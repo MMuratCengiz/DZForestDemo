@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DZForestDemo", "DZForestDemo\DZForestDemo.csproj", "{34712A8C-56EB-44E7-BFE1-2740E5D19FD3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImportAssets", "ImportAssets\ImportAssets.csproj", "{ECB52015-40C0-4E47-A05E-B5A76E8A3BF0}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{34712A8C-56EB-44E7-BFE1-2740E5D19FD3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34712A8C-56EB-44E7-BFE1-2740E5D19FD3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34712A8C-56EB-44E7-BFE1-2740E5D19FD3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34712A8C-56EB-44E7-BFE1-2740E5D19FD3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ECB52015-40C0-4E47-A05E-B5A76E8A3BF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ECB52015-40C0-4E47-A05E-B5A76E8A3BF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ECB52015-40C0-4E47-A05E-B5A76E8A3BF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ECB52015-40C0-4E47-A05E-B5A76E8A3BF0}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
