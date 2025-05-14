@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DZForestDemo", "DZForestDem
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImportAssets", "ImportAssets\ImportAssets.csproj", "{ECB52015-40C0-4E47-A05E-B5A76E8A3BF0}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetManagement", "AssetManagement\AssetManagement.csproj", "{870E27E1-56EA-49FC-B23F-A66653CDA2E6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{ECB52015-40C0-4E47-A05E-B5A76E8A3BF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ECB52015-40C0-4E47-A05E-B5A76E8A3BF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{ECB52015-40C0-4E47-A05E-B5A76E8A3BF0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{870E27E1-56EA-49FC-B23F-A66653CDA2E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{870E27E1-56EA-49FC-B23F-A66653CDA2E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{870E27E1-56EA-49FC-B23F-A66653CDA2E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{870E27E1-56EA-49FC-B23F-A66653CDA2E6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
