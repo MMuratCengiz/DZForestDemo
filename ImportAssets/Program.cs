@@ -3,7 +3,8 @@
 using DenOfIz;
 
 var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-InteropString targetDirectory = new("C:/Workspace/DZForestDemo/DZForestDemo/Assets/MeadowForest/");
+var solutionDir = Path.GetDirectoryName(Path.GetDirectoryName(AppDomain.CurrentDomain.BaseDirectory));
+InteropString targetDirectory = new($"{solutionDir}/DZForestDemo/Assets/MeadowForest/");
 InteropString importRoot =
     new($"{home}/Downloads/Polygon_NatureBiomes_MeadowForest_SourceFiles_v2/Meadow_Source_Files/");
 var texRoot = importRoot.Append("Textures/");
@@ -11,7 +12,7 @@ var fbxRoot = importRoot.Append("FBX/");
 
 EngineDesc engineDesc = new();
 engineDesc.FS.AssetPath = new InteropString("C:/Workspace/DZForestDemo/DZForestDemo/Assets");
-DenOfIzGraphicsInitializer.Initialize(engineDesc);
+DenOfIzRuntime.Initialize(engineDesc);
 
 AssimpImporterDesc importerDesc = new();
 AssimpImporter importer = new(importerDesc);
