@@ -12,7 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="DenOfIzGraphics" Version="0.1.16-alpha" />
+      <PackageReference Include="DenOfIzGraphics" Version="0.1.38-alpha" />
     </ItemGroup>
 
 </Project>

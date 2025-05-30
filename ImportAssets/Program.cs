@@ -14,6 +14,11 @@ EngineDesc engineDesc = new();
 engineDesc.FS.AssetPath = new InteropString("C:/Workspace/DZForestDemo/DZForestDemo/Assets");
 DenOfIzRuntime.Initialize(engineDesc);
 
+AssimpImportDesc importDesc = new();
+
+AssetScanner assetScanner = new();
+assetScanner.AddImporter(new AssimpImporter(new AssimpImporterDesc()), importDesc);
+
 AssimpImporterDesc importerDesc = new();
 AssimpImporter importer = new(importerDesc);
 
