@@ -22,6 +22,11 @@ assetScanner.AddImporter(new AssimpImporter(new AssimpImporterDesc()), importDes
 AssimpImporterDesc importerDesc = new();
 AssimpImporter importer = new(importerDesc);
 
+AssetScanner scanner = new();
+AssimpImportDesc assimpImportDesc = new();
+scanner.AddImporter(new AssimpImporter(new AssimpImporterDesc()), new AssimpImportDesc());
+scanner.AddImporter(new TextureImporter(new TextureImporterDesc()), new TextureImportDesc());
+
 ImportJobDesc importJobDesc = new();
 importJobDesc.SourceFilePath = fbxRoot.Append("SM_Env_Tree_Meadow_01.fbx");
 importJobDesc.AssetNamePrefix = new InteropString("");
