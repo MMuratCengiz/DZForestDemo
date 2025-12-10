@@ -8,11 +8,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="Assets\MeadowForest\" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="DenOfIzGraphics" Version="0.1.38-alpha" />
+      <PackageReference Include="DenOfIzGraphics" Version="0.2.0-alpha" />
     </ItemGroup>
 
 </Project>
