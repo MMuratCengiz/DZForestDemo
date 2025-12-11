@@ -1,4 +1,4 @@
-﻿namespace DenOfIzNugetTest;
+﻿namespace DZForestDemo;
 
 public abstract class Triangle
 {

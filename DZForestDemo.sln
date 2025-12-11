@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ImportAssets", "ImportAsset
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AssetManagement", "AssetManagement\AssetManagement.csproj", "{870E27E1-56EA-49FC-B23F-A66653CDA2E6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Graphics", "Graphics\Graphics.csproj", "{D1F4D156-735C-413E-875A-014D56421D89}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{870E27E1-56EA-49FC-B23F-A66653CDA2E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{870E27E1-56EA-49FC-B23F-A66653CDA2E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{870E27E1-56EA-49FC-B23F-A66653CDA2E6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D1F4D156-735C-413E-875A-014D56421D89}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D1F4D156-735C-413E-875A-014D56421D89}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D1F4D156-735C-413E-875A-014D56421D89}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D1F4D156-735C-413E-875A-014D56421D89}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

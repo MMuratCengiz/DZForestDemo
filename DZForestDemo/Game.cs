@@ -2,7 +2,7 @@
 using System.Text;
 using DenOfIz;
 
-namespace DenOfIzNugetTest;
+namespace DZForestDemo;
 
 public class Game
 {
@@ -14,11 +14,26 @@ public class Game
     private Pipeline _pipeline = null!;
     private BufferResource _vertexBuffer = null!;
     private readonly StepTimer _stepTimer = new();
+    private readonly Clay _clay;
 
     private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments = new(1);
 
     public Game(LogicalDevice logicalDevice, ResourceTracking resourceTracking, uint screenWidth = 1920, uint screenHeight = 1080)
     {
+        ClayDesc clayDesc = new()
+        {
+            LogicalDevice = _logicalDevice,
+            ResourceTracking = _resourceTracking,
+            RenderTargetFormat = Format.B8G8R8A8Unorm,
+            NumFrames = 3,
+            Width = screenWidth,
+            Height = screenHeight,
+            MaxNumElements = 8192,
+            MaxNumTextMeasureCacheElements = 16384,
+            MaxNumFonts = 16
+        };
+        _clay = new Clay(clayDesc);
+
         _logicalDevice = logicalDevice;
         _resourceTracking = resourceTracking;
         _frameDebugRenderer = new FrameDebugRenderer(new FrameDebugRendererDesc
@@ -34,6 +49,12 @@ public class Game
         CreatePipeline();
     }
 
+    public void HandleEvent(Event ev)
+    {
+        _clay.HandleEvent(ev);
+        _clay.UpdateScrollContainers(true, new Float2{ X = 0.0f, Y = 0.0f }, (float)_stepTimer.GetDeltaTime());
+    }
+    
     public void Render(Viewport viewport, CommandList commandList, TextureResource renderTarget, uint frameIndex)
     {
         _stepTimer.Tick();
@@ -59,6 +80,20 @@ public class Game
         RenderContent(viewport, commandList, frameIndex);
         commandList.EndRendering();
 
+        _resourceTracking.TransitionTexture(commandList, renderTarget,
+            (uint)ResourceUsageFlagBits.CopyDst, QueueType.Graphics);
+        
+        _clay.BeginLayout();
+
+        var uiRender = _clay.EndLayout(frameIndex, (float)_stepTimer.GetDeltaTime());
+
+        CopyTextureRegionDesc copyRegion = new();
+        copyRegion.SrcTexture = uiRender.Texture;
+        copyRegion.DstTexture = renderTarget;
+        copyRegion.Width      = (uint)(viewport.Width - viewport.X);
+        copyRegion.Height     = (uint)(viewport.Height - viewport.Y);
+        copyRegion.Depth      = 1;
+        
         _resourceTracking.TransitionTexture(commandList, renderTarget,
             (uint)ResourceUsageFlagBits.Present, QueueType.Graphics);
 

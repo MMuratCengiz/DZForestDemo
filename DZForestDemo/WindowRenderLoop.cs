@@ -1,6 +1,6 @@
 using DenOfIz;
 
-namespace DenOfIzNugetTest;
+namespace DZForestDemo;
 
 public class WindowRenderLoop : IDisposable
 {
@@ -82,6 +82,8 @@ public class WindowRenderLoop : IDisposable
                 case EventType.KeyDown when ev.Key.KeyCode == KeyCode.Escape:
                     return false;
             }
+
+            _game.HandleEvent(ev);
         }
 
         var frameIndex = _frameSync.NextFrame();

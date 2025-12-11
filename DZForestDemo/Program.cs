@@ -1,7 +1,6 @@
 using DenOfIz;
-using DenOfIz.Bindings.Runtime;
 
-namespace DenOfIzNugetTest;
+namespace DZForestDemo;
 
 internal static class Program
 {

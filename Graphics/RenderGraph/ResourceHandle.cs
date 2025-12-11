@@ -1,0 +1,34 @@
+using System.Runtime.InteropServices;
+
+namespace Graphics.RenderGraph;
+
+[StructLayout(LayoutKind.Sequential)]
+public readonly struct ResourceHandle : IEquatable<ResourceHandle>
+{
+    public readonly int Index;
+    public readonly int Version;
+
+    public ResourceHandle(int index, int version)
+    {
+        Index = index;
+        Version = version;
+    }
+
+    public bool IsValid => Index >= 0;
+    public static ResourceHandle Invalid => new(-1, 0);
+
+    public bool Equals(ResourceHandle other) => Index == other.Index && Version == other.Version;
+    public override bool Equals(object? obj) => obj is ResourceHandle other && Equals(other);
+    public override int GetHashCode() => HashCode.Combine(Index, Version);
+    public static bool operator ==(ResourceHandle left, ResourceHandle right) => left.Equals(right);
+    public static bool operator !=(ResourceHandle left, ResourceHandle right) => !left.Equals(right);
+}
+
+[Flags]
+public enum ResourceAccess
+{
+    None = 0,
+    Read = 1,
+    Write = 2,
+    ReadWrite = Read | Write
+}
