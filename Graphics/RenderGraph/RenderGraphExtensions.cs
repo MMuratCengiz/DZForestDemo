@@ -64,18 +64,18 @@ public static class CommonPasses
             });
     }
 
-    public static void AddPresentPass(this RenderGraph graph, ResourceHandle swapchainRT)
+    public static void AddPresentPass(this RenderGraph graph, ResourceHandle swapchainRt)
     {
         graph.AddPass("Present",
             (ref RenderPassSetupContext ctx, ref PassBuilder builder) =>
             {
-                builder.ReadTexture(swapchainRT, (uint)ResourceUsageFlagBits.Present);
+                builder.ReadTexture(swapchainRt, (uint)ResourceUsageFlagBits.Present);
                 builder.HasSideEffects();
             },
             (ref RenderPassExecuteContext ctx) =>
             {
                 var cmd = ctx.CommandList;
-                var rt = ctx.GetTexture(swapchainRT);
+                var rt = ctx.GetTexture(swapchainRt);
 
                 ctx.ResourceTracking.TransitionTexture(cmd, rt,
                     (uint)ResourceUsageFlagBits.Present, QueueType.Graphics);

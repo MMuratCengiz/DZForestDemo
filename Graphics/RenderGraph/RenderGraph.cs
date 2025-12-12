@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using DenOfIz;
 using Semaphore = DenOfIz.Semaphore;
 
@@ -17,38 +18,47 @@ public struct RenderGraphDesc
 
 public class RenderGraph : IDisposable
 {
-    readonly LogicalDevice _logicalDevice;
-    readonly CommandQueue _commandQueue;
-    readonly ResourceTracking _resourceTracking;
-    readonly uint _numFrames;
-    readonly uint _maxPasses;
-    readonly uint _maxResources;
+    private readonly LogicalDevice _logicalDevice;
+    private readonly CommandQueue _commandQueue;
+    private readonly uint _numFrames;
+    private readonly uint _maxPasses;
+    private readonly uint _maxResources;
 
-    readonly List<RenderGraphResourceEntry> _resources;
-    readonly Dictionary<string, ResourceHandle> _namedResources;
-    int _resourceCount;
+    private readonly List<RenderGraphResourceEntry> _resources;
+    private readonly Dictionary<string, ResourceHandle> _namedResources;
+    private int _resourceCount;
 
-    readonly List<RenderPassData> _passes;
-    readonly List<int> _executionOrder;
-    int _passCount;
+    private readonly List<RenderPassData> _passes;
+    private readonly List<int> _executionOrder;
+    private int _passCount;
 
-    readonly CommandListPool[] _commandListPools;
-    readonly List<Semaphore>[] _frameSemaphores;
-    readonly Fence[] _frameFences;
-    uint _currentFrameIndex;
-    bool _isFrameActive;
-    bool _isCompiled;
+    private readonly CommandListPool[] _commandListPools;
+    private readonly List<Semaphore>[] _frameSemaphores;
+    private readonly Fence[] _frameFences;
+    private bool _isFrameActive;
+    private bool _isCompiled;
 
-    readonly List<TextureResource>[] _transientTextures;
-    readonly List<BufferResource>[] _transientBuffers;
+    private readonly List<TextureResource>[] _transientTextures;
+    private readonly List<BufferResource>[] _transientBuffers;
 
-    uint _width;
-    uint _height;
+    private readonly Semaphore[] _waitSemaphoresBuffer;
+    private readonly Semaphore[] _signalSemaphoresBuffer;
 
-    readonly Semaphore[] _waitSemaphoresBuffer;
-    readonly Semaphore[] _signalSemaphoresBuffer;
+    // Pre-pinned handle arrays for zero-allocation submission
+    private readonly ulong[] _commandListHandles;
+    private readonly ulong[] _waitSemaphoreHandles;
+    private readonly ulong[] _signalSemaphoreHandles;
+    private GCHandle _commandListPin;
+    private GCHandle _waitSemaphorePin;
+    private GCHandle _signalSemaphorePin;
 
-    bool _disposed;
+    // Pre-allocated queue for graph algorithms
+    private readonly Queue<int> _algorithmQueue;
+
+    // Cached command lists per frame - initialized once to avoid ToArray() allocation
+    private readonly CommandList[][] _cachedCommandLists;
+
+    private bool _disposed;
 
     public RenderGraph(RenderGraphDesc desc)
     {
@@ -58,7 +68,7 @@ public class RenderGraph : IDisposable
         _maxPasses = desc.MaxPasses;
         _maxResources = desc.MaxResources;
 
-        _resourceTracking = new ResourceTracking();
+        ResourceTracking = new ResourceTracking();
 
         _resources = new List<RenderGraphResourceEntry>((int)_maxResources);
         for (var i = 0; i < _maxResources; i++)
@@ -93,27 +103,48 @@ public class RenderGraph : IDisposable
 
         _waitSemaphoresBuffer = new Semaphore[_maxPasses];
         _signalSemaphoresBuffer = new Semaphore[1];
+
+        // Pre-allocate and pin handle arrays for zero-allocation submission
+        _commandListHandles = new ulong[1];
+        _waitSemaphoreHandles = new ulong[_maxPasses];
+        _signalSemaphoreHandles = new ulong[1];
+        _commandListPin = GCHandle.Alloc(_commandListHandles, GCHandleType.Pinned);
+        _waitSemaphorePin = GCHandle.Alloc(_waitSemaphoreHandles, GCHandleType.Pinned);
+        _signalSemaphorePin = GCHandle.Alloc(_signalSemaphoreHandles, GCHandleType.Pinned);
+
+        // Pre-allocate queue for graph algorithms
+        _algorithmQueue = new Queue<int>((int)_maxPasses);
+
+        // Cache command lists per frame - call ToArray() once at init, not per frame
+        _cachedCommandLists = new CommandList[_numFrames][];
+        for (var i = 0; i < _numFrames; i++)
+            _cachedCommandLists[i] = _commandListPools[i].GetCommandLists().ToArray();
     }
 
-    public uint Width => _width;
-    public uint Height => _height;
-    public uint CurrentFrameIndex => _currentFrameIndex;
-    public ResourceTracking ResourceTracking => _resourceTracking;
+    public uint Width { get; private set; }
+
+    public uint Height { get; private set; }
+
+    public uint CurrentFrameIndex { get; private set; }
+
+    public ResourceTracking ResourceTracking { get; }
 
     public void SetDimensions(uint width, uint height)
     {
-        _width = width;
-        _height = height;
+        Width = width;
+        Height = height;
     }
 
     public void BeginFrame(uint frameIndex)
     {
         if (_isFrameActive)
+        {
             throw new InvalidOperationException("Frame already active. Call Execute() first.");
+        }
 
-        _currentFrameIndex = frameIndex;
-        _frameFences[_currentFrameIndex].Wait();
-        _frameFences[_currentFrameIndex].Reset();
+        CurrentFrameIndex = frameIndex;
+        _frameFences[CurrentFrameIndex].Wait();
+        _frameFences[CurrentFrameIndex].Reset();
 
         ResetFrame();
         _isFrameActive = true;
@@ -123,7 +154,9 @@ public class RenderGraph : IDisposable
     public ResourceHandle ImportTexture(string name, TextureResource texture)
     {
         if (_resourceCount >= _maxResources)
+        {
             throw new InvalidOperationException("Maximum resource count exceeded");
+        }
 
         var entry = _resources[_resourceCount];
         entry.Reset();
@@ -140,7 +173,9 @@ public class RenderGraph : IDisposable
     public ResourceHandle ImportBuffer(string name, BufferResource buffer)
     {
         if (_resourceCount >= _maxResources)
+        {
             throw new InvalidOperationException("Maximum resource count exceeded");
+        }
 
         var entry = _resources[_resourceCount];
         entry.Reset();
@@ -154,10 +189,12 @@ public class RenderGraph : IDisposable
         return handle;
     }
 
-    internal ResourceHandle CreateTransientTexture(TransientTextureDesc desc)
+    public ResourceHandle CreateTransientTexture(TransientTextureDesc desc)
     {
         if (_resourceCount >= _maxResources)
+        {
             throw new InvalidOperationException("Maximum resource count exceeded");
+        }
 
         var entry = _resources[_resourceCount];
         entry.Reset();
@@ -167,7 +204,10 @@ public class RenderGraph : IDisposable
 
         var handle = new ResourceHandle(_resourceCount, entry.Version);
         if (!string.IsNullOrEmpty(desc.DebugName))
+        {
             _namedResources[desc.DebugName] = handle;
+        }
+
         _resourceCount++;
         return handle;
     }
@@ -175,7 +215,9 @@ public class RenderGraph : IDisposable
     internal ResourceHandle CreateTransientBuffer(TransientBufferDesc desc)
     {
         if (_resourceCount >= _maxResources)
+        {
             throw new InvalidOperationException("Maximum resource count exceeded");
+        }
 
         var entry = _resources[_resourceCount];
         entry.Reset();
@@ -185,7 +227,10 @@ public class RenderGraph : IDisposable
 
         var handle = new ResourceHandle(_resourceCount, entry.Version);
         if (!string.IsNullOrEmpty(desc.DebugName))
+        {
             _namedResources[desc.DebugName] = handle;
+        }
+
         _resourceCount++;
         return handle;
     }
@@ -197,11 +242,15 @@ public class RenderGraph : IDisposable
     public TextureResource GetTexture(ResourceHandle handle)
     {
         if (!handle.IsValid || handle.Index >= _resourceCount)
+        {
             throw new ArgumentException("Invalid resource handle");
+        }
 
         var entry = _resources[handle.Index];
         if (entry.Version != handle.Version)
+        {
             throw new ArgumentException("Stale resource handle");
+        }
 
         return entry.Texture ?? throw new InvalidOperationException("Resource is not a texture or not allocated");
     }
@@ -210,11 +259,15 @@ public class RenderGraph : IDisposable
     public BufferResource GetBuffer(ResourceHandle handle)
     {
         if (!handle.IsValid || handle.Index >= _resourceCount)
+        {
             throw new ArgumentException("Invalid resource handle");
+        }
 
         var entry = _resources[handle.Index];
         if (entry.Version != handle.Version)
+        {
             throw new ArgumentException("Stale resource handle");
+        }
 
         return entry.Buffer ?? throw new InvalidOperationException("Resource is not a buffer or not allocated");
     }
@@ -222,7 +275,9 @@ public class RenderGraph : IDisposable
     public void AddPass(string name, RenderPassSetupDelegate setup, RenderPassExecuteDelegate execute)
     {
         if (_passCount >= _maxPasses)
+        {
             throw new InvalidOperationException("Maximum pass count exceeded");
+        }
 
         var passData = _passes[_passCount];
         passData.Reset();
@@ -233,9 +288,9 @@ public class RenderGraph : IDisposable
         var setupContext = new RenderPassSetupContext
         {
             Graph = this,
-            Width = _width,
-            Height = _height,
-            FrameIndex = _currentFrameIndex
+            Width = Width,
+            Height = Height,
+            FrameIndex = CurrentFrameIndex
         };
 
         var builder = new PassBuilder(passData, this);
@@ -251,24 +306,114 @@ public class RenderGraph : IDisposable
         }, execute);
     }
 
+    public ResourceHandle AddExternalPass(string name, ExternalPassExecuteDelegate execute, TransientTextureDesc outputDesc)
+    {
+        if (_passCount >= _maxPasses)
+        {
+            throw new InvalidOperationException("Maximum pass count exceeded");
+        }
+
+        var passData = _passes[_passCount];
+        passData.Reset();
+        passData.Index = _passCount;
+        passData.Name = name;
+        passData.ExternalExecute = execute;
+        passData.IsExternal = true;
+        passData.HasSideEffects = true;
+
+        var outputHandle = CreateTransientTexture(outputDesc);
+        passData.ExternalOutputHandle = outputHandle;
+        UpdateResourceLifetime(outputHandle, _passCount);
+
+        _passCount++;
+        return outputHandle;
+    }
+
+    public ResourceHandle AddExternalPass(string name, RenderPassSetupDelegate setup, ExternalPassExecuteDelegate execute, TransientTextureDesc outputDesc)
+    {
+        if (_passCount >= _maxPasses)
+        {
+            throw new InvalidOperationException("Maximum pass count exceeded");
+        }
+
+        var passData = _passes[_passCount];
+        passData.Reset();
+        passData.Index = _passCount;
+        passData.Name = name;
+        passData.ExternalExecute = execute;
+        passData.IsExternal = true;
+        passData.HasSideEffects = true;
+
+        var setupContext = new RenderPassSetupContext
+        {
+            Graph = this,
+            Width = Width,
+            Height = Height,
+            FrameIndex = CurrentFrameIndex
+        };
+
+        var builder = new PassBuilder(passData, this);
+        setup(ref setupContext, ref builder);
+
+        var outputHandle = CreateTransientTexture(outputDesc);
+        passData.ExternalOutputHandle = outputHandle;
+        UpdateResourceLifetime(outputHandle, _passCount - 1);
+
+        _passCount++;
+        return outputHandle;
+    }
+
+    internal void SetExternalTexture(ResourceHandle handle, TextureResource texture)
+    {
+        if (!handle.IsValid || handle.Index >= _resourceCount)
+        {
+            return;
+        }
+
+        var entry = _resources[handle.Index];
+        entry.Texture = texture;
+    }
+
+    internal Semaphore? GetExternalSemaphore(ResourceHandle handle)
+    {
+        for (var i = 0; i < _passCount; i++)
+        {
+            var pass = _passes[i];
+            if (pass.IsExternal && pass.ExternalOutputHandle == handle)
+            {
+                return pass.ExternalResult.Semaphore;
+            }
+        }
+        return null;
+    }
+
     internal void UpdateResourceLifetime(ResourceHandle handle, int passIndex)
     {
         if (!handle.IsValid || handle.Index >= _resourceCount)
+        {
             return;
+        }
 
         var entry = _resources[handle.Index];
         if (entry.FirstPassIndex < 0)
+        {
             entry.FirstPassIndex = passIndex;
+        }
+
         entry.LastPassIndex = passIndex;
     }
 
     public void Compile()
     {
         if (!_isFrameActive)
+        {
             throw new InvalidOperationException("No active frame. Call BeginFrame() first.");
+        }
 
         if (_isCompiled)
+        {
             return;
+        }
 
         BuildDependencyGraph();
         CullPasses();
@@ -281,16 +426,47 @@ public class RenderGraph : IDisposable
     public void Execute()
     {
         if (!_isFrameActive)
+        {
             throw new InvalidOperationException("No active frame. Call BeginFrame() first.");
+        }
 
         if (!_isCompiled)
+        {
             Compile();
+        }
 
         for (var i = 0; i < _executionOrder.Count; i++)
         {
             var passData = _passes[_executionOrder[i]];
-            if (passData.IsCulled || passData.Execute == null || passData.CommandList == null)
+            if (passData.IsCulled)
+            {
                 continue;
+            }
+
+            if (passData.IsExternal)
+            {
+                if (passData.ExternalExecute == null)
+                {
+                    continue;
+                }
+
+                var externalContext = new ExternalPassExecuteContext
+                {
+                    Graph = this,
+                    Width = Width,
+                    Height = Height,
+                    FrameIndex = CurrentFrameIndex
+                };
+
+                passData.ExternalResult = passData.ExternalExecute(ref externalContext);
+                SetExternalTexture(passData.ExternalOutputHandle, passData.ExternalResult.Texture);
+                continue;
+            }
+
+            if (passData.Execute == null || passData.CommandList == null)
+            {
+                continue;
+            }
 
             var commandList = passData.CommandList;
             commandList.Begin();
@@ -299,10 +475,10 @@ public class RenderGraph : IDisposable
             {
                 Graph = this,
                 CommandList = commandList,
-                ResourceTracking = _resourceTracking,
-                Width = _width,
-                Height = _height,
-                FrameIndex = _currentFrameIndex
+                ResourceTracking = ResourceTracking,
+                Width = Width,
+                Height = Height,
+                FrameIndex = CurrentFrameIndex
             };
 
             passData.Execute(ref context);
@@ -313,7 +489,7 @@ public class RenderGraph : IDisposable
         _isFrameActive = false;
     }
 
-    void ResetFrame()
+    private void ResetFrame()
     {
         _resourceCount = 0;
         _namedResources.Clear();
@@ -321,7 +497,7 @@ public class RenderGraph : IDisposable
         _executionOrder.Clear();
     }
 
-    void BuildDependencyGraph()
+    private void BuildDependencyGraph()
     {
         for (var i = 0; i < _passCount; i++)
         {
@@ -351,36 +527,36 @@ public class RenderGraph : IDisposable
         }
     }
 
-    void CullPasses()
+    private void CullPasses()
     {
         for (var i = 0; i < _passCount; i++)
             _passes[i].IsCulled = true;
 
-        var toProcess = new Queue<int>();
+        _algorithmQueue.Clear();
         for (var i = 0; i < _passCount; i++)
         {
             if (_passes[i].HasSideEffects)
             {
                 _passes[i].IsCulled = false;
-                toProcess.Enqueue(i);
+                _algorithmQueue.Enqueue(i);
             }
         }
 
-        while (toProcess.Count > 0)
+        while (_algorithmQueue.Count > 0)
         {
-            var passIdx = toProcess.Dequeue();
+            var passIdx = _algorithmQueue.Dequeue();
             foreach (var depIdx in _passes[passIdx].DependsOnPasses)
             {
                 if (_passes[depIdx].IsCulled)
                 {
                     _passes[depIdx].IsCulled = false;
-                    toProcess.Enqueue(depIdx);
+                    _algorithmQueue.Enqueue(depIdx);
                 }
             }
         }
     }
 
-    void TopologicalSort()
+    private void TopologicalSort()
     {
         _executionOrder.Clear();
 
@@ -396,19 +572,24 @@ public class RenderGraph : IDisposable
             var count = 0;
             foreach (var dep in _passes[i].DependsOnPasses)
                 if (!_passes[dep].IsCulled)
+                {
                     count++;
+                }
+
             inDegree[i] = count;
         }
 
-        var queue = new Queue<int>();
+        _algorithmQueue.Clear();
         for (var i = 0; i < _passCount; i++)
             if (inDegree[i] == 0)
-                queue.Enqueue(i);
+            {
+                _algorithmQueue.Enqueue(i);
+            }
 
         var order = 0;
-        while (queue.Count > 0)
+        while (_algorithmQueue.Count > 0)
         {
-            var passIdx = queue.Dequeue();
+            var passIdx = _algorithmQueue.Dequeue();
             var pass = _passes[passIdx];
 
             pass.ExecutionOrder = order++;
@@ -417,26 +598,35 @@ public class RenderGraph : IDisposable
             foreach (var depIdx in pass.DependentPasses)
             {
                 if (_passes[depIdx].IsCulled)
+                {
                     continue;
+                }
 
                 inDegree[depIdx]--;
                 if (inDegree[depIdx] == 0)
-                    queue.Enqueue(depIdx);
+                {
+                    _algorithmQueue.Enqueue(depIdx);
+                }
             }
         }
 
         var culledCount = 0;
         for (var i = 0; i < _passCount; i++)
-            if (_passes[i].IsCulled) culledCount++;
+            if (_passes[i].IsCulled)
+            {
+                culledCount++;
+            }
 
         if (_executionOrder.Count < _passCount - culledCount)
+        {
             throw new InvalidOperationException("Circular dependency detected in render graph");
+        }
     }
 
-    void AllocateTransientResources()
+    private void AllocateTransientResources()
     {
-        var transientTextures = _transientTextures[_currentFrameIndex];
-        var transientBuffers = _transientBuffers[_currentFrameIndex];
+        var transientTextures = _transientTextures[CurrentFrameIndex];
+        var transientBuffers = _transientBuffers[CurrentFrameIndex];
         var textureIndex = 0;
         var bufferIndex = 0;
 
@@ -444,7 +634,9 @@ public class RenderGraph : IDisposable
         {
             var entry = _resources[i];
             if (!entry.IsTransient || entry.FirstPassIndex < 0 || _passes[entry.FirstPassIndex].IsCulled)
+            {
                 continue;
+            }
 
             if (entry.Type == RenderGraphResourceType.Texture)
             {
@@ -457,8 +649,8 @@ public class RenderGraph : IDisposable
                     var desc = entry.TextureDesc;
                     var texture = _logicalDevice.CreateTextureResource(new TextureDesc
                     {
-                        Width = desc.Width > 0 ? desc.Width : _width,
-                        Height = desc.Height > 0 ? desc.Height : _height,
+                        Width = desc.Width > 0 ? desc.Width : Width,
+                        Height = desc.Height > 0 ? desc.Height : Height,
                         Depth = desc.Depth > 0 ? desc.Depth : 1,
                         Format = desc.Format,
                         MipLevels = desc.MipLevels > 0 ? desc.MipLevels : 1,
@@ -467,9 +659,9 @@ public class RenderGraph : IDisposable
                         Descriptor = desc.Descriptor,
                         HeapType = HeapType.Gpu,
                         InitialUsage = (uint)ResourceUsageFlagBits.Common,
-                        DebugName = StringView.Create(desc.DebugName ?? "TransientTexture")
+                        DebugName = StringView.Intern(desc.DebugName ?? "TransientTexture")
                     });
-                    _resourceTracking.TrackTexture(texture, (uint)ResourceUsageFlagBits.Common, QueueType.Graphics);
+                    ResourceTracking.TrackTexture(texture, (uint)ResourceUsageFlagBits.Common, QueueType.Graphics);
                     transientTextures.Add(texture);
                     entry.Texture = texture;
                 }
@@ -490,7 +682,7 @@ public class RenderGraph : IDisposable
                         Usages = desc.Usages,
                         Descriptor = desc.Descriptor,
                         HeapType = desc.HeapType,
-                        DebugName = StringView.Create(desc.DebugName ?? "TransientBuffer")
+                        DebugName = StringView.Intern(desc.DebugName ?? "TransientBuffer")
                     });
                     transientBuffers.Add(buffer);
                     entry.Buffer = buffer;
@@ -500,17 +692,19 @@ public class RenderGraph : IDisposable
         }
     }
 
-    void AssignCommandLists()
+    private void AssignCommandLists()
     {
-        var commandLists = _commandListPools[_currentFrameIndex].GetCommandLists().ToArray();
-        var semaphores = _frameSemaphores[_currentFrameIndex];
+        var commandLists = _cachedCommandLists[CurrentFrameIndex];
+        var semaphores = _frameSemaphores[CurrentFrameIndex];
 
         var cmdIndex = 0;
         for (var i = 0; i < _executionOrder.Count; i++)
         {
             var pass = _passes[_executionOrder[i]];
             if (pass.IsCulled)
+            {
                 continue;
+            }
 
             pass.CommandList = commandLists[cmdIndex];
             pass.CompletionSemaphore = semaphores[cmdIndex];
@@ -518,37 +712,70 @@ public class RenderGraph : IDisposable
         }
     }
 
-    void SubmitCommandLists()
+    private void SubmitCommandLists()
     {
+        var lastSubmittedIndex = -1;
+        for (var i = _executionOrder.Count - 1; i >= 0; i--)
+        {
+            var pass = _passes[_executionOrder[i]];
+            if (!pass.IsCulled && !pass.IsExternal && pass.CommandList != null)
+            {
+                lastSubmittedIndex = i;
+                break;
+            }
+        }
+
         for (var i = 0; i < _executionOrder.Count; i++)
         {
             var pass = _passes[_executionOrder[i]];
-            if (pass.IsCulled || pass.CommandList == null)
+            if (pass.IsCulled || pass.IsExternal || pass.CommandList == null)
+            {
                 continue;
+            }
 
             var waitCount = 0;
             foreach (var depIdx in pass.DependsOnPasses)
             {
                 var depPass = _passes[depIdx];
-                if (!depPass.IsCulled && depPass.CompletionSemaphore != null)
+                if (depPass.IsCulled)
+                {
+                    continue;
+                }
+
+                if (depPass.IsExternal && depPass.ExternalResult.Semaphore != null)
+                {
+                    _waitSemaphoresBuffer[waitCount++] = depPass.ExternalResult.Semaphore;
+                }
+                else if (!depPass.IsExternal && depPass.CompletionSemaphore != null)
+                {
                     _waitSemaphoresBuffer[waitCount++] = depPass.CompletionSemaphore;
+                }
             }
 
             _signalSemaphoresBuffer[0] = pass.CompletionSemaphore!;
 
-            using var commandListArray = CommandListArray.Create([pass.CommandList]);
-            using var waitSemaphores = SemaphoreArray.Create(_waitSemaphoresBuffer[..waitCount]);
-            using var signalSemaphores = SemaphoreArray.Create(_signalSemaphoresBuffer);
+            // Update pre-pinned handle arrays - zero allocation (implicit conversion to ulong)
+            _commandListHandles[0] = pass.CommandList;
+            for (var w = 0; w < waitCount; w++)
+                _waitSemaphoreHandles[w] = _waitSemaphoresBuffer[w];
+            _signalSemaphoreHandles[0] = pass.CompletionSemaphore!;
+
+            // Create array structs from pre-pinned memory - no allocation
+            var commandListArray = CommandListArray.FromPinned(_commandListPin, 1);
+            var waitSemaphores = SemaphoreArray.FromPinned(_waitSemaphorePin, waitCount);
+            var signalSemaphores = SemaphoreArray.FromPinned(_signalSemaphorePin, 1);
 
             var submitDesc = new ExecuteCommandListsDesc
             {
-                CommandLists = commandListArray.Value,
-                WaitSemaphores = waitSemaphores.Value,
-                SignalSemaphores = signalSemaphores.Value
+                CommandLists = commandListArray,
+                WaitSemaphores = waitSemaphores,
+                SignalSemaphores = signalSemaphores
             };
 
-            if (i == _executionOrder.Count - 1)
-                submitDesc.Signal = _frameFences[_currentFrameIndex];
+            if (i == lastSubmittedIndex)
+            {
+                submitDesc.Signal = _frameFences[CurrentFrameIndex];
+            }
 
             _commandQueue.ExecuteCommandLists(submitDesc);
         }
@@ -563,7 +790,11 @@ public class RenderGraph : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
 
         WaitIdle();
@@ -580,7 +811,24 @@ public class RenderGraph : IDisposable
             _commandListPools[i].Dispose();
         }
 
-        _resourceTracking.Dispose();
+        ResourceTracking.Dispose();
+
+        // Free pinned handles
+        if (_commandListPin.IsAllocated)
+        {
+            _commandListPin.Free();
+        }
+
+        if (_waitSemaphorePin.IsAllocated)
+        {
+            _waitSemaphorePin.Free();
+        }
+
+        if (_signalSemaphorePin.IsAllocated)
+        {
+            _signalSemaphorePin.Free();
+        }
+
         GC.SuppressFinalize(this);
     }
 }

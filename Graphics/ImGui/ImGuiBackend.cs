@@ -941,7 +941,6 @@ float4 main(PSInput input) : SV_TARGET
 /// </summary>
 public class ImGuiRenderer : IDisposable
 {
-    private readonly ImGuiBackend _backend;
     private bool _disposed;
     private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments = new(1);
 
@@ -957,14 +956,14 @@ public class ImGuiRenderer : IDisposable
         // BackendRendererName is read-only in recent ImGui.NET versions
         io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
 
-        _backend = new ImGuiBackend(desc);
+        Backend = new ImGuiBackend(desc);
     }
 
-    public ImGuiBackend Backend => _backend;
+    public ImGuiBackend Backend { get; }
 
     public void ProcessEvent(Event ev)
     {
-        _backend.ProcessEvent(ev);
+        Backend.ProcessEvent(ev);
     }
 
     public void NewFrame(uint width, uint height, float deltaTime)
@@ -973,7 +972,7 @@ public class ImGuiRenderer : IDisposable
         io.DisplaySize = new Vector2(width, height);
         io.DeltaTime = deltaTime;
         ImGui.NewFrame();
-        _backend.UpdateTextInputState();
+        Backend.UpdateTextInputState();
     }
 
     public void Render(TextureResource renderTarget, CommandList commandList, uint frameIndex)
@@ -993,33 +992,33 @@ public class ImGuiRenderer : IDisposable
 
         commandList.BeginRendering(renderingDesc);
 
-        var viewport = _backend.Viewport;
+        var viewport = Backend.Viewport;
         commandList.BindViewport(viewport.X, viewport.Y, viewport.Width, viewport.Height);
         commandList.BindScissorRect(viewport.X, viewport.Y, viewport.Width, viewport.Height);
 
-        _backend.RenderDrawData(commandList, ImGui.GetDrawData(), frameIndex);
+        Backend.RenderDrawData(commandList, ImGui.GetDrawData(), frameIndex);
 
         commandList.EndRendering();
     }
 
     public void SetViewport(Viewport viewport)
     {
-        _backend.SetViewport(viewport);
+        Backend.SetViewport(viewport);
     }
 
     public void RecreateFonts()
     {
-        _backend.RecreateFonts();
+        Backend.RecreateFonts();
     }
 
     public IntPtr AddTexture(TextureResource texture)
     {
-        return _backend.AddTexture(texture);
+        return Backend.AddTexture(texture);
     }
 
     public void RemoveTexture(IntPtr textureId)
     {
-        _backend.RemoveTexture(textureId);
+        Backend.RemoveTexture(textureId);
     }
 
     public void Dispose()
@@ -1031,7 +1030,7 @@ public class ImGuiRenderer : IDisposable
 
         _disposed = true;
 
-        _backend.Dispose();
+        Backend.Dispose();
         _rtAttachments.Dispose();
         ImGui.DestroyContext();
 

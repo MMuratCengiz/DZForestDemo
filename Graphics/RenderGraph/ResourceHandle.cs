@@ -3,16 +3,10 @@ using System.Runtime.InteropServices;
 namespace Graphics.RenderGraph;
 
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct ResourceHandle : IEquatable<ResourceHandle>
+public readonly struct ResourceHandle(int index, int version) : IEquatable<ResourceHandle>
 {
-    public readonly int Index;
-    public readonly int Version;
-
-    public ResourceHandle(int index, int version)
-    {
-        Index = index;
-        Version = version;
-    }
+    public readonly int Index = index;
+    public readonly int Version = version;
 
     public bool IsValid => Index >= 0;
     public static ResourceHandle Invalid => new(-1, 0);

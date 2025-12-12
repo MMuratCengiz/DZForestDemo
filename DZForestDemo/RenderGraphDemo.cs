@@ -7,25 +7,25 @@ namespace DZForestDemo;
 
 public class RenderGraphDemo : IDisposable
 {
-    readonly LogicalDevice _logicalDevice;
-    readonly Window _window;
-    readonly CommandQueue _commandQueue;
-    readonly SwapChain _swapChain;
-    readonly RenderGraph _renderGraph;
-    readonly Viewport _viewport;
-    readonly StepTimer _stepTimer = new();
+    private readonly LogicalDevice _logicalDevice;
+    private readonly Window _window;
+    private readonly CommandQueue _commandQueue;
+    private readonly SwapChain _swapChain;
+    private readonly RenderGraph _renderGraph;
+    private readonly Viewport _viewport;
+    private readonly StepTimer _stepTimer = new();
 
-    InputLayout _inputLayout = null!;
-    RootSignature _rootSignature = null!;
-    Pipeline _pipeline = null!;
-    BufferResource _vertexBuffer = null!;
+    private InputLayout _inputLayout = null!;
+    private RootSignature _rootSignature = null!;
+    private Pipeline _pipeline = null!;
+    private BufferResource _vertexBuffer = null!;
 
-    readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments = new(1);
+    private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments = new(1);
 
-    uint _currentFrameIndex;
-    uint _currentImageIndex;
-    readonly uint _numFrames = 3;
-    bool _disposed;
+    private uint _currentFrameIndex;
+    private uint _currentImageIndex;
+    private readonly uint _numFrames = 3;
+    private bool _disposed;
 
     public RenderGraphDemo(LogicalDevice logicalDevice, uint width, uint height, string title)
     {
@@ -102,18 +102,18 @@ public class RenderGraphDemo : IDisposable
         _currentImageIndex = _swapChain.AcquireNextImage();
         var renderTarget = _swapChain.GetRenderTarget(_currentImageIndex);
 
-        var swapchainRT = _renderGraph.ImportTexture("SwapchainRT", renderTarget);
+        var swapchainRt = _renderGraph.ImportTexture("SwapchainRT", renderTarget);
 
         _renderGraph.AddPass("MainRender",
             (ref RenderPassSetupContext ctx, ref PassBuilder builder) =>
             {
-                builder.WriteTexture(swapchainRT, (uint)ResourceUsageFlagBits.RenderTarget);
+                builder.WriteTexture(swapchainRt, (uint)ResourceUsageFlagBits.RenderTarget);
                 builder.HasSideEffects();
             },
             (ref RenderPassExecuteContext ctx) =>
             {
                 var cmd = ctx.CommandList;
-                var rt = ctx.GetTexture(swapchainRT);
+                var rt = ctx.GetTexture(swapchainRt);
 
                 ctx.ResourceTracking.TransitionTexture(cmd, rt,
                     (uint)ResourceUsageFlagBits.RenderTarget, QueueType.Graphics);
@@ -159,7 +159,7 @@ public class RenderGraphDemo : IDisposable
         return true;
     }
 
-    void HandleResize(uint width, uint height)
+    private void HandleResize(uint width, uint height)
     {
         _renderGraph.WaitIdle();
         _logicalDevice.WaitIdle();
@@ -178,7 +178,7 @@ public class RenderGraphDemo : IDisposable
         }
     }
 
-    void CreateBuffers()
+    private void CreateBuffers()
     {
         _vertexBuffer = _logicalDevice.CreateBufferResource(new BufferDesc
         {
@@ -215,7 +215,7 @@ public class RenderGraphDemo : IDisposable
         handle.Free();
     }
 
-    void CreatePipeline()
+    private void CreatePipeline()
     {
         var programDesc = new ShaderProgramDesc
         {
@@ -261,7 +261,11 @@ public class RenderGraphDemo : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
 
         _renderGraph.WaitIdle();

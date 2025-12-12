@@ -9,12 +9,14 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="DenOfIzGraphics" Version="0.2.3-alpha" />
+      <PackageReference Include="DenOfIzGraphics" Version="0.2.7-alpha" />
       <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Application\Application.csproj" />
       <ProjectReference Include="..\Graphics\Graphics.csproj" />
+      <ProjectReference Include="..\UIFramework\UIFramework.csproj" />
     </ItemGroup>
 
 </Project>
