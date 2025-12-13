@@ -6,7 +6,8 @@ namespace Application;
 public sealed class AppBuilder
 {
     private readonly ApplicationOptions _options = new();
-    private readonly List<Func<App, ISystem>> _systemFactories = new();
+    private readonly List<Action<App>> _plugins = new();
+    private readonly List<Action<App>> _systemRegistrations = new();
 
     public static AppBuilder Create() => new();
 
@@ -59,15 +60,21 @@ public sealed class AppBuilder
         return this;
     }
 
-    public AppBuilder AddSystem(ISystem system)
+    public AppBuilder AddPlugin(Action<App> plugin)
     {
-        _systemFactories.Add(_ => system);
+        _plugins.Add(plugin);
         return this;
     }
 
-    public AppBuilder AddSystem(Func<App, ISystem> factory)
+    public AppBuilder AddSystem(ISystem system, Schedule schedule)
     {
-        _systemFactories.Add(factory);
+        _systemRegistrations.Add(app => app.AddSystem(system, schedule));
+        return this;
+    }
+
+    public AppBuilder AddSystem(Func<App, ISystem> factory, Schedule schedule)
+    {
+        _systemRegistrations.Add(app => app.AddSystem(factory(app), schedule));
         return this;
     }
 
@@ -75,9 +82,14 @@ public sealed class AppBuilder
     {
         var app = new App(_options);
 
-        foreach (var factory in _systemFactories)
+        foreach (var plugin in _plugins)
         {
-            app.AddSystem(factory(app));
+            plugin(app);
+        }
+
+        foreach (var registration in _systemRegistrations)
+        {
+            registration(app);
         }
 
         return app;

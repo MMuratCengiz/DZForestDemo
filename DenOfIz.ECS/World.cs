@@ -6,8 +6,11 @@ namespace ECS;
 public class World : IDisposable
 {
     private readonly Dictionary<Type, IContext> _contexts = new();
-    private readonly List<ISystem> _systems = [];
-    private ISystem[] _systemsArray = [];
+    private readonly List<SystemDescriptor> _descriptors = new();
+    private readonly Dictionary<Schedule, ISystem[]> _schedules = new();
+    private readonly List<ISystem> _allSystems = new();
+    private ISystem[] _allSystemsArray = [];
+
     private bool _initialized;
     private bool _disposed;
 
@@ -26,20 +29,22 @@ public class World : IDisposable
         return _contexts.TryGetValue(typeof(T), out var context) ? (T)context : null;
     }
 
-    public T AddSystem<T>(T system) where T : ISystem
+    public SystemDescriptor AddSystem<T>(T system, Schedule schedule) where T : ISystem
     {
         if (_initialized)
         {
             throw new InvalidOperationException("Cannot add systems after initialization.");
         }
 
-        _systems.Add(system);
-        return system;
+        var descriptor = new SystemDescriptor(system, schedule);
+        _descriptors.Add(descriptor);
+        _allSystems.Add(system);
+        return descriptor;
     }
 
     public T? GetSystem<T>() where T : class, ISystem
     {
-        foreach (var system in _systems)
+        foreach (var system in _allSystems)
         {
             if (system is T typed)
             {
@@ -51,60 +56,118 @@ public class World : IDisposable
 
     public void Initialize()
     {
-        _systemsArray = _systems.ToArray();
+        BuildSchedules();
+        _allSystemsArray = _allSystems.ToArray();
         _initialized = true;
 
-        foreach (var system in _systemsArray)
+        foreach (var system in _allSystemsArray)
         {
             system.Initialize(this);
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Update(double deltaTime)
+    private void BuildSchedules()
     {
-        ReadOnlySpan<ISystem> systems = _systemsArray;
-        for (int i = 0; i < systems.Length; i++)
+        var bySchedule = _descriptors.GroupBy(d => d.Schedule);
+
+        foreach (var group in bySchedule)
         {
-            systems[i].Update(deltaTime);
+            var sorted = TopologicalSort(group.ToList());
+            _schedules[group.Key] = sorted;
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void LateUpdate(double deltaTime)
+    private ISystem[] TopologicalSort(List<SystemDescriptor> descriptors)
     {
-        ReadOnlySpan<ISystem> systems = _systemsArray;
-        for (int i = 0; i < systems.Length; i++)
+        if (descriptors.Count == 0)
         {
-            systems[i].LateUpdate(deltaTime);
+            return [];
         }
+
+        var typeToDescriptor = descriptors.ToDictionary(d => d.System.GetType(), d => d);
+        var inDegree = new Dictionary<SystemDescriptor, int>();
+        var graph = new Dictionary<SystemDescriptor, List<SystemDescriptor>>();
+
+        foreach (var desc in descriptors)
+        {
+            inDegree[desc] = 0;
+            graph[desc] = new List<SystemDescriptor>();
+        }
+
+        foreach (var desc in descriptors)
+        {
+            foreach (var beforeType in desc.RunBefore)
+            {
+                if (typeToDescriptor.TryGetValue(beforeType, out var beforeDesc))
+                {
+                    graph[desc].Add(beforeDesc);
+                    inDegree[beforeDesc]++;
+                }
+            }
+
+            foreach (var afterType in desc.RunAfter)
+            {
+                if (typeToDescriptor.TryGetValue(afterType, out var afterDesc))
+                {
+                    graph[afterDesc].Add(desc);
+                    inDegree[desc]++;
+                }
+            }
+        }
+
+        var queue = new Queue<SystemDescriptor>();
+        foreach (var desc in descriptors)
+        {
+            if (inDegree[desc] == 0)
+            {
+                queue.Enqueue(desc);
+            }
+        }
+
+        var result = new List<ISystem>();
+        while (queue.Count > 0)
+        {
+            var current = queue.Dequeue();
+            result.Add(current.System);
+
+            foreach (var next in graph[current])
+            {
+                inDegree[next]--;
+                if (inDegree[next] == 0)
+                {
+                    queue.Enqueue(next);
+                }
+            }
+        }
+
+        if (result.Count != descriptors.Count)
+        {
+            throw new InvalidOperationException("Circular dependency detected in system ordering.");
+        }
+
+        return result.ToArray();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void FixedUpdate(double fixedDeltaTime)
+    public void RunSchedule(Schedule schedule)
     {
-        ReadOnlySpan<ISystem> systems = _systemsArray;
-        for (int i = 0; i < systems.Length; i++)
+        if (!_schedules.TryGetValue(schedule, out var systems))
         {
-            systems[i].FixedUpdate(fixedDeltaTime);
+            return;
         }
-    }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Render(double deltaTime)
-    {
-        ReadOnlySpan<ISystem> systems = _systemsArray;
-        for (int i = 0; i < systems.Length; i++)
+        ReadOnlySpan<ISystem> span = systems;
+        for (var i = 0; i < span.Length; i++)
         {
-            systems[i].Render(deltaTime);
+            span[i].Run();
         }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool OnEvent(ref Event ev)
     {
-        ReadOnlySpan<ISystem> systems = _systemsArray;
-        for (int i = 0; i < systems.Length; i++)
+        ReadOnlySpan<ISystem> systems = _allSystemsArray;
+        for (var i = 0; i < systems.Length; i++)
         {
             if (systems[i].OnEvent(ref ev))
             {
@@ -116,9 +179,9 @@ public class World : IDisposable
 
     public void Shutdown()
     {
-        for (int i = _systems.Count - 1; i >= 0; i--)
+        for (var i = _allSystems.Count - 1; i >= 0; i--)
         {
-            _systems[i].Shutdown();
+            _allSystems[i].Shutdown();
         }
     }
 
@@ -131,9 +194,9 @@ public class World : IDisposable
 
         _disposed = true;
 
-        for (int i = _systems.Count - 1; i >= 0; i--)
+        for (var i = _allSystems.Count - 1; i >= 0; i--)
         {
-            _systems[i].Dispose();
+            _allSystems[i].Dispose();
         }
 
         foreach (var context in _contexts.Values)

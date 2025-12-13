@@ -10,8 +10,6 @@ namespace DZForestDemo;
 
 public sealed class GameSystem : ISystem
 {
-    private World _world = null!;
-    private GraphicsSystem _graphics = null!;
     private GraphicsContext _ctx = null!;
 
     private StepTimer _stepTimer = null!;
@@ -40,8 +38,6 @@ public sealed class GameSystem : ISystem
 
     public void Initialize(World world)
     {
-        _world = world;
-        _graphics = world.GetSystem<GraphicsSystem>() ?? throw new InvalidOperationException("GraphicsSystem not found");
         _ctx = world.GetContext<GraphicsContext>();
 
         var logicalDevice = _ctx.LogicalDevice;
@@ -55,7 +51,7 @@ public sealed class GameSystem : ISystem
         _ui = new UiContext(new UiContextDesc
         {
             LogicalDevice = logicalDevice,
-            ResourceTracking = _graphics.RenderGraph.ResourceTracking,
+            ResourceTracking = _ctx.RenderGraph.ResourceTracking,
             RenderTargetFormat = _ctx.BackBufferFormat,
             NumFrames = numFrames,
             Width = _ctx.Width,
@@ -104,14 +100,12 @@ public sealed class GameSystem : ISystem
         _ui.SetViewportSize(width, height);
     }
 
-    public void Render(double deltaTime)
+    public void Run()
     {
         _stepTimer.Tick();
 
-        _graphics.BeginFrame();
-
-        var renderGraph = _graphics.RenderGraph;
-        var swapchainRt = _graphics.SwapchainRenderTarget;
+        var renderGraph = _ctx.RenderGraph;
+        var swapchainRt = _ctx.SwapchainRenderTarget;
         var viewport = _ctx.SwapChain.GetViewport();
 
         _sceneRt = renderGraph.CreateTransientTexture(new TransientTextureDesc
@@ -127,8 +121,6 @@ public sealed class GameSystem : ISystem
         AddTrianglePass(renderGraph, viewport);
         AddUiPass(renderGraph);
         AddCompositePass(renderGraph, swapchainRt, viewport);
-
-        _graphics.EndFrame();
     }
 
     private void AddTrianglePass(RenderGraph renderGraph, Viewport viewport)
@@ -428,7 +420,7 @@ public sealed class GameSystem : ISystem
 
     public void Shutdown()
     {
-        _graphics.RenderGraph.WaitIdle();
+        _ctx.RenderGraph.WaitIdle();
     }
 
     public void Dispose()

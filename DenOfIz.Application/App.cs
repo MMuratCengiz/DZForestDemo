@@ -26,20 +26,20 @@ public sealed class App(ApplicationOptions options) : IDisposable
     public APIPreference ApiPreference => _options.ApiPreference;
     public bool AllowTearing => _options.AllowTearing;
 
-    public bool IsRunning { get; private set; }
+    private bool IsRunning { get; set; }
 
     public App() : this(new ApplicationOptions())
     {
     }
 
-    public T AddSystem<T>(T system) where T : ISystem
+    public SystemDescriptor AddSystem<T>(T system, Schedule schedule) where T : ISystem
     {
         if (_initialized)
         {
             throw new InvalidOperationException("Cannot add systems after initialization.");
         }
 
-        return World.AddSystem(system);
+        return World.AddSystem(system, schedule);
     }
 
     public T? GetSystem<T>() where T : class, ISystem
@@ -90,18 +90,22 @@ public sealed class App(ApplicationOptions options) : IDisposable
             return;
         }
 
-        var deltaTime = Clock.DeltaTime;
+        World.RunSchedule(Schedule.First);
+        World.RunSchedule(Schedule.PreUpdate);
 
-        var fixedSteps = _fixedTimestep.Accumulate(deltaTime);
-        var fixedDelta = _fixedTimestep.FixedDeltaTime;
+        var fixedSteps = _fixedTimestep.Accumulate(Clock.DeltaTime);
         for (var i = 0; i < fixedSteps; i++)
         {
-            World.FixedUpdate(fixedDelta);
+            World.RunSchedule(Schedule.FixedUpdate);
         }
 
-        World.Update(deltaTime);
-        World.LateUpdate(deltaTime);
-        World.Render(deltaTime);
+        World.RunSchedule(Schedule.Update);
+        World.RunSchedule(Schedule.PostUpdate);
+        World.RunSchedule(Schedule.Last);
+
+        World.RunSchedule(Schedule.PrepareFrame);
+        World.RunSchedule(Schedule.Render);
+        World.RunSchedule(Schedule.PostRender);
     }
 
     private void ProcessEvents()

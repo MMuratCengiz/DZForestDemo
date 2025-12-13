@@ -15,6 +15,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\DenOfIz.ECS\DenOfIz.ECS.csproj" />
+      <ProjectReference Include="..\DenOfIz.Application\DenOfIz.Application.csproj" />
     </ItemGroup>
 
 </Project>

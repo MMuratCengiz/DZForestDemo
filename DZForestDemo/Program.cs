@@ -1,5 +1,6 @@
 using Application;
 using DenOfIz;
+using ECS;
 using Graphics;
 
 namespace DZForestDemo;
@@ -18,14 +19,8 @@ internal static class Program
             {
                 Windows = APIPreferenceWindows.Directx12
             })
-            .AddSystem(app => new GraphicsSystem(
-                app.Window.NativeWindow,
-                app.ApiPreference,
-                app.NumFrames,
-                app.BackBufferFormat,
-                app.DepthBufferFormat,
-                app.AllowTearing))
-            .AddSystem(new GameSystem())
+            .WithGraphics()
+            .AddSystem(new GameSystem(), Schedule.Render)
             .Run();
     }
 }
