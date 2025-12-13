@@ -176,7 +176,7 @@ public class ImGuiDemoWindow : IDisposable
             ImGui.Text($"counter = {_counter}");
 
             var io = ImGui.GetIO();
-            ImGui.Text($"Application average {1000.0f / io.Framerate:0.000} ms/frame ({io.Framerate:0.0} FPS)");
+            ImGui.Text($"DenOfIz.Application average {1000.0f / io.Framerate:0.000} ms/frame ({io.Framerate:0.0} FPS)");
 
             ImGui.Separator();
             ImGui.Text("Debug Info:");

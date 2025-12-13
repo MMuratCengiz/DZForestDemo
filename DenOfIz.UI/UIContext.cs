@@ -70,13 +70,13 @@ public sealed class UiContext : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void HandleEvent(Event ev)
     {
-        if (ev.Type == EventType.MouseButtonDown && ev.MouseButton.Button == MouseButton.Left)
+        if (ev is { Type: EventType.MouseButtonDown, MouseButton.Button: MouseButton.Left })
         {
             MousePressed = true;
             _mouseJustPressed = true;
             MouseJustReleased = false;
         }
-        else if (ev.Type == EventType.MouseButtonUp && ev.MouseButton.Button == MouseButton.Left)
+        else if (ev is { Type: EventType.MouseButtonUp, MouseButton.Button: MouseButton.Left })
         {
             MousePressed = false;
             MouseJustReleased = true;

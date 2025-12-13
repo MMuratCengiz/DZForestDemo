@@ -718,7 +718,7 @@ public class RenderGraph : IDisposable
         for (var i = _executionOrder.Count - 1; i >= 0; i--)
         {
             var pass = _passes[_executionOrder[i]];
-            if (!pass.IsCulled && !pass.IsExternal && pass.CommandList != null)
+            if (pass is { IsCulled: false, IsExternal: false, CommandList: not null })
             {
                 lastSubmittedIndex = i;
                 break;
@@ -742,11 +742,11 @@ public class RenderGraph : IDisposable
                     continue;
                 }
 
-                if (depPass.IsExternal && depPass.ExternalResult.Semaphore != null)
+                if (depPass is { IsExternal: true, ExternalResult.Semaphore: not null })
                 {
                     _waitSemaphoresBuffer[waitCount++] = depPass.ExternalResult.Semaphore;
                 }
-                else if (!depPass.IsExternal && depPass.CompletionSemaphore != null)
+                else if (depPass is { IsExternal: false, CompletionSemaphore: not null })
                 {
                     _waitSemaphoresBuffer[waitCount++] = depPass.CompletionSemaphore;
                 }

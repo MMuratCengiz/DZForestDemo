@@ -1,19 +1,19 @@
 using System.Runtime.InteropServices;
 using System.Text;
-using Application;
-using Application.Events;
 using DenOfIz;
+using ECS;
+using Graphics;
 using Graphics.RenderGraph;
 using UIFramework;
 
 namespace DZForestDemo;
 
-/// <summary>
-/// Main game subsystem that handles rendering and game logic.
-/// </summary>
-public sealed class GameSubsystem(App app) : ISubsystem, IEventReceiver, IApplicationEventReceiver, IRenderable
+public sealed class GameSystem : ISystem
 {
-    private RenderGraph _renderGraph = null!;
+    private World _world = null!;
+    private GraphicsSystem _graphics = null!;
+    private GraphicsContext _ctx = null!;
+
     private StepTimer _stepTimer = null!;
     private UiContext _ui = null!;
     private FrameDebugRenderer _frameDebugRenderer = null!;
@@ -36,50 +36,30 @@ public sealed class GameSubsystem(App app) : ISubsystem, IEventReceiver, IApplic
     private TextureResource?[] _boundSceneTextures = null!;
     private TextureResource?[] _boundUiTextures = null!;
 
-    private uint _width;
-    private uint _height;
     private bool _disposed;
 
-    public void Initialize()
+    public void Initialize(World world)
     {
-        var logicalDevice = app.LogicalDevice!;
-        var commandQueue = app.CommandQueue!;
-        var swapChain = app.SwapChain!;
-        var numFrames = app.NumFrames;
+        _world = world;
+        _graphics = world.GetSystem<GraphicsSystem>() ?? throw new InvalidOperationException("GraphicsSystem not found");
+        _ctx = world.GetContext<GraphicsContext>();
 
-        _width = app.Window.Width;
-        _height = app.Window.Height;
+        var logicalDevice = _ctx.LogicalDevice;
+        var numFrames = _ctx.NumFrames;
 
         _stepTimer = new StepTimer();
         _rtAttachments = new PinnedArray<RenderingAttachmentDesc>(1);
         _boundSceneTextures = new TextureResource?[numFrames];
         _boundUiTextures = new TextureResource?[numFrames];
 
-        _renderGraph = new RenderGraph(new RenderGraphDesc
-        {
-            LogicalDevice = logicalDevice,
-            CommandQueue = commandQueue,
-            NumFrames = numFrames
-        });
-        _renderGraph.SetDimensions(_width, _height);
-
-        for (uint i = 0; i < numFrames; ++i)
-        {
-            _renderGraph.ResourceTracking.TrackTexture(
-                swapChain.GetRenderTarget(i),
-                (uint)ResourceUsageFlagBits.Common,
-                QueueType.Graphics
-            );
-        }
-
         _ui = new UiContext(new UiContextDesc
         {
             LogicalDevice = logicalDevice,
-            ResourceTracking = _renderGraph.ResourceTracking,
-            RenderTargetFormat = app.BackBufferFormat,
+            ResourceTracking = _graphics.RenderGraph.ResourceTracking,
+            RenderTargetFormat = _ctx.BackBufferFormat,
             NumFrames = numFrames,
-            Width = _width,
-            Height = _height,
+            Width = _ctx.Width,
+            Height = _ctx.Height,
             MaxNumElements = 8192,
             MaxNumTextMeasureCacheElements = 16384,
             MaxNumFonts = 16
@@ -89,8 +69,8 @@ public sealed class GameSubsystem(App app) : ISubsystem, IEventReceiver, IApplic
         {
             Enabled = true,
             LogicalDevice = logicalDevice,
-            ScreenWidth = _width,
-            ScreenHeight = _height,
+            ScreenWidth = _ctx.Width,
+            ScreenHeight = _ctx.Height,
             FontSize = 24,
             TextColor = new Float4 { X = 1.0f, Y = 1.0f, Z = 1.0f, W = 1.0f }
         });
@@ -104,15 +84,13 @@ public sealed class GameSubsystem(App app) : ISubsystem, IEventReceiver, IApplic
     {
         _ui.HandleEvent(ev);
         _ui.UpdateScroll((float)_stepTimer.GetDeltaTime());
-        return false; // Don't consume events, let them propagate
-    }
 
-    public void OnApplicationEvent(in ApplicationEvent ev)
-    {
-        if (ev.Type == ApplicationEventType.Resized)
+        if (ev is { Type: EventType.WindowEvent, Window.Event: WindowEventType.Resized })
         {
-            HandleResize(ev.Width, ev.Height);
+            HandleResize((uint)ev.Window.Data1, (uint)ev.Window.Data2);
         }
+
+        return false;
     }
 
     private void HandleResize(uint width, uint height)
@@ -122,77 +100,40 @@ public sealed class GameSubsystem(App app) : ISubsystem, IEventReceiver, IApplic
             return;
         }
 
-        _renderGraph.WaitIdle();
-
-        _width = width;
-        _height = height;
-
-        _renderGraph.SetDimensions(width, height);
         _frameDebugRenderer.SetScreenSize(width, height);
         _ui.SetViewportSize(width, height);
-
-        // Re-track swapchain render targets after resize
-        var swapChain = app.SwapChain!;
-        for (uint i = 0; i < app.NumFrames; ++i)
-        {
-            _renderGraph.ResourceTracking.TrackTexture(
-                swapChain.GetRenderTarget(i),
-                (uint)ResourceUsageFlagBits.Common,
-                QueueType.Graphics
-            );
-        }
     }
 
-    public void Update(double deltaTime)
-    {
-        // Game logic updates would go here
-    }
-
-    public void Render(ref RenderContext context)
+    public void Render(double deltaTime)
     {
         _stepTimer.Tick();
 
-        var swapChain = app.SwapChain!;
-        var viewport = swapChain.GetViewport();
+        _graphics.BeginFrame();
 
-        _renderGraph.BeginFrame(context.FrameIndex);
+        var renderGraph = _graphics.RenderGraph;
+        var swapchainRt = _graphics.SwapchainRenderTarget;
+        var viewport = _ctx.SwapChain.GetViewport();
 
-        var imageIndex = swapChain.AcquireNextImage();
-        var renderTarget = swapChain.GetRenderTarget(imageIndex);
-        var swapchainRt = _renderGraph.ImportTexture("SwapchainRT", renderTarget);
-
-        _sceneRt = _renderGraph.CreateTransientTexture(new TransientTextureDesc
+        _sceneRt = renderGraph.CreateTransientTexture(new TransientTextureDesc
         {
-            Width = _width,
-            Height = _height,
-            Format = app.BackBufferFormat,
+            Width = _ctx.Width,
+            Height = _ctx.Height,
+            Format = _ctx.BackBufferFormat,
             Usages = (uint)(ResourceUsageFlagBits.RenderTarget | ResourceUsageFlagBits.ShaderResource),
             Descriptor = (uint)(ResourceDescriptorFlagBits.RenderTarget | ResourceDescriptorFlagBits.Texture),
             DebugName = "SceneRT"
         });
 
-        AddTrianglePass(viewport);
-        AddUiPass(context.FrameIndex);
-        AddCompositePass(swapchainRt, viewport, context.FrameIndex);
+        AddTrianglePass(renderGraph, viewport);
+        AddUiPass(renderGraph);
+        AddCompositePass(renderGraph, swapchainRt, viewport);
 
-        _renderGraph.Compile();
-        _renderGraph.Execute();
-
-        switch (swapChain.Present(context.FrameIndex))
-        {
-            case PresentResult.Success:
-            case PresentResult.Suboptimal:
-                break;
-            case PresentResult.Timeout:
-            case PresentResult.DeviceLost:
-                app.LogicalDevice?.WaitIdle();
-                break;
-        }
+        _graphics.EndFrame();
     }
 
-    private void AddTrianglePass(Viewport viewport)
+    private void AddTrianglePass(RenderGraph renderGraph, Viewport viewport)
     {
-        _renderGraph.AddPass("Triangle",
+        renderGraph.AddPass("Triangle",
             (ref RenderPassSetupContext ctx, ref PassBuilder builder) =>
             {
                 builder.WriteTexture(_sceneRt, (uint)ResourceUsageFlagBits.RenderTarget);
@@ -230,9 +171,9 @@ public sealed class GameSubsystem(App app) : ISubsystem, IEventReceiver, IApplic
             });
     }
 
-    private void AddUiPass(uint frameIndex)
+    private void AddUiPass(RenderGraph renderGraph)
     {
-        _uiRt = _renderGraph.AddExternalPass("UI",
+        _uiRt = renderGraph.AddExternalPass("UI",
             (ref ExternalPassExecuteContext ctx) =>
             {
                 var frame = _ui.BeginFrame();
@@ -261,18 +202,18 @@ public sealed class GameSubsystem(App app) : ISubsystem, IEventReceiver, IApplic
             },
             new TransientTextureDesc
             {
-                Width = _width,
-                Height = _height,
-                Format = app.BackBufferFormat,
+                Width = _ctx.Width,
+                Height = _ctx.Height,
+                Format = _ctx.BackBufferFormat,
                 Usages = (uint)(ResourceUsageFlagBits.ShaderResource | ResourceUsageFlagBits.CopySrc),
                 Descriptor = (uint)ResourceDescriptorFlagBits.Texture,
                 DebugName = "UIRT"
             });
     }
 
-    private void AddCompositePass(ResourceHandle swapchainRt, Viewport viewport, uint frameIndex)
+    private void AddCompositePass(RenderGraph renderGraph, ResourceHandle swapchainRt, Viewport viewport)
     {
-        _renderGraph.AddPass("Composite",
+        renderGraph.AddPass("Composite",
             (ref RenderPassSetupContext ctx, ref PassBuilder builder) =>
             {
                 builder.ReadTexture(_sceneRt, (uint)ResourceUsageFlagBits.ShaderResource);
@@ -292,7 +233,7 @@ public sealed class GameSubsystem(App app) : ISubsystem, IEventReceiver, IApplic
                 ctx.ResourceTracking.TransitionTexture(cmd, rt,
                     (uint)ResourceUsageFlagBits.RenderTarget, QueueType.Graphics);
 
-                UpdateBindGroupIfNeeded(sceneTexture, uiTexture, frameIndex);
+                UpdateBindGroupIfNeeded(sceneTexture, uiTexture, ctx.FrameIndex);
 
                 _rtAttachments[0] = new RenderingAttachmentDesc
                 {
@@ -310,7 +251,7 @@ public sealed class GameSubsystem(App app) : ISubsystem, IEventReceiver, IApplic
                 cmd.BindPipeline(_compositePipeline);
                 cmd.BindViewport(viewport.X, viewport.Y, viewport.Width, viewport.Height);
                 cmd.BindScissorRect(viewport.X, viewport.Y, viewport.Width, viewport.Height);
-                cmd.BindResourceGroup(_compositeBindGroups[frameIndex]);
+                cmd.BindResourceGroup(_compositeBindGroups[ctx.FrameIndex]);
                 cmd.Draw(3, 1, 0, 0);
                 cmd.EndRendering();
 
@@ -339,7 +280,7 @@ public sealed class GameSubsystem(App app) : ISubsystem, IEventReceiver, IApplic
 
     private void CreateBuffers()
     {
-        var logicalDevice = app.LogicalDevice!;
+        var logicalDevice = _ctx.LogicalDevice;
 
         _vertexBuffer = logicalDevice.CreateBufferResource(new BufferDesc
         {
@@ -378,7 +319,7 @@ public sealed class GameSubsystem(App app) : ISubsystem, IEventReceiver, IApplic
 
     private void CreateTrianglePipeline()
     {
-        var logicalDevice = app.LogicalDevice!;
+        var logicalDevice = _ctx.LogicalDevice;
 
         var programDesc = new ShaderProgramDesc
         {
@@ -414,7 +355,7 @@ public sealed class GameSubsystem(App app) : ISubsystem, IEventReceiver, IApplic
                 RenderTargets = RenderTargetDescArray.Create([
                     new RenderTargetDesc
                     {
-                        Format = app.BackBufferFormat,
+                        Format = _ctx.BackBufferFormat,
                         Blend = new BlendDesc { RenderTargetWriteMask = 0x0F }
                     }
                 ])
@@ -424,8 +365,8 @@ public sealed class GameSubsystem(App app) : ISubsystem, IEventReceiver, IApplic
 
     private void CreateCompositePipeline()
     {
-        var logicalDevice = app.LogicalDevice!;
-        var numFrames = app.NumFrames;
+        var logicalDevice = _ctx.LogicalDevice;
+        var numFrames = _ctx.NumFrames;
 
         var programDesc = new ShaderProgramDesc
         {
@@ -459,7 +400,7 @@ public sealed class GameSubsystem(App app) : ISubsystem, IEventReceiver, IApplic
                 RenderTargets = RenderTargetDescArray.Create([
                     new RenderTargetDesc
                     {
-                        Format = app.BackBufferFormat,
+                        Format = _ctx.BackBufferFormat,
                         Blend = new BlendDesc { RenderTargetWriteMask = 0x0F }
                     }
                 ])
@@ -487,7 +428,7 @@ public sealed class GameSubsystem(App app) : ISubsystem, IEventReceiver, IApplic
 
     public void Shutdown()
     {
-        _renderGraph.WaitIdle();
+        _graphics.RenderGraph.WaitIdle();
     }
 
     public void Dispose()
@@ -499,7 +440,7 @@ public sealed class GameSubsystem(App app) : ISubsystem, IEventReceiver, IApplic
 
         _disposed = true;
 
-        for (var i = 0; i < app.NumFrames; i++)
+        for (var i = 0; i < _ctx.NumFrames; i++)
         {
             _compositeBindGroups[i]?.Dispose();
         }
@@ -516,7 +457,6 @@ public sealed class GameSubsystem(App app) : ISubsystem, IEventReceiver, IApplic
         _rtAttachments.Dispose();
         _ui.Dispose();
         _frameDebugRenderer.Dispose();
-        _renderGraph.Dispose();
 
         GC.SuppressFinalize(this);
     }

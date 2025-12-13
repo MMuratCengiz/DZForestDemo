@@ -8,7 +8,7 @@ namespace Application;
 public sealed class ApplicationOptions
 {
     /// <summary>Window title.</summary>
-    public string Title { get; set; } = "Application";
+    public string Title { get; set; } = "DenOfIz.Application";
 
     /// <summary>Initial window width in pixels.</summary>
     public uint Width { get; set; } = 1920;

@@ -1,5 +1,6 @@
 using Application;
 using DenOfIz;
+using Graphics;
 
 namespace DZForestDemo;
 
@@ -17,7 +18,14 @@ internal static class Program
             {
                 Windows = APIPreferenceWindows.Directx12
             })
-            .AddSubsystem(app => new GameSubsystem(app))
+            .AddSystem(app => new GraphicsSystem(
+                app.Window.NativeWindow,
+                app.ApiPreference,
+                app.NumFrames,
+                app.BackBufferFormat,
+                app.DepthBufferFormat,
+                app.AllowTearing))
+            .AddSystem(new GameSystem())
             .Run();
     }
 }
