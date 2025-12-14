@@ -10,7 +10,6 @@ public sealed class EventQueue
     public void Poll()
     {
         Count = 0;
-
         while (InputSystem.PollEvent(out var ev))
         {
             if (Count >= _events.Length)
@@ -22,11 +21,11 @@ public sealed class EventQueue
         }
     }
 
-    public int Count
+    private int Count
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get;
-        private set;
+        set;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

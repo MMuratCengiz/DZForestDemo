@@ -9,7 +9,7 @@ public enum Schedule
     PostUpdate,
     Last,
 
-    PrepareFrame,
+    PreRender,
     Render,
     PostRender
 }

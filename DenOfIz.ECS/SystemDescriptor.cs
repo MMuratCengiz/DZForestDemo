@@ -4,8 +4,8 @@ public class SystemDescriptor
 {
     public ISystem System { get; }
     public Schedule Schedule { get; }
-    public List<Type> RunBefore { get; } = new();
-    public List<Type> RunAfter { get; } = new();
+    public List<Type> RunBefore { get; } = [];
+    public List<Type> RunAfter { get; } = [];
 
     public SystemDescriptor(ISystem system, Schedule schedule)
     {

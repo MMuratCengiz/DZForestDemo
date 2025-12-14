@@ -1,4 +1,4 @@
-using DenOfIz;
+using Graphics;
 
 namespace Application;
 
@@ -16,24 +16,9 @@ public sealed class ApplicationOptions
     /// <summary>Initial window height in pixels.</summary>
     public uint Height { get; set; } = 1080;
 
-    /// <summary>Number of back buffers for swapchain (typically 2 or 3).</summary>
-    public uint NumFrames { get; set; } = 3;
-
     /// <summary>Target fixed update rate in Hz. Set to 0 to disable fixed updates.</summary>
     public double FixedUpdateRate { get; set; } = 60.0;
 
-    /// <summary>Back buffer format.</summary>
-    public Format BackBufferFormat { get; set; } = Format.B8G8R8A8Unorm;
-
-    /// <summary>Depth buffer format. Set to Format.Unknown to disable depth buffer.</summary>
-    public Format DepthBufferFormat { get; set; } = Format.D32Float;
-
-    /// <summary>Allow tearing for variable refresh rate displays.</summary>
-    public bool AllowTearing { get; set; } = true;
-
-    /// <summary>Preferred graphics API.</summary>
-    public APIPreference ApiPreference { get; set; } = new()
-    {
-        Windows = APIPreferenceWindows.Directx12
-    };
+    /// <summary>Graphics configuration options.</summary>
+    public GraphicsOptions Graphics { get; set; } = new();
 }

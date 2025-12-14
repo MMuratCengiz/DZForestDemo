@@ -22,11 +22,8 @@ using System.Text;
 using DenOfIz;
 using ImGuiNET;
 
-namespace DZForestDemo;
+namespace Graphics.ImGui;
 
-/// <summary>
-/// Configuration for the ImGui backend
-/// </summary>
 public struct ImGuiBackendDesc
 {
     public LogicalDevice LogicalDevice;
@@ -52,9 +49,6 @@ public struct ImGuiBackendDesc
     }
 }
 
-/// <summary>
-/// Uniform buffer data for the ImGui vertex shader
-/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 internal struct ImGuiUniforms
 {
@@ -62,9 +56,6 @@ internal struct ImGuiUniforms
     public Float4 ScreenSize;
 }
 
-/// <summary>
-/// Pixel shader constants for texture indexing
-/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 internal struct PixelConstants
 {
@@ -74,9 +65,6 @@ internal struct PixelConstants
     private readonly uint _pad2;
 }
 
-/// <summary>
-/// Per-frame data for double/triple buffering
-/// </summary>
 internal class ImGuiFrameData
 {
     public CommandList? CommandList;
@@ -85,9 +73,6 @@ internal class ImGuiFrameData
     public ResourceBindGroup? TextureBindGroup;
 }
 
-/// <summary>
-/// ImGui rendering backend for DenOfIz RHI
-/// </summary>
 public class ImGuiBackend : IDisposable
 {
     private const string ImGuiVertexShaderSource = @"
@@ -151,13 +136,11 @@ float4 main(PSInput input) : SV_TARGET
     private readonly LogicalDevice _logicalDevice;
     private Viewport _viewport;
 
-    // Shader resources
     private ShaderProgram? _shaderProgram;
     private RootSignature? _rootSignature;
     private InputLayout? _inputLayout;
     private Pipeline? _pipeline;
 
-    // Buffers
     private BufferResource? _vertexBuffer;
     private BufferResource? _indexBuffer;
     private BufferResource? _uniformBuffer;
@@ -418,7 +401,7 @@ float4 main(PSInput input) : SV_TARGET
                 RootSignature = _rootSignature,
                 RegisterSpace = 1
             };
-            
+
             _frameData[frameIdx].ConstantsBindGroup = _logicalDevice.CreateResourceBindGroup(constantsBindGroupDesc);
             _frameData[frameIdx].ConstantsBindGroup!.BeginUpdate();
             _frameData[frameIdx].ConstantsBindGroup!.CbvWithDesc(new BindBufferDesc
@@ -493,7 +476,7 @@ float4 main(PSInput input) : SV_TARGET
 
     private void CreateFontTexture()
     {
-        var io = ImGui.GetIO();
+        var io = ImGuiNET.ImGui.GetIO();
 
         io.Fonts.GetTexDataAsRGBA32(out IntPtr fontData, out var fontWidth, out var fontHeight, out var bytesPerPixel);
         var fontDataSize = fontWidth * fontHeight * bytesPerPixel;
@@ -556,7 +539,8 @@ float4 main(PSInput input) : SV_TARGET
         };
         commandList.CopyBufferToTexture(copyDesc);
 
-        resourceTracking.TransitionTexture(commandList, _fontTexture, (uint)ResourceUsageFlagBits.ShaderResource, QueueType.Graphics);
+        resourceTracking.TransitionTexture(commandList, _fontTexture, (uint)ResourceUsageFlagBits.ShaderResource,
+            QueueType.Graphics);
 
         commandList.End();
 
@@ -574,7 +558,7 @@ float4 main(PSInput input) : SV_TARGET
         uploadBuffer.Dispose();
 
         _textures[0] = _fontTexture;
-        io.Fonts.SetTexID(IntPtr.Zero); // Texture ID 0
+        io.Fonts.SetTexID(IntPtr.Zero);
         _texturesDirty = true;
     }
 
@@ -596,7 +580,6 @@ float4 main(PSInput input) : SV_TARGET
             return;
         }
 
-        // Build texture array for binding - using implicit conversion to ulong
         var textureHandles = new ulong[_desc.MaxTextures];
         for (uint i = 0; i < _desc.MaxTextures; i++)
         {
@@ -770,7 +753,8 @@ float4 main(PSInput input) : SV_TARGET
             commandList.BindScissorRect(clipMin.X, clipMin.Y, clipMax.X - clipMin.X, clipMax.Y - clipMin.Y);
 
             var textureIndex = (uint)pcmd.TextureId;
-            if (textureIndex < _desc.MaxTextures && _textures[textureIndex] != null && _pixelConstantsBindGroups[textureIndex] != null)
+            if (textureIndex < _desc.MaxTextures && _textures[textureIndex] != null &&
+                _pixelConstantsBindGroups[textureIndex] != null)
             {
                 commandList.BindResourceGroup(_pixelConstantsBindGroups[textureIndex]);
                 commandList.DrawIndexed(
@@ -785,7 +769,7 @@ float4 main(PSInput input) : SV_TARGET
 
     public void ProcessEvent(Event ev)
     {
-        var io = ImGui.GetIO();
+        var io = ImGuiNET.ImGui.GetIO();
 
         switch (ev.Type)
         {
@@ -795,19 +779,18 @@ float4 main(PSInput input) : SV_TARGET
 
             case EventType.MouseButtonDown:
             case EventType.MouseButtonUp:
-                {
-                    // Update mouse position from button event (important for click detection)
-                    io.AddMousePosEvent(ev.MouseButton.X, ev.MouseButton.Y);
+            {
+                io.AddMousePosEvent(ev.MouseButton.X, ev.MouseButton.Y);
 
-                    var mouseButton = ev.MouseButton.Button switch
-                    {
-                        MouseButton.Left => 0,
-                        MouseButton.Right => 1,
-                        MouseButton.Middle => 2,
-                        _ => 0
-                    };
-                    io.AddMouseButtonEvent(mouseButton, ev.Type == EventType.MouseButtonDown);
-                }
+                var mouseButton = ev.MouseButton.Button switch
+                {
+                    MouseButton.Left => 0,
+                    MouseButton.Right => 1,
+                    MouseButton.Middle => 2,
+                    _ => 0
+                };
+                io.AddMouseButtonEvent(mouseButton, ev.Type == EventType.MouseButtonDown);
+            }
                 break;
 
             case EventType.MouseWheel:
@@ -816,13 +799,13 @@ float4 main(PSInput input) : SV_TARGET
 
             case EventType.KeyDown:
             case EventType.KeyUp:
+            {
+                var key = KeyCodeToImGuiKey(ev.Key.KeyCode);
+                if (key != ImGuiKey.None)
                 {
-                    var key = KeyCodeToImGuiKey(ev.Key.KeyCode);
-                    if (key != ImGuiKey.None)
-                    {
-                        io.AddKeyEvent(key, ev.Type == EventType.KeyDown);
-                    }
+                    io.AddKeyEvent(key, ev.Type == EventType.KeyDown);
                 }
+            }
                 break;
 
             case EventType.TextInput:
@@ -833,18 +816,17 @@ float4 main(PSInput input) : SV_TARGET
 
     public void UpdateTextInputState()
     {
-        var io = ImGui.GetIO();
-        var wantTextInput = io.WantTextInput;
-
-        if (wantTextInput && !_textInputActive)
+        var io = ImGuiNET.ImGui.GetIO();
+        switch (io.WantTextInput)
         {
-            InputSystem.StartTextInput();
-            _textInputActive = true;
-        }
-        else if (!wantTextInput && _textInputActive)
-        {
-            InputSystem.StopTextInput();
-            _textInputActive = false;
+            case true when !_textInputActive:
+                InputSystem.StartTextInput();
+                _textInputActive = true;
+                break;
+            case false when _textInputActive:
+                InputSystem.StopTextInput();
+                _textInputActive = false;
+                break;
         }
     }
 
@@ -936,48 +918,42 @@ float4 main(PSInput input) : SV_TARGET
     }
 }
 
-/// <summary>
-/// High-level ImGui renderer that manages context and rendering lifecycle
-/// </summary>
 public class ImGuiRenderer : IDisposable
 {
     private bool _disposed;
+    private readonly ImGuiBackend _backend;
+    
     private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments = new(1);
 
     public ImGuiRenderer(ImGuiBackendDesc desc)
     {
-        // Initialize ImGui context
-        ImGui.CreateContext();
-        var io = ImGui.GetIO();
+        ImGuiNET.ImGui.CreateContext();
+        var io = ImGuiNET.ImGui.GetIO();
         io.ConfigFlags |= ImGuiConfigFlags.NavEnableKeyboard;
 
-        ImGui.StyleColorsDark();
+        ImGuiNET.ImGui.StyleColorsDark();
 
-        // BackendRendererName is read-only in recent ImGui.NET versions
         io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
-
-        Backend = new ImGuiBackend(desc);
+        _backend = new ImGuiBackend(desc);
     }
-
-    public ImGuiBackend Backend { get; }
 
     public void ProcessEvent(Event ev)
     {
-        Backend.ProcessEvent(ev);
+        _backend.ProcessEvent(ev);
     }
 
     public void NewFrame(uint width, uint height, float deltaTime)
     {
-        var io = ImGui.GetIO();
+        var io = ImGuiNET.ImGui.GetIO();
         io.DisplaySize = new Vector2(width, height);
         io.DeltaTime = deltaTime;
-        ImGui.NewFrame();
-        Backend.UpdateTextInputState();
+        ImGuiNET.ImGui.NewFrame();
+        _backend.UpdateTextInputState();
     }
 
     public void Render(TextureResource renderTarget, CommandList commandList, uint frameIndex)
     {
-        ImGui.Render();
+        ImGuiNET.ImGui.Render();
 
         _rtAttachments[0] = new RenderingAttachmentDesc
         {
@@ -992,33 +968,33 @@ public class ImGuiRenderer : IDisposable
 
         commandList.BeginRendering(renderingDesc);
 
-        var viewport = Backend.Viewport;
+        var viewport = _backend.Viewport;
         commandList.BindViewport(viewport.X, viewport.Y, viewport.Width, viewport.Height);
         commandList.BindScissorRect(viewport.X, viewport.Y, viewport.Width, viewport.Height);
 
-        Backend.RenderDrawData(commandList, ImGui.GetDrawData(), frameIndex);
+        _backend.RenderDrawData(commandList, ImGuiNET.ImGui.GetDrawData(), frameIndex);
 
         commandList.EndRendering();
     }
 
     public void SetViewport(Viewport viewport)
     {
-        Backend.SetViewport(viewport);
+        _backend.SetViewport(viewport);
     }
 
     public void RecreateFonts()
     {
-        Backend.RecreateFonts();
+        _backend.RecreateFonts();
     }
 
     public IntPtr AddTexture(TextureResource texture)
     {
-        return Backend.AddTexture(texture);
+        return _backend.AddTexture(texture);
     }
 
     public void RemoveTexture(IntPtr textureId)
     {
-        Backend.RemoveTexture(textureId);
+        _backend.RemoveTexture(textureId);
     }
 
     public void Dispose()
@@ -1030,9 +1006,9 @@ public class ImGuiRenderer : IDisposable
 
         _disposed = true;
 
-        Backend.Dispose();
+        _backend.Dispose();
         _rtAttachments.Dispose();
-        ImGui.DestroyContext();
+        ImGuiNET.ImGui.DestroyContext();
 
         GC.SuppressFinalize(this);
     }

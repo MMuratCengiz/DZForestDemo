@@ -4,6 +4,7 @@ using Application.Timing;
 using Application.Windowing;
 using DenOfIz;
 using ECS;
+using Graphics;
 
 namespace Application;
 
@@ -20,11 +21,7 @@ public sealed class App(ApplicationOptions options) : IDisposable
     public FrameClock Clock { get; } = new();
     public World World { get; } = new();
 
-    public uint NumFrames => _options.NumFrames;
-    public Format BackBufferFormat => _options.BackBufferFormat;
-    public Format DepthBufferFormat => _options.DepthBufferFormat;
-    public APIPreference ApiPreference => _options.ApiPreference;
-    public bool AllowTearing => _options.AllowTearing;
+    public GraphicsOptions Graphics => _options.Graphics;
 
     private bool IsRunning { get; set; }
 
@@ -103,7 +100,7 @@ public sealed class App(ApplicationOptions options) : IDisposable
         World.RunSchedule(Schedule.PostUpdate);
         World.RunSchedule(Schedule.Last);
 
-        World.RunSchedule(Schedule.PrepareFrame);
+        World.RunSchedule(Schedule.PreRender);
         World.RunSchedule(Schedule.Render);
         World.RunSchedule(Schedule.PostRender);
     }

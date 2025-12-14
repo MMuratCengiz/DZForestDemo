@@ -6,8 +6,8 @@ namespace Application;
 public sealed class AppBuilder
 {
     private readonly ApplicationOptions _options = new();
-    private readonly List<Action<App>> _plugins = new();
-    private readonly List<Action<App>> _systemRegistrations = new();
+    private readonly List<Action<App>> _plugins = [];
+    private readonly List<Action<App>> _systemRegistrations = [];
 
     public static AppBuilder Create() => new();
 
@@ -24,39 +24,39 @@ public sealed class AppBuilder
         return this;
     }
 
-    public AppBuilder WithNumFrames(uint numFrames)
-    {
-        _options.NumFrames = numFrames;
-        return this;
-    }
-
     public AppBuilder WithFixedUpdateRate(double hz)
     {
         _options.FixedUpdateRate = hz;
         return this;
     }
 
+    public AppBuilder WithNumFrames(uint numFrames)
+    {
+        _options.Graphics.NumFrames = numFrames;
+        return this;
+    }
+
     public AppBuilder WithBackBufferFormat(Format format)
     {
-        _options.BackBufferFormat = format;
+        _options.Graphics.BackBufferFormat = format;
         return this;
     }
 
     public AppBuilder WithDepthBufferFormat(Format format)
     {
-        _options.DepthBufferFormat = format;
+        _options.Graphics.DepthBufferFormat = format;
         return this;
     }
 
     public AppBuilder WithTearing(bool allow)
     {
-        _options.AllowTearing = allow;
+        _options.Graphics.AllowTearing = allow;
         return this;
     }
 
     public AppBuilder WithApiPreference(APIPreference preference)
     {
-        _options.ApiPreference = preference;
+        _options.Graphics.ApiPreference = preference;
         return this;
     }
 

@@ -6,9 +6,9 @@ namespace ECS;
 public class World : IDisposable
 {
     private readonly Dictionary<Type, IContext> _contexts = new();
-    private readonly List<SystemDescriptor> _descriptors = new();
+    private readonly List<SystemDescriptor> _descriptors = [];
     private readonly Dictionary<Schedule, ISystem[]> _schedules = new();
-    private readonly List<ISystem> _allSystems = new();
+    private readonly List<ISystem> _allSystems = [];
     private ISystem[] _allSystemsArray = [];
 
     private bool _initialized;
@@ -91,7 +91,7 @@ public class World : IDisposable
         foreach (var desc in descriptors)
         {
             inDegree[desc] = 0;
-            graph[desc] = new List<SystemDescriptor>();
+            graph[desc] = [];
         }
 
         foreach (var desc in descriptors)

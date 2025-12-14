@@ -165,7 +165,7 @@ public class GraphicsPlugin
             height);
 
         world.RegisterContext(context);
-        world.AddSystem(new PrepareFrameSystem(), Schedule.PrepareFrame);
+        world.AddSystem(new PrepareFrameSystem(), Schedule.PreRender);
         world.AddSystem(new PresentFrameSystem(), Schedule.PostRender);
     }
 }

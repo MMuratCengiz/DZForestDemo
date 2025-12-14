@@ -1,6 +1,6 @@
-using Application;
+using Graphics;
 
-namespace Graphics;
+namespace Application;
 
 public static class GraphicsExtensions
 {
@@ -8,13 +8,14 @@ public static class GraphicsExtensions
     {
         return builder.AddPlugin(app =>
         {
+            var gfx = app.Graphics;
             var plugin = new GraphicsPlugin(
                 app.Window.NativeWindow,
-                app.ApiPreference,
-                app.NumFrames,
-                app.BackBufferFormat,
-                app.DepthBufferFormat,
-                app.AllowTearing);
+                gfx.ApiPreference,
+                gfx.NumFrames,
+                gfx.BackBufferFormat,
+                gfx.DepthBufferFormat,
+                gfx.AllowTearing);
 
             plugin.Build(app.World);
         });
