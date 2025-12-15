@@ -650,6 +650,7 @@ public class RenderGraph : IDisposable
                     var desc = entry.TextureDesc;
                     var texture = _logicalDevice.CreateTexture(new TextureDesc
                     {
+                        Aspect = desc.Aspect,
                         Width = desc.Width > 0 ? desc.Width : Width,
                         Height = desc.Height > 0 ? desc.Height : Height,
                         Depth = desc.Depth > 0 ? desc.Depth : 1,

@@ -4,24 +4,15 @@ using ECS;
 
 namespace RuntimeAssets;
 
-public sealed class AssetContext : IContext, IDisposable
+public sealed class AssetContext(LogicalDevice device) : IContext, IDisposable
 {
-    private readonly LogicalDevice _device;
-    private readonly RuntimeMeshStore _meshStore;
-    private readonly RuntimeTextureStore _textureStore;
-    private readonly GeometryBuilder _geometryBuilder;
+    private readonly RuntimeMeshStore _meshStore = new(device);
+    private readonly RuntimeTextureStore _textureStore = new(device);
+    private readonly GeometryBuilder _geometryBuilder = new();
 
     private BatchResourceCopy? _batchCopy;
     private bool _uploading;
     private bool _disposed;
-
-    public AssetContext(LogicalDevice device)
-    {
-        _device = device;
-        _meshStore = new RuntimeMeshStore(device);
-        _textureStore = new RuntimeTextureStore(device);
-        _geometryBuilder = new GeometryBuilder();
-    }
 
     public void BeginUpload()
     {
@@ -32,7 +23,7 @@ public sealed class AssetContext : IContext, IDisposable
 
         _batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
         {
-            Device = _device,
+            Device = device,
             IssueBarriers = false
         });
         _batchCopy.Begin();
@@ -78,8 +69,7 @@ public sealed class AssetContext : IContext, IDisposable
     {
         EnsureUploading();
 
-        using var semaphore = _device.CreateSemaphore();
-        _batchCopy!.Submit(semaphore);
+        _batchCopy!.Submit(null);
         _batchCopy.Dispose();
         _batchCopy = null;
         _uploading = false;

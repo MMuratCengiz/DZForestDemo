@@ -20,6 +20,7 @@ internal static class Program
                 Windows = APIPreferenceWindows.Directx12
             })
             .WithGraphics()
+            .WithPhysics()
             .WithAssets()
             .AddSystem(new GameSystem(), Schedule.Render)
             .Run();

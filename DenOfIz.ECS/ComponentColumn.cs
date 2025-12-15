@@ -15,12 +15,13 @@ public interface IComponentColumn
     void CopyFrom(IComponentColumn source, int sourceIndex);
 }
 
-public sealed class ComponentColumn<T> : IComponentColumn where T : struct
+public sealed class ComponentColumn<T>(int initialCapacity) : IComponentColumn
+    where T : struct
 {
-    private T[] _data;
-    private int _count;
+    private T[] _data = new T[initialCapacity];
+    private int _count = 0;
 
-    public ComponentId ComponentId { get; }
+    public ComponentId ComponentId { get; } = ComponentRegistry.GetId<T>();
 
     public int Count
     {
@@ -36,13 +37,6 @@ public sealed class ComponentColumn<T> : IComponentColumn where T : struct
 
     public ComponentColumn() : this(16)
     {
-    }
-
-    public ComponentColumn(int initialCapacity)
-    {
-        ComponentId = ComponentRegistry.GetId<T>();
-        _data = new T[initialCapacity];
-        _count = 0;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

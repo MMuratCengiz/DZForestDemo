@@ -370,36 +370,25 @@ public sealed class RuntimeSkeletonStore : IDisposable
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct SkeletonSlot
+    [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private struct SkeletonSlot(RuntimeSkeleton skeleton, uint generation, bool isOccupied)
     {
-        public RuntimeSkeleton Skeleton;
-        public uint Generation;
-        public bool IsOccupied;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public SkeletonSlot(RuntimeSkeleton skeleton, uint generation, bool isOccupied)
-        {
-            Skeleton = skeleton;
-            Generation = generation;
-            IsOccupied = isOccupied;
-        }
+        public RuntimeSkeleton Skeleton = skeleton;
+        public uint Generation = generation;
+        public bool IsOccupied = isOccupied;
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct AnimationSlot
+    [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private struct AnimationSlot(
+        RuntimeAnimationClip clip,
+        RuntimeSkeletonHandle skeletonHandle,
+        uint generation,
+        bool isOccupied)
     {
-        public RuntimeAnimationClip Clip;
-        public RuntimeSkeletonHandle SkeletonHandle;
-        public uint Generation;
-        public bool IsOccupied;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public AnimationSlot(RuntimeAnimationClip clip, RuntimeSkeletonHandle skeletonHandle, uint generation, bool isOccupied)
-        {
-            Clip = clip;
-            SkeletonHandle = skeletonHandle;
-            Generation = generation;
-            IsOccupied = isOccupied;
-        }
+        public RuntimeAnimationClip Clip = clip;
+        public RuntimeSkeletonHandle SkeletonHandle = skeletonHandle;
+        public uint Generation = generation;
+        public bool IsOccupied = isOccupied;
     }
 }

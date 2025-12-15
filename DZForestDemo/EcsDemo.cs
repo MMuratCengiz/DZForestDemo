@@ -4,24 +4,14 @@ using ECS.Components;
 
 namespace DZForestDemo;
 
-public struct SpinComponent
+public struct SpinComponent(float speed)
 {
-    public float Speed;
-
-    public SpinComponent(float speed)
-    {
-        Speed = speed;
-    }
+    public float Speed = speed;
 }
 
-public struct NameComponent
+public struct NameComponent(string name)
 {
-    public string Name;
-
-    public NameComponent(string name)
-    {
-        Name = name;
-    }
+    public string Name = name;
 }
 
 public sealed class MovementSystem : ISystem

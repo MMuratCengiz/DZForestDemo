@@ -5,18 +5,15 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-        <RootNamespace>Application</RootNamespace>
+        <RootNamespace>Physics</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="DenOfIzGraphics" Version="0.3.0-alpha" />
+      <PackageReference Include="BepuPhysics" Version="2.4.0" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\DenOfIz.ECS\DenOfIz.ECS.csproj" />
-      <ProjectReference Include="..\DenOfIz.Graphics\DenOfIz.Graphics.csproj" />
-      <ProjectReference Include="..\DenOfIz.Physics\DenOfIz.Physics.csproj" />
-      <ProjectReference Include="..\DenOfIz.RuntimeAssets\DenOfIz.RuntimeAssets.csproj" />
     </ItemGroup>
 
 </Project>

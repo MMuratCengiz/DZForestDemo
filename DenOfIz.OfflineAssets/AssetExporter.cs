@@ -4,15 +4,9 @@ namespace OfflineAssets;
 
 public sealed class AssetExporter : IDisposable
 {
-    private readonly GltfExporter _gltfExporter;
-    private readonly OzzExporter _ozzExporter;
+    private readonly GltfExporter _gltfExporter = new();
+    private readonly OzzExporter _ozzExporter = new();
     private bool _disposed;
-
-    public AssetExporter()
-    {
-        _gltfExporter = new GltfExporter();
-        _ozzExporter = new OzzExporter();
-    }
 
     public bool CanProcess(string filePath)
     {

@@ -23,21 +23,18 @@ public readonly struct RuntimeMesh
     }
 }
 
-public sealed class RuntimeMeshStore : IDisposable
+public sealed class RuntimeMeshStore(
+    LogicalDevice device,
+    ulong vertexPoolSize = 64 * 1024 * 1024,
+    ulong indexPoolSize = 32 * 1024 * 1024)
+    : IDisposable
 {
-    private readonly LogicalDevice _device;
-    private readonly BufferPool _vertexPool;
-    private readonly BufferPool _indexPool;
+    private readonly LogicalDevice _device = device;
+    private readonly BufferPool _vertexPool = new(device, (uint)ResourceUsageFlagBits.VertexAndConstantBuffer, vertexPoolSize);
+    private readonly BufferPool _indexPool = new(device, (uint)ResourceUsageFlagBits.IndexBuffer, indexPoolSize);
     private readonly List<MeshSlot> _slots = [];
     private readonly Queue<uint> _freeIndices = new();
     private bool _disposed;
-
-    public RuntimeMeshStore(LogicalDevice device, ulong vertexPoolSize = 64 * 1024 * 1024, ulong indexPoolSize = 32 * 1024 * 1024)
-    {
-        _device = device;
-        _vertexPool = new BufferPool(device, (uint)ResourceUsageFlagBits.VertexAndConstantBuffer, vertexPoolSize);
-        _indexPool = new BufferPool(device, (uint)ResourceUsageFlagBits.IndexBuffer, indexPoolSize);
-    }
 
     public RuntimeMeshHandle Add(MeshData meshData, BatchResourceCopy batchCopy)
     {
@@ -273,18 +270,11 @@ public sealed class RuntimeMeshStore : IDisposable
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct MeshSlot
+    [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private struct MeshSlot(RuntimeMesh mesh, uint generation, bool isOccupied)
     {
-        public RuntimeMesh Mesh;
-        public uint Generation;
-        public bool IsOccupied;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public MeshSlot(RuntimeMesh mesh, uint generation, bool isOccupied)
-        {
-            Mesh = mesh;
-            Generation = generation;
-            IsOccupied = isOccupied;
-        }
+        public RuntimeMesh Mesh = mesh;
+        public uint Generation = generation;
+        public bool IsOccupied = isOccupied;
     }
 }

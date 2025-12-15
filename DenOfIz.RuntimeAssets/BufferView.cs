@@ -4,19 +4,12 @@ using Buffer = DenOfIz.Buffer;
 
 namespace RuntimeAssets;
 
-public readonly struct BufferView
+[method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+public readonly struct BufferView(Buffer buffer, ulong offset, ulong size)
 {
-    public readonly Buffer Buffer;
-    public readonly ulong Offset;
-    public readonly ulong Size;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public BufferView(Buffer buffer, ulong offset, ulong size)
-    {
-        Buffer = buffer;
-        Offset = offset;
-        Size = size;
-    }
+    public readonly Buffer Buffer = buffer;
+    public readonly ulong Offset = offset;
+    public readonly ulong Size = size;
 
     public bool IsValid
     {
@@ -31,19 +24,12 @@ public readonly struct BufferView
     }
 }
 
-public readonly struct VertexBufferView
+[method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+public readonly struct VertexBufferView(BufferView view, uint stride, uint count)
 {
-    public readonly BufferView View;
-    public readonly uint Stride;
-    public readonly uint Count;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public VertexBufferView(BufferView view, uint stride, uint count)
-    {
-        View = view;
-        Stride = stride;
-        Count = count;
-    }
+    public readonly BufferView View = view;
+    public readonly uint Stride = stride;
+    public readonly uint Count = count;
 
     public bool IsValid
     {
@@ -52,19 +38,12 @@ public readonly struct VertexBufferView
     }
 }
 
-public readonly struct IndexBufferView
+[method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+public readonly struct IndexBufferView(BufferView view, IndexType indexType, uint count)
 {
-    public readonly BufferView View;
-    public readonly IndexType IndexType;
-    public readonly uint Count;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public IndexBufferView(BufferView view, IndexType indexType, uint count)
-    {
-        View = view;
-        IndexType = indexType;
-        Count = count;
-    }
+    public readonly BufferView View = view;
+    public readonly IndexType IndexType = indexType;
+    public readonly uint Count = count;
 
     public bool IsValid
     {

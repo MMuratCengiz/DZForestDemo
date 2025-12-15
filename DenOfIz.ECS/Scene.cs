@@ -39,14 +39,9 @@ public readonly struct SceneId : IEquatable<SceneId>
     public static bool operator !=(SceneId left, SceneId right) => !left.Equals(right);
 }
 
-public struct SceneComponent
+public struct SceneComponent(SceneId sceneId)
 {
-    public SceneId SceneId;
-
-    public SceneComponent(SceneId sceneId)
-    {
-        SceneId = sceneId;
-    }
+    public SceneId SceneId = sceneId;
 }
 
 public sealed class Scene
@@ -184,21 +179,12 @@ public sealed class Scene
     }
 }
 
-public sealed class SceneManager
+public sealed class SceneManager(EntityStore store)
 {
-    private readonly EntityStore _store;
-    private readonly List<Scene> _scenes;
-    private readonly Dictionary<string, SceneId> _nameToId;
-    private uint _nextId;
+    private readonly List<Scene> _scenes = new();
+    private readonly Dictionary<string, SceneId> _nameToId = new();
+    private uint _nextId = 1;
     private Scene? _activeScene;
-
-    public SceneManager(EntityStore store)
-    {
-        _store = store;
-        _scenes = new List<Scene>();
-        _nameToId = new Dictionary<string, SceneId>();
-        _nextId = 1;
-    }
 
     public Scene? ActiveScene
     {
@@ -220,7 +206,7 @@ public sealed class SceneManager
         }
 
         var id = new SceneId(_nextId++);
-        var scene = new Scene(id, name, _store);
+        var scene = new Scene(id, name, store);
         _scenes.Add(scene);
         _nameToId[name] = id;
         return scene;

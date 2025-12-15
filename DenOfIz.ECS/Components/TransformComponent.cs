@@ -3,11 +3,12 @@ using System.Runtime.CompilerServices;
 
 namespace ECS.Components;
 
-public struct Transform
+[method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+public struct Transform(Vector3 position, Quaternion rotation, Vector3 scale)
 {
-    public Vector3 Position;
-    public Quaternion Rotation;
-    public Vector3 Scale;
+    public Vector3 Position = position;
+    public Quaternion Rotation = rotation;
+    public Vector3 Scale = scale;
 
     public static Transform Identity
     {
@@ -21,27 +22,13 @@ public struct Transform
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Transform(Vector3 position)
+    public Transform(Vector3 position) : this(position, Quaternion.Identity, Vector3.One)
     {
-        Position = position;
-        Rotation = Quaternion.Identity;
-        Scale = Vector3.One;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Transform(Vector3 position, Quaternion rotation)
+    public Transform(Vector3 position, Quaternion rotation) : this(position, rotation, Vector3.One)
     {
-        Position = position;
-        Rotation = rotation;
-        Scale = Vector3.One;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Transform(Vector3 position, Quaternion rotation, Vector3 scale)
-    {
-        Position = position;
-        Rotation = rotation;
-        Scale = scale;
     }
 
     public Matrix4x4 Matrix
@@ -97,33 +84,20 @@ public struct Transform
     }
 }
 
-public struct LocalToWorld
+[method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+public struct LocalToWorld(Matrix4x4 matrix)
 {
-    public Matrix4x4 Matrix;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public LocalToWorld(Matrix4x4 matrix)
-    {
-        Matrix = matrix;
-    }
+    public Matrix4x4 Matrix = matrix;
 }
 
-public struct Velocity
+[method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+public struct Velocity(Vector3 linear, Vector3 angular)
 {
-    public Vector3 Linear;
-    public Vector3 Angular;
+    public Vector3 Linear = linear;
+    public Vector3 Angular = angular;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Velocity(Vector3 linear)
+    public Velocity(Vector3 linear) : this(linear, Vector3.Zero)
     {
-        Linear = linear;
-        Angular = Vector3.Zero;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Velocity(Vector3 linear, Vector3 angular)
-    {
-        Linear = linear;
-        Angular = angular;
     }
 }

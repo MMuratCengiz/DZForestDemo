@@ -1,17 +1,11 @@
 namespace ECS;
 
-public class SystemDescriptor
+public class SystemDescriptor(ISystem system, Schedule schedule)
 {
-    public ISystem System { get; }
-    public Schedule Schedule { get; }
+    public ISystem System { get; } = system;
+    public Schedule Schedule { get; } = schedule;
     public List<Type> RunBefore { get; } = [];
     public List<Type> RunAfter { get; } = [];
-
-    public SystemDescriptor(ISystem system, Schedule schedule)
-    {
-        System = system;
-        Schedule = schedule;
-    }
 
     public SystemDescriptor Before<T>() where T : ISystem
     {

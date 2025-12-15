@@ -16,6 +16,7 @@
     <ItemGroup>
       <ProjectReference Include="..\DenOfIz.Application\DenOfIz.Application.csproj" />
       <ProjectReference Include="..\DenOfIz.Graphics\DenOfIz.Graphics.csproj" />
+      <ProjectReference Include="..\DenOfIz.Physics\DenOfIz.Physics.csproj" />
       <ProjectReference Include="..\DenOfIz.UI\DenOfIz.UI.csproj" />
     </ItemGroup>
 

@@ -2,14 +2,9 @@ using RuntimeAssets;
 
 namespace ECS.Components;
 
-public struct TextureComponent
+public struct TextureComponent(RuntimeTextureHandle texture)
 {
-    public RuntimeTextureHandle Texture;
-
-    public TextureComponent(RuntimeTextureHandle texture)
-    {
-        Texture = texture;
-    }
+    public RuntimeTextureHandle Texture = texture;
 
     public bool IsValid => Texture.IsValid;
 }

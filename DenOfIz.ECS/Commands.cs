@@ -7,30 +7,18 @@ public interface ICommand
     void Execute(EntityStore store);
 }
 
-public struct SpawnCommand : ICommand
+public struct SpawnCommand(Action<EntityStore, Entity>? configure = null) : ICommand
 {
-    private readonly Action<EntityStore, Entity>? _configure;
-
-    public SpawnCommand(Action<EntityStore, Entity>? configure = null)
-    {
-        _configure = configure;
-    }
-
     public void Execute(EntityStore store)
     {
         var entity = store.Spawn();
-        _configure?.Invoke(store, entity);
+        configure?.Invoke(store, entity);
     }
 }
 
-public struct DespawnCommand : ICommand
+public struct DespawnCommand(Entity entity) : ICommand
 {
-    public Entity Entity;
-
-    public DespawnCommand(Entity entity)
-    {
-        Entity = entity;
-    }
+    public Entity Entity = entity;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Execute(EntityStore store)
@@ -39,16 +27,11 @@ public struct DespawnCommand : ICommand
     }
 }
 
-public struct AddComponentCommand<T> : ICommand where T : struct
+public struct AddComponentCommand<T>(Entity entity, T component) : ICommand
+    where T : struct
 {
-    public Entity Entity;
-    public T Component;
-
-    public AddComponentCommand(Entity entity, T component)
-    {
-        Entity = entity;
-        Component = component;
-    }
+    public Entity Entity = entity;
+    public T Component = component;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Execute(EntityStore store)
@@ -57,14 +40,10 @@ public struct AddComponentCommand<T> : ICommand where T : struct
     }
 }
 
-public struct RemoveComponentCommand<T> : ICommand where T : struct
+public struct RemoveComponentCommand<T>(Entity entity) : ICommand
+    where T : struct
 {
-    public Entity Entity;
-
-    public RemoveComponentCommand(Entity entity)
-    {
-        Entity = entity;
-    }
+    public Entity Entity = entity;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Execute(EntityStore store)
@@ -73,16 +52,9 @@ public struct RemoveComponentCommand<T> : ICommand where T : struct
     }
 }
 
-public sealed class Commands
+public sealed class Commands(EntityStore store)
 {
-    private readonly List<ICommand> _commands;
-    private readonly EntityStore _store;
-
-    public Commands(EntityStore store)
-    {
-        _store = store;
-        _commands = new List<ICommand>(64);
-    }
+    private readonly List<ICommand> _commands = new(64);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Spawn(Action<EntityStore, Entity>? configure = null)
@@ -112,7 +84,7 @@ public sealed class Commands
     {
         foreach (var command in _commands)
         {
-            command.Execute(_store);
+            command.Execute(store);
         }
         _commands.Clear();
     }

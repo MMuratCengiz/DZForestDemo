@@ -21,17 +21,12 @@ public readonly struct RuntimeTexture
     }
 }
 
-public sealed class RuntimeTextureStore : IDisposable
+public sealed class RuntimeTextureStore(LogicalDevice device) : IDisposable
 {
-    private readonly LogicalDevice _device;
+    private readonly LogicalDevice _device = device;
     private readonly List<TextureSlot> _slots = [];
     private readonly Queue<uint> _freeIndices = new();
     private bool _disposed;
-
-    public RuntimeTextureStore(LogicalDevice device)
-    {
-        _device = device;
-    }
 
     public RuntimeTextureHandle Add(string path, BatchResourceCopy batchCopy)
     {
@@ -161,18 +156,11 @@ public sealed class RuntimeTextureStore : IDisposable
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct TextureSlot
+    [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private struct TextureSlot(RuntimeTexture texture, uint generation, bool isOccupied)
     {
-        public RuntimeTexture Texture;
-        public uint Generation;
-        public bool IsOccupied;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public TextureSlot(RuntimeTexture texture, uint generation, bool isOccupied)
-        {
-            Texture = texture;
-            Generation = generation;
-            IsOccupied = isOccupied;
-        }
+        public RuntimeTexture Texture = texture;
+        public uint Generation = generation;
+        public bool IsOccupied = isOccupied;
     }
 }

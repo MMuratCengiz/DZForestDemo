@@ -11,6 +11,7 @@ public enum RenderGraphResourceType
 
 public struct TransientTextureDesc
 {
+    public TextureAspect Aspect;
     public uint Width;
     public uint Height;
     public uint Depth;
@@ -21,21 +22,25 @@ public struct TransientTextureDesc
     public uint Descriptor;
     public string DebugName;
 
-    public static TransientTextureDesc RenderTarget(uint width, uint height, Format format, string debugName = "") => new()
-    {
-        Width = width,
-        Height = height,
-        Depth = 1,
-        Format = format,
-        MipLevels = 1,
-        ArraySize = 1,
-        Usages = (uint)(ResourceUsageFlagBits.RenderTarget | ResourceUsageFlagBits.ShaderResource),
-        Descriptor = (uint)(ResourceDescriptorFlagBits.RenderTarget | ResourceDescriptorFlagBits.Texture),
-        DebugName = debugName
-    };
+    public static TransientTextureDesc RenderTarget(uint width, uint height, Format format, string debugName = "") =>
+        new()
+        {
+            Aspect = TextureAspect.Color,
+            Width = width,
+            Height = height,
+            Depth = 1,
+            Format = format,
+            MipLevels = 1,
+            ArraySize = 1,
+            Usages = (uint)(ResourceUsageFlagBits.RenderTarget | ResourceUsageFlagBits.ShaderResource),
+            Descriptor = (uint)(ResourceDescriptorFlagBits.RenderTarget | ResourceDescriptorFlagBits.Texture),
+            DebugName = debugName
+        };
 
-    public static TransientTextureDesc DepthStencil(uint width, uint height, Format format = Format.D32Float, string debugName = "") => new()
+    public static TransientTextureDesc DepthStencil(uint width, uint height, Format format = Format.D32Float,
+        string debugName = "") => new()
     {
+        Aspect = TextureAspect.Depth,
         Width = width,
         Height = height,
         Depth = 1,

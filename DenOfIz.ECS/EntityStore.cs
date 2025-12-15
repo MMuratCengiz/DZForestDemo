@@ -3,19 +3,12 @@ using System.Runtime.InteropServices;
 
 namespace ECS;
 
-public struct EntityLocation
+[method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+public struct EntityLocation(ArchetypeId archetypeId, int row, uint generation)
 {
-    public ArchetypeId ArchetypeId;
-    public int Row;
-    public uint Generation;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public EntityLocation(ArchetypeId archetypeId, int row, uint generation)
-    {
-        ArchetypeId = archetypeId;
-        Row = row;
-        Generation = generation;
-    }
+    public ArchetypeId ArchetypeId = archetypeId;
+    public int Row = row;
+    public uint Generation = generation;
 
     public bool IsValid
     {
@@ -161,7 +154,7 @@ public sealed class EntityStore
         MoveEntity(entity, ref location, currentArchetype, newArchetype);
 
         var newColumn = newArchetype.GetColumn<T>();
-        newColumn.Set(location.Row, in component);
+        newColumn.Add(in component);
     }
 
     public void RemoveComponent<T>(Entity entity) where T : struct

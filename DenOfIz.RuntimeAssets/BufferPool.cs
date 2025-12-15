@@ -5,20 +5,11 @@ using Buffer = DenOfIz.Buffer;
 
 namespace RuntimeAssets;
 
-public sealed class BufferPool : IDisposable
+public sealed class BufferPool(LogicalDevice device, uint usages, ulong blockSize = 64 * 1024 * 1024)
+    : IDisposable
 {
-    private readonly LogicalDevice _device;
-    private readonly uint _usages;
-    private readonly ulong _blockSize;
     private readonly List<BufferBlock> _blocks = [];
     private bool _disposed;
-
-    public BufferPool(LogicalDevice device, uint usages, ulong blockSize = 64 * 1024 * 1024)
-    {
-        _device = device;
-        _usages = usages;
-        _blockSize = blockSize;
-    }
 
     public BufferView Allocate(ulong size, ulong alignment = 16)
     {
@@ -33,16 +24,11 @@ public sealed class BufferPool : IDisposable
             }
         }
 
-        var newBlockSize = Math.Max(_blockSize, size);
-        var newBlock = new BufferBlock(_device, _usages, newBlockSize);
+        var newBlockSize = Math.Max(blockSize, size);
+        var newBlock = new BufferBlock(device, usages, newBlockSize);
         _blocks.Add(newBlock);
 
-        if (newBlock.TryAllocate(size, alignment, out var newView))
-        {
-            return newView;
-        }
-
-        return BufferView.Invalid;
+        return newBlock.TryAllocate(size, alignment, out var newView) ? newView : BufferView.Invalid;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -67,43 +53,31 @@ public sealed class BufferPool : IDisposable
         _blocks.Clear();
     }
 
-    private sealed class BufferBlock : IDisposable
+    private sealed class BufferBlock(LogicalDevice device, uint usages, ulong size) : IDisposable
     {
-        private readonly Buffer _buffer;
-        private readonly ulong _size;
+        private readonly Buffer _buffer = device.CreateBuffer(new BufferDesc
+        {
+            NumBytes = size,
+            Usages = usages,
+            HeapType = HeapType.Gpu
+        });
+
         private ulong _offset;
 
-        public BufferBlock(LogicalDevice device, uint usages, ulong size)
-        {
-            _size = size;
-            _buffer = device.CreateBuffer(new BufferDesc
-            {
-                NumBytes = size,
-                Usages = usages,
-                HeapType = HeapType.Gpu
-            });
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryAllocate(ulong size, ulong alignment, out BufferView view)
+        public bool TryAllocate(ulong size1, ulong alignment, out BufferView view)
         {
             var alignedOffset = AlignUp(_offset, alignment);
 
-            if (alignedOffset + size > _size)
+            if (alignedOffset + size1 > size)
             {
                 view = BufferView.Invalid;
                 return false;
             }
 
-            view = new BufferView(_buffer, alignedOffset, size);
-            _offset = alignedOffset + size;
+            view = new BufferView(_buffer, alignedOffset, size1);
+            _offset = alignedOffset + size1;
             return true;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ulong AlignUp(ulong value, ulong alignment)
-        {
-            return (value + alignment - 1) & ~(alignment - 1);
         }
 
         public void Dispose()

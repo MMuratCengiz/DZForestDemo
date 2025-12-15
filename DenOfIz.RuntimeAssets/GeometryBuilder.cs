@@ -2,16 +2,10 @@ using DenOfIz;
 
 namespace RuntimeAssets;
 
-public enum GeometryBuildFlags : uint
-{
-    None = 0,
-    InvertNormals = 1 << 0,
-    InvertWinding = 1 << 1
-}
 
 public sealed class GeometryBuilder
 {
-    public GeometryData BuildQuadXY(float width, float height, GeometryBuildFlags flags = GeometryBuildFlags.None)
+    public GeometryData BuildQuadXY(float width, float height, BuildDesc flags = 0)
     {
         var desc = new QuadDesc
         {
@@ -22,7 +16,7 @@ public sealed class GeometryBuilder
         return Geometry.BuildQuadXY(ref desc);
     }
 
-    public GeometryData BuildQuadXZ(float width, float height, GeometryBuildFlags flags = GeometryBuildFlags.None)
+    public GeometryData BuildQuadXZ(float width, float height, BuildDesc flags = 0)
     {
         var desc = new QuadDesc
         {
@@ -33,7 +27,7 @@ public sealed class GeometryBuilder
         return Geometry.BuildQuadXZ(ref desc);
     }
 
-    public GeometryData BuildBox(float width, float height, float depth, GeometryBuildFlags flags = GeometryBuildFlags.None)
+    public GeometryData BuildBox(float width, float height, float depth, BuildDesc flags = 0)
     {
         var desc = new BoxDesc
         {
@@ -45,7 +39,7 @@ public sealed class GeometryBuilder
         return Geometry.BuildBox(ref desc);
     }
 
-    public GeometryData BuildSphere(float diameter, uint tessellation = 16, GeometryBuildFlags flags = GeometryBuildFlags.None)
+    public GeometryData BuildSphere(float diameter, uint tessellation = 16, BuildDesc flags = 0)
     {
         var desc = new SphereDesc
         {
@@ -56,7 +50,7 @@ public sealed class GeometryBuilder
         return Geometry.BuildSphere(ref desc);
     }
 
-    public GeometryData BuildGeoSphere(float diameter, uint tessellation = 3, GeometryBuildFlags flags = GeometryBuildFlags.None)
+    public GeometryData BuildGeoSphere(float diameter, uint tessellation = 3, BuildDesc flags = 0)
     {
         var desc = new GeoSphereDesc
         {
@@ -67,7 +61,7 @@ public sealed class GeometryBuilder
         return Geometry.BuildGeoSphere(ref desc);
     }
 
-    public GeometryData BuildCylinder(float diameter, float height, uint tessellation = 16, GeometryBuildFlags flags = GeometryBuildFlags.None)
+    public GeometryData BuildCylinder(float diameter, float height, uint tessellation = 16, BuildDesc flags = 0)
     {
         var desc = new CylinderDesc
         {
@@ -79,7 +73,7 @@ public sealed class GeometryBuilder
         return Geometry.BuildCylinder(ref desc);
     }
 
-    public GeometryData BuildCone(float diameter, float height, uint tessellation = 16, GeometryBuildFlags flags = GeometryBuildFlags.None)
+    public GeometryData BuildCone(float diameter, float height, uint tessellation = 16, BuildDesc flags = 0)
     {
         var desc = new ConeDesc
         {
@@ -91,7 +85,7 @@ public sealed class GeometryBuilder
         return Geometry.BuildCone(ref desc);
     }
 
-    public GeometryData BuildTorus(float diameter, float thickness, uint tessellation = 16, GeometryBuildFlags flags = GeometryBuildFlags.None)
+    public GeometryData BuildTorus(float diameter, float thickness, uint tessellation = 16, BuildDesc flags = 0)
     {
         var desc = new TorusDesc
         {
@@ -103,25 +97,25 @@ public sealed class GeometryBuilder
         return Geometry.BuildTorus(ref desc);
     }
 
-    public GeometryData BuildTetrahedron(GeometryBuildFlags flags = GeometryBuildFlags.None)
+    public GeometryData BuildTetrahedron(BuildDesc flags = 0)
     {
         var desc = new TetrahedronDesc { BuildDesc = (uint)flags };
         return Geometry.BuildTetrahedron(ref desc);
     }
 
-    public GeometryData BuildOctahedron(GeometryBuildFlags flags = GeometryBuildFlags.None)
+    public GeometryData BuildOctahedron(BuildDesc flags = 0)
     {
         var desc = new OctahedronDesc { BuildDesc = (uint)flags };
         return Geometry.BuildOctahedron(ref desc);
     }
 
-    public GeometryData BuildDodecahedron(GeometryBuildFlags flags = GeometryBuildFlags.None)
+    public GeometryData BuildDodecahedron(BuildDesc flags = 0)
     {
         var desc = new DodecahedronDesc { BuildDesc = (uint)flags };
         return Geometry.BuildDodecahedron(ref desc);
     }
 
-    public GeometryData BuildIcosahedron(GeometryBuildFlags flags = GeometryBuildFlags.None)
+    public GeometryData BuildIcosahedron(BuildDesc flags = 0)
     {
         var desc = new IcosahedronDesc { BuildDesc = (uint)flags };
         return Geometry.BuildIcosahedron(ref desc);

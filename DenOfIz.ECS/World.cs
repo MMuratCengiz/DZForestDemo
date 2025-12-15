@@ -229,6 +229,12 @@ public class World : IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool TryGetComponent<T>(Entity entity, out T component) where T : struct
+    {
+        return _entityStore.TryGetComponent(entity, out component);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Query<T1> Query<T1>() where T1 : struct
     {
         return _entityStore.Query<T1>();

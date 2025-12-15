@@ -101,30 +101,15 @@ public class PresentFrameSystem : ISystem
     }
 }
 
-public class GraphicsPlugin
+public class GraphicsPlugin(
+    Window window,
+    APIPreference? apiPreference = null,
+    uint numFrames = 3,
+    Format backBufferFormat = Format.B8G8R8A8Unorm,
+    Format depthBufferFormat = Format.D32Float,
+    bool allowTearing = true)
 {
-    private readonly Window _window;
-    private readonly APIPreference _apiPreference;
-    private readonly uint _numFrames;
-    private readonly Format _backBufferFormat;
-    private readonly Format _depthBufferFormat;
-    private readonly bool _allowTearing;
-
-    public GraphicsPlugin(
-        Window window,
-        APIPreference? apiPreference = null,
-        uint numFrames = 3,
-        Format backBufferFormat = Format.B8G8R8A8Unorm,
-        Format depthBufferFormat = Format.D32Float,
-        bool allowTearing = true)
-    {
-        _window = window;
-        _apiPreference = apiPreference ?? new APIPreference { Windows = APIPreferenceWindows.Directx12 };
-        _numFrames = numFrames;
-        _backBufferFormat = backBufferFormat;
-        _depthBufferFormat = depthBufferFormat;
-        _allowTearing = allowTearing;
-    }
+    private readonly APIPreference _apiPreference = apiPreference ?? new APIPreference { Windows = APIPreferenceWindows.Directx12 };
 
     public void Build(World world)
     {
@@ -135,32 +120,32 @@ public class GraphicsPlugin
         var computeQueue = logicalDevice.CreateCommandQueue(new CommandQueueDesc { QueueType = QueueType.Compute });
         var copyQueue = logicalDevice.CreateCommandQueue(new CommandQueueDesc { QueueType = QueueType.Copy });
 
-        var width = (uint)_window.GetSize().Width;
-        var height = (uint)_window.GetSize().Height;
+        var width = (uint)window.GetSize().Width;
+        var height = (uint)window.GetSize().Height;
 
         var swapChain = logicalDevice.CreateSwapChain(new SwapChainDesc
         {
-            AllowTearing = _allowTearing,
-            BackBufferFormat = _backBufferFormat,
-            DepthBufferFormat = _depthBufferFormat,
+            AllowTearing = allowTearing,
+            BackBufferFormat = backBufferFormat,
+            DepthBufferFormat = depthBufferFormat,
             CommandQueue = graphicsQueue,
-            WindowHandle = _window.GetGraphicsWindowHandle(),
+            WindowHandle = window.GetGraphicsWindowHandle(),
             Width = width,
             Height = height,
-            NumBuffers = _numFrames
+            NumBuffers = numFrames
         });
 
         var context = new GraphicsContext(
             graphicsApi,
             logicalDevice,
             swapChain,
-            _window,
+            window,
             graphicsQueue,
             computeQueue,
             copyQueue,
-            _numFrames,
-            _backBufferFormat,
-            _depthBufferFormat,
+            numFrames,
+            backBufferFormat,
+            depthBufferFormat,
             width,
             height);
 
