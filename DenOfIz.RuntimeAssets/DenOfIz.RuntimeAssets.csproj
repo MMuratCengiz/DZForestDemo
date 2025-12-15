@@ -5,10 +5,16 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>RuntimeAssets</RootNamespace>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
 
     <ItemGroup>
+      <PackageReference Include="DenOfIzGraphics" Version="0.3.0-alpha" />
       <PackageReference Include="SharpGLTF.Core" Version="1.0.5" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\DenOfIz.ECS\DenOfIz.ECS.csproj" />
     </ItemGroup>
 
 </Project>

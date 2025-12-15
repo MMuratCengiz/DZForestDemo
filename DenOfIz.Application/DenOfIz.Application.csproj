@@ -9,12 +9,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="DenOfIzGraphics" Version="0.2.7-alpha" />
+      <PackageReference Include="DenOfIzGraphics" Version="0.3.0-alpha" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\DenOfIz.ECS\DenOfIz.ECS.csproj" />
       <ProjectReference Include="..\DenOfIz.Graphics\DenOfIz.Graphics.csproj" />
+      <ProjectReference Include="..\DenOfIz.RuntimeAssets\DenOfIz.RuntimeAssets.csproj" />
     </ItemGroup>
 
 </Project>

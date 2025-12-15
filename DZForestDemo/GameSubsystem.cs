@@ -1,25 +1,28 @@
-using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using System.Text;
 using DenOfIz;
 using ECS;
+using ECS.Components;
 using Graphics;
 using Graphics.RenderGraph;
+using RuntimeAssets;
 using UIFramework;
 
 namespace DZForestDemo;
 
 public sealed class GameSystem : ISystem
 {
+    private World _world = null!;
     private GraphicsContext _ctx = null!;
+    private AssetContext _assets = null!;
 
     private StepTimer _stepTimer = null!;
     private UiContext _ui = null!;
     private FrameDebugRenderer _frameDebugRenderer = null!;
 
-    private InputLayout _triangleInputLayout = null!;
-    private RootSignature _triangleRootSignature = null!;
-    private Pipeline _trianglePipeline = null!;
-    private BufferResource _vertexBuffer = null!;
+    private InputLayout _geometryInputLayout = null!;
+    private RootSignature _geometryRootSignature = null!;
+    private Pipeline _geometryPipeline = null!;
 
     private RootSignature _compositeRootSignature = null!;
     private Pipeline _compositePipeline = null!;
@@ -38,7 +41,9 @@ public sealed class GameSystem : ISystem
 
     public void Initialize(World world)
     {
+        _world = world;
         _ctx = world.GetContext<GraphicsContext>();
+        _assets = world.GetContext<AssetContext>();
 
         var logicalDevice = _ctx.LogicalDevice;
         var numFrames = _ctx.NumFrames;
@@ -71,9 +76,9 @@ public sealed class GameSystem : ISystem
             TextColor = new Float4 { X = 1.0f, Y = 1.0f, Z = 1.0f, W = 1.0f }
         });
 
-        CreateBuffers();
-        CreateTrianglePipeline();
+        CreateGeometryPipeline();
         CreateCompositePipeline();
+        CreateQuadEntity();
     }
 
     public bool OnEvent(ref Event ev)
@@ -118,14 +123,14 @@ public sealed class GameSystem : ISystem
             DebugName = "SceneRT"
         });
 
-        AddTrianglePass(renderGraph, viewport);
+        AddScenePass(renderGraph, viewport);
         AddUiPass(renderGraph);
         AddCompositePass(renderGraph, swapchainRt, viewport);
     }
 
-    private void AddTrianglePass(RenderGraph renderGraph, Viewport viewport)
+    private void AddScenePass(RenderGraph renderGraph, Viewport viewport)
     {
-        renderGraph.AddPass("Triangle",
+        renderGraph.AddPass("Scene",
             (ref RenderPassSetupContext ctx, ref PassBuilder builder) =>
             {
                 builder.WriteTexture(_sceneRt, (uint)ResourceUsageFlagBits.RenderTarget);
@@ -153,11 +158,31 @@ public sealed class GameSystem : ISystem
                 };
 
                 cmd.BeginRendering(renderingDesc);
-                cmd.BindPipeline(_trianglePipeline);
+                cmd.BindPipeline(_geometryPipeline);
                 cmd.BindViewport(viewport.X, viewport.Y, viewport.Width, viewport.Height);
                 cmd.BindScissorRect(viewport.X, viewport.Y, viewport.Width, viewport.Height);
-                cmd.BindVertexBuffer(_vertexBuffer, 0, 0, 0);
-                cmd.Draw(3, 1, 0, 0);
+
+                foreach (var (entity, mesh) in _world.Query<MeshComponent>())
+                {
+                    if (!mesh.IsValid)
+                    {
+                        continue;
+                    }
+
+                    ref readonly var runtimeMesh = ref _assets.GetMeshRef(mesh.Mesh);
+                    if (Unsafe.IsNullRef(ref Unsafe.AsRef(in runtimeMesh)))
+                    {
+                        continue;
+                    }
+
+                    var vb = runtimeMesh.VertexBuffer;
+                    var ib = runtimeMesh.IndexBuffer;
+
+                    cmd.BindVertexBuffer(vb.View.Buffer, vb.Stride, (uint)vb.View.Offset, 0);
+                    cmd.BindIndexBuffer(ib.View.Buffer, ib.IndexType, ib.View.Offset);
+                    cmd.DrawIndexed(ib.Count, 1, 0, 0, 0);
+                }
+
                 _frameDebugRenderer.Render(cmd);
                 cmd.EndRendering();
             });
@@ -270,46 +295,7 @@ public sealed class GameSystem : ISystem
         bindGroup.EndUpdate();
     }
 
-    private void CreateBuffers()
-    {
-        var logicalDevice = _ctx.LogicalDevice;
-
-        _vertexBuffer = logicalDevice.CreateBufferResource(new BufferDesc
-        {
-            NumBytes = (ulong)Triangle.Vertices.Length * sizeof(float),
-            Usages = (uint)ResourceUsageFlagBits.VertexAndConstantBuffer,
-            HeapType = HeapType.Gpu
-        });
-
-        var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
-        {
-            Device = logicalDevice,
-            IssueBarriers = false
-        });
-
-        batchCopy.Begin();
-
-        var data = new byte[Triangle.Vertices.Length * sizeof(float)];
-        Buffer.BlockCopy(Triangle.Vertices, 0, data, 0, data.Length);
-        var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
-
-        batchCopy.CopyToGPUBuffer(new CopyToGpuBufferDesc
-        {
-            Data = new ByteArrayView
-            {
-                Elements = handle.AddrOfPinnedObject(),
-                NumElements = (ulong)data.Length
-            },
-            DstBuffer = _vertexBuffer,
-            DstBufferOffset = 0
-        });
-
-        var semaphore = logicalDevice.CreateSemaphore();
-        batchCopy.Submit(semaphore);
-        handle.Free();
-    }
-
-    private void CreateTrianglePipeline()
+    private void CreateGeometryPipeline()
     {
         var logicalDevice = _ctx.LogicalDevice;
 
@@ -319,13 +305,13 @@ public sealed class GameSystem : ISystem
                 new ShaderStageDesc
                 {
                     EntryPoint = StringView.Create("VSMain"),
-                    Data = ByteArray.Create(Encoding.UTF8.GetBytes(Shaders.VertexShaderSource)),
+                    Data = ByteArray.Create(Encoding.UTF8.GetBytes(Shaders.GeometryVertexShader)),
                     Stage = ShaderStage.Vertex
                 },
                 new ShaderStageDesc
                 {
                     EntryPoint = StringView.Create("PSMain"),
-                    Data = ByteArray.Create(Encoding.UTF8.GetBytes(Shaders.PixelShaderSource)),
+                    Data = ByteArray.Create(Encoding.UTF8.GetBytes(Shaders.GeometryPixelShader)),
                     Stage = ShaderStage.Pixel
                 }
             ])
@@ -333,13 +319,13 @@ public sealed class GameSystem : ISystem
 
         var program = new ShaderProgram(programDesc);
         var reflection = program.Reflect();
-        _triangleInputLayout = logicalDevice.CreateInputLayout(reflection.InputLayout);
-        _triangleRootSignature = logicalDevice.CreateRootSignature(reflection.RootSignature);
+        _geometryInputLayout = logicalDevice.CreateInputLayout(reflection.InputLayout);
+        _geometryRootSignature = logicalDevice.CreateRootSignature(reflection.RootSignature);
 
-        _trianglePipeline = logicalDevice.CreatePipeline(new PipelineDesc
+        _geometryPipeline = logicalDevice.CreatePipeline(new PipelineDesc
         {
-            InputLayout = _triangleInputLayout,
-            RootSignature = _triangleRootSignature,
+            InputLayout = _geometryInputLayout,
+            RootSignature = _geometryRootSignature,
             ShaderProgram = program,
             Graphics = new GraphicsPipelineDesc
             {
@@ -353,6 +339,17 @@ public sealed class GameSystem : ISystem
                 ])
             }
         });
+    }
+
+    private void CreateQuadEntity()
+    {
+        _assets.BeginUpload();
+        var meshHandle = _assets.AddQuad(1.0f, 1.0f);
+        _assets.EndUpload();
+
+        var entity = _world.Spawn();
+        _world.AddComponent(entity, new MeshComponent(meshHandle));
+        _world.AddComponent(entity, Transform.Identity);
     }
 
     private void CreateCompositePipeline()
@@ -441,10 +438,9 @@ public sealed class GameSystem : ISystem
         _compositePipeline.Dispose();
         _compositeRootSignature.Dispose();
 
-        _vertexBuffer.Dispose();
-        _trianglePipeline.Dispose();
-        _triangleRootSignature.Dispose();
-        _triangleInputLayout.Dispose();
+        _geometryPipeline.Dispose();
+        _geometryRootSignature.Dispose();
+        _geometryInputLayout.Dispose();
 
         _rtAttachments.Dispose();
         _ui.Dispose();

@@ -1,4 +1,5 @@
 using DenOfIz;
+using Buffer = DenOfIz.Buffer;
 
 namespace Graphics.RenderGraph;
 
@@ -66,7 +67,7 @@ internal class RenderGraphResourceEntry
     public TextureResource? Texture;
     public TransientTextureDesc TextureDesc;
 
-    public BufferResource? Buffer;
+    public Buffer? Buffer;
     public TransientBufferDesc BufferDesc;
 
     public int FirstPassIndex = -1;

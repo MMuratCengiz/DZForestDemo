@@ -2,6 +2,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using DenOfIz;
 using Graphics.RenderGraph;
+using Buffer = DenOfIz.Buffer;
+using Texture = DenOfIz.Texture;
 
 namespace DZForestDemo;
 
@@ -18,7 +20,7 @@ public class RenderGraphDemo : IDisposable
     private InputLayout _inputLayout = null!;
     private RootSignature _rootSignature = null!;
     private Pipeline _pipeline = null!;
-    private BufferResource _vertexBuffer = null!;
+    private Buffer _vertexBuffer = null!;
 
     private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments = new(1);
 
@@ -180,7 +182,7 @@ public class RenderGraphDemo : IDisposable
 
     private void CreateBuffers()
     {
-        _vertexBuffer = _logicalDevice.CreateBufferResource(new BufferDesc
+        _vertexBuffer = _logicalDevice.CreateBuffer(new BufferDesc
         {
             NumBytes = (ulong)Triangle.Vertices.Length * sizeof(float),
             Usages = (uint)ResourceUsageFlagBits.VertexAndConstantBuffer,
@@ -196,7 +198,7 @@ public class RenderGraphDemo : IDisposable
         batchCopy.Begin();
 
         var data = new byte[Triangle.Vertices.Length * sizeof(float)];
-        Buffer.BlockCopy(Triangle.Vertices, 0, data, 0, data.Length);
+        System.Buffer.BlockCopy(Triangle.Vertices, 0, data, 0, data.Length);
         var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
 
         batchCopy.CopyToGPUBuffer(new CopyToGpuBufferDesc

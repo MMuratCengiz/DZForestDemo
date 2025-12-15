@@ -1,7 +1,49 @@
-﻿namespace DZForestDemo;
+namespace DZForestDemo;
 
 public static class Shaders
 {
+    public const string GeometryVertexShader = @"
+struct VSInput
+{
+    float3 Position : POSITION;
+    float3 Normal : NORMAL;
+    float2 TexCoord : TEXCOORD0;
+};
+
+struct PSInput
+{
+    float4 Position : SV_POSITION;
+    float3 Normal : NORMAL;
+    float2 TexCoord : TEXCOORD0;
+};
+
+PSInput VSMain(VSInput input)
+{
+    PSInput output;
+    output.Position = float4(input.Position, 1.0);
+    output.Normal = input.Normal;
+    output.TexCoord = input.TexCoord;
+    return output;
+}
+";
+
+    public const string GeometryPixelShader = @"
+struct PSInput
+{
+    float4 Position : SV_POSITION;
+    float3 Normal : NORMAL;
+    float2 TexCoord : TEXCOORD0;
+};
+
+float4 PSMain(PSInput input) : SV_TARGET
+{
+    float3 lightDir = normalize(float3(0.5, 1.0, 0.5));
+    float ndotl = saturate(dot(input.Normal, lightDir));
+    float3 color = float3(0.8, 0.6, 0.4) * (0.3 + 0.7 * ndotl);
+    return float4(color, 1.0);
+}
+";
+
     public const string VertexShaderSource = @"
 struct VSInput
 {

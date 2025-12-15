@@ -4,18 +4,11 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>AssetManagement</RootNamespace>
+        <RootNamespace>OfflineAssets</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-      <Reference Include="DenOfIzGraphics">
-        <HintPath>..\..\..\.nuget\packages\denofizgraphics\0.1.17-alpha\lib\netstandard2.0\DenOfIzGraphics.dll</HintPath>
-      </Reference>
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="DenOfIzGraphics" Version="0.2.7-alpha" />
-      <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
+      <PackageReference Include="DenOfIzGraphics" Version="0.3.0-alpha" />
     </ItemGroup>
 
 </Project>

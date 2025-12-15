@@ -1,4 +1,5 @@
 using DenOfIz;
+using Buffer = DenOfIz.Buffer;
 using Semaphore = DenOfIz.Semaphore;
 
 namespace Graphics.RenderGraph;
@@ -37,7 +38,7 @@ public ref struct RenderPassExecuteContext
     public uint FrameIndex;
 
     public TextureResource GetTexture(ResourceHandle handle) => Graph.GetTexture(handle);
-    public BufferResource GetBuffer(ResourceHandle handle) => Graph.GetBuffer(handle);
+    public Buffer GetBuffer(ResourceHandle handle) => Graph.GetBuffer(handle);
 }
 
 public delegate void RenderPassSetupDelegate(ref RenderPassSetupContext context, ref PassBuilder builder);
@@ -59,7 +60,7 @@ public ref struct ExternalPassExecuteContext
     public uint FrameIndex;
 
     public TextureResource GetTexture(ResourceHandle handle) => Graph.GetTexture(handle);
-    public BufferResource GetBuffer(ResourceHandle handle) => Graph.GetBuffer(handle);
+    public Buffer GetBuffer(ResourceHandle handle) => Graph.GetBuffer(handle);
 }
 
 public readonly ref struct PassBuilder

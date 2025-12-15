@@ -21,6 +21,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using DenOfIz;
 using ImGuiNET;
+using Buffer = DenOfIz.Buffer;
 
 namespace Graphics.ImGui;
 
@@ -141,10 +142,10 @@ float4 main(PSInput input) : SV_TARGET
     private InputLayout? _inputLayout;
     private Pipeline? _pipeline;
 
-    private BufferResource? _vertexBuffer;
-    private BufferResource? _indexBuffer;
-    private BufferResource? _uniformBuffer;
-    private BufferResource? _pixelConstantsBuffer;
+    private Buffer? _vertexBuffer;
+    private Buffer? _indexBuffer;
+    private Buffer? _uniformBuffer;
+    private Buffer? _pixelConstantsBuffer;
     private IntPtr _vertexBufferData;
     private IntPtr _indexBufferData;
     private IntPtr _uniformBufferData;
@@ -354,7 +355,7 @@ float4 main(PSInput input) : SV_TARGET
             HeapType = HeapType.CpuGpu,
             DebugName = StringView.Intern("ImGui Vertex Buffer")
         };
-        _vertexBuffer = _logicalDevice.CreateBufferResource(vertexBufferDesc);
+        _vertexBuffer = _logicalDevice.CreateBuffer(vertexBufferDesc);
         _vertexBufferData = _vertexBuffer.MapMemory();
 
         var indexBufferDesc = new BufferDesc
@@ -365,7 +366,7 @@ float4 main(PSInput input) : SV_TARGET
             HeapType = HeapType.CpuGpu,
             DebugName = StringView.Intern("ImGui Index Buffer")
         };
-        _indexBuffer = _logicalDevice.CreateBufferResource(indexBufferDesc);
+        _indexBuffer = _logicalDevice.CreateBuffer(indexBufferDesc);
         _indexBufferData = _indexBuffer.MapMemory();
 
         _alignedUniformSize = (uint)((Marshal.SizeOf<ImGuiUniforms>() + 255) & ~255);
@@ -377,7 +378,7 @@ float4 main(PSInput input) : SV_TARGET
             HeapType = HeapType.CpuGpu,
             DebugName = StringView.Intern("ImGui Uniform Buffer")
         };
-        _uniformBuffer = _logicalDevice.CreateBufferResource(uniformBufferDesc);
+        _uniformBuffer = _logicalDevice.CreateBuffer(uniformBufferDesc);
         _uniformBufferData = _uniformBuffer.MapMemory();
 
         _alignedPixelConstantsSize = (uint)((Marshal.SizeOf<PixelConstants>() + 255) & ~255);
@@ -389,7 +390,7 @@ float4 main(PSInput input) : SV_TARGET
             HeapType = HeapType.CpuGpu,
             DebugName = StringView.Intern("ImGui Pixel Constants Buffer")
         };
-        _pixelConstantsBuffer = _logicalDevice.CreateBufferResource(pixelConstantsBufferDesc);
+        _pixelConstantsBuffer = _logicalDevice.CreateBuffer(pixelConstantsBufferDesc);
         _pixelConstantsData = _pixelConstantsBuffer.MapMemory();
 
         InitializePixelConstants();
@@ -450,7 +451,7 @@ float4 main(PSInput input) : SV_TARGET
 
     private static unsafe void CopyFontData(IntPtr src, IntPtr dst, int size)
     {
-        Buffer.MemoryCopy(src.ToPointer(), dst.ToPointer(), size, size);
+        System.Buffer.MemoryCopy(src.ToPointer(), dst.ToPointer(), size, size);
     }
 
     private void CreateNullTexture()
@@ -470,7 +471,7 @@ float4 main(PSInput input) : SV_TARGET
             DebugName = StringView.Intern("ImGui Null Texture")
         };
 
-        _nullTexture = _logicalDevice.CreateTextureResource(textureDesc);
+        _nullTexture = _logicalDevice.CreateTexture(textureDesc);
         _textures[1] = _nullTexture;
     }
 
@@ -495,7 +496,7 @@ float4 main(PSInput input) : SV_TARGET
             HeapType = HeapType.Gpu,
             DebugName = StringView.Intern("ImGui Font Texture")
         };
-        _fontTexture = _logicalDevice.CreateTextureResource(fontTextureDesc);
+        _fontTexture = _logicalDevice.CreateTexture(fontTextureDesc);
 
         // Create upload buffer
         var uploadBufferDesc = new BufferDesc
@@ -506,7 +507,7 @@ float4 main(PSInput input) : SV_TARGET
             HeapType = HeapType.CpuGpu,
             DebugName = StringView.Intern("ImGui Font Upload Buffer")
         };
-        var uploadBuffer = _logicalDevice.CreateBufferResource(uploadBufferDesc);
+        var uploadBuffer = _logicalDevice.CreateBuffer(uploadBufferDesc);
 
         var uploadData = uploadBuffer.MapMemory();
         CopyFontData(fontData, uploadData, fontDataSize);
@@ -677,13 +678,13 @@ float4 main(PSInput input) : SV_TARGET
                 var vertexDataSize = cmdList.VtxBuffer.Size * 20;
                 var indexDataSize = cmdList.IdxBuffer.Size * 2;
 
-                Buffer.MemoryCopy(
+                System.Buffer.MemoryCopy(
                     cmdList.VtxBuffer.Data.ToPointer(),
                     ((byte*)_vertexBufferData + vertexOffset * 20),
                     vertexDataSize,
                     vertexDataSize);
 
-                Buffer.MemoryCopy(
+                System.Buffer.MemoryCopy(
                     cmdList.IdxBuffer.Data.ToPointer(),
                     ((byte*)_indexBufferData + indexOffset * 2),
                     indexDataSize,
@@ -922,7 +923,7 @@ public class ImGuiRenderer : IDisposable
 {
     private bool _disposed;
     private readonly ImGuiBackend _backend;
-    
+
     private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments = new(1);
 
     public ImGuiRenderer(ImGuiBackendDesc desc)

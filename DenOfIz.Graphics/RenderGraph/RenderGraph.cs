@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DenOfIz;
+using Buffer = DenOfIz.Buffer;
 using Semaphore = DenOfIz.Semaphore;
 
 namespace Graphics.RenderGraph;
@@ -39,7 +40,7 @@ public class RenderGraph : IDisposable
     private bool _isCompiled;
 
     private readonly List<TextureResource>[] _transientTextures;
-    private readonly List<BufferResource>[] _transientBuffers;
+    private readonly List<Buffer>[] _transientBuffers;
 
     private readonly Semaphore[] _waitSemaphoresBuffer;
     private readonly Semaphore[] _signalSemaphoresBuffer;
@@ -84,7 +85,7 @@ public class RenderGraph : IDisposable
         _frameSemaphores = new List<Semaphore>[_numFrames];
         _frameFences = new Fence[_numFrames];
         _transientTextures = new List<TextureResource>[_numFrames];
-        _transientBuffers = new List<BufferResource>[_numFrames];
+        _transientBuffers = new List<Buffer>[_numFrames];
 
         for (var i = 0; i < _numFrames; i++)
         {
@@ -98,7 +99,7 @@ public class RenderGraph : IDisposable
                 _frameSemaphores[i].Add(_logicalDevice.CreateSemaphore());
             _frameFences[i] = _logicalDevice.CreateFence();
             _transientTextures[i] = new List<TextureResource>(32);
-            _transientBuffers[i] = new List<BufferResource>(32);
+            _transientBuffers[i] = new List<Buffer>(32);
         }
 
         _waitSemaphoresBuffer = new Semaphore[_maxPasses];
@@ -170,7 +171,7 @@ public class RenderGraph : IDisposable
         return handle;
     }
 
-    public ResourceHandle ImportBuffer(string name, BufferResource buffer)
+    public ResourceHandle ImportBuffer(string name, Buffer buffer)
     {
         if (_resourceCount >= _maxResources)
         {
@@ -256,7 +257,7 @@ public class RenderGraph : IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public BufferResource GetBuffer(ResourceHandle handle)
+    public Buffer GetBuffer(ResourceHandle handle)
     {
         if (!handle.IsValid || handle.Index >= _resourceCount)
         {
@@ -647,7 +648,7 @@ public class RenderGraph : IDisposable
                 else
                 {
                     var desc = entry.TextureDesc;
-                    var texture = _logicalDevice.CreateTextureResource(new TextureDesc
+                    var texture = _logicalDevice.CreateTexture(new TextureDesc
                     {
                         Width = desc.Width > 0 ? desc.Width : Width,
                         Height = desc.Height > 0 ? desc.Height : Height,
@@ -676,7 +677,7 @@ public class RenderGraph : IDisposable
                 else
                 {
                     var desc = entry.BufferDesc;
-                    var buffer = _logicalDevice.CreateBufferResource(new BufferDesc
+                    var buffer = _logicalDevice.CreateBuffer(new BufferDesc
                     {
                         NumBytes = desc.NumBytes,
                         Usages = desc.Usages,

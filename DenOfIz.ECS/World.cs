@@ -11,8 +11,23 @@ public class World : IDisposable
     private readonly List<ISystem> _allSystems = [];
     private ISystem[] _allSystemsArray = [];
 
+    private readonly EntityStore _entityStore;
+    private readonly SceneManager _sceneManager;
+    private readonly Commands _commands;
+
     private bool _initialized;
     private bool _disposed;
+
+    public EntityStore Entities => _entityStore;
+    public SceneManager Scenes => _sceneManager;
+    public Commands Commands => _commands;
+
+    public World()
+    {
+        _entityStore = new EntityStore();
+        _sceneManager = new SceneManager(_entityStore);
+        _commands = new Commands(_entityStore);
+    }
 
     public void RegisterContext<T>(T context) where T : class, IContext
     {
@@ -175,6 +190,102 @@ public class World : IDisposable
             }
         }
         return false;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Entity Spawn()
+    {
+        return _entityStore.Spawn();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Despawn(Entity entity)
+    {
+        _entityStore.Despawn(entity);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void AddComponent<T>(Entity entity, in T component) where T : struct
+    {
+        _entityStore.AddComponent(entity, in component);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void RemoveComponent<T>(Entity entity) where T : struct
+    {
+        _entityStore.RemoveComponent<T>(entity);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ref T GetComponent<T>(Entity entity) where T : struct
+    {
+        return ref _entityStore.GetComponent<T>(entity);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool HasComponent<T>(Entity entity) where T : struct
+    {
+        return _entityStore.HasComponent<T>(entity);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Query<T1> Query<T1>() where T1 : struct
+    {
+        return _entityStore.Query<T1>();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Query<T1, T2> Query<T1, T2>() where T1 : struct where T2 : struct
+    {
+        return _entityStore.Query<T1, T2>();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Query<T1, T2, T3> Query<T1, T2, T3>() where T1 : struct where T2 : struct where T3 : struct
+    {
+        return _entityStore.Query<T1, T2, T3>();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Query<T1, T2, T3, T4> Query<T1, T2, T3, T4>() where T1 : struct where T2 : struct where T3 : struct where T4 : struct
+    {
+        return _entityStore.Query<T1, T2, T3, T4>();
+    }
+
+    public void ApplyCommands()
+    {
+        _commands.Apply();
+        _sceneManager.CleanupDespawnedEntities();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Entity Create<T1>(T1 c1) where T1 : struct
+    {
+        return _entityStore.Create(c1);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Entity Create<T1, T2>(T1 c1, T2 c2) where T1 : struct where T2 : struct
+    {
+        return _entityStore.Create(c1, c2);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Entity Create<T1, T2, T3>(T1 c1, T2 c2, T3 c3) where T1 : struct where T2 : struct where T3 : struct
+    {
+        return _entityStore.Create(c1, c2, c3);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Entity Create<T1, T2, T3, T4>(T1 c1, T2 c2, T3 c3, T4 c4) where T1 : struct where T2 : struct where T3 : struct where T4 : struct
+    {
+        return _entityStore.Create(c1, c2, c3, c4);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Entity Create<T1, T2, T3, T4, T5>(T1 c1, T2 c2, T3 c3, T4 c4, T5 c5) where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct
+    {
+        return _entityStore.Create(c1, c2, c3, c4, c5);
     }
 
     public void Shutdown()

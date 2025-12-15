@@ -142,7 +142,6 @@ public class ImGuiDemoWindow : IDisposable
         _imGuiRenderer.NewFrame((uint)_viewport.Width, (uint)_viewport.Height, (float)_stepTimer.GetDeltaTime());
         BuildImGuiUi();
 
-        // Render
         Render(commandList, renderTarget, frameIndex);
 
         _frameSync.ExecuteCommandList(frameIndex, _emptySemaphoreArray);
