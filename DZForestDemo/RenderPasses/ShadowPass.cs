@@ -33,15 +33,18 @@ public sealed class ShadowPass : IDisposable
 
     private readonly InputLayout _inputLayout;
 
-    private readonly Buffer[] _lightMatrixBuffers;
-    private readonly ResourceBindGroup[] _lightMatrixBindGroups;
-    private readonly IntPtr[] _lightMatrixMappedPtrs;
+    // One buffer/bindgroup per light per frame to avoid overwrite during command recording
+    private readonly Buffer[][] _lightMatrixBuffers;
+    private readonly ResourceBindGroup[][] _lightMatrixBindGroups;
+    private readonly IntPtr[][] _lightMatrixMappedPtrs;
 
     private readonly Pipeline _pipeline;
     private readonly RootSignature _rootSignature;
     private readonly World _world;
     private bool _disposed;
 
+    // Cached light data for building passes
+    private readonly List<LightRenderInfo> _lightRenderInfos = [];
     private ResourceHandle _shadowAtlas;
 
     public ShadowPass(GraphicsContext ctx, AssetContext assets, World world, RenderBatcher batcher)
@@ -55,33 +58,41 @@ public sealed class ShadowPass : IDisposable
 
         CreatePipeline(logicalDevice, out _inputLayout, out _rootSignature, out _pipeline);
 
-        // Create per-frame light matrix buffers and bind groups
+        // Create per-frame, per-light matrix buffers and bind groups
+        // Each light needs its own buffer to avoid overwriting during command recording
         var numFrames = (int)ctx.NumFrames;
-        _lightMatrixBuffers = new Buffer[numFrames];
-        _lightMatrixBindGroups = new ResourceBindGroup[numFrames];
-        _lightMatrixMappedPtrs = new IntPtr[numFrames];
+        _lightMatrixBuffers = new Buffer[numFrames][];
+        _lightMatrixBindGroups = new ResourceBindGroup[numFrames][];
+        _lightMatrixMappedPtrs = new IntPtr[numFrames][];
 
         _perFrameBatchData = new Dictionary<RuntimeMeshHandle, BatchInstanceData>[numFrames];
 
         for (var i = 0; i < numFrames; i++)
         {
-            _lightMatrixBuffers[i] = logicalDevice.CreateBuffer(new BufferDesc
-            {
-                Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
-                HeapType = HeapType.CpuGpu,
-                NumBytes = (ulong)Unsafe.SizeOf<LightMatrixConstants>(),
-                DebugName = StringView.Create($"ShadowLightMatrix_{i}")
-            });
-            _lightMatrixMappedPtrs[i] = _lightMatrixBuffers[i].MapMemory();
+            _lightMatrixBuffers[i] = new Buffer[MaxShadowCastingLights];
+            _lightMatrixBindGroups[i] = new ResourceBindGroup[MaxShadowCastingLights];
+            _lightMatrixMappedPtrs[i] = new IntPtr[MaxShadowCastingLights];
 
-            _lightMatrixBindGroups[i] = logicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
+            for (var lightIdx = 0; lightIdx < MaxShadowCastingLights; lightIdx++)
             {
-                RootSignature = _rootSignature,
-                RegisterSpace = 0
-            });
-            _lightMatrixBindGroups[i].BeginUpdate();
-            _lightMatrixBindGroups[i].Cbv(0, _lightMatrixBuffers[i]);
-            _lightMatrixBindGroups[i].EndUpdate();
+                _lightMatrixBuffers[i][lightIdx] = logicalDevice.CreateBuffer(new BufferDesc
+                {
+                    Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
+                    HeapType = HeapType.CpuGpu,
+                    NumBytes = (ulong)Unsafe.SizeOf<LightMatrixConstants>(),
+                    DebugName = StringView.Create($"ShadowLightMatrix_{i}_{lightIdx}")
+                });
+                _lightMatrixMappedPtrs[i][lightIdx] = _lightMatrixBuffers[i][lightIdx].MapMemory();
+
+                _lightMatrixBindGroups[i][lightIdx] = logicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
+                {
+                    RootSignature = _rootSignature,
+                    RegisterSpace = 0
+                });
+                _lightMatrixBindGroups[i][lightIdx].BeginUpdate();
+                _lightMatrixBindGroups[i][lightIdx].Cbv(0, _lightMatrixBuffers[i][lightIdx]);
+                _lightMatrixBindGroups[i][lightIdx].EndUpdate();
+            }
 
             _perFrameBatchData[i] = new Dictionary<RuntimeMeshHandle, BatchInstanceData>();
         }
@@ -98,9 +109,12 @@ public sealed class ShadowPass : IDisposable
 
         for (var i = 0; i < _lightMatrixBuffers.Length; i++)
         {
-            _lightMatrixBuffers[i].UnmapMemory();
-            _lightMatrixBindGroups[i].Dispose();
-            _lightMatrixBuffers[i].Dispose();
+            for (var lightIdx = 0; lightIdx < MaxShadowCastingLights; lightIdx++)
+            {
+                _lightMatrixBuffers[i][lightIdx].UnmapMemory();
+                _lightMatrixBindGroups[i][lightIdx].Dispose();
+                _lightMatrixBuffers[i][lightIdx].Dispose();
+            }
 
             foreach (var batchData in _perFrameBatchData[i].Values)
             {
@@ -186,53 +200,22 @@ public sealed class ShadowPass : IDisposable
         return _shadowAtlas;
     }
 
-    public unsafe void Execute(
-        ref RenderPassExecuteContext ctx,
+    /// <summary>
+    /// Adds separate render graph passes for each shadow-casting light.
+    /// Each light gets its own pass with dedicated buffers and bind groups.
+    /// </summary>
+    public void AddPasses(
+        RenderGraph renderGraph,
         ResourceHandle shadowAtlas,
         List<ShadowData> shadowDataOut,
         Vector3 sceneCenter,
         float sceneRadius)
     {
-        var cmd = ctx.CommandList;
-        var atlas = ctx.GetTexture(shadowAtlas);
-        var frameIndex = (int)ctx.FrameIndex;
-
-        ctx.ResourceTracking.TransitionTexture(cmd, atlas,
-            (uint)ResourceUsageFlagBits.DepthWrite, QueueType.Graphics);
-
-        var clearDesc = new RenderingDesc
-        {
-            RTAttachments = RenderingAttachmentDescArray.Create([]),
-            DepthAttachment = new RenderingAttachmentDesc
-            {
-                Resource = atlas,
-                LoadOp = LoadOp.Clear,
-                ClearDepthStencil = new Float2 { X = 1.0f, Y = 0.0f }
-            },
-            NumLayers = 1,
-            RenderAreaWidth = ShadowMapSize * 2,
-            RenderAreaHeight = ShadowMapSize * 2
-        };
-        cmd.BeginRendering(clearDesc);
-        cmd.EndRendering();
-
-        var batchDataDict = _perFrameBatchData[frameIndex];
-        var allInstances = _batcher.AllInstances;
-
-        foreach (var batch in _batcher.Batches)
-        {
-            var batchData = GetOrCreateBatchData(batchDataDict, batch.MeshHandle, batch.InstanceCount, frameIndex);
-            var instancePtr = (ShadowInstanceData*)batchData.MappedPtr.ToPointer();
-
-            for (var i = 0; i < batch.InstanceCount; i++)
-            {
-                instancePtr[i] = new ShadowInstanceData { Model = allInstances[batch.StartInstance + i].WorldMatrix };
-            }
-        }
-
+        _lightRenderInfos.Clear();
         shadowDataOut.Clear();
         var shadowIndex = 0;
 
+        // Collect all shadow-casting lights and their matrices
         foreach (var (entity, light) in _world.Query<DirectionalLight>())
         {
             if (!light.CastShadows || shadowIndex >= MaxShadowCastingLights)
@@ -244,7 +227,13 @@ public sealed class ShadowPass : IDisposable
                 CalculateDirectionalLightMatrices(light.Direction, sceneCenter, sceneRadius);
             var atlasOffset = GetAtlasOffset(shadowIndex);
 
-            RenderShadowMap(ref ctx, atlas, renderMatrix, atlasOffset, frameIndex, batchDataDict);
+            _lightRenderInfos.Add(new LightRenderInfo
+            {
+                RenderMatrix = renderMatrix,
+                AtlasOffset = atlasOffset,
+                ShadowIndex = shadowIndex,
+                LightType = LightType.Directional
+            });
 
             shadowDataOut.Add(new ShadowData
             {
@@ -266,14 +255,20 @@ public sealed class ShadowPass : IDisposable
                 continue;
             }
 
-            var lightViewProj = CalculatePointLightMatrix(transform.Position, 0);
+            var lightViewProj = CalculatePointLightMatrix(transform.Position, sceneCenter, light.Radius);
             var atlasOffset = GetAtlasOffset(shadowIndex);
 
-            RenderShadowMap(ref ctx, atlas, lightViewProj, atlasOffset, frameIndex, batchDataDict);
+            _lightRenderInfos.Add(new LightRenderInfo
+            {
+                RenderMatrix = lightViewProj,
+                AtlasOffset = atlasOffset,
+                ShadowIndex = shadowIndex,
+                LightType = LightType.Point
+            });
 
             shadowDataOut.Add(new ShadowData
             {
-                LightViewProjection = lightViewProj,
+                LightViewProjection = lightViewProj * BiasMatrix,
                 AtlasScaleOffset = new Vector4(0.5f, 0.5f, atlasOffset.X / (ShadowMapSize * 2f),
                     atlasOffset.Y / (ShadowMapSize * 2f)),
                 ShadowIndex = shadowIndex,
@@ -295,11 +290,17 @@ public sealed class ShadowPass : IDisposable
                 CalculateSpotLightMatrix(transform.Position, light.Direction, light.OuterConeAngle, light.Radius);
             var atlasOffset = GetAtlasOffset(shadowIndex);
 
-            RenderShadowMap(ref ctx, atlas, lightViewProj, atlasOffset, frameIndex, batchDataDict);
+            _lightRenderInfos.Add(new LightRenderInfo
+            {
+                RenderMatrix = lightViewProj,
+                AtlasOffset = atlasOffset,
+                ShadowIndex = shadowIndex,
+                LightType = LightType.Spot
+            });
 
             shadowDataOut.Add(new ShadowData
             {
-                LightViewProjection = lightViewProj,
+                LightViewProjection = lightViewProj * BiasMatrix,
                 AtlasScaleOffset = new Vector4(0.5f, 0.5f, atlasOffset.X / (ShadowMapSize * 2f),
                     atlasOffset.Y / (ShadowMapSize * 2f)),
                 ShadowIndex = shadowIndex,
@@ -309,15 +310,100 @@ public sealed class ShadowPass : IDisposable
 
             shadowIndex++;
         }
+
+        // Add a clear pass first
+        renderGraph.AddPass("Shadow_Clear",
+            (ref RenderPassSetupContext ctx, ref PassBuilder builder) =>
+            {
+                builder.WriteTexture(shadowAtlas, (uint)ResourceUsageFlagBits.DepthWrite);
+                builder.HasSideEffects();
+            },
+            (ref RenderPassExecuteContext ctx) =>
+            {
+                ExecuteClearPass(ref ctx, shadowAtlas);
+            });
+
+        // Add separate pass for each light
+        // Use ReadWriteTexture to create proper dependency chain - each pass preserves
+        // existing content (renders to different atlas region) so depends on previous writes
+        for (var i = 0; i < _lightRenderInfos.Count; i++)
+        {
+            var lightInfo = _lightRenderInfos[i];
+            var passName = $"Shadow_{lightInfo.LightType}_{lightInfo.ShadowIndex}";
+
+            renderGraph.AddPass(passName,
+                (ref RenderPassSetupContext ctx, ref PassBuilder builder) =>
+                {
+                    builder.ReadWriteTexture(shadowAtlas, (uint)ResourceUsageFlagBits.DepthWrite);
+                    builder.HasSideEffects();
+                },
+                (ref RenderPassExecuteContext ctx) =>
+                {
+                    ExecuteLightPass(ref ctx, shadowAtlas, lightInfo);
+                });
+        }
+    }
+
+    private void ExecuteClearPass(ref RenderPassExecuteContext ctx, ResourceHandle shadowAtlas)
+    {
+        var cmd = ctx.CommandList;
+        var atlas = ctx.GetTexture(shadowAtlas);
+
+        ctx.ResourceTracking.TransitionTexture(cmd, atlas,
+            (uint)ResourceUsageFlagBits.DepthWrite, QueueType.Graphics);
+
+        var clearDesc = new RenderingDesc
+        {
+            RTAttachments = RenderingAttachmentDescArray.Create([]),
+            DepthAttachment = new RenderingAttachmentDesc
+            {
+                Resource = atlas,
+                LoadOp = LoadOp.Clear,
+                ClearDepthStencil = new Float2 { X = 1.0f, Y = 0.0f }
+            },
+            NumLayers = 1,
+            RenderAreaWidth = ShadowMapSize * 2,
+            RenderAreaHeight = ShadowMapSize * 2
+        };
+        cmd.BeginRendering(clearDesc);
+        cmd.EndRendering();
+    }
+
+    private unsafe void ExecuteLightPass(ref RenderPassExecuteContext ctx, ResourceHandle shadowAtlas, LightRenderInfo lightInfo)
+    {
+        var cmd = ctx.CommandList;
+        var atlas = ctx.GetTexture(shadowAtlas);
+        var frameIndex = (int)ctx.FrameIndex;
+
+        ctx.ResourceTracking.TransitionTexture(cmd, atlas,
+            (uint)ResourceUsageFlagBits.DepthWrite, QueueType.Graphics);
+
+        var batchDataDict = _perFrameBatchData[frameIndex];
+        var allInstances = _batcher.AllInstances;
+
+        // Update instance data for this light's pass
+        foreach (var batch in _batcher.Batches)
+        {
+            var batchData = GetOrCreateBatchData(batchDataDict, batch.MeshHandle, batch.InstanceCount, frameIndex);
+            var instancePtr = (ShadowInstanceData*)batchData.MappedPtr.ToPointer();
+
+            for (var i = 0; i < batch.InstanceCount; i++)
+            {
+                instancePtr[i] = new ShadowInstanceData { Model = allInstances[batch.StartInstance + i].WorldMatrix };
+            }
+        }
+
+        RenderShadowMap(ref ctx, atlas, lightInfo.RenderMatrix, lightInfo.AtlasOffset, frameIndex, lightInfo.ShadowIndex, batchDataDict);
     }
 
     private unsafe void RenderShadowMap(ref RenderPassExecuteContext ctx, Texture atlas, Matrix4x4 lightViewProj,
-        Vector2 atlasOffset, int frameIndex, Dictionary<RuntimeMeshHandle, BatchInstanceData> batchDataDict)
+        Vector2 atlasOffset, int frameIndex, int shadowIndex, Dictionary<RuntimeMeshHandle, BatchInstanceData> batchDataDict)
     {
         var cmd = ctx.CommandList;
 
+        // Write to this light's dedicated buffer (not shared) to avoid overwrite during command recording
         var lightMatrixConstants = new LightMatrixConstants { LightViewProjection = lightViewProj };
-        Unsafe.Write(_lightMatrixMappedPtrs[frameIndex].ToPointer(), lightMatrixConstants);
+        Unsafe.Write(_lightMatrixMappedPtrs[frameIndex][shadowIndex].ToPointer(), lightMatrixConstants);
 
         var renderingDesc = new RenderingDesc
         {
@@ -336,7 +422,7 @@ public sealed class ShadowPass : IDisposable
         cmd.BindPipeline(_pipeline);
         cmd.BindViewport(atlasOffset.X, atlasOffset.Y, ShadowMapSize, ShadowMapSize);
         cmd.BindScissorRect((int)atlasOffset.X, (int)atlasOffset.Y, ShadowMapSize, ShadowMapSize);
-        cmd.BindResourceGroup(_lightMatrixBindGroups[frameIndex]);
+        cmd.BindResourceGroup(_lightMatrixBindGroups[frameIndex][shadowIndex]);
 
         foreach (var batch in _batcher.Batches)
         {
@@ -352,7 +438,7 @@ public sealed class ShadowPass : IDisposable
             var vb = runtimeMesh.VertexBuffer;
             var ib = runtimeMesh.IndexBuffer;
 
-            cmd.BindVertexBuffer(vb.View.Buffer, (uint)vb.View.Offset, 0, 0);
+            cmd.BindVertexBuffer(vb.View.Buffer, (uint)vb.View.Offset, vb.Stride, 0);
             cmd.BindIndexBuffer(ib.View.Buffer, ib.IndexType, ib.View.Offset);
             cmd.DrawIndexed(ib.Count, (uint)batch.InstanceCount, 0, 0, 0);
         }
@@ -385,27 +471,21 @@ public sealed class ShadowPass : IDisposable
         return (viewProj, viewProj * BiasMatrix);
     }
 
-    private static Matrix4x4 CalculatePointLightMatrix(Vector3 position, int face)
+    private static Matrix4x4 CalculatePointLightMatrix(Vector3 position, Vector3 sceneCenter, float radius)
     {
-        var targets = new[]
-        {
-            position + Vector3.UnitX,
-            position - Vector3.UnitX,
-            position + Vector3.UnitY,
-            position - Vector3.UnitY,
-            position + Vector3.UnitZ,
-            position - Vector3.UnitZ
-        };
+        // Look toward scene center from light position
+        var direction = Vector3.Normalize(sceneCenter - position);
+        var target = position + direction;
 
-        var ups = new[]
-        {
-            Vector3.UnitY, Vector3.UnitY,
-            Vector3.UnitZ, -Vector3.UnitZ,
-            Vector3.UnitY, Vector3.UnitY
-        };
+        // Choose up vector that isn't parallel to direction
+        var up = MathF.Abs(direction.Y) < 0.99f ? Vector3.UnitY : Vector3.UnitX;
 
-        var view = Matrix4x4.CreateLookAtLeftHanded(position, targets[face], ups[face]);
-        var proj = Matrix4x4.CreatePerspectiveFieldOfViewLeftHanded(MathF.PI / 2f, 1f, 0.1f, 50f);
+        var view = Matrix4x4.CreateLookAtLeftHanded(position, target, up);
+
+        // Use perspective projection with 90-degree FOV for good coverage
+        var nearPlane = 0.1f;
+        var farPlane = radius * 2f;
+        var proj = Matrix4x4.CreatePerspectiveFieldOfViewLeftHanded(MathF.PI / 2f, 1f, nearPlane, farPlane);
 
         return view * proj;
     }
@@ -504,5 +584,20 @@ public sealed class ShadowPass : IDisposable
             BindGroup.Dispose();
             Buffer.Dispose();
         }
+    }
+
+    private enum LightType
+    {
+        Directional,
+        Point,
+        Spot
+    }
+
+    private struct LightRenderInfo
+    {
+        public Matrix4x4 RenderMatrix;
+        public Vector2 AtlasOffset;
+        public int ShadowIndex;
+        public LightType LightType;
     }
 }

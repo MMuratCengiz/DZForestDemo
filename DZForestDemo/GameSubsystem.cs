@@ -194,14 +194,14 @@ public sealed class GameSystem : ISystem
             new Vector3(1.0f, 0.95f, 0.9f),
             0.6f
         ));
-
+        
         var ambientEntity = _world.Spawn();
         _world.AddComponent(ambientEntity, new AmbientLight(
             new Vector3(0.5f, 0.6f, 0.7f),
             new Vector3(0.25f, 0.2f, 0.15f),
             0.4f
         ));
-
+        
         var pointLight1 = _world.Spawn();
         _world.AddComponent(pointLight1, new Transform(new Vector3(6, 6, 6)));
         _world.AddComponent(pointLight1, new PointLight(
@@ -209,7 +209,7 @@ public sealed class GameSystem : ISystem
             2.5f,
             18.0f
         ));
-
+        
         var pointLight2 = _world.Spawn();
         _world.AddComponent(pointLight2, new Transform(new Vector3(-6, 5, -4)));
         _world.AddComponent(pointLight2, new PointLight(
@@ -217,7 +217,7 @@ public sealed class GameSystem : ISystem
             2.0f,
             15.0f
         ));
-
+        
         var pointLight3 = _world.Spawn();
         _world.AddComponent(pointLight3, new Transform(new Vector3(-5, 4, 6)));
         _world.AddComponent(pointLight3, new PointLight(
@@ -225,7 +225,7 @@ public sealed class GameSystem : ISystem
             1.8f,
             14.0f
         ));
-
+        
         var pointLight4 = _world.Spawn();
         _world.AddComponent(pointLight4, new Transform(new Vector3(5, 3, -5)));
         _world.AddComponent(pointLight4, new PointLight(
@@ -296,16 +296,18 @@ public sealed class GameSystem : ISystem
 
         _shadowAtlas = _shadowPass.CreateShadowAtlas(renderGraph);
 
-        renderGraph.AddPass("Shadows",
+        // Add separate shadow passes for each light (clear pass + one pass per light)
+        _shadowPass.AddPasses(renderGraph, _shadowAtlas, _shadowData, new Vector3(0, 5, 0), 15f);
+
+        // Finalize pass to create the shadow bind group after all shadow rendering is complete
+        renderGraph.AddPass("ShadowFinalize",
             (ref RenderPassSetupContext ctx, ref PassBuilder builder) =>
             {
-                builder.WriteTexture(_shadowAtlas, (uint)ResourceUsageFlagBits.DepthWrite);
+                builder.ReadTexture(_shadowAtlas);
                 builder.HasSideEffects();
             },
             (ref RenderPassExecuteContext ctx) =>
             {
-                _shadowPass.Execute(ref ctx, _shadowAtlas, _shadowData, new Vector3(0, 5, 0), 15f);
-
                 var atlas = ctx.GetTexture(_shadowAtlas);
                 _shadowBindGroup?.Dispose();
                 _shadowBindGroup = _scenePass.CreateShadowBindGroup(atlas);
