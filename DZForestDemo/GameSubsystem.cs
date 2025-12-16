@@ -43,6 +43,7 @@ public sealed class GameSystem : ISystem
     private ShadowPass _shadowPass = null!;
     private RuntimeMeshHandle _smallSphereMesh;
     private RuntimeMeshHandle _sphereMesh;
+    private RenderBatcher _batcher = null!;
 
     private StepTimer _stepTimer = null!;
     private float _totalTime;
@@ -66,13 +67,15 @@ public sealed class GameSystem : ISystem
         );
         _camera.SetAspectRatio(_ctx.Width, _ctx.Height);
 
-        _shadowPass = new ShadowPass(_ctx, _assets, _world);
-        _scenePass = new SceneRenderPass(_ctx, _assets, _world);
+        _batcher = new RenderBatcher(_world);
+        _shadowPass = new ShadowPass(_ctx, _assets, _world, _batcher);
+        _scenePass = new SceneRenderPass(_ctx, _assets, _world, _batcher);
         _uiPass = new UiRenderPass(_ctx, _stepTimer);
         _compositePass = new CompositeRenderPass(_ctx);
         _debugPass = new DebugRenderPass(_ctx);
 
         _uiPass.OnAddCubeClicked += AddCube;
+        _uiPass.OnAdd100CubeClicked += Add100Cubes;
         _materialPalette =
         [
             Materials.Red,
@@ -103,7 +106,7 @@ public sealed class GameSystem : ISystem
 
         if (ev.Type == EventType.KeyDown)
         {
-            var delta = LightMoveSpeed * 0.016f;
+            const float delta = LightMoveSpeed * 0.016f;
             switch (ev.Key.KeyCode)
             {
                 case KeyCode.W: _debugLightPosition.Z -= delta; break;
@@ -128,6 +131,9 @@ public sealed class GameSystem : ISystem
     {
         _stepTimer.Tick();
         _totalTime += 0.016f;
+
+        // Build batches once per frame for all render passes
+        _batcher.BuildBatches();
 
         var renderGraph = _ctx.RenderGraph;
         var swapchainRt = _ctx.SwapchainRenderTarget;
@@ -175,6 +181,7 @@ public sealed class GameSystem : ISystem
         _scenePass.Dispose();
         _shadowPass.Dispose();
         _uiPass.Dispose();
+        _batcher.Dispose();
 
         GC.SuppressFinalize(this);
     }
@@ -376,6 +383,14 @@ public sealed class GameSystem : ISystem
         }
 
         _cubeCount++;
+    }
+
+    private void Add100Cubes()
+    {
+        for (var i = 0; i < 100; i++)
+        {
+            AddCube();
+        }
     }
 
     private Entity SpawnStaticBox(Vector3 position, Vector3 size, RuntimeMeshHandle mesh, StandardMaterial material)

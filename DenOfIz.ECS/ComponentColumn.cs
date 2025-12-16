@@ -23,7 +23,7 @@ public sealed class ComponentColumn<T>(int initialCapacity) : IComponentColumn
     {
     }
 
-    public ComponentId ComponentId { get; } = ComponentRegistry.GetId<T>();
+    public ComponentId ComponentId { get; } = Component<T>.Id;
 
     public int Count
     {

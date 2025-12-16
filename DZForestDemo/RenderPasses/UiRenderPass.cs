@@ -5,11 +5,21 @@ using UIFramework;
 
 namespace DZForestDemo.RenderPasses;
 
-public sealed class UiRenderPass : IDisposable
+public sealed class UiRenderPass(GraphicsContext ctx, StepTimer stepTimer) : IDisposable
 {
-    private readonly GraphicsContext _ctx;
-    private readonly StepTimer _stepTimer;
-    private readonly UiContext _ui;
+    private readonly UiContext _ui = new(new UiContextDesc
+    {
+        LogicalDevice = ctx.LogicalDevice,
+        ResourceTracking = ctx.RenderGraph.ResourceTracking,
+        RenderTargetFormat = ctx.BackBufferFormat,
+        NumFrames = ctx.NumFrames,
+        Width = ctx.Width,
+        Height = ctx.Height,
+        MaxNumElements = 8192,
+        MaxNumTextMeasureCacheElements = 16384,
+        MaxNumFonts = 16
+    });
+
     private int _cubeCount;
     private string _cubeName = "MyCube";
 
@@ -22,25 +32,6 @@ public sealed class UiRenderPass : IDisposable
 
     private readonly string[] _qualityLevels = ["Low", "Medium", "High", "Ultra"];
     private int _selectedQuality = 2;
-
-    public UiRenderPass(GraphicsContext ctx, StepTimer stepTimer)
-    {
-        _ctx = ctx;
-        _stepTimer = stepTimer;
-
-        _ui = new UiContext(new UiContextDesc
-        {
-            LogicalDevice = ctx.LogicalDevice,
-            ResourceTracking = ctx.RenderGraph.ResourceTracking,
-            RenderTargetFormat = ctx.BackBufferFormat,
-            NumFrames = ctx.NumFrames,
-            Width = ctx.Width,
-            Height = ctx.Height,
-            MaxNumElements = 8192,
-            MaxNumTextMeasureCacheElements = 16384,
-            MaxNumFonts = 16
-        });
-    }
 
     public bool ShowWireframe { get; private set; }
 
@@ -63,12 +54,13 @@ public sealed class UiRenderPass : IDisposable
     }
 
     public event Action? OnAddCubeClicked;
+    public event Action? OnAdd100CubeClicked;
 
     public void HandleEvent(Event ev)
     {
         _ui.HandleEvent(ev);
         _ui.RecordEvent(ev);
-        _ui.UpdateScroll((float)_stepTimer.GetDeltaTime());
+        _ui.UpdateScroll((float)stepTimer.GetDeltaTime());
     }
 
     public void HandleResize(uint width, uint height)
@@ -81,13 +73,13 @@ public sealed class UiRenderPass : IDisposable
         return renderGraph.AddExternalPass("UI",
             (ref ExternalPassExecuteContext ctx) =>
             {
-                var deltaTime = (float)_stepTimer.GetDeltaTime();
+                var deltaTime = (float)stepTimer.GetDeltaTime();
                 var frame = _ui.BeginFrame();
 
                 using (frame.Root()
                            .Vertical()
-                           .Padding(24)
-                           .Gap(16)
+                           .Padding(16)
+                           .Gap(12)
                            .AlignChildren(UiAlignX.Left, UiAlignY.Top)
                            .Background(UiColor.Rgba(0, 0, 0, 0))
                            .Open())
@@ -95,23 +87,24 @@ public sealed class UiRenderPass : IDisposable
                     frame.Text("3D Cube Demo", new UiTextStyle
                     {
                         Color = UiColor.White,
-                        FontSize = 28
+                        FontSize = 24
                     });
+
                     using (Ui.Card(_ui, "SettingsCard")
                                .Background(UiColor.Rgba(30, 30, 35, 220))
                                .Border(1, UiColor.Rgb(60, 60, 65))
-                               .Padding(16)
-                               .Gap(12)
-                               .Width(280)
+                               .Padding(12)
+                               .Gap(8)
                                .Open())
                     {
                         frame.Text("Settings", new UiTextStyle
                         {
                             Color = UiColor.White,
-                            FontSize = 18
+                            FontSize = 16
                         });
 
                         Ui.Divider(_ui, UiColor.Rgb(60, 60, 65));
+
                         if (Ui.Checkbox(_ui, "chkWireframe", "Wireframe Mode", ShowWireframe)
                             .LabelColor(UiColor.LightGray)
                             .Show())
@@ -134,12 +127,12 @@ public sealed class UiRenderPass : IDisposable
                             _showStats = !_showStats;
                         }
 
-                        Ui.VerticalSpacer(_ui, 8);
+                        Ui.VerticalSpacer(_ui, 4);
 
                         frame.Text("Render Mode:", new UiTextStyle
                         {
                             Color = UiColor.LightGray,
-                            FontSize = 14
+                            FontSize = 12
                         });
 
                         Ui.Dropdown(_ui, "ddRenderMode", _renderModes)
@@ -150,7 +143,7 @@ public sealed class UiRenderPass : IDisposable
                         frame.Text("Quality:", new UiTextStyle
                         {
                             Color = UiColor.LightGray,
-                            FontSize = 14
+                            FontSize = 12
                         });
 
                         Ui.Dropdown(_ui, "ddQuality", _qualityLevels)
@@ -162,22 +155,22 @@ public sealed class UiRenderPass : IDisposable
                     using (Ui.Card(_ui, "CubeCard")
                                .Background(UiColor.Rgba(30, 30, 35, 220))
                                .Border(1, UiColor.Rgb(60, 60, 65))
-                               .Padding(16)
-                               .Gap(12)
-                               .Width(280)
+                               .Padding(12)
+                               .Gap(8)
                                .Open())
                     {
                         frame.Text("Cube Creator", new UiTextStyle
                         {
                             Color = UiColor.White,
-                            FontSize = 18
+                            FontSize = 16
                         });
 
                         Ui.Divider(_ui, UiColor.Rgb(60, 60, 65));
+
                         frame.Text("Name:", new UiTextStyle
                         {
                             Color = UiColor.LightGray,
-                            FontSize = 14
+                            FontSize = 12
                         });
 
                         Ui.TextField(_ui, "tfCubeName", ref _cubeName)
@@ -185,22 +178,32 @@ public sealed class UiRenderPass : IDisposable
                             .GrowWidth()
                             .Show(ref _cubeName, deltaTime);
 
-                        Ui.VerticalSpacer(_ui, 4);
-                        using (frame.Row("BtnRow").Gap(12).Open())
+                        Ui.VerticalSpacer(_ui, 2);
+
+                        using (frame.Row("BtnRow").Gap(8).Open())
                         {
                             if (Ui.Button(_ui, "AddCubeBtn", "Add Cube")
                                 .Color(UiColor.Rgb(60, 140, 60))
-                                .Padding(12, 8)
+                                .Padding(8, 6)
                                 .Show())
                             {
                                 _cubeCount++;
                                 OnAddCubeClicked?.Invoke();
                             }
 
+                            if (Ui.Button(_ui, "Add100CubesBtn", "+100")
+                                .Color(UiColor.Rgb(60, 140, 60))
+                                .Padding(8, 6)
+                                .Show())
+                            {
+                                _cubeCount += 100;
+                                OnAdd100CubeClicked?.Invoke();
+                            }
+
                             frame.Text($"Count: {_cubeCount}", new UiTextStyle
                             {
                                 Color = UiColor.Gray,
-                                FontSize = 14
+                                FontSize = 12
                             });
                         }
                     }
@@ -208,22 +211,21 @@ public sealed class UiRenderPass : IDisposable
                     using (Ui.Card(_ui, "NotesCard")
                                .Background(UiColor.Rgba(30, 30, 35, 220))
                                .Border(1, UiColor.Rgb(60, 60, 65))
-                               .Padding(16)
-                               .Gap(8)
-                               .Width(280)
+                               .Padding(12)
+                               .Gap(6)
                                .Open())
                     {
                         frame.Text("Notes", new UiTextStyle
                         {
                             Color = UiColor.White,
-                            FontSize = 18
+                            FontSize = 16
                         });
 
                         Ui.TextField(_ui, "tfNotes", ref _notes)
                             .Multiline()
                             .Placeholder("Add notes here...")
                             .GrowWidth()
-                            .Height(80)
+                            .Height(UiSizing.Fit())
                             .Show(ref _notes, deltaTime);
                     }
 
@@ -232,24 +234,24 @@ public sealed class UiRenderPass : IDisposable
                         using (Ui.Card(_ui, "StatsCard")
                                    .Background(UiColor.Rgba(20, 60, 20, 200))
                                    .Border(1, UiColor.Rgb(40, 100, 40))
-                                   .Padding(12)
-                                   .Gap(4)
+                                   .Padding(8)
+                                   .Gap(2)
                                    .Open())
                         {
                             frame.Text($"FPS: {1.0 / deltaTime:F0}", new UiTextStyle
                             {
                                 Color = UiColor.Rgb(150, 255, 150),
-                                FontSize = 14
+                                FontSize = 12
                             });
                             frame.Text($"Wireframe: {(ShowWireframe ? "ON" : "OFF")}", new UiTextStyle
                             {
                                 Color = UiColor.Rgb(150, 255, 150),
-                                FontSize = 14
+                                FontSize = 12
                             });
                             frame.Text($"Shadows: {(EnableShadows ? "ON" : "OFF")}", new UiTextStyle
                             {
                                 Color = UiColor.Rgb(150, 255, 150),
-                                FontSize = 14
+                                FontSize = 12
                             });
                         }
                     }
@@ -266,9 +268,9 @@ public sealed class UiRenderPass : IDisposable
             },
             new TransientTextureDesc
             {
-                Width = _ctx.Width,
-                Height = _ctx.Height,
-                Format = _ctx.BackBufferFormat,
+                Width = ctx.Width,
+                Height = ctx.Height,
+                Format = ctx.BackBufferFormat,
                 Usages = (uint)(ResourceUsageFlagBits.ShaderResource | ResourceUsageFlagBits.CopySrc),
                 Descriptor = (uint)ResourceDescriptorFlagBits.Texture,
                 DebugName = "UIRT"

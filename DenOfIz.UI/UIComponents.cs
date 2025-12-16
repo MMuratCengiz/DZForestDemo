@@ -692,11 +692,11 @@ public ref struct UiCheckbox
         _boxHoverColor = UiColor.LightGray;
         _checkColor = UiColor.Rgb(100, 149, 237);
         _labelColor = UiColor.White;
-        _fontSize = 14;
-        _boxSize = 20;
-        _cornerRadius = 4;
-        _gap = 8;
-        _borderWidth = 2;
+        _fontSize = 12;
+        _boxSize = 14;
+        _cornerRadius = 3;
+        _gap = 6;
+        _borderWidth = 1;
         _borderColor = UiColor.Gray;
     }
 
@@ -816,12 +816,12 @@ public ref struct UiCheckbox
             {
                 if (_isChecked)
                 {
-                    var checkSize = _boxSize - 8;
+                    var checkSize = _boxSize * 0.6f;
                     var checkDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("ChkMark", Id) };
                     checkDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(checkSize);
                     checkDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(checkSize);
                     checkDecl.BackgroundColor = _checkColor.ToClayColor();
-                    checkDecl.BorderRadius = ClayBorderRadius.CreateUniform(_cornerRadius - 2);
+                    checkDecl.BorderRadius = ClayBorderRadius.CreateUniform(_cornerRadius * 0.5f);
                     _context.Clay.OpenElement(checkDecl);
                     _context.Clay.CloseElement();
                 }

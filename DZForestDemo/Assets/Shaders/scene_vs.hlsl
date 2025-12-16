@@ -1,4 +1,4 @@
-// Scene vertex shader - transforms geometry to world/clip space
+// Scene vertex shader - transforms geometry to world/clip space with GPU instancing
 
 #include "common/vertex_input.hlsl"
 
@@ -8,6 +8,18 @@ struct PSInput
     float3 WorldNormal : NORMAL;
     float3 WorldPos : TEXCOORD1;
     float2 TexCoord : TEXCOORD0;
+    nointerpolation uint InstanceID : TEXCOORD2;
+};
+
+// Per-instance data stored in a structured buffer
+struct InstanceData
+{
+    float4x4 Model;
+    float4 BaseColor;
+    float Metallic;
+    float Roughness;
+    float AmbientOcclusion;
+    float Padding;
 };
 
 cbuffer FrameConstants : register(b0, space0)
@@ -17,18 +29,17 @@ cbuffer FrameConstants : register(b0, space0)
     float Time;
 };
 
-cbuffer DrawConstants : register(b0, space2)
-{
-    float4x4 Model;
-};
+StructuredBuffer<InstanceData> Instances : register(t0, space2);
 
-PSInput VSMain(VSInput input)
+PSInput VSMain(VSInput input, uint instanceID : SV_InstanceID)
 {
     PSInput output;
-    float4 worldPos = mul(float4(input.Position, 1.0), Model);
+    InstanceData inst = Instances[instanceID];
+    float4 worldPos = mul(float4(input.Position, 1.0), inst.Model);
     output.Position = mul(worldPos, ViewProjection);
     output.WorldPos = worldPos.xyz;
-    output.WorldNormal = mul(input.Normal, (float3x3)Model);
+    output.WorldNormal = mul(input.Normal, (float3x3)inst.Model);
     output.TexCoord = input.TexCoord;
+    output.InstanceID = instanceID;
     return output;
 }

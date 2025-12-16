@@ -64,7 +64,7 @@ public sealed class PhysicsSyncSystem : ISystem
 
 public sealed class PhysicsCleanupSystem : ISystem
 {
-    private readonly List<Entity> _entitiesToRemove = new();
+    private readonly List<Entity> _entitiesToRemove = [];
     private PhysicsContext _physics = null!;
     private World _world = null!;
 

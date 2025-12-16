@@ -12,6 +12,14 @@ public readonly struct ComponentId : IEquatable<ComponentId>, IComparable<Compon
         Id = id;
     }
 
+    public bool IsValid
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => Id >= 0;
+    }
+
+    public static ComponentId Invalid => new(-1);
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(ComponentId other)
     {
@@ -71,39 +79,54 @@ public readonly struct ComponentId : IEquatable<ComponentId>, IComparable<Compon
     }
 }
 
+/// <summary>
+/// Arch ECS-style static component type cache.
+/// Accessing Component&lt;T&gt;.Id is a direct field read - no dictionary lookup!
+/// </summary>
+public static class Component<T> where T : struct
+{
+    /// <summary>
+    /// The unique ID for this component type. Cached statically per-type.
+    /// </summary>
+    public static readonly ComponentId Id = ComponentRegistry.Register<T>();
+}
+
 public static class ComponentRegistry
 {
     private static readonly Dictionary<Type, ComponentId> TypeToId = new();
     private static readonly List<ComponentInfo> Components = [];
+    private static readonly object Lock = new();
     private static int _nextId;
+
+    /// <summary>
+    /// Maximum component ID currently registered. Used for sizing sparse arrays.
+    /// </summary>
+    public static int MaxId
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _nextId;
+    }
 
     public static int Count => Components.Count;
 
     public static ComponentId Register<T>() where T : struct
     {
         var type = typeof(T);
-        if (TypeToId.TryGetValue(type, out var existing))
+
+        lock (Lock)
         {
-            return existing;
+            if (TypeToId.TryGetValue(type, out var existing))
+            {
+                return existing;
+            }
+
+            var id = new ComponentId(_nextId++);
+            TypeToId[type] = id;
+            Components.Add(new ComponentInfo(type, Unsafe.SizeOf<T>()));
+            return id;
         }
-
-        var id = new ComponentId(_nextId++);
-        TypeToId[type] = id;
-        Components.Add(new ComponentInfo(type, Unsafe.SizeOf<T>()));
-        return id;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ComponentId GetId<T>() where T : struct
-    {
-        return TypeToId.TryGetValue(typeof(T), out var id) ? id : Register<T>();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetId<T>(out ComponentId id) where T : struct
-    {
-        return TypeToId.TryGetValue(typeof(T), out id);
-    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ComponentInfo GetInfo(ComponentId id)

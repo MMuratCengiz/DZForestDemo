@@ -2,22 +2,13 @@ using System.Numerics;
 
 namespace DZForestDemo;
 
-public struct StandardMaterial
+public struct StandardMaterial()
 {
-    public Vector4 BaseColor;
-    public float Metallic;
-    public float Roughness;
-    public float AmbientOcclusion;
-    private float _padding;
-
-    public StandardMaterial()
-    {
-        BaseColor = new Vector4(0.8f, 0.8f, 0.8f, 1.0f);
-        Metallic = 0.0f;
-        Roughness = 0.5f;
-        AmbientOcclusion = 1.0f;
-        _padding = 0;
-    }
+    public Vector4 BaseColor = new(0.8f, 0.8f, 0.8f, 1.0f);
+    public float Metallic = 0.0f;
+    public float Roughness = 0.5f;
+    public float AmbientOcclusion = 1.0f;
+    private float _padding = 0;
 
     public static StandardMaterial FromColor(Vector3 color)
     {

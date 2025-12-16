@@ -8,7 +8,7 @@ public struct EntityLocation(ArchetypeId archetypeId, int row, uint generation)
 {
     public ArchetypeId ArchetypeId = archetypeId;
     public int Row = row;
-    public uint Generation = generation;
+    public readonly uint Generation = generation;
 
     public bool IsValid
     {
@@ -27,9 +27,9 @@ public sealed class EntityStore
 
     public EntityStore()
     {
-        _entityLocations = new List<EntityLocation>();
+        _entityLocations = [];
         _freeIndices = new Queue<uint>();
-        _archetypes = new List<Archetype>();
+        _archetypes = [];
         _signatureToArchetype = new Dictionary<ArchetypeSignature, ArchetypeId>();
 
         var emptySignature = new ArchetypeSignature(Array.Empty<ComponentId>());
@@ -136,7 +136,7 @@ public sealed class EntityStore
             return;
         }
 
-        var componentId = ComponentRegistry.GetId<T>();
+        var componentId = Component<T>.Id;
         var locations = CollectionsMarshal.AsSpan(_entityLocations);
         ref var location = ref locations[(int)entity.Index];
         var currentArchetype = _archetypes[location.ArchetypeId.Id];
@@ -164,7 +164,7 @@ public sealed class EntityStore
             return;
         }
 
-        var componentId = ComponentRegistry.GetId<T>();
+        var componentId = Component<T>.Id;
         var locations = CollectionsMarshal.AsSpan(_entityLocations);
         ref var location = ref locations[(int)entity.Index];
         var currentArchetype = _archetypes[location.ArchetypeId.Id];

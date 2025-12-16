@@ -32,11 +32,11 @@ public struct CollisionEvent
 
 public class PhysicsContext : IContext, IDisposable
 {
-    private readonly List<CollisionEvent> _collisionEvents = new();
+    private readonly List<CollisionEvent> _collisionEvents = [];
     private readonly Dictionary<BodyHandle, Entity> _dynamicToEntity = new();
     private readonly Dictionary<Entity, BodyHandle> _entityToDynamic = new();
     private readonly Dictionary<Entity, StaticHandle> _entityToStatic = new();
-    private readonly HashSet<Entity> _pendingRemoval = new();
+    private readonly HashSet<Entity> _pendingRemoval = [];
     private readonly Dictionary<StaticHandle, Entity> _staticToEntity = new();
     private readonly ThreadDispatcher _threadDispatcher;
 
@@ -281,18 +281,10 @@ public class PhysicsContext : IContext, IDisposable
     }
 }
 
-internal struct RayHitHandler : IRayHitHandler
+internal struct RayHitHandler(PhysicsContext context) : IRayHitHandler
 {
-    private readonly PhysicsContext _context;
-    public bool Hit;
-    public RaycastHit Result;
-
-    public RayHitHandler(PhysicsContext context)
-    {
-        _context = context;
-        Hit = false;
-        Result = default;
-    }
+    public bool Hit = false;
+    public RaycastHit Result = default;
 
     public bool AllowTest(CollidableReference collidable)
     {
@@ -312,7 +304,7 @@ internal struct RayHitHandler : IRayHitHandler
             maximumT = t;
             Hit = true;
 
-            var entity = _context.GetEntityFromCollidable(collidable);
+            var entity = context.GetEntityFromCollidable(collidable);
             Result = new RaycastHit
             {
                 Entity = entity ?? default,
@@ -325,17 +317,8 @@ internal struct RayHitHandler : IRayHitHandler
     }
 }
 
-internal struct RayHitAllHandler : IRayHitHandler
+internal struct RayHitAllHandler(PhysicsContext context, List<RaycastHit> hits) : IRayHitHandler
 {
-    private readonly PhysicsContext _context;
-    private readonly List<RaycastHit> _hits;
-
-    public RayHitAllHandler(PhysicsContext context, List<RaycastHit> hits)
-    {
-        _context = context;
-        _hits = hits;
-    }
-
     public bool AllowTest(CollidableReference collidable)
     {
         return true;
@@ -349,8 +332,8 @@ internal struct RayHitAllHandler : IRayHitHandler
     public void OnRayHit(in RayData ray, ref float maximumT, float t, in Vector3 normal, CollidableReference collidable,
         int childIndex)
     {
-        var entity = _context.GetEntityFromCollidable(collidable);
-        _hits.Add(new RaycastHit
+        var entity = context.GetEntityFromCollidable(collidable);
+        hits.Add(new RaycastHit
         {
             Entity = entity ?? default,
             Point = ray.Origin + ray.Direction * t,
@@ -361,14 +344,9 @@ internal struct RayHitAllHandler : IRayHitHandler
     }
 }
 
-public struct NarrowPhaseCallbacks : INarrowPhaseCallbacks
+public struct NarrowPhaseCallbacks(PhysicsContext context) : INarrowPhaseCallbacks
 {
-    private PhysicsContext _context;
-
-    public NarrowPhaseCallbacks(PhysicsContext context)
-    {
-        _context = context;
-    }
+    private PhysicsContext _context = context;
 
     public void Initialize(Simulation simulation)
     {
@@ -405,24 +383,16 @@ public struct NarrowPhaseCallbacks : INarrowPhaseCallbacks
     }
 }
 
-public struct PoseIntegratorCallbacks : IPoseIntegratorCallbacks
+public struct PoseIntegratorCallbacks(Vector3 gravity, float linearDamping = 0.03f, float angularDamping = 0.03f)
+    : IPoseIntegratorCallbacks
 {
-    private readonly Vector3 _gravity;
-    private Vector3Wide _gravityWideDt;
-    private Vector<float> _linearDampingDt;
-    private Vector<float> _angularDampingDt;
+    private Vector3Wide _gravityWideDt = default;
+    private Vector<float> _linearDampingDt = new(1f - linearDamping);
+    private Vector<float> _angularDampingDt = new(1f - angularDamping);
 
     public readonly AngularIntegrationMode AngularIntegrationMode => AngularIntegrationMode.Nonconserving;
     public readonly bool AllowSubstepsForUnconstrainedBodies => false;
     public readonly bool IntegrateVelocityForKinematics => false;
-
-    public PoseIntegratorCallbacks(Vector3 gravity, float linearDamping = 0.03f, float angularDamping = 0.03f)
-    {
-        _gravity = gravity;
-        _gravityWideDt = default;
-        _linearDampingDt = new Vector<float>(1f - linearDamping);
-        _angularDampingDt = new Vector<float>(1f - angularDamping);
-    }
 
     public void Initialize(Simulation simulation)
     {
@@ -430,7 +400,7 @@ public struct PoseIntegratorCallbacks : IPoseIntegratorCallbacks
 
     public void PrepareForIntegration(float dt)
     {
-        _gravityWideDt = Vector3Wide.Broadcast(_gravity * dt);
+        _gravityWideDt = Vector3Wide.Broadcast(gravity * dt);
         _linearDampingDt = new Vector<float>(MathF.Pow(0.97f, dt));
         _angularDampingDt = new Vector<float>(MathF.Pow(0.97f, dt));
     }

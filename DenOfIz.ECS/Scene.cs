@@ -70,8 +70,8 @@ public sealed class Scene
         Id = id;
         Name = name;
         _store = store;
-        _entities = new List<Entity>();
-        _entityIndices = new HashSet<uint>();
+        _entities = [];
+        _entityIndices = [];
         IsLoaded = false;
     }
 
@@ -190,7 +190,7 @@ public sealed class Scene
 public sealed class SceneManager(EntityStore store)
 {
     private readonly Dictionary<string, SceneId> _nameToId = new();
-    private readonly List<Scene> _scenes = new();
+    private readonly List<Scene> _scenes = [];
     private uint _nextId = 1;
 
     public Scene? ActiveScene

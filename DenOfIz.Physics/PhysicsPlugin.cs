@@ -3,22 +3,13 @@ using ECS;
 
 namespace Physics;
 
-public class PhysicsPlugin
+public class PhysicsPlugin(Vector3? gravity = null, int threadCount = -1, bool syncVelocity = false)
 {
-    private readonly Vector3 _gravity;
-    private readonly bool _syncVelocity;
-    private readonly int _threadCount;
-
-    public PhysicsPlugin(Vector3? gravity = null, int threadCount = -1, bool syncVelocity = false)
-    {
-        _gravity = gravity ?? new Vector3(0, -9.81f, 0);
-        _threadCount = threadCount;
-        _syncVelocity = syncVelocity;
-    }
+    private readonly Vector3 _gravity = gravity ?? new Vector3(0, -9.81f, 0);
 
     public void Build(World world)
     {
-        var context = new PhysicsContext(_threadCount)
+        var context = new PhysicsContext(threadCount)
         {
             Gravity = _gravity
         };
@@ -33,7 +24,7 @@ public class PhysicsPlugin
         world.AddSystem(new PhysicsSyncSystem(), Schedule.FixedUpdate)
             .After<PhysicsStepSystem>();
 
-        if (_syncVelocity)
+        if (syncVelocity)
         {
             world.AddSystem(new PhysicsVelocitySyncSystem(), Schedule.FixedUpdate)
                 .After<PhysicsSyncSystem>();

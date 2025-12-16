@@ -4,24 +4,16 @@ using ECS;
 
 namespace RuntimeAssets;
 
-public sealed class AssetContext : IContext, IDisposable
+public sealed class AssetContext(LogicalDevice device) : IContext, IDisposable
 {
-    private readonly LogicalDevice _device;
     private readonly GeometryBuilder _geometryBuilder = new();
     private readonly GltfLoader _gltfLoader = new();
-    private readonly RuntimeMeshStore _meshStore;
-    private readonly RuntimeTextureStore _textureStore;
+    private readonly RuntimeMeshStore _meshStore = new(device);
+    private readonly RuntimeTextureStore _textureStore = new(device);
 
     private BatchResourceCopy? _batchCopy;
     private bool _disposed;
     private bool _uploading;
-
-    public AssetContext(LogicalDevice device)
-    {
-        _device = device;
-        _meshStore = new RuntimeMeshStore(device);
-        _textureStore = new RuntimeTextureStore(device);
-    }
 
     public void Dispose()
     {
@@ -46,7 +38,7 @@ public sealed class AssetContext : IContext, IDisposable
 
         _batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
         {
-            Device = _device,
+            Device = device,
             IssueBarriers = false
         });
         _batchCopy.Begin();

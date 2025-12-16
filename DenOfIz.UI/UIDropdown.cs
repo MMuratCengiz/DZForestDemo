@@ -216,7 +216,8 @@ public ref struct UiDropdown
         }
 
         var changed = false;
-        var interaction = _context.GetInteraction(Id);
+        var headerId = _context.StringCache.GetId("DDHeader", Id);
+        var interaction = _context.GetInteraction(headerId);
 
         var containerDecl = new ClayElementDeclaration { Id = Id };
         containerDecl.Layout.LayoutDirection = ClayLayoutDirection.TopToBottom;
@@ -228,7 +229,7 @@ public ref struct UiDropdown
 
             if (_state.IsOpen)
             {
-                changed = RenderDropdownList();
+                changed = RenderDropdownList(headerId);
             }
         }
         _context.Clay.CloseElement();
@@ -334,16 +335,14 @@ public ref struct UiDropdown
         _context.Clay.CloseElement();
     }
 
-    private bool RenderDropdownList()
+    private bool RenderDropdownList(uint headerId)
     {
         var changed = false;
-        var totalHeight = _items.Length * _itemHeight;
-        var listHeight = Math.Min(totalHeight, _maxDropdownHeight);
 
         var listDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("DDList", Id) };
         listDecl.Layout.LayoutDirection = ClayLayoutDirection.TopToBottom;
         listDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
-        listDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(listHeight);
+        listDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(0, _maxDropdownHeight);
         listDecl.BackgroundColor = _dropdownBgColor.ToClayColor();
         listDecl.BorderRadius = new ClayBorderRadius
         {
@@ -351,10 +350,15 @@ public ref struct UiDropdown
             BottomRight = _style.CornerRadius
         };
 
-        if (totalHeight > _maxDropdownHeight)
+        // Make this a floating element attached to the header
+        listDecl.Floating = new ClayFloatingDesc
         {
-            listDecl.Scroll.Vertical = true;
-        }
+            AttachTo = ClayFloatingAttachTo.ElementWithId,
+            ParentId = headerId,
+            ParentAttachPoint = ClayFloatingAttachPoint.LeftBottom,
+            ElementAttachPoint = ClayFloatingAttachPoint.LeftTop,
+            ZIndex = 1000
+        };
 
         if (_style.BorderWidth > 0)
         {
@@ -369,6 +373,8 @@ public ref struct UiDropdown
                 Color = _style.FocusedBorderColor.ToClayColor()
             };
         }
+
+        listDecl.Scroll.Vertical = true;
 
         _context.Clay.OpenElement(listDecl);
         {
@@ -400,14 +406,8 @@ public ref struct UiDropdown
         var itemDecl = new ClayElementDeclaration { Id = itemId };
         itemDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
         itemDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
-        itemDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(_itemHeight);
-        itemDecl.Layout.Padding = new ClayPadding
-        {
-            Left = (ushort)_style.Padding.Left,
-            Right = (ushort)_style.Padding.Right,
-            Top = 0,
-            Bottom = 0
-        };
+        itemDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(0, float.MaxValue);
+        itemDecl.Layout.Padding = _style.Padding.ToClayPadding();
         itemDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
         itemDecl.BackgroundColor = bgColor.ToClayColor();
 

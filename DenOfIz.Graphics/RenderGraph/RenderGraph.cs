@@ -11,8 +11,8 @@ public struct RenderGraphDesc
     public LogicalDevice LogicalDevice;
     public CommandQueue CommandQueue;
     public uint NumFrames = 3;
-    public uint MaxPasses = 64;
-    public uint MaxResources = 256;
+    public readonly uint MaxPasses = 64;
+    public readonly uint MaxResources = 256;
 
     public RenderGraphDesc()
     {

@@ -4,28 +4,20 @@ using Graphics.RenderGraph;
 
 namespace DZForestDemo.RenderPasses;
 
-public sealed class DebugRenderPass : IDisposable
+public sealed class DebugRenderPass(GraphicsContext ctx) : IDisposable
 {
-    private readonly GraphicsContext _ctx;
-    private readonly FrameDebugRenderer _debugRenderer;
-    private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments;
+    private readonly FrameDebugRenderer _debugRenderer = new(new FrameDebugRendererDesc
+    {
+        Enabled = true,
+        LogicalDevice = ctx.LogicalDevice,
+        ScreenWidth = ctx.Width,
+        ScreenHeight = ctx.Height,
+        FontSize = 24,
+        TextColor = new Float4 { X = 1.0f, Y = 1.0f, Z = 1.0f, W = 1.0f }
+    });
+    private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments = new(1);
 
     private bool _disposed;
-
-    public DebugRenderPass(GraphicsContext ctx)
-    {
-        _ctx = ctx;
-        _debugRenderer = new FrameDebugRenderer(new FrameDebugRendererDesc
-        {
-            Enabled = true,
-            LogicalDevice = ctx.LogicalDevice,
-            ScreenWidth = ctx.Width,
-            ScreenHeight = ctx.Height,
-            FontSize = 24,
-            TextColor = new Float4 { X = 1.0f, Y = 1.0f, Z = 1.0f, W = 1.0f }
-        });
-        _rtAttachments = new PinnedArray<RenderingAttachmentDesc>(1);
-    }
 
     public void Dispose()
     {
@@ -51,15 +43,15 @@ public sealed class DebugRenderPass : IDisposable
     {
         var debugRt = renderGraph.CreateTransientTexture(new TransientTextureDesc
         {
-            Width = _ctx.Width,
-            Height = _ctx.Height,
-            Format = _ctx.BackBufferFormat,
+            Width = ctx.Width,
+            Height = ctx.Height,
+            Format = ctx.BackBufferFormat,
             Usages = (uint)(ResourceUsageFlagBits.RenderTarget | ResourceUsageFlagBits.ShaderResource),
             Descriptor = (uint)(ResourceDescriptorFlagBits.RenderTarget | ResourceDescriptorFlagBits.Texture),
             DebugName = "DebugRT"
         });
 
-        var viewport = _ctx.SwapChain.GetViewport();
+        var viewport = ctx.SwapChain.GetViewport();
 
         renderGraph.AddPass("Debug",
             (ref RenderPassSetupContext ctx, ref PassBuilder builder) =>

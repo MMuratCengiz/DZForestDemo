@@ -46,7 +46,7 @@ public sealed class UiContext : IDisposable
     internal bool MouseJustReleased { get; private set; }
     internal bool MousePressed { get; private set; }
     public uint FocusedTextFieldId { get; internal set; }
-    internal List<Event> FrameEvents { get; } = new();
+    internal List<Event> FrameEvents { get; } = [];
 
     public void Dispose()
     {

@@ -13,7 +13,9 @@
       "Bash(wc:*)",
       "Bash(dotnet build:*)",
       "WebFetch(domain:rastertek.com)",
-      "WebFetch(domain:www.ogldev.org)"
+      "WebFetch(domain:www.ogldev.org)",
+      "Bash(findstr:*)",
+      "WebFetch(domain:raw.githubusercontent.com)"
     ]
   }
 }

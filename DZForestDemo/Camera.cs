@@ -3,20 +3,14 @@ using DenOfIz;
 
 namespace DZForestDemo;
 
-public class Camera
+public class Camera(Vector3 position, Vector3 target)
 {
     private bool _isDragging;
     private int _lastMouseX;
     private int _lastMouseY;
 
-    public Camera(Vector3 position, Vector3 target)
-    {
-        Position = position;
-        Target = target;
-    }
-
-    public Vector3 Position { get; set; }
-    public Vector3 Target { get; set; }
+    public Vector3 Position { get; set; } = position;
+    public Vector3 Target { get; set; } = target;
     public Vector3 Up { get; set; } = Vector3.UnitY;
 
     public float FieldOfView { get; set; } = MathF.PI / 4f;

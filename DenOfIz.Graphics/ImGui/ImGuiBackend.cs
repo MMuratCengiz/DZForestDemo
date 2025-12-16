@@ -631,7 +631,7 @@ float4 main(PSInput input) : SV_TARGET
         }
 
         using var textureArrayPinned = new PinnedArray<ulong>(textureHandles);
-        var textureArray = new TextureResourceArray
+        var textureArray = new TextureArray
         {
             Elements = textureArrayPinned.Pointer,
             NumElements = _desc.MaxTextures

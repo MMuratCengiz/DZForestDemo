@@ -50,9 +50,21 @@ public struct WidgetStyle
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly UiColor GetBackgroundColor(bool isHovered, bool isPressed, bool isDisabled)
     {
-        if (isDisabled) return DisabledColor;
-        if (isPressed) return PressedColor;
-        if (isHovered) return HoverColor;
+        if (isDisabled)
+        {
+            return DisabledColor;
+        }
+
+        if (isPressed)
+        {
+            return PressedColor;
+        }
+
+        if (isHovered)
+        {
+            return HoverColor;
+        }
+
         return BackgroundColor;
     }
 
@@ -63,33 +75,18 @@ public struct WidgetStyle
     }
 }
 
-public ref struct WidgetBuilder
+[method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+public ref struct WidgetBuilder(UiContext ctx, uint id)
 {
-    private readonly UiContext _context;
-    private ClayElementDeclaration _decl;
-    private WidgetStyle _style;
-    private UiSizing _width;
-    private UiSizing _height;
-    private UiDirection _direction;
-    private float _gap;
-    private UiAlignX _alignX;
-    private UiAlignY _alignY;
-    private bool _isDisabled;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public WidgetBuilder(UiContext ctx, uint id)
-    {
-        _context = ctx;
-        _decl = new ClayElementDeclaration { Id = id };
-        _style = WidgetStyle.Default;
-        _width = UiSizing.Fit();
-        _height = UiSizing.Fit();
-        _direction = UiDirection.Vertical;
-        _gap = 0;
-        _alignX = UiAlignX.Left;
-        _alignY = UiAlignY.Top;
-        _isDisabled = false;
-    }
+    private ClayElementDeclaration _decl = new() { Id = id };
+    private WidgetStyle _style = WidgetStyle.Default;
+    private UiSizing _width = UiSizing.Fit();
+    private UiSizing _height = UiSizing.Fit();
+    private UiDirection _direction = UiDirection.Vertical;
+    private float _gap = 0;
+    private UiAlignX _alignX = UiAlignX.Left;
+    private UiAlignY _alignY = UiAlignY.Top;
+    private bool _isDisabled = false;
 
     public uint Id => _decl.Id;
 
@@ -287,21 +284,29 @@ public ref struct WidgetBuilder
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiInteraction GetInteraction()
     {
-        if (_isDisabled) return UiInteraction.None;
-        return _context.GetInteraction(Id);
+        if (_isDisabled)
+        {
+            return UiInteraction.None;
+        }
+
+        return ctx.GetInteraction(Id);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool WasClicked()
     {
-        if (_isDisabled) return false;
+        if (_isDisabled)
+        {
+            return false;
+        }
+
         return GetInteraction().WasClicked;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ClayElementDeclaration Build(bool isFocused = false)
     {
-        var interaction = _isDisabled ? UiInteraction.None : _context.GetInteraction(Id);
+        var interaction = _isDisabled ? UiInteraction.None : ctx.GetInteraction(Id);
         var bgColor = _style.GetBackgroundColor(interaction.IsHovered, interaction.IsPressed, _isDisabled);
         var borderColor = _style.GetBorderColor(isFocused);
 
@@ -343,8 +348,8 @@ public ref struct WidgetBuilder
     public UiElementScope Open(bool isFocused = false)
     {
         var decl = Build(isFocused);
-        _context.Clay.OpenElement(decl);
-        return new UiElementScope(_context);
+        ctx.Clay.OpenElement(decl);
+        return new UiElementScope(ctx);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -355,7 +360,7 @@ public ref struct WidgetBuilder
             TextColor = (_isDisabled ? _style.DisabledColor : _style.TextColor).ToClayColor(),
             FontSize = _style.FontSize
         };
-        _context.Clay.Text(StringView.Intern(text), desc);
+        ctx.Clay.Text(StringView.Intern(text), desc);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -366,11 +371,11 @@ public ref struct WidgetBuilder
             TextColor = color.ToClayColor(),
             FontSize = _style.FontSize
         };
-        _context.Clay.Text(StringView.Intern(text), desc);
+        ctx.Clay.Text(StringView.Intern(text), desc);
     }
 
     public WidgetStyle CurrentStyle => _style;
-    public UiContext Context => _context;
+    public UiContext Context => ctx;
 }
 
 public static class WidgetBuilderExtensions

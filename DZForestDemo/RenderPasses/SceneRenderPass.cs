@@ -14,7 +14,7 @@ namespace DZForestDemo.RenderPasses;
 
 public sealed class SceneRenderPass : IDisposable
 {
-    private const int MaxDrawsPerFrame = 512;
+    private const int MaxInstancesPerFrame = 4096;
     private const int MaxLights = 8;
     private const int MaxShadowLights = 4;
 
@@ -22,22 +22,11 @@ public sealed class SceneRenderPass : IDisposable
     private const uint LightTypePoint = 1;
     private const uint LightTypeSpot = 2;
 
-    private static readonly MaterialConstants DefaultMaterial = new()
-    {
-        BaseColor = new Vector4(0.7f, 0.7f, 0.7f, 1.0f),
-        Metallic = 0.0f,
-        Roughness = 0.5f,
-        AmbientOcclusion = 1.0f
-    };
 
     private readonly AssetContext _assets;
-
+    private readonly RenderBatcher _batcher;
     private readonly GraphicsContext _ctx;
-    private readonly ResourceBindGroup[] _drawBindGroups;
 
-    private readonly RingBuffer _drawConstantsRingBuffer;
-
-    // Per-frame buffers to avoid race conditions with GPU
     private readonly Buffer[] _frameConstantsBuffers;
     private readonly ResourceBindGroup[] _frameBindGroups;
     private readonly IntPtr[] _frameBufferMappedPtrs;
@@ -46,10 +35,10 @@ public sealed class SceneRenderPass : IDisposable
     private readonly ResourceBindGroup[] _lightBindGroups;
     private readonly IntPtr[] _lightBufferMappedPtrs;
 
-    private readonly InputLayout _inputLayout;
-    private readonly ResourceBindGroup[] _materialBindGroups;
+    // Per-batch instance buffers (one per unique mesh, per frame)
+    private readonly Dictionary<RuntimeMeshHandle, BatchInstanceData>[] _perFrameBatchData;
 
-    private readonly RingBuffer _materialConstantsRingBuffer;
+    private readonly InputLayout _inputLayout;
     private readonly Pipeline _pipeline;
     private readonly RootSignature _rootSignature;
     private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments;
@@ -59,11 +48,12 @@ public sealed class SceneRenderPass : IDisposable
 
     private bool _disposed;
 
-    public SceneRenderPass(GraphicsContext ctx, AssetContext assets, World world)
+    public SceneRenderPass(GraphicsContext ctx, AssetContext assets, World world, RenderBatcher batcher)
     {
         _ctx = ctx;
         _assets = assets;
         _world = world;
+        _batcher = batcher;
 
         var logicalDevice = ctx.LogicalDevice;
 
@@ -81,6 +71,8 @@ public sealed class SceneRenderPass : IDisposable
         _lightConstantsBuffers = new Buffer[numFrames];
         _lightBindGroups = new ResourceBindGroup[numFrames];
         _lightBufferMappedPtrs = new IntPtr[numFrames];
+
+        _perFrameBatchData = new Dictionary<RuntimeMeshHandle, BatchInstanceData>[numFrames];
 
         for (var i = 0; i < numFrames; i++)
         {
@@ -119,62 +111,8 @@ public sealed class SceneRenderPass : IDisposable
             _lightBindGroups[i].BeginUpdate();
             _lightBindGroups[i].Cbv(0, _lightConstantsBuffers[i]);
             _lightBindGroups[i].EndUpdate();
-        }
 
-        _drawConstantsRingBuffer = new RingBuffer(new RingBufferDesc
-        {
-            LogicalDevice = logicalDevice,
-            DataNumBytes = (nuint)Unsafe.SizeOf<DrawConstants>(),
-            NumEntries = MaxDrawsPerFrame,
-            MaxChunkNumBytes = 65536
-        });
-
-        _drawBindGroups = new ResourceBindGroup[MaxDrawsPerFrame];
-        for (var i = 0; i < MaxDrawsPerFrame; i++)
-        {
-            var bufferView = _drawConstantsRingBuffer.GetBufferView((nuint)i);
-            var bindGroup = logicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
-            {
-                RootSignature = _rootSignature,
-                RegisterSpace = 2
-            });
-            bindGroup.BeginUpdate();
-            bindGroup.CbvWithDesc(new BindBufferDesc
-            {
-                Binding = 0,
-                Resource = bufferView.Buffer,
-                ResourceOffset = bufferView.Offset
-            });
-            bindGroup.EndUpdate();
-            _drawBindGroups[i] = bindGroup;
-        }
-
-        _materialConstantsRingBuffer = new RingBuffer(new RingBufferDesc
-        {
-            LogicalDevice = logicalDevice,
-            DataNumBytes = (nuint)Unsafe.SizeOf<MaterialConstants>(),
-            NumEntries = MaxDrawsPerFrame,
-            MaxChunkNumBytes = 65536
-        });
-
-        _materialBindGroups = new ResourceBindGroup[MaxDrawsPerFrame];
-        for (var i = 0; i < MaxDrawsPerFrame; i++)
-        {
-            var bufferView = _materialConstantsRingBuffer.GetBufferView((nuint)i);
-            var bindGroup = logicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
-            {
-                RootSignature = _rootSignature,
-                RegisterSpace = 3
-            });
-            bindGroup.BeginUpdate();
-            bindGroup.CbvWithDesc(new BindBufferDesc
-            {
-                Binding = 0,
-                Resource = bufferView.Buffer,
-                ResourceOffset = bufferView.Offset
-            });
-            bindGroup.EndUpdate();
-            _materialBindGroups[i] = bindGroup;
+            _perFrameBatchData[i] = new Dictionary<RuntimeMeshHandle, BatchInstanceData>();
         }
 
         _shadowSampler = logicalDevice.CreateSampler(new SamplerDesc
@@ -203,26 +141,21 @@ public sealed class SceneRenderPass : IDisposable
         {
             _frameConstantsBuffers[i].UnmapMemory();
             _lightConstantsBuffers[i].UnmapMemory();
+
             _frameBindGroups[i].Dispose();
             _lightBindGroups[i].Dispose();
+
             _frameConstantsBuffers[i].Dispose();
             _lightConstantsBuffers[i].Dispose();
-        }
 
-        foreach (var bindGroup in _drawBindGroups)
-        {
-            bindGroup.Dispose();
-        }
-
-        foreach (var bindGroup in _materialBindGroups)
-        {
-            bindGroup.Dispose();
+            // Dispose per-batch instance data
+            foreach (var batchData in _perFrameBatchData[i].Values)
+            {
+                batchData.Dispose();
+            }
         }
 
         _shadowSampler.Dispose();
-
-        _materialConstantsRingBuffer.Dispose();
-        _drawConstantsRingBuffer.Dispose();
         _pipeline.Dispose();
         _rootSignature.Dispose();
         _inputLayout.Dispose();
@@ -342,6 +275,29 @@ public sealed class SceneRenderPass : IDisposable
 
         UpdateLightConstants(shadowData, frameIndex);
 
+        var batchDataDict = _perFrameBatchData[frameIndex];
+        var allInstances = _batcher.AllInstances;
+
+        // Write instance data - material is already cached in batcher, no per-entity lookups!
+        foreach (var batch in _batcher.Batches)
+        {
+            var batchData = GetOrCreateBatchData(batchDataDict, batch.MeshHandle, batch.InstanceCount, frameIndex);
+            var instancePtr = (GpuInstanceData*)batchData.MappedPtr.ToPointer();
+
+            for (var i = 0; i < batch.InstanceCount; i++)
+            {
+                var inst = allInstances[batch.StartInstance + i];
+                instancePtr[i] = new GpuInstanceData
+                {
+                    Model = inst.WorldMatrix,
+                    BaseColor = inst.BaseColor,
+                    Metallic = inst.Metallic,
+                    Roughness = inst.Roughness,
+                    AmbientOcclusion = inst.AmbientOcclusion
+                };
+            }
+        }
+
         _rtAttachments[0] = new RenderingAttachmentDesc
         {
             Resource = rt,
@@ -374,42 +330,73 @@ public sealed class SceneRenderPass : IDisposable
             cmd.BindResourceGroup(shadowBindGroup);
         }
 
-        var drawIndex = 0;
-        foreach (var (entity, mesh, transform) in _world.Query<MeshComponent, Transform>())
+        foreach (var batch in _batcher.Batches)
         {
-            if (!mesh.IsValid || drawIndex >= MaxDrawsPerFrame)
-            {
-                continue;
-            }
-
-            ref readonly var runtimeMesh = ref _assets.GetMeshRef(mesh.Mesh);
+            ref readonly var runtimeMesh = ref _assets.GetMeshRef(batch.MeshHandle);
             if (Unsafe.IsNullRef(ref Unsafe.AsRef(in runtimeMesh)))
             {
                 continue;
             }
 
-            var drawConstants = new DrawConstants { Model = transform.Matrix };
-            var drawMappedPtr = _drawConstantsRingBuffer.GetMappedMemory((nuint)drawIndex);
-            Unsafe.Write(drawMappedPtr.ToPointer(), drawConstants);
-
-            var materialConstants = GetMaterialConstants(entity);
-            var materialMappedPtr = _materialConstantsRingBuffer.GetMappedMemory((nuint)drawIndex);
-            Unsafe.Write(materialMappedPtr.ToPointer(), materialConstants);
-
-            cmd.BindResourceGroup(_drawBindGroups[drawIndex]);
-            cmd.BindResourceGroup(_materialBindGroups[drawIndex]);
+            var batchData = batchDataDict[batch.MeshHandle];
+            cmd.BindResourceGroup(batchData.BindGroup);
 
             var vb = runtimeMesh.VertexBuffer;
             var ib = runtimeMesh.IndexBuffer;
 
             cmd.BindVertexBuffer(vb.View.Buffer, (uint)vb.View.Offset, 0, 0);
             cmd.BindIndexBuffer(ib.View.Buffer, ib.IndexType, ib.View.Offset);
-            cmd.DrawIndexed(ib.Count, 1, 0, 0, 0);
-
-            drawIndex++;
+            cmd.DrawIndexed(ib.Count, (uint)batch.InstanceCount, 0, 0, 0);
         }
 
         cmd.EndRendering();
+    }
+
+
+    private BatchInstanceData GetOrCreateBatchData(Dictionary<RuntimeMeshHandle, BatchInstanceData> dict, RuntimeMeshHandle meshHandle, int requiredCapacity, int frameIndex)
+    {
+        if (dict.TryGetValue(meshHandle, out var existing) && existing.Capacity >= requiredCapacity)
+        {
+            return existing;
+        }
+
+        existing?.Dispose();
+
+        var capacity = Math.Max(requiredCapacity, 64);
+        var stride = (ulong)Unsafe.SizeOf<GpuInstanceData>();
+        var buffer = _ctx.LogicalDevice.CreateBuffer(new BufferDesc
+        {
+            Descriptor = (uint)ResourceDescriptorFlagBits.StructuredBuffer,
+            HeapType = HeapType.CpuGpu,
+            NumBytes = stride * (ulong)capacity,
+            StructureDesc = new StructuredBufferDesc
+            {
+                Offset = 0,
+                NumElements = (ulong)capacity,
+                Stride = stride
+            },
+            DebugName = StringView.Create($"BatchInstance_{frameIndex}_{meshHandle.Index}")
+        });
+
+        var bindGroup = _ctx.LogicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
+        {
+            RootSignature = _rootSignature,
+            RegisterSpace = 2
+        });
+        bindGroup.BeginUpdate();
+        bindGroup.SrvBuffer(0, buffer);
+        bindGroup.EndUpdate();
+
+        var batchData = new BatchInstanceData
+        {
+            Buffer = buffer,
+            BindGroup = bindGroup,
+            MappedPtr = buffer.MapMemory(),
+            Capacity = capacity
+        };
+
+        dict[meshHandle] = batchData;
+        return batchData;
     }
 
     private unsafe void UpdateLightConstants(List<ShadowPass.ShadowData>? shadowData, int frameIndex)
@@ -529,22 +516,6 @@ public sealed class SceneRenderPass : IDisposable
         Unsafe.Write(_lightBufferMappedPtrs[frameIndex].ToPointer(), lightConstants);
     }
 
-    private MaterialConstants GetMaterialConstants(Entity entity)
-    {
-        if (_world.TryGetComponent<StandardMaterial>(entity, out var material))
-        {
-            return new MaterialConstants
-            {
-                BaseColor = material.BaseColor,
-                Metallic = material.Metallic,
-                Roughness = material.Roughness,
-                AmbientOcclusion = material.AmbientOcclusion
-            };
-        }
-
-        return DefaultMaterial;
-    }
-
     [StructLayout(LayoutKind.Sequential)]
     private struct FrameConstants
     {
@@ -592,18 +563,28 @@ public sealed class SceneRenderPass : IDisposable
     }
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct DrawConstants
+    private struct GpuInstanceData
     {
-        public Matrix4x4 Model;
+        public Matrix4x4 Model; // 64 bytes
+        public Vector4 BaseColor; // 16 bytes
+        public float Metallic; // 4 bytes
+        public float Roughness; // 4 bytes
+        public float AmbientOcclusion; // 4 bytes
+        public float Padding; // 4 bytes -> 96 bytes total
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    private struct MaterialConstants
+    private sealed class BatchInstanceData : IDisposable
     {
-        public Vector4 BaseColor;
-        public float Metallic;
-        public float Roughness;
-        public float AmbientOcclusion;
-        public float Padding;
+        public Buffer Buffer;
+        public ResourceBindGroup BindGroup;
+        public IntPtr MappedPtr;
+        public int Capacity;
+
+        public void Dispose()
+        {
+            Buffer.UnmapMemory();
+            BindGroup.Dispose();
+            Buffer.Dispose();
+        }
     }
 }

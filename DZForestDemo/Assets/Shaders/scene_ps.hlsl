@@ -6,6 +6,17 @@ struct PSInput
     float3 WorldNormal : NORMAL;
     float3 WorldPos : TEXCOORD1;
     float2 TexCoord : TEXCOORD0;
+    nointerpolation uint InstanceID : TEXCOORD2;
+};
+
+struct InstanceData
+{
+    float4x4 Model;
+    float4 BaseColor;
+    float Metallic;
+    float Roughness;
+    float AmbientOcclusion;
+    float Padding;
 };
 
 cbuffer FrameConstants : register(b0, space0)
@@ -29,14 +40,7 @@ cbuffer LightConstants : register(b0, space1)
     uint _Pad2;
 };
 
-cbuffer MaterialConstants : register(b0, space3)
-{
-    float4 BaseColor;
-    float Metallic;
-    float Roughness;
-    float AmbientOcclusion;
-    float _MatPadding;
-};
+StructuredBuffer<InstanceData> Instances : register(t0, space2);
 
 Texture2D<float> ShadowAtlas : register(t0, space4);
 SamplerComparisonState ShadowSampler : register(s0, space4);
@@ -67,7 +71,7 @@ float SampleShadow(int shadowIndex, float3 worldPos, float3 normal)
     return ShadowAtlas.SampleCmpLevelZero(ShadowSampler, uv, currentDepth);
 }
 
-float3 CalculateDirectionalLight(Light light, float3 worldPos, float3 normal, float3 viewDir, float3 albedo)
+float3 CalculateDirectionalLight(Light light, float3 worldPos, float3 normal, float3 viewDir, float3 albedo, float metallic, float roughness)
 {
     float3 lightDir = normalize(-light.PositionOrDirection);
     float3 halfDir = normalize(lightDir + viewDir);
@@ -75,18 +79,18 @@ float3 CalculateDirectionalLight(Light light, float3 worldPos, float3 normal, fl
     float ndotl = saturate(dot(normal, lightDir));
     float ndoth = saturate(dot(normal, halfDir));
 
-    float specPower = lerp(8.0, 128.0, 1.0 - Roughness);
-    float spec = pow(ndoth, specPower) * (1.0 - Roughness) * 0.5;
+    float specPower = lerp(8.0, 128.0, 1.0 - roughness);
+    float spec = pow(ndoth, specPower) * (1.0 - roughness) * 0.5;
 
     float3 diffuse = albedo * ndotl;
-    float3 specular = lerp(float3(0.04, 0.04, 0.04), albedo, Metallic) * spec;
+    float3 specular = lerp(float3(0.04, 0.04, 0.04), albedo, metallic) * spec;
 
     float shadow = SampleShadow(light.ShadowIndex, worldPos, normal);
 
     return (diffuse + specular) * light.Color * light.Intensity * shadow;
 }
 
-float3 CalculatePointLight(Light light, float3 worldPos, float3 normal, float3 viewDir, float3 albedo)
+float3 CalculatePointLight(Light light, float3 worldPos, float3 normal, float3 viewDir, float3 albedo, float metallic, float roughness)
 {
     float3 lightVec = light.PositionOrDirection - worldPos;
     float dist = length(lightVec);
@@ -105,18 +109,18 @@ float3 CalculatePointLight(Light light, float3 worldPos, float3 normal, float3 v
     float ndotl = saturate(dot(normal, lightDir));
     float ndoth = saturate(dot(normal, halfDir));
 
-    float specPower = lerp(8.0, 128.0, 1.0 - Roughness);
-    float spec = pow(ndoth, specPower) * (1.0 - Roughness) * 0.5;
+    float specPower = lerp(8.0, 128.0, 1.0 - roughness);
+    float spec = pow(ndoth, specPower) * (1.0 - roughness) * 0.5;
 
     float3 diffuse = albedo * ndotl;
-    float3 specular = lerp(float3(0.04, 0.04, 0.04), albedo, Metallic) * spec;
+    float3 specular = lerp(float3(0.04, 0.04, 0.04), albedo, metallic) * spec;
 
     float shadow = SampleShadow(light.ShadowIndex, worldPos, normal);
 
     return (diffuse + specular) * light.Color * light.Intensity * atten * shadow;
 }
 
-float3 CalculateSpotLight(Light light, float3 worldPos, float3 normal, float3 viewDir, float3 albedo)
+float3 CalculateSpotLight(Light light, float3 worldPos, float3 normal, float3 viewDir, float3 albedo, float metallic, float roughness)
 {
     float3 lightVec = light.PositionOrDirection - worldPos;
     float dist = length(lightVec);
@@ -140,11 +144,11 @@ float3 CalculateSpotLight(Light light, float3 worldPos, float3 normal, float3 vi
     float ndotl = saturate(dot(normal, lightDir));
     float ndoth = saturate(dot(normal, halfDir));
 
-    float specPower = lerp(8.0, 128.0, 1.0 - Roughness);
-    float spec = pow(ndoth, specPower) * (1.0 - Roughness) * 0.5;
+    float specPower = lerp(8.0, 128.0, 1.0 - roughness);
+    float spec = pow(ndoth, specPower) * (1.0 - roughness) * 0.5;
 
     float3 diffuse = albedo * ndotl;
-    float3 specular = lerp(float3(0.04, 0.04, 0.04), albedo, Metallic) * spec;
+    float3 specular = lerp(float3(0.04, 0.04, 0.04), albedo, metallic) * spec;
 
     float shadow = SampleShadow(light.ShadowIndex, worldPos, normal);
 
@@ -153,12 +157,18 @@ float3 CalculateSpotLight(Light light, float3 worldPos, float3 normal, float3 vi
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
+    // Load material properties from instance data
+    InstanceData inst = Instances[input.InstanceID];
+    float3 albedo = inst.BaseColor.rgb;
+    float metallic = inst.Metallic;
+    float roughness = inst.Roughness;
+    float ao = inst.AmbientOcclusion;
+
     float3 normal = normalize(input.WorldNormal);
     float3 viewDir = normalize(CameraPosition - input.WorldPos);
-    float3 albedo = BaseColor.rgb;
 
     float3 ambient = lerp(AmbientGroundColor, AmbientSkyColor, normal.y * 0.5 + 0.5);
-    ambient *= AmbientIntensity * AmbientOcclusion;
+    ambient *= AmbientIntensity * ao;
 
     float3 totalLight = ambient * albedo;
 
@@ -168,24 +178,24 @@ float4 PSMain(PSInput input) : SV_TARGET
 
         if (light.Type == LIGHT_TYPE_DIRECTIONAL)
         {
-            totalLight += CalculateDirectionalLight(light, input.WorldPos, normal, viewDir, albedo);
+            totalLight += CalculateDirectionalLight(light, input.WorldPos, normal, viewDir, albedo, metallic, roughness);
         }
         else if (light.Type == LIGHT_TYPE_POINT)
         {
-            totalLight += CalculatePointLight(light, input.WorldPos, normal, viewDir, albedo);
+            totalLight += CalculatePointLight(light, input.WorldPos, normal, viewDir, albedo, metallic, roughness);
         }
         else if (light.Type == LIGHT_TYPE_SPOT)
         {
-            totalLight += CalculateSpotLight(light, input.WorldPos, normal, viewDir, albedo);
+            totalLight += CalculateSpotLight(light, input.WorldPos, normal, viewDir, albedo, metallic, roughness);
         }
     }
 
     float ndotv = saturate(dot(normal, viewDir));
-    float fresnel = pow(1.0 - ndotv, 4.0) * Metallic * 0.3;
+    float fresnel = pow(1.0 - ndotv, 4.0) * metallic * 0.3;
     totalLight += fresnel * albedo;
 
     totalLight = totalLight / (totalLight + 1.0);
     totalLight = pow(totalLight, 1.0 / 2.2);
 
-    return float4(totalLight, BaseColor.a);
+    return float4(totalLight, inst.BaseColor.a);
 }

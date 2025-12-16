@@ -4,28 +4,17 @@ using BepuPhysics;
 
 namespace Physics.Components;
 
-public struct RigidBody
+[method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+public struct RigidBody(BodyHandle handle, bool isStatic = false)
 {
-    public BodyHandle Handle;
-    public bool IsStatic;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public RigidBody(BodyHandle handle, bool isStatic = false)
-    {
-        Handle = handle;
-        IsStatic = isStatic;
-    }
+    public BodyHandle Handle = handle;
+    public readonly bool IsStatic = isStatic;
 }
 
-public struct StaticBody
+[method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+public struct StaticBody(StaticHandle handle)
 {
-    public StaticHandle Handle;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public StaticBody(StaticHandle handle)
-    {
-        Handle = handle;
-    }
+    public StaticHandle Handle = handle;
 }
 
 public enum ColliderShape
