@@ -30,11 +30,28 @@ public sealed class RuntimeMeshStore(
     : IDisposable
 {
     private readonly LogicalDevice _device = device;
-    private readonly BufferPool _vertexPool = new(device, (uint)ResourceUsageFlagBits.VertexAndConstantBuffer, vertexPoolSize);
+    private readonly Queue<uint> _freeIndices = new();
     private readonly BufferPool _indexPool = new(device, (uint)ResourceUsageFlagBits.IndexBuffer, indexPoolSize);
     private readonly List<MeshSlot> _slots = [];
-    private readonly Queue<uint> _freeIndices = new();
+
+    private readonly BufferPool _vertexPool =
+        new(device, (uint)ResourceUsageFlagBits.VertexAndConstantBuffer, vertexPoolSize);
+
     private bool _disposed;
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        _vertexPool.Dispose();
+        _indexPool.Dispose();
+        _slots.Clear();
+    }
 
     public RuntimeMeshHandle Add(MeshData meshData, BatchResourceCopy batchCopy)
     {
@@ -209,6 +226,7 @@ public sealed class RuntimeMeshStore(
         {
             ThrowInvalidHandle();
         }
+
         return mesh;
     }
 
@@ -253,20 +271,6 @@ public sealed class RuntimeMeshStore(
         const uint initialGeneration = 1;
         _slots.Add(new MeshSlot(mesh, initialGeneration, true));
         return new RuntimeMeshHandle(index, initialGeneration);
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        _vertexPool.Dispose();
-        _indexPool.Dispose();
-        _slots.Clear();
     }
 
     [StructLayout(LayoutKind.Sequential)]

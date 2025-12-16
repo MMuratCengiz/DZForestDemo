@@ -11,7 +11,10 @@ public sealed class GltfLoadResult
     public IReadOnlyList<MaterialData> Materials { get; init; } = [];
     public IReadOnlyList<Matrix4x4> InverseBindMatrices { get; init; } = [];
 
-    public static GltfLoadResult Failed(string error) => new() { Success = false, ErrorMessage = error };
+    public static GltfLoadResult Failed(string error)
+    {
+        return new GltfLoadResult { Success = false, ErrorMessage = error };
+    }
 }
 
 public sealed class GltfLoader
@@ -148,7 +151,6 @@ public sealed class GltfLoader
         var vertices = new Vertex[positions.Count];
 
         for (var i = 0; i < positions.Count; i++)
-        {
             vertices[i] = new Vertex
             {
                 Position = positions[i],
@@ -166,7 +168,6 @@ public sealed class GltfLoader
                     }
                     : default
             };
-        }
 
         return vertices;
     }
@@ -182,10 +183,7 @@ public sealed class GltfLoader
         var indices = accessor.AsIndicesArray();
         var result = new uint[indices.Count];
 
-        for (var i = 0; i < indices.Count; i++)
-        {
-            result[i] = indices[i];
-        }
+        for (var i = 0; i < indices.Count; i++) result[i] = indices[i];
 
         return result;
     }

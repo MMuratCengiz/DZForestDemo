@@ -1,12 +1,14 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 using DenOfIz;
 using ECS;
 using ECS.Components;
 using Graphics;
 using Graphics.RenderGraph;
 using RuntimeAssets;
+using Buffer = DenOfIz.Buffer;
 
 namespace DZForestDemo.RenderPasses;
 
@@ -14,78 +16,11 @@ public sealed class SceneRenderPass : IDisposable
 {
     private const int MaxDrawsPerFrame = 512;
     private const int MaxLights = 8;
+    private const int MaxShadowLights = 4;
 
-    private readonly GraphicsContext _ctx;
-    private readonly AssetContext _assets;
-    private readonly World _world;
-
-    private readonly InputLayout _inputLayout;
-    private readonly RootSignature _rootSignature;
-    private readonly Pipeline _pipeline;
-    private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments;
-
-    private readonly DenOfIz.Buffer _frameConstantsBuffer;
-    private readonly ResourceBindGroup _frameBindGroup;
-    private readonly IntPtr _frameBufferMappedPtr;
-
-    private readonly DenOfIz.Buffer _lightConstantsBuffer;
-    private readonly ResourceBindGroup _lightBindGroup;
-    private readonly IntPtr _lightBufferMappedPtr;
-
-    private readonly RingBuffer _drawConstantsRingBuffer;
-    private readonly ResourceBindGroup[] _drawBindGroups;
-
-    private readonly RingBuffer _materialConstantsRingBuffer;
-    private readonly ResourceBindGroup[] _materialBindGroups;
-
-    private bool _disposed;
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct FrameConstants
-    {
-        public Matrix4x4 ViewProjection;
-        public Vector3 CameraPosition;
-        public float Time;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct GpuLight
-    {
-        public Vector3 PositionOrDirection;
-        public uint Type;
-        public Vector3 Color;
-        public float Intensity;
-        public float Radius;
-        public float InnerConeAngle;
-        public float OuterConeAngle;
-        public float Padding;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private unsafe struct LightConstants
-    {
-        public fixed byte Lights[MaxLights * 48];
-        public Vector3 AmbientSkyColor;
-        public uint NumLights;
-        public Vector3 AmbientGroundColor;
-        public float AmbientIntensity;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct DrawConstants
-    {
-        public Matrix4x4 Model;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct MaterialConstants
-    {
-        public Vector4 BaseColor;
-        public float Metallic;
-        public float Roughness;
-        public float AmbientOcclusion;
-        public float Padding;
-    }
+    private const uint LightTypeDirectional = 0;
+    private const uint LightTypePoint = 1;
+    private const uint LightTypeSpot = 2;
 
     private static readonly MaterialConstants DefaultMaterial = new()
     {
@@ -95,9 +30,34 @@ public sealed class SceneRenderPass : IDisposable
         AmbientOcclusion = 1.0f
     };
 
-    private const uint LightTypeDirectional = 0;
-    private const uint LightTypePoint = 1;
-    private const uint LightTypeSpot = 2;
+    private readonly AssetContext _assets;
+
+    private readonly GraphicsContext _ctx;
+    private readonly ResourceBindGroup[] _drawBindGroups;
+
+    private readonly RingBuffer _drawConstantsRingBuffer;
+
+    // Per-frame buffers to avoid race conditions with GPU
+    private readonly Buffer[] _frameConstantsBuffers;
+    private readonly ResourceBindGroup[] _frameBindGroups;
+    private readonly IntPtr[] _frameBufferMappedPtrs;
+
+    private readonly Buffer[] _lightConstantsBuffers;
+    private readonly ResourceBindGroup[] _lightBindGroups;
+    private readonly IntPtr[] _lightBufferMappedPtrs;
+
+    private readonly InputLayout _inputLayout;
+    private readonly ResourceBindGroup[] _materialBindGroups;
+
+    private readonly RingBuffer _materialConstantsRingBuffer;
+    private readonly Pipeline _pipeline;
+    private readonly RootSignature _rootSignature;
+    private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments;
+
+    private readonly Sampler _shadowSampler;
+    private readonly World _world;
+
+    private bool _disposed;
 
     public SceneRenderPass(GraphicsContext ctx, AssetContext assets, World world)
     {
@@ -111,41 +71,55 @@ public sealed class SceneRenderPass : IDisposable
 
         CreatePipeline(logicalDevice, out _inputLayout, out _rootSignature, out _pipeline);
 
-        _frameConstantsBuffer = logicalDevice.CreateBuffer(new BufferDesc
-        {
-            Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
-            HeapType = HeapType.CpuGpu,
-            NumBytes = (ulong)Unsafe.SizeOf<FrameConstants>(),
-            DebugName = StringView.Create("FrameConstants")
-        });
-        _frameBufferMappedPtr = _frameConstantsBuffer.MapMemory();
+        // Create per-frame buffers and bind groups
+        var numFrames = (int)ctx.NumFrames;
 
-        _frameBindGroup = logicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
-        {
-            RootSignature = _rootSignature,
-            RegisterSpace = 0
-        });
-        _frameBindGroup.BeginUpdate();
-        _frameBindGroup.Cbv(0, _frameConstantsBuffer);
-        _frameBindGroup.EndUpdate();
+        _frameConstantsBuffers = new Buffer[numFrames];
+        _frameBindGroups = new ResourceBindGroup[numFrames];
+        _frameBufferMappedPtrs = new IntPtr[numFrames];
 
-        _lightConstantsBuffer = logicalDevice.CreateBuffer(new BufferDesc
-        {
-            Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
-            HeapType = HeapType.CpuGpu,
-            NumBytes = (ulong)Unsafe.SizeOf<LightConstants>(),
-            DebugName = StringView.Create("LightConstants")
-        });
-        _lightBufferMappedPtr = _lightConstantsBuffer.MapMemory();
+        _lightConstantsBuffers = new Buffer[numFrames];
+        _lightBindGroups = new ResourceBindGroup[numFrames];
+        _lightBufferMappedPtrs = new IntPtr[numFrames];
 
-        _lightBindGroup = logicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
+        for (var i = 0; i < numFrames; i++)
         {
-            RootSignature = _rootSignature,
-            RegisterSpace = 1
-        });
-        _lightBindGroup.BeginUpdate();
-        _lightBindGroup.Cbv(0, _lightConstantsBuffer);
-        _lightBindGroup.EndUpdate();
+            _frameConstantsBuffers[i] = logicalDevice.CreateBuffer(new BufferDesc
+            {
+                Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
+                HeapType = HeapType.CpuGpu,
+                NumBytes = (ulong)Unsafe.SizeOf<FrameConstants>(),
+                DebugName = StringView.Create($"FrameConstants_{i}")
+            });
+            _frameBufferMappedPtrs[i] = _frameConstantsBuffers[i].MapMemory();
+
+            _frameBindGroups[i] = logicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
+            {
+                RootSignature = _rootSignature,
+                RegisterSpace = 0
+            });
+            _frameBindGroups[i].BeginUpdate();
+            _frameBindGroups[i].Cbv(0, _frameConstantsBuffers[i]);
+            _frameBindGroups[i].EndUpdate();
+
+            _lightConstantsBuffers[i] = logicalDevice.CreateBuffer(new BufferDesc
+            {
+                Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
+                HeapType = HeapType.CpuGpu,
+                NumBytes = (ulong)Unsafe.SizeOf<LightConstants>(),
+                DebugName = StringView.Create($"LightConstants_{i}")
+            });
+            _lightBufferMappedPtrs[i] = _lightConstantsBuffers[i].MapMemory();
+
+            _lightBindGroups[i] = logicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
+            {
+                RootSignature = _rootSignature,
+                RegisterSpace = 1
+            });
+            _lightBindGroups[i].BeginUpdate();
+            _lightBindGroups[i].Cbv(0, _lightConstantsBuffers[i]);
+            _lightBindGroups[i].EndUpdate();
+        }
 
         _drawConstantsRingBuffer = new RingBuffer(new RingBufferDesc
         {
@@ -202,24 +176,81 @@ public sealed class SceneRenderPass : IDisposable
             bindGroup.EndUpdate();
             _materialBindGroups[i] = bindGroup;
         }
+
+        _shadowSampler = logicalDevice.CreateSampler(new SamplerDesc
+        {
+            AddressModeU = SamplerAddressMode.ClampToBorder,
+            AddressModeV = SamplerAddressMode.ClampToBorder,
+            AddressModeW = SamplerAddressMode.ClampToBorder,
+            MinFilter = Filter.Linear,
+            MagFilter = Filter.Linear,
+            MipmapMode = MipmapMode.Nearest,
+            CompareOp = CompareOp.LessOrEqual
+        });
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        // Dispose per-frame resources
+        for (var i = 0; i < _frameConstantsBuffers.Length; i++)
+        {
+            _frameConstantsBuffers[i].UnmapMemory();
+            _lightConstantsBuffers[i].UnmapMemory();
+            _frameBindGroups[i].Dispose();
+            _lightBindGroups[i].Dispose();
+            _frameConstantsBuffers[i].Dispose();
+            _lightConstantsBuffers[i].Dispose();
+        }
+
+        foreach (var bindGroup in _drawBindGroups)
+        {
+            bindGroup.Dispose();
+        }
+
+        foreach (var bindGroup in _materialBindGroups)
+        {
+            bindGroup.Dispose();
+        }
+
+        _shadowSampler.Dispose();
+
+        _materialConstantsRingBuffer.Dispose();
+        _drawConstantsRingBuffer.Dispose();
+        _pipeline.Dispose();
+        _rootSignature.Dispose();
+        _inputLayout.Dispose();
+        _rtAttachments.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 
     private void CreatePipeline(LogicalDevice logicalDevice, out InputLayout inputLayout,
         out RootSignature rootSignature, out Pipeline pipeline)
     {
+        var shaderLoader = new ShaderLoader();
+        var vsSource = shaderLoader.Load("scene_vs.hlsl");
+        var psSource = shaderLoader.Load("scene_ps.hlsl");
+
         var programDesc = new ShaderProgramDesc
         {
             ShaderStages = ShaderStageDescArray.Create([
                 new ShaderStageDesc
                 {
                     EntryPoint = StringView.Create("VSMain"),
-                    Data = ByteArray.Create(System.Text.Encoding.UTF8.GetBytes(Shaders.Geometry3DVertexShader)),
+                    Data = ByteArray.Create(Encoding.UTF8.GetBytes(vsSource)),
                     Stage = ShaderStage.Vertex
                 },
                 new ShaderStageDesc
                 {
                     EntryPoint = StringView.Create("PSMain"),
-                    Data = ByteArray.Create(System.Text.Encoding.UTF8.GetBytes(Shaders.Geometry3DPixelShader)),
+                    Data = ByteArray.Create(Encoding.UTF8.GetBytes(psSource)),
                     Stage = ShaderStage.Pixel
                 }
             ])
@@ -243,7 +274,7 @@ public sealed class SceneRenderPass : IDisposable
                 {
                     Enable = true,
                     Write = true,
-                    CompareOp = CompareOp.Less,
+                    CompareOp = CompareOp.Less
                 },
                 RenderTargets = RenderTargetDescArray.Create([
                     new RenderTargetDesc
@@ -257,10 +288,27 @@ public sealed class SceneRenderPass : IDisposable
         });
     }
 
+    public ResourceBindGroup CreateShadowBindGroup(Texture shadowAtlas)
+    {
+        var bindGroup = _ctx.LogicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
+        {
+            RootSignature = _rootSignature,
+            RegisterSpace = 4
+        });
+        bindGroup.BeginUpdate();
+        bindGroup.SrvTexture(0, shadowAtlas);
+        bindGroup.Sampler(0, _shadowSampler);
+        bindGroup.EndUpdate();
+        return bindGroup;
+    }
+
     public unsafe void Execute(
         ref RenderPassExecuteContext ctx,
         ResourceHandle sceneRt,
         ResourceHandle depthRt,
+        ResourceHandle shadowAtlas,
+        ResourceBindGroup? shadowBindGroup,
+        List<ShadowPass.ShadowData>? shadowData,
         Viewport viewport,
         in Matrix4x4 viewProjection,
         Vector3 cameraPosition,
@@ -275,21 +323,30 @@ public sealed class SceneRenderPass : IDisposable
         ctx.ResourceTracking.TransitionTexture(cmd, depth,
             (uint)ResourceUsageFlagBits.DepthWrite, QueueType.Graphics);
 
+        if (shadowAtlas.IsValid)
+        {
+            var atlas = ctx.GetTexture(shadowAtlas);
+            ctx.ResourceTracking.TransitionTexture(cmd, atlas,
+                (uint)ResourceUsageFlagBits.ShaderResource, QueueType.Graphics);
+        }
+
+        var frameIndex = (int)ctx.FrameIndex;
+
         var frameConstants = new FrameConstants
         {
             ViewProjection = viewProjection,
             CameraPosition = cameraPosition,
             Time = time
         };
-        Unsafe.Write(_frameBufferMappedPtr.ToPointer(), frameConstants);
+        Unsafe.Write(_frameBufferMappedPtrs[frameIndex].ToPointer(), frameConstants);
 
-        UpdateLightConstants();
+        UpdateLightConstants(shadowData, frameIndex);
 
         _rtAttachments[0] = new RenderingAttachmentDesc
         {
             Resource = rt,
             LoadOp = LoadOp.Clear,
-            ClearColor = new Float4 { X = 0.05f, Y = 0.05f, Z = 0.08f, W = 1.0f }
+            ClearColor = new Float4 { X = 0.02f, Y = 0.02f, Z = 0.04f, W = 1.0f }
         };
 
         var renderingDesc = new RenderingDesc
@@ -309,8 +366,13 @@ public sealed class SceneRenderPass : IDisposable
         cmd.BindViewport(viewport.X, viewport.Y, viewport.Width, viewport.Height);
         cmd.BindScissorRect(viewport.X, viewport.Y, viewport.Width, viewport.Height);
 
-        cmd.BindResourceGroup(_frameBindGroup);
-        cmd.BindResourceGroup(_lightBindGroup);
+        cmd.BindResourceGroup(_frameBindGroups[frameIndex]);
+        cmd.BindResourceGroup(_lightBindGroups[frameIndex]);
+
+        if (shadowBindGroup != null)
+        {
+            cmd.BindResourceGroup(shadowBindGroup);
+        }
 
         var drawIndex = 0;
         foreach (var (entity, mesh, transform) in _world.Query<MeshComponent, Transform>())
@@ -350,18 +412,43 @@ public sealed class SceneRenderPass : IDisposable
         cmd.EndRendering();
     }
 
-    private unsafe void UpdateLightConstants()
+    private unsafe void UpdateLightConstants(List<ShadowPass.ShadowData>? shadowData, int frameIndex)
     {
         var lightConstants = new LightConstants
         {
             AmbientSkyColor = new Vector3(0.4f, 0.5f, 0.6f),
             AmbientGroundColor = new Vector3(0.2f, 0.18f, 0.15f),
             AmbientIntensity = 0.3f,
-            NumLights = 0
+            NumLights = 0,
+            NumShadows = 0
         };
 
         var lightPtr = (GpuLight*)lightConstants.Lights;
+        var shadowPtr = (GpuShadowData*)lightConstants.Shadows;
         uint lightIndex = 0;
+        var shadowIndex = 0;
+
+        if (shadowData != null)
+        {
+            foreach (var shadow in shadowData)
+            {
+                if (shadowIndex >= MaxShadowLights)
+                {
+                    break;
+                }
+
+                shadowPtr[shadowIndex] = new GpuShadowData
+                {
+                    LightViewProjection = shadow.LightViewProjection,
+                    AtlasScaleOffset = shadow.AtlasScaleOffset,
+                    Bias = shadow.Bias,
+                    NormalBias = shadow.NormalBias
+                };
+                shadowIndex++;
+            }
+
+            lightConstants.NumShadows = (uint)shadowIndex;
+        }
 
         foreach (var (_, ambient) in _world.Query<AmbientLight>())
         {
@@ -371,10 +458,16 @@ public sealed class SceneRenderPass : IDisposable
             break;
         }
 
+        var currentShadowIndex = 0;
+
         foreach (var (_, light) in _world.Query<DirectionalLight>())
         {
-            if (lightIndex >= MaxLights) break;
+            if (lightIndex >= MaxLights)
+            {
+                break;
+            }
 
+            var hasShadow = light.CastShadows && currentShadowIndex < shadowIndex;
             lightPtr[lightIndex] = new GpuLight
             {
                 PositionOrDirection = light.Direction,
@@ -383,14 +476,18 @@ public sealed class SceneRenderPass : IDisposable
                 Intensity = light.Intensity,
                 Radius = 0,
                 InnerConeAngle = 0,
-                OuterConeAngle = 0
+                OuterConeAngle = 0,
+                ShadowIndex = hasShadow ? currentShadowIndex++ : -1
             };
             lightIndex++;
         }
 
         foreach (var (_, light, transform) in _world.Query<PointLight, Transform>())
         {
-            if (lightIndex >= MaxLights) break;
+            if (lightIndex >= MaxLights)
+            {
+                break;
+            }
 
             lightPtr[lightIndex] = new GpuLight
             {
@@ -400,14 +497,18 @@ public sealed class SceneRenderPass : IDisposable
                 Intensity = light.Intensity,
                 Radius = light.Radius,
                 InnerConeAngle = 0,
-                OuterConeAngle = 0
+                OuterConeAngle = 0,
+                ShadowIndex = -1
             };
             lightIndex++;
         }
 
         foreach (var (_, light, transform) in _world.Query<SpotLight, Transform>())
         {
-            if (lightIndex >= MaxLights) break;
+            if (lightIndex >= MaxLights)
+            {
+                break;
+            }
 
             lightPtr[lightIndex] = new GpuLight
             {
@@ -417,14 +518,15 @@ public sealed class SceneRenderPass : IDisposable
                 Intensity = light.Intensity,
                 Radius = light.Radius,
                 InnerConeAngle = MathF.Cos(light.InnerConeAngle),
-                OuterConeAngle = MathF.Cos(light.OuterConeAngle)
+                OuterConeAngle = MathF.Cos(light.OuterConeAngle),
+                ShadowIndex = -1
             };
             lightIndex++;
         }
 
         lightConstants.NumLights = lightIndex;
 
-        Unsafe.Write(_lightBufferMappedPtr.ToPointer(), lightConstants);
+        Unsafe.Write(_lightBufferMappedPtrs[frameIndex].ToPointer(), lightConstants);
     }
 
     private MaterialConstants GetMaterialConstants(Entity entity)
@@ -443,40 +545,65 @@ public sealed class SceneRenderPass : IDisposable
         return DefaultMaterial;
     }
 
-    public void Dispose()
+    [StructLayout(LayoutKind.Sequential)]
+    private struct FrameConstants
     {
-        if (_disposed)
-        {
-            return;
-        }
+        public Matrix4x4 ViewProjection;
+        public Vector3 CameraPosition;
+        public float Time;
+    }
 
-        _disposed = true;
+    [StructLayout(LayoutKind.Sequential)]
+    private struct GpuLight
+    {
+        public Vector3 PositionOrDirection;
+        public uint Type;
+        public Vector3 Color;
+        public float Intensity;
+        public float Radius;
+        public float InnerConeAngle;
+        public float OuterConeAngle;
+        public int ShadowIndex;
+    }
 
-        _frameConstantsBuffer.UnmapMemory();
-        _lightConstantsBuffer.UnmapMemory();
+    [StructLayout(LayoutKind.Sequential)]
+    private struct GpuShadowData
+    {
+        public Matrix4x4 LightViewProjection;
+        public Vector4 AtlasScaleOffset;
+        public float Bias;
+        public float NormalBias;
+        public Vector2 Padding;
+    }
 
-        foreach (var bindGroup in _drawBindGroups)
-        {
-            bindGroup?.Dispose();
-        }
+    [StructLayout(LayoutKind.Sequential)]
+    private unsafe struct LightConstants
+    {
+        public fixed byte Lights[MaxLights * 48];
+        public fixed byte Shadows[MaxShadowLights * 96];
+        public Vector3 AmbientSkyColor;
+        public uint NumLights;
+        public Vector3 AmbientGroundColor;
+        public float AmbientIntensity;
+        public uint NumShadows;
+        public uint Pad0;
+        public uint Pad1;
+        public uint Pad2;
+    }
 
-        foreach (var bindGroup in _materialBindGroups)
-        {
-            bindGroup?.Dispose();
-        }
+    [StructLayout(LayoutKind.Sequential)]
+    private struct DrawConstants
+    {
+        public Matrix4x4 Model;
+    }
 
-        _lightBindGroup.Dispose();
-        _frameBindGroup.Dispose();
-
-        _materialConstantsRingBuffer.Dispose();
-        _drawConstantsRingBuffer.Dispose();
-        _lightConstantsBuffer.Dispose();
-        _frameConstantsBuffer.Dispose();
-        _pipeline.Dispose();
-        _rootSignature.Dispose();
-        _inputLayout.Dispose();
-        _rtAttachments.Dispose();
-
-        GC.SuppressFinalize(this);
+    [StructLayout(LayoutKind.Sequential)]
+    private struct MaterialConstants
+    {
+        public Vector4 BaseColor;
+        public float Metallic;
+        public float Roughness;
+        public float AmbientOcclusion;
+        public float Padding;
     }
 }

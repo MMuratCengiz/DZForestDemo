@@ -22,8 +22,9 @@ public struct TransientTextureDesc
     public uint Descriptor;
     public string DebugName;
 
-    public static TransientTextureDesc RenderTarget(uint width, uint height, Format format, string debugName = "") =>
-        new()
+    public static TransientTextureDesc RenderTarget(uint width, uint height, Format format, string debugName = "")
+    {
+        return new TransientTextureDesc
         {
             Aspect = TextureAspect.Color,
             Width = width,
@@ -36,21 +37,25 @@ public struct TransientTextureDesc
             Descriptor = (uint)(ResourceDescriptorFlagBits.RenderTarget | ResourceDescriptorFlagBits.Texture),
             DebugName = debugName
         };
+    }
 
     public static TransientTextureDesc DepthStencil(uint width, uint height, Format format = Format.D32Float,
-        string debugName = "") => new()
+        string debugName = "")
     {
-        Aspect = TextureAspect.Depth,
-        Width = width,
-        Height = height,
-        Depth = 1,
-        Format = format,
-        MipLevels = 1,
-        ArraySize = 1,
-        Usages = (uint)(ResourceUsageFlagBits.DepthWrite | ResourceUsageFlagBits.DepthRead),
-        Descriptor = (uint)ResourceDescriptorFlagBits.DepthStencil,
-        DebugName = debugName
-    };
+        return new TransientTextureDesc
+        {
+            Aspect = TextureAspect.Depth,
+            Width = width,
+            Height = height,
+            Depth = 1,
+            Format = format,
+            MipLevels = 1,
+            ArraySize = 1,
+            Usages = (uint)(ResourceUsageFlagBits.DepthWrite | ResourceUsageFlagBits.DepthRead),
+            Descriptor = (uint)ResourceDescriptorFlagBits.DepthStencil,
+            DebugName = debugName
+        };
+    }
 }
 
 public struct TransientBufferDesc
@@ -64,19 +69,18 @@ public struct TransientBufferDesc
 
 internal class RenderGraphResourceEntry
 {
-    public RenderGraphResourceType Type;
-    public int Version;
-    public bool IsImported;
-    public bool IsTransient;
-
-    public TextureResource? Texture;
-    public TransientTextureDesc TextureDesc;
-
     public Buffer? Buffer;
     public TransientBufferDesc BufferDesc;
 
     public int FirstPassIndex = -1;
+    public bool IsImported;
+    public bool IsTransient;
     public int LastPassIndex = -1;
+
+    public Texture? Texture;
+    public TransientTextureDesc TextureDesc;
+    public RenderGraphResourceType Type;
+    public int Version;
 
     public void Reset()
     {

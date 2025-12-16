@@ -23,27 +23,24 @@ using ImGuiNET;
 
 namespace DZForestDemo;
 
-/// <summary>
-/// Example class demonstrating ImGui integration with DenOfIz RHI
-/// </summary>
 public class ImGuiDemoWindow : IDisposable
 {
-    private readonly Window _window;
     private readonly CommandQueue _commandQueue;
-    private readonly SwapChain _swapChain;
-    private readonly FrameSync _frameSync;
-    private readonly ResourceTracking _resourceTracking;
-    private readonly ImGuiRenderer _imGuiRenderer;
-    private readonly Viewport _viewport;
     private readonly SemaphoreArray _emptySemaphoreArray;
+    private readonly FrameSync _frameSync;
+    private readonly ImGuiRenderer _imGuiRenderer;
+    private readonly ResourceTracking _resourceTracking;
     private readonly StepTimer _stepTimer = new();
+    private readonly SwapChain _swapChain;
+    private readonly Viewport _viewport;
+    private readonly Window _window;
+    private Vector3 _clearColor = new(0.45f, 0.55f, 0.60f);
+    private int _counter;
 
     private bool _disposed;
-    private bool _showDemoWindow = true;
-    private bool _showAnotherWindow;
-    private Vector3 _clearColor = new(0.45f, 0.55f, 0.60f);
     private float _floatValue;
-    private int _counter;
+    private bool _showAnotherWindow;
+    private bool _showDemoWindow = true;
 
     public ImGuiDemoWindow(LogicalDevice logicalDevice, uint width, uint height, string title)
     {
@@ -86,13 +83,11 @@ public class ImGuiDemoWindow : IDisposable
         _resourceTracking = new ResourceTracking();
         const uint numFrames = 3;
         for (uint i = 0; i < numFrames; ++i)
-        {
             _resourceTracking.TrackTexture(
                 _swapChain.GetRenderTarget(i),
                 (uint)ResourceUsageFlagBits.Common,
                 QueueType.Graphics
             );
-        }
 
         _emptySemaphoreArray = new SemaphoreArray();
         _viewport = _swapChain.GetViewport();
@@ -107,6 +102,28 @@ public class ImGuiDemoWindow : IDisposable
             RenderTargetFormat = Format.B8G8R8A8Unorm
         };
         _imGuiRenderer = new ImGuiRenderer(imguiDesc);
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        _frameSync.WaitIdle();
+        _commandQueue.WaitIdle();
+
+        _imGuiRenderer.Dispose();
+        _frameSync.Dispose();
+        _swapChain.Dispose();
+        _commandQueue.Dispose();
+        _resourceTracking.Dispose();
+        _window.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 
     public bool PollAndRender()
@@ -124,9 +141,6 @@ public class ImGuiDemoWindow : IDisposable
                         return false;
                     }
 
-                    break;
-                default:
-                    // Not used
                     break;
             }
         }
@@ -203,7 +217,7 @@ public class ImGuiDemoWindow : IDisposable
         ImGui.End();
     }
 
-    private void Render(CommandList commandList, TextureResource renderTarget, uint frameIndex)
+    private void Render(CommandList commandList, Texture renderTarget, uint frameIndex)
     {
         commandList.Begin();
 
@@ -242,38 +256,10 @@ public class ImGuiDemoWindow : IDisposable
 
         commandList.End();
     }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        _frameSync.WaitIdle();
-        _commandQueue.WaitIdle();
-
-        _imGuiRenderer.Dispose();
-        _frameSync.Dispose();
-        _swapChain.Dispose();
-        _commandQueue.Dispose();
-        _resourceTracking.Dispose();
-        _window.Dispose();
-
-        GC.SuppressFinalize(this);
-    }
 }
 
-/// <summary>
-/// Example program entry point showing how to use ImGui with DenOfIz
-/// </summary>
 public static class ImGuiDemoProgram
 {
-    /// <summary>
-    /// Run the ImGui demo window
-    /// </summary>
     public static void RunDemo()
     {
         Engine.Init(new EngineDesc());

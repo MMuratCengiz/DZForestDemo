@@ -35,6 +35,16 @@ public class PrepareFrameSystem : ISystem
         return false;
     }
 
+    public void Shutdown()
+    {
+        _ctx.WaitIdle();
+    }
+
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+    }
+
     private void HandleResize(uint width, uint height)
     {
         if (width == 0 || height == 0)
@@ -49,22 +59,10 @@ public class PrepareFrameSystem : ISystem
         _ctx.RenderGraph.SetDimensions(width, height);
 
         for (uint i = 0; i < _ctx.NumFrames; ++i)
-        {
             _ctx.ResourceTracking.TrackTexture(
                 _ctx.SwapChain.GetRenderTarget(i),
                 (uint)ResourceUsageFlagBits.Common,
                 QueueType.Graphics);
-        }
-    }
-
-    public void Shutdown()
-    {
-        _ctx.WaitIdle();
-    }
-
-    public void Dispose()
-    {
-        GC.SuppressFinalize(this);
     }
 }
 
@@ -109,7 +107,8 @@ public class GraphicsPlugin(
     Format depthBufferFormat = Format.D32Float,
     bool allowTearing = true)
 {
-    private readonly APIPreference _apiPreference = apiPreference ?? new APIPreference { Windows = APIPreferenceWindows.Directx12 };
+    private readonly APIPreference _apiPreference =
+        apiPreference ?? new APIPreference { Windows = APIPreferenceWindows.Directx12 };
 
     public void Build(World world)
     {

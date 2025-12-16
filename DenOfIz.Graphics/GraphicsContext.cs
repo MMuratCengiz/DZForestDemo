@@ -6,24 +6,6 @@ namespace Graphics;
 
 public class GraphicsContext : IContext, IDisposable
 {
-    public GraphicsApi GraphicsApi { get; }
-    public LogicalDevice LogicalDevice { get; }
-    public SwapChain SwapChain { get; }
-    public Window Window { get; }
-    public CommandQueue GraphicsCommandQueue { get; }
-    public CommandQueue ComputeCommandQueue { get; }
-    public CommandQueue CopyCommandQueue { get; }
-    public ResourceTracking ResourceTracking { get; } = new();
-    public RenderGraph.RenderGraph RenderGraph { get; }
-
-    public uint NumFrames { get; }
-    public Format BackBufferFormat { get; }
-    public Format DepthBufferFormat { get; }
-    public uint FrameIndex { get; internal set; }
-    public uint Width { get; internal set; }
-    public uint Height { get; internal set; }
-    public ResourceHandle SwapchainRenderTarget { get; internal set; }
-
     public GraphicsContext(
         GraphicsApi graphicsApi,
         LogicalDevice logicalDevice,
@@ -60,19 +42,29 @@ public class GraphicsContext : IContext, IDisposable
         RenderGraph.SetDimensions(width, height);
 
         for (uint i = 0; i < numFrames; ++i)
-        {
             ResourceTracking.TrackTexture(
                 swapChain.GetRenderTarget(i),
                 (uint)ResourceUsageFlagBits.Common,
                 QueueType.Graphics);
-        }
     }
 
-    public void WaitIdle()
-    {
-        LogicalDevice.WaitIdle();
-        GraphicsCommandQueue.WaitIdle();
-    }
+    public GraphicsApi GraphicsApi { get; }
+    public LogicalDevice LogicalDevice { get; }
+    public SwapChain SwapChain { get; }
+    public Window Window { get; }
+    public CommandQueue GraphicsCommandQueue { get; }
+    public CommandQueue ComputeCommandQueue { get; }
+    public CommandQueue CopyCommandQueue { get; }
+    public ResourceTracking ResourceTracking { get; } = new();
+    public RenderGraph.RenderGraph RenderGraph { get; }
+
+    public uint NumFrames { get; }
+    public Format BackBufferFormat { get; }
+    public Format DepthBufferFormat { get; }
+    public uint FrameIndex { get; internal set; }
+    public uint Width { get; internal set; }
+    public uint Height { get; internal set; }
+    public ResourceHandle SwapchainRenderTarget { get; internal set; }
 
     public void Dispose()
     {
@@ -85,5 +77,11 @@ public class GraphicsContext : IContext, IDisposable
         LogicalDevice.Dispose();
         GraphicsApi.ReportLiveObjects();
         GC.SuppressFinalize(this);
+    }
+
+    public void WaitIdle()
+    {
+        LogicalDevice.WaitIdle();
+        GraphicsCommandQueue.WaitIdle();
     }
 }

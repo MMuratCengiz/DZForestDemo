@@ -9,7 +9,10 @@ public sealed class AppBuilder
     private readonly List<Action<App>> _plugins = [];
     private readonly List<Action<App>> _systemRegistrations = [];
 
-    public static AppBuilder Create() => new();
+    public static AppBuilder Create()
+    {
+        return new AppBuilder();
+    }
 
     public AppBuilder WithTitle(string title)
     {

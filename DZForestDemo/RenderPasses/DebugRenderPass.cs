@@ -27,6 +27,21 @@ public sealed class DebugRenderPass : IDisposable
         _rtAttachments = new PinnedArray<RenderingAttachmentDesc>(1);
     }
 
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        _debugRenderer.Dispose();
+        _rtAttachments.Dispose();
+
+        GC.SuppressFinalize(this);
+    }
+
     public void SetScreenSize(uint width, uint height)
     {
         _debugRenderer.SetScreenSize(width, height);
@@ -49,13 +64,10 @@ public sealed class DebugRenderPass : IDisposable
         renderGraph.AddPass("Debug",
             (ref RenderPassSetupContext ctx, ref PassBuilder builder) =>
             {
-                builder.WriteTexture(debugRt, (uint)ResourceUsageFlagBits.RenderTarget);
+                builder.WriteTexture(debugRt);
                 builder.HasSideEffects();
             },
-            (ref RenderPassExecuteContext ctx) =>
-            {
-                Execute(ref ctx, debugRt, viewport);
-            });
+            (ref RenderPassExecuteContext ctx) => { Execute(ref ctx, debugRt, viewport); });
 
         return debugRt;
     }
@@ -89,20 +101,5 @@ public sealed class DebugRenderPass : IDisposable
         cmd.BindScissorRect(viewport.X, viewport.Y, viewport.Width, viewport.Height);
         _debugRenderer.Render(cmd);
         cmd.EndRendering();
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        _debugRenderer.Dispose();
-        _rtAttachments.Dispose();
-
-        GC.SuppressFinalize(this);
     }
 }

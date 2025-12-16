@@ -29,8 +29,8 @@ public sealed class PhysicsStepSystem : ISystem
 
 public sealed class PhysicsSyncSystem : ISystem
 {
-    private World _world = null!;
     private PhysicsContext _physics = null!;
+    private World _world = null!;
 
     public void Initialize(World world)
     {
@@ -64,9 +64,9 @@ public sealed class PhysicsSyncSystem : ISystem
 
 public sealed class PhysicsCleanupSystem : ISystem
 {
-    private World _world = null!;
-    private PhysicsContext _physics = null!;
     private readonly List<Entity> _entitiesToRemove = new();
+    private PhysicsContext _physics = null!;
+    private World _world = null!;
 
     public void Initialize(World world)
     {
@@ -111,8 +111,8 @@ public sealed class PhysicsCleanupSystem : ISystem
 
 public sealed class PhysicsVelocitySyncSystem : ISystem
 {
-    private World _world = null!;
     private PhysicsContext _physics = null!;
+    private World _world = null!;
 
     public void Initialize(World world)
     {

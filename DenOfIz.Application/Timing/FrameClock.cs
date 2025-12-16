@@ -7,9 +7,9 @@ public sealed class FrameClock
 {
     private readonly Stopwatch _stopwatch = new();
     private readonly double _tickFrequency = 1.0 / Stopwatch.Frequency;
+    private long _currentTicks;
 
     private long _previousTicks;
-    private long _currentTicks;
 
     public double DeltaTime
     {

@@ -2,7 +2,6 @@ using DenOfIz;
 
 namespace RuntimeAssets;
 
-
 public sealed class GeometryBuilder
 {
     public GeometryData BuildQuadXY(float width, float height, BuildDesc flags = 0)

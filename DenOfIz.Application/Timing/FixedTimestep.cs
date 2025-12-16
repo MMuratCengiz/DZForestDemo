@@ -2,11 +2,16 @@ using System.Runtime.CompilerServices;
 
 namespace Application.Timing;
 
-
 public sealed class FixedTimestep
 {
     private double _accumulator;
     private int _maxStepsPerFrame;
+
+    public FixedTimestep(double updateRate, int maxStepsPerFrame = 8)
+    {
+        SetUpdateRate(updateRate);
+        _maxStepsPerFrame = Math.Max(1, maxStepsPerFrame);
+    }
 
     public double FixedDeltaTime
     {
@@ -26,12 +31,6 @@ public sealed class FixedTimestep
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _maxStepsPerFrame;
         set => _maxStepsPerFrame = Math.Max(1, value);
-    }
-
-    public FixedTimestep(double updateRate, int maxStepsPerFrame = 8)
-    {
-        SetUpdateRate(updateRate);
-        _maxStepsPerFrame = Math.Max(1, maxStepsPerFrame);
     }
 
     private void SetUpdateRate(double updateRate)

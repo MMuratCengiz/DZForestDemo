@@ -13,32 +13,62 @@ public readonly struct ComponentId : IEquatable<ComponentId>, IComparable<Compon
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Equals(ComponentId other) => Id == other.Id;
+    public bool Equals(ComponentId other)
+    {
+        return Id == other.Id;
+    }
 
-    public override bool Equals(object? obj) => obj is ComponentId other && Equals(other);
+    public override bool Equals(object? obj)
+    {
+        return obj is ComponentId other && Equals(other);
+    }
 
-    public override int GetHashCode() => Id;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int CompareTo(ComponentId other) => Id.CompareTo(other.Id);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator ==(ComponentId left, ComponentId right) => left.Equals(right);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator !=(ComponentId left, ComponentId right) => !left.Equals(right);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator <(ComponentId left, ComponentId right) => left.Id < right.Id;
+    public override int GetHashCode()
+    {
+        return Id;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator >(ComponentId left, ComponentId right) => left.Id > right.Id;
+    public int CompareTo(ComponentId other)
+    {
+        return Id.CompareTo(other.Id);
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator <=(ComponentId left, ComponentId right) => left.Id <= right.Id;
+    public static bool operator ==(ComponentId left, ComponentId right)
+    {
+        return left.Equals(right);
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator >=(ComponentId left, ComponentId right) => left.Id >= right.Id;
+    public static bool operator !=(ComponentId left, ComponentId right)
+    {
+        return !left.Equals(right);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator <(ComponentId left, ComponentId right)
+    {
+        return left.Id < right.Id;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator >(ComponentId left, ComponentId right)
+    {
+        return left.Id > right.Id;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator <=(ComponentId left, ComponentId right)
+    {
+        return left.Id <= right.Id;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool operator >=(ComponentId left, ComponentId right)
+    {
+        return left.Id >= right.Id;
+    }
 }
 
 public static class ComponentRegistry
@@ -46,6 +76,8 @@ public static class ComponentRegistry
     private static readonly Dictionary<Type, ComponentId> TypeToId = new();
     private static readonly List<ComponentInfo> Components = [];
     private static int _nextId;
+
+    public static int Count => Components.Count;
 
     public static ComponentId Register<T>() where T : struct
     {
@@ -78,8 +110,6 @@ public static class ComponentRegistry
     {
         return Components[id.Id];
     }
-
-    public static int Count => Components.Count;
 }
 
 public readonly struct ComponentInfo

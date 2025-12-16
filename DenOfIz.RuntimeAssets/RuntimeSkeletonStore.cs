@@ -45,11 +45,32 @@ public readonly struct RuntimeAnimationClip
 
 public sealed class RuntimeSkeletonStore : IDisposable
 {
-    private readonly List<SkeletonSlot> _skeletonSlots = [];
-    private readonly Queue<uint> _freeSkeletonIndices = new();
     private readonly List<AnimationSlot> _animationSlots = [];
     private readonly Queue<uint> _freeAnimationIndices = new();
+    private readonly Queue<uint> _freeSkeletonIndices = new();
+    private readonly List<SkeletonSlot> _skeletonSlots = [];
     private bool _disposed;
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        foreach (var slot in _skeletonSlots)
+        {
+            if (slot.IsOccupied)
+            {
+                slot.Skeleton.Animation.Dispose();
+            }
+        }
+
+        _skeletonSlots.Clear();
+        _animationSlots.Clear();
+    }
 
     public RuntimeSkeletonHandle AddSkeleton(string ozzSkeletonPath)
     {
@@ -69,7 +90,7 @@ public sealed class RuntimeSkeletonStore : IDisposable
         using var container = new BinaryContainer();
         var writer = BinaryWriter.CreateFromContainer(container);
 
-        var handle = System.Runtime.InteropServices.GCHandle.Alloc(skeletonData, System.Runtime.InteropServices.GCHandleType.Pinned);
+        var handle = GCHandle.Alloc(skeletonData, GCHandleType.Pinned);
         try
         {
             writer.WriteBytes(new ByteArrayView
@@ -124,7 +145,7 @@ public sealed class RuntimeSkeletonStore : IDisposable
         using var container = new BinaryContainer();
         var writer = BinaryWriter.CreateFromContainer(container);
 
-        var handle = System.Runtime.InteropServices.GCHandle.Alloc(animationData, System.Runtime.InteropServices.GCHandleType.Pinned);
+        var handle = GCHandle.Alloc(animationData, GCHandleType.Pinned);
         try
         {
             writer.WriteBytes(new ByteArrayView
@@ -201,6 +222,7 @@ public sealed class RuntimeSkeletonStore : IDisposable
         {
             ThrowInvalidSkeletonHandle();
         }
+
         return skeleton;
     }
 
@@ -260,6 +282,7 @@ public sealed class RuntimeSkeletonStore : IDisposable
         {
             ThrowInvalidAnimationHandle();
         }
+
         return clip;
     }
 
@@ -332,7 +355,8 @@ public sealed class RuntimeSkeletonStore : IDisposable
         return new RuntimeSkeletonHandle(index, initialGeneration);
     }
 
-    private RuntimeAnimationHandle AllocateAnimationSlot(RuntimeAnimationClip clip, RuntimeSkeletonHandle skeletonHandle)
+    private RuntimeAnimationHandle AllocateAnimationSlot(RuntimeAnimationClip clip,
+        RuntimeSkeletonHandle skeletonHandle)
     {
         if (_freeAnimationIndices.TryDequeue(out var freeIndex))
         {
@@ -347,26 +371,6 @@ public sealed class RuntimeSkeletonStore : IDisposable
         const uint initialGeneration = 1;
         _animationSlots.Add(new AnimationSlot(clip, skeletonHandle, initialGeneration, true));
         return new RuntimeAnimationHandle(index, initialGeneration);
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        foreach (var slot in _skeletonSlots)
-        {
-            if (slot.IsOccupied)
-            {
-                slot.Skeleton.Animation.Dispose();
-            }
-        }
-        _skeletonSlots.Clear();
-        _animationSlots.Clear();
     }
 
     [StructLayout(LayoutKind.Sequential)]

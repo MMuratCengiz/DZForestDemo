@@ -25,17 +25,32 @@ public readonly struct ArchetypeId : IEquatable<ArchetypeId>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Equals(ArchetypeId other) => Id == other.Id;
+    public bool Equals(ArchetypeId other)
+    {
+        return Id == other.Id;
+    }
 
-    public override bool Equals(object? obj) => obj is ArchetypeId other && Equals(other);
+    public override bool Equals(object? obj)
+    {
+        return obj is ArchetypeId other && Equals(other);
+    }
 
-    public override int GetHashCode() => Id;
+    public override int GetHashCode()
+    {
+        return Id;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator ==(ArchetypeId left, ArchetypeId right) => left.Equals(right);
+    public static bool operator ==(ArchetypeId left, ArchetypeId right)
+    {
+        return left.Equals(right);
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator !=(ArchetypeId left, ArchetypeId right) => !left.Equals(right);
+    public static bool operator !=(ArchetypeId left, ArchetypeId right)
+    {
+        return !left.Equals(right);
+    }
 }
 
 public readonly struct ArchetypeSignature : IEquatable<ArchetypeSignature>
@@ -76,6 +91,7 @@ public readonly struct ArchetypeSignature : IEquatable<ArchetypeSignature>
         {
             hash.Add(id.Id);
         }
+
         return hash.ToHashCode();
     }
 
@@ -95,6 +111,7 @@ public readonly struct ArchetypeSignature : IEquatable<ArchetypeSignature>
                 return false;
             }
         }
+
         return true;
     }
 
@@ -133,22 +150,33 @@ public readonly struct ArchetypeSignature : IEquatable<ArchetypeSignature>
         }
 
         for (var i = 0; i < _componentIds.Length; i++)
-        {
             if (_componentIds[i] != other._componentIds[i])
             {
                 return false;
             }
-        }
+
         return true;
     }
 
-    public override bool Equals(object? obj) => obj is ArchetypeSignature other && Equals(other);
+    public override bool Equals(object? obj)
+    {
+        return obj is ArchetypeSignature other && Equals(other);
+    }
 
-    public override int GetHashCode() => _hashCode;
+    public override int GetHashCode()
+    {
+        return _hashCode;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator ==(ArchetypeSignature left, ArchetypeSignature right) => left.Equals(right);
+    public static bool operator ==(ArchetypeSignature left, ArchetypeSignature right)
+    {
+        return left.Equals(right);
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator !=(ArchetypeSignature left, ArchetypeSignature right) => !left.Equals(right);
+    public static bool operator !=(ArchetypeSignature left, ArchetypeSignature right)
+    {
+        return !left.Equals(right);
+    }
 }

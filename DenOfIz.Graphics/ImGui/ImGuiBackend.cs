@@ -69,8 +69,8 @@ internal struct PixelConstants
 internal class ImGuiFrameData
 {
     public CommandList? CommandList;
-    public Fence? FrameFence;
     public ResourceBindGroup? ConstantsBindGroup;
+    public Fence? FrameFence;
     public ResourceBindGroup? TextureBindGroup;
 }
 
@@ -134,41 +134,41 @@ float4 main(PSInput input) : SV_TARGET
 }";
 
     private readonly ImGuiBackendDesc _desc;
-    private readonly LogicalDevice _logicalDevice;
-    private Viewport _viewport;
-
-    private ShaderProgram? _shaderProgram;
-    private RootSignature? _rootSignature;
-    private InputLayout? _inputLayout;
-    private Pipeline? _pipeline;
-
-    private Buffer? _vertexBuffer;
-    private Buffer? _indexBuffer;
-    private Buffer? _uniformBuffer;
-    private Buffer? _pixelConstantsBuffer;
-    private IntPtr _vertexBufferData;
-    private IntPtr _indexBufferData;
-    private IntPtr _uniformBufferData;
-    private IntPtr _pixelConstantsData;
-    private uint _alignedUniformSize;
-    private uint _alignedPixelConstantsSize;
-
-    private readonly TextureResource?[] _textures;
-    private TextureResource? _fontTexture;
-    private TextureResource? _nullTexture;
-    private Sampler? _sampler;
-    private bool _texturesDirty = true;
 
     private readonly ImGuiFrameData[] _frameData;
+    private readonly LogicalDevice _logicalDevice;
     private readonly ResourceBindGroup?[] _pixelConstantsBindGroups;
-    private uint _nextFrame;
 
-    private CommandQueue? _commandQueue;
+    private readonly Texture?[] _textures;
+    private uint _alignedPixelConstantsSize;
+    private uint _alignedUniformSize;
     private CommandListPool? _commandListPool;
 
-    private Float4x4 _projectionMatrix;
-    private bool _textInputActive;
+    private CommandQueue? _commandQueue;
     private bool _disposed;
+    private Texture? _fontTexture;
+    private Buffer? _indexBuffer;
+    private IntPtr _indexBufferData;
+    private InputLayout? _inputLayout;
+    private uint _nextFrame;
+    private Texture? _nullTexture;
+    private Pipeline? _pipeline;
+    private Buffer? _pixelConstantsBuffer;
+    private IntPtr _pixelConstantsData;
+
+    private Float4x4 _projectionMatrix;
+    private RootSignature? _rootSignature;
+    private Sampler? _sampler;
+
+    private ShaderProgram? _shaderProgram;
+    private bool _textInputActive;
+    private bool _texturesDirty = true;
+    private Buffer? _uniformBuffer;
+    private IntPtr _uniformBufferData;
+
+    private Buffer? _vertexBuffer;
+    private IntPtr _vertexBufferData;
+    private Viewport _viewport;
 
     public ImGuiBackend(ImGuiBackendDesc desc)
     {
@@ -176,14 +176,11 @@ float4 main(PSInput input) : SV_TARGET
         _logicalDevice = desc.LogicalDevice;
         _viewport = desc.Viewport;
 
-        _textures = new TextureResource?[desc.MaxTextures];
+        _textures = new Texture?[desc.MaxTextures];
         _frameData = new ImGuiFrameData[desc.NumFrames];
         _pixelConstantsBindGroups = new ResourceBindGroup?[desc.MaxTextures];
 
-        for (var i = 0; i < desc.NumFrames; i++)
-        {
-            _frameData[i] = new ImGuiFrameData();
-        }
+        for (var i = 0; i < desc.NumFrames; i++) _frameData[i] = new ImGuiFrameData();
 
         CreateCommandInfrastructure();
         CreateShaderProgram();
@@ -197,6 +194,56 @@ float4 main(PSInput input) : SV_TARGET
     }
 
     public Viewport Viewport => _viewport;
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        if (_textInputActive)
+        {
+            InputSystem.StopTextInput();
+        }
+
+        _vertexBuffer?.UnmapMemory();
+        _indexBuffer?.UnmapMemory();
+        _uniformBuffer?.UnmapMemory();
+        _pixelConstantsBuffer?.UnmapMemory();
+
+        _vertexBuffer?.Dispose();
+        _indexBuffer?.Dispose();
+        _uniformBuffer?.Dispose();
+        _pixelConstantsBuffer?.Dispose();
+
+        foreach (var frameData in _frameData)
+        {
+            frameData.ConstantsBindGroup?.Dispose();
+            frameData.TextureBindGroup?.Dispose();
+            frameData.FrameFence?.Dispose();
+        }
+
+        foreach (var bindGroup in _pixelConstantsBindGroups)
+        {
+            bindGroup?.Dispose();
+        }
+
+        _fontTexture?.Dispose();
+        _nullTexture?.Dispose();
+
+        _sampler?.Dispose();
+        _pipeline?.Dispose();
+        _rootSignature?.Dispose();
+        _inputLayout?.Dispose();
+        _shaderProgram?.Dispose();
+        _commandListPool?.Dispose();
+        _commandQueue?.Dispose();
+
+        GC.SuppressFinalize(this);
+    }
 
     public void SetViewport(Viewport viewport)
     {
@@ -349,7 +396,7 @@ float4 main(PSInput input) : SV_TARGET
     {
         var vertexBufferDesc = new BufferDesc
         {
-            NumBytes = _desc.MaxVertices * 20, // sizeof(ImDrawVert) = 20 bytes
+            NumBytes = _desc.MaxVertices * 20,
             Descriptor = (uint)ResourceDescriptorFlagBits.VertexBuffer,
             Usages = (uint)ResourceUsageFlagBits.VertexAndConstantBuffer,
             HeapType = HeapType.CpuGpu,
@@ -360,7 +407,7 @@ float4 main(PSInput input) : SV_TARGET
 
         var indexBufferDesc = new BufferDesc
         {
-            NumBytes = _desc.MaxIndices * 2, // sizeof(ImDrawIdx) = 2 bytes (ushort)
+            NumBytes = _desc.MaxIndices * 2,
             Descriptor = (uint)ResourceDescriptorFlagBits.IndexBuffer,
             Usages = (uint)ResourceUsageFlagBits.IndexBuffer,
             HeapType = HeapType.CpuGpu,
@@ -420,7 +467,6 @@ float4 main(PSInput input) : SV_TARGET
             _frameData[frameIdx].TextureBindGroup = _logicalDevice.CreateResourceBindGroup(textureBindGroupDesc);
         }
 
-        // Create pixel constants bind groups for each texture slot
         for (uint texIdx = 0; texIdx < _desc.MaxTextures; texIdx++)
         {
             var pixelConstantsBindGroupDesc = new ResourceBindGroupDesc
@@ -497,8 +543,6 @@ float4 main(PSInput input) : SV_TARGET
             DebugName = StringView.Intern("ImGui Font Texture")
         };
         _fontTexture = _logicalDevice.CreateTexture(fontTextureDesc);
-
-        // Create upload buffer
         var uploadBufferDesc = new BufferDesc
         {
             NumBytes = (ulong)fontDataSize,
@@ -512,8 +556,6 @@ float4 main(PSInput input) : SV_TARGET
         var uploadData = uploadBuffer.MapMemory();
         CopyFontData(fontData, uploadData, fontDataSize);
         uploadBuffer.UnmapMemory();
-
-        // Use resource tracking for proper state transitions
         using var resourceTracking = new ResourceTracking();
         resourceTracking.TrackTexture(_fontTexture, (uint)ResourceUsageFlagBits.CopyDst, QueueType.Graphics);
         resourceTracking.TrackBuffer(uploadBuffer, (uint)ResourceUsageFlagBits.CopySrc, QueueType.Graphics);
@@ -606,7 +648,7 @@ float4 main(PSInput input) : SV_TARGET
         _texturesDirty = false;
     }
 
-    public IntPtr AddTexture(TextureResource texture)
+    public IntPtr AddTexture(Texture texture)
     {
         for (uint i = 2; i < _desc.MaxTextures; i++)
         {
@@ -656,8 +698,8 @@ float4 main(PSInput input) : SV_TARGET
         for (var n = 0; n < drawData.CmdListsCount; n++)
         {
             var cmdList = drawData.CmdLists[n];
-            totalVertexSize += (ulong)(cmdList.VtxBuffer.Size * 20); // sizeof(ImDrawVert)
-            totalIndexSize += (ulong)(cmdList.IdxBuffer.Size * 2); // sizeof(ImDrawIdx)
+            totalVertexSize += (ulong)(cmdList.VtxBuffer.Size * 20);
+            totalIndexSize += (ulong)(cmdList.IdxBuffer.Size * 2);
         }
 
         if (totalVertexSize > _desc.MaxVertices * 20 || totalIndexSize > _desc.MaxIndices * 2)
@@ -680,13 +722,13 @@ float4 main(PSInput input) : SV_TARGET
 
                 System.Buffer.MemoryCopy(
                     cmdList.VtxBuffer.Data.ToPointer(),
-                    ((byte*)_vertexBufferData + vertexOffset * 20),
+                    (byte*)_vertexBufferData + vertexOffset * 20,
                     vertexDataSize,
                     vertexDataSize);
 
                 System.Buffer.MemoryCopy(
                     cmdList.IdxBuffer.Data.ToPointer(),
-                    ((byte*)_indexBufferData + indexOffset * 2),
+                    (byte*)_indexBufferData + indexOffset * 2,
                     indexDataSize,
                     indexDataSize);
 
@@ -711,7 +753,7 @@ float4 main(PSInput input) : SV_TARGET
     private void SetupRenderState(CommandList commandList, uint frameIndex)
     {
         commandList.BindPipeline(_pipeline);
-        commandList.BindVertexBuffer(_vertexBuffer, 0, 20, 0); // stride = sizeof(ImDrawVert) = 20
+        commandList.BindVertexBuffer(_vertexBuffer, 0, 20, 0);
         commandList.BindIndexBuffer(_indexBuffer, IndexType.Uint16, 0);
         unsafe
         {
@@ -738,8 +780,6 @@ float4 main(PSInput input) : SV_TARGET
 
             if (pcmd.UserCallback != IntPtr.Zero)
             {
-                // User callback handling would go here
-                // For ImDrawCallback_ResetRenderState, we'd call SetupRenderState
                 continue;
             }
 
@@ -867,64 +907,14 @@ float4 main(PSInput input) : SV_TARGET
             _ => ImGuiKey.None
         };
     }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        if (_textInputActive)
-        {
-            InputSystem.StopTextInput();
-        }
-
-        _vertexBuffer?.UnmapMemory();
-        _indexBuffer?.UnmapMemory();
-        _uniformBuffer?.UnmapMemory();
-        _pixelConstantsBuffer?.UnmapMemory();
-
-        _vertexBuffer?.Dispose();
-        _indexBuffer?.Dispose();
-        _uniformBuffer?.Dispose();
-        _pixelConstantsBuffer?.Dispose();
-
-        foreach (var frameData in _frameData)
-        {
-            frameData.ConstantsBindGroup?.Dispose();
-            frameData.TextureBindGroup?.Dispose();
-            frameData.FrameFence?.Dispose();
-        }
-
-        foreach (var bindGroup in _pixelConstantsBindGroups)
-        {
-            bindGroup?.Dispose();
-        }
-
-        _fontTexture?.Dispose();
-        _nullTexture?.Dispose();
-
-        _sampler?.Dispose();
-        _pipeline?.Dispose();
-        _rootSignature?.Dispose();
-        _inputLayout?.Dispose();
-        _shaderProgram?.Dispose();
-        _commandListPool?.Dispose();
-        _commandQueue?.Dispose();
-
-        GC.SuppressFinalize(this);
-    }
 }
 
 public class ImGuiRenderer : IDisposable
 {
-    private bool _disposed;
     private readonly ImGuiBackend _backend;
 
     private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments = new(1);
+    private bool _disposed;
 
     public ImGuiRenderer(ImGuiBackendDesc desc)
     {
@@ -936,6 +926,22 @@ public class ImGuiRenderer : IDisposable
 
         io.BackendFlags |= ImGuiBackendFlags.RendererHasVtxOffset;
         _backend = new ImGuiBackend(desc);
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        _backend.Dispose();
+        _rtAttachments.Dispose();
+        ImGuiNET.ImGui.DestroyContext();
+
+        GC.SuppressFinalize(this);
     }
 
     public void ProcessEvent(Event ev)
@@ -952,7 +958,7 @@ public class ImGuiRenderer : IDisposable
         _backend.UpdateTextInputState();
     }
 
-    public void Render(TextureResource renderTarget, CommandList commandList, uint frameIndex)
+    public void Render(Texture renderTarget, CommandList commandList, uint frameIndex)
     {
         ImGuiNET.ImGui.Render();
 
@@ -988,7 +994,7 @@ public class ImGuiRenderer : IDisposable
         _backend.RecreateFonts();
     }
 
-    public IntPtr AddTexture(TextureResource texture)
+    public IntPtr AddTexture(Texture texture)
     {
         return _backend.AddTexture(texture);
     }
@@ -996,21 +1002,5 @@ public class ImGuiRenderer : IDisposable
     public void RemoveTexture(IntPtr textureId)
     {
         _backend.RemoveTexture(textureId);
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        _backend.Dispose();
-        _rtAttachments.Dispose();
-        ImGuiNET.ImGui.DestroyContext();
-
-        GC.SuppressFinalize(this);
     }
 }

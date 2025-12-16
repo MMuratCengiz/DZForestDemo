@@ -11,11 +11,30 @@ public readonly struct ResourceHandle(int index, int version) : IEquatable<Resou
     public bool IsValid => Index >= 0;
     public static ResourceHandle Invalid => new(-1, 0);
 
-    public bool Equals(ResourceHandle other) => Index == other.Index && Version == other.Version;
-    public override bool Equals(object? obj) => obj is ResourceHandle other && Equals(other);
-    public override int GetHashCode() => HashCode.Combine(Index, Version);
-    public static bool operator ==(ResourceHandle left, ResourceHandle right) => left.Equals(right);
-    public static bool operator !=(ResourceHandle left, ResourceHandle right) => !left.Equals(right);
+    public bool Equals(ResourceHandle other)
+    {
+        return Index == other.Index && Version == other.Version;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is ResourceHandle other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Index, Version);
+    }
+
+    public static bool operator ==(ResourceHandle left, ResourceHandle right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(ResourceHandle left, ResourceHandle right)
+    {
+        return !left.Equals(right);
+    }
 }
 
 [Flags]

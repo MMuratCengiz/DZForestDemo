@@ -17,37 +17,55 @@ public readonly struct PhysicsShape
     public PhysicsShapeType Type { get; init; }
     public Vector3 Size { get; init; }
 
-    public static PhysicsShape Box(float width, float height, float depth) => new()
+    public static PhysicsShape Box(float width, float height, float depth)
     {
-        Type = PhysicsShapeType.Box,
-        Size = new Vector3(width, height, depth)
-    };
+        return new PhysicsShape
+        {
+            Type = PhysicsShapeType.Box,
+            Size = new Vector3(width, height, depth)
+        };
+    }
 
-    public static PhysicsShape Box(Vector3 size) => new()
+    public static PhysicsShape Box(Vector3 size)
     {
-        Type = PhysicsShapeType.Box,
-        Size = size
-    };
+        return new PhysicsShape
+        {
+            Type = PhysicsShapeType.Box,
+            Size = size
+        };
+    }
 
-    public static PhysicsShape Cube(float size) => Box(size, size, size);
-
-    public static PhysicsShape Sphere(float diameter) => new()
+    public static PhysicsShape Cube(float size)
     {
-        Type = PhysicsShapeType.Sphere,
-        Size = new Vector3(diameter, diameter, diameter)
-    };
+        return Box(size, size, size);
+    }
 
-    public static PhysicsShape Capsule(float radius, float length) => new()
+    public static PhysicsShape Sphere(float diameter)
     {
-        Type = PhysicsShapeType.Capsule,
-        Size = new Vector3(radius, length, 0)
-    };
+        return new PhysicsShape
+        {
+            Type = PhysicsShapeType.Sphere,
+            Size = new Vector3(diameter, diameter, diameter)
+        };
+    }
 
-    public static PhysicsShape Cylinder(float diameter, float height) => new()
+    public static PhysicsShape Capsule(float radius, float length)
     {
-        Type = PhysicsShapeType.Cylinder,
-        Size = new Vector3(diameter, height, 0)
-    };
+        return new PhysicsShape
+        {
+            Type = PhysicsShapeType.Capsule,
+            Size = new Vector3(radius, length, 0)
+        };
+    }
+
+    public static PhysicsShape Cylinder(float diameter, float height)
+    {
+        return new PhysicsShape
+        {
+            Type = PhysicsShapeType.Cylinder,
+            Size = new Vector3(diameter, height, 0)
+        };
+    }
 
     internal TypedIndex AddToSimulation(Simulation simulation)
     {
@@ -89,30 +107,39 @@ public readonly struct PhysicsBodyDesc
     public float SpeculativeMargin { get; init; }
     public float SleepThreshold { get; init; }
 
-    public static PhysicsBodyDesc Dynamic(PhysicsShape shape, float mass = 1f) => new()
+    public static PhysicsBodyDesc Dynamic(PhysicsShape shape, float mass = 1f)
     {
-        Shape = shape,
-        BodyType = PhysicsBodyType.Dynamic,
-        Mass = mass,
-        SpeculativeMargin = 0.1f,
-        SleepThreshold = 0.01f
-    };
+        return new PhysicsBodyDesc
+        {
+            Shape = shape,
+            BodyType = PhysicsBodyType.Dynamic,
+            Mass = mass,
+            SpeculativeMargin = 0.1f,
+            SleepThreshold = 0.01f
+        };
+    }
 
-    public static PhysicsBodyDesc Static(PhysicsShape shape) => new()
+    public static PhysicsBodyDesc Static(PhysicsShape shape)
     {
-        Shape = shape,
-        BodyType = PhysicsBodyType.Static,
-        Mass = 0f,
-        SpeculativeMargin = 0.1f,
-        SleepThreshold = 0f
-    };
+        return new PhysicsBodyDesc
+        {
+            Shape = shape,
+            BodyType = PhysicsBodyType.Static,
+            Mass = 0f,
+            SpeculativeMargin = 0.1f,
+            SleepThreshold = 0f
+        };
+    }
 
-    public static PhysicsBodyDesc Kinematic(PhysicsShape shape) => new()
+    public static PhysicsBodyDesc Kinematic(PhysicsShape shape)
     {
-        Shape = shape,
-        BodyType = PhysicsBodyType.Kinematic,
-        Mass = 0f,
-        SpeculativeMargin = 0.1f,
-        SleepThreshold = 0f
-    };
+        return new PhysicsBodyDesc
+        {
+            Shape = shape,
+            BodyType = PhysicsBodyType.Kinematic,
+            Mass = 0f,
+            SpeculativeMargin = 0.1f,
+            SleepThreshold = 0f
+        };
+    }
 }

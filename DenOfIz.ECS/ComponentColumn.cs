@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace ECS;
 
@@ -19,24 +18,24 @@ public sealed class ComponentColumn<T>(int initialCapacity) : IComponentColumn
     where T : struct
 {
     private T[] _data = new T[initialCapacity];
-    private int _count = 0;
+
+    public ComponentColumn() : this(16)
+    {
+    }
 
     public ComponentId ComponentId { get; } = ComponentRegistry.GetId<T>();
 
     public int Count
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _count;
+        get;
+        private set;
     }
 
     public int Capacity
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _data.Length;
-    }
-
-    public ComponentColumn() : this(16)
-    {
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -49,16 +48,44 @@ public sealed class ComponentColumn<T>(int initialCapacity) : IComponentColumn
 
         var newCapacity = Math.Max(_data.Length * 2, capacity);
         var newData = new T[newCapacity];
-        Array.Copy(_data, newData, _count);
+        Array.Copy(_data, newData, Count);
         _data = newData;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SwapRemove(int index)
+    {
+        if (index < Count - 1)
+        {
+            _data[index] = _data[Count - 1];
+        }
+
+        Count--;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Clear()
+    {
+        Count = 0;
+    }
+
+    public IComponentColumn Clone()
+    {
+        return new ComponentColumn<T>(_data.Length);
+    }
+
+    public void CopyFrom(IComponentColumn source, int sourceIndex)
+    {
+        var typedSource = (ComponentColumn<T>)source;
+        Add(in typedSource._data[sourceIndex]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int Add(in T component)
     {
-        EnsureCapacity(_count + 1);
-        _data[_count] = component;
-        return _count++;
+        EnsureCapacity(Count + 1);
+        _data[Count] = component;
+        return Count++;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -76,33 +103,6 @@ public sealed class ComponentColumn<T>(int initialCapacity) : IComponentColumn
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Span<T> AsSpan()
     {
-        return _data.AsSpan(0, _count);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SwapRemove(int index)
-    {
-        if (index < _count - 1)
-        {
-            _data[index] = _data[_count - 1];
-        }
-        _count--;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Clear()
-    {
-        _count = 0;
-    }
-
-    public IComponentColumn Clone()
-    {
-        return new ComponentColumn<T>(_data.Length);
-    }
-
-    public void CopyFrom(IComponentColumn source, int sourceIndex)
-    {
-        var typedSource = (ComponentColumn<T>)source;
-        Add(in typedSource._data[sourceIndex]);
+        return _data.AsSpan(0, Count);
     }
 }

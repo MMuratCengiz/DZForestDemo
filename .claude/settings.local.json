@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "Bash(find:*)",
+      "WebFetch(domain:bevy-cheatbook.github.io)",
+      "Bash(dir:*)",
+      "Bash(cat:*)",
+      "Bash(powershell:*)",
+      "Bash(cmd /c \"dir C:\\Users\\cengi\\.nuget\\packages\\denofizgraphics\\0.2.7-alpha /s /b\")",
+      "Bash(dotnet run:*)",
+      "Bash(wc:*)",
+      "Bash(dotnet build:*)",
+      "WebFetch(domain:rastertek.com)",
+      "WebFetch(domain:www.ogldev.org)"
+    ]
+  }
+}

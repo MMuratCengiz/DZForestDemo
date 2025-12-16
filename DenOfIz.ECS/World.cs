@@ -5,28 +5,49 @@ namespace ECS;
 
 public class World : IDisposable
 {
+    private readonly List<ISystem> _allSystems = [];
     private readonly Dictionary<Type, IContext> _contexts = new();
     private readonly List<SystemDescriptor> _descriptors = [];
+
     private readonly Dictionary<Schedule, ISystem[]> _schedules = new();
-    private readonly List<ISystem> _allSystems = [];
     private ISystem[] _allSystemsArray = [];
-
-    private readonly EntityStore _entityStore;
-    private readonly SceneManager _sceneManager;
-    private readonly Commands _commands;
-
-    private bool _initialized;
     private bool _disposed;
 
-    public EntityStore Entities => _entityStore;
-    public SceneManager Scenes => _sceneManager;
-    public Commands Commands => _commands;
+    private bool _initialized;
 
     public World()
     {
-        _entityStore = new EntityStore();
-        _sceneManager = new SceneManager(_entityStore);
-        _commands = new Commands(_entityStore);
+        Entities = new EntityStore();
+        Scenes = new SceneManager(Entities);
+        Commands = new Commands(Entities);
+    }
+
+    public EntityStore Entities { get; }
+
+    public SceneManager Scenes { get; }
+
+    public Commands Commands { get; }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        for (var i = _allSystems.Count - 1; i >= 0; i--) _allSystems[i].Dispose();
+
+        foreach (var context in _contexts.Values)
+        {
+            if (context is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
+        }
+
+        GC.SuppressFinalize(this);
     }
 
     public void RegisterContext<T>(T context) where T : class, IContext
@@ -66,6 +87,7 @@ public class World : IDisposable
                 return typed;
             }
         }
+
         return null;
     }
 
@@ -172,10 +194,7 @@ public class World : IDisposable
         }
 
         ReadOnlySpan<ISystem> span = systems;
-        for (var i = 0; i < span.Length; i++)
-        {
-            span[i].Run();
-        }
+        for (var i = 0; i < span.Length; i++) span[i].Run();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -183,147 +202,126 @@ public class World : IDisposable
     {
         ReadOnlySpan<ISystem> systems = _allSystemsArray;
         for (var i = 0; i < systems.Length; i++)
-        {
             if (systems[i].OnEvent(ref ev))
             {
                 return true;
             }
-        }
+
         return false;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Entity Spawn()
     {
-        return _entityStore.Spawn();
+        return Entities.Spawn();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Despawn(Entity entity)
     {
-        _entityStore.Despawn(entity);
+        Entities.Despawn(entity);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void AddComponent<T>(Entity entity, in T component) where T : struct
     {
-        _entityStore.AddComponent(entity, in component);
+        Entities.AddComponent(entity, in component);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void RemoveComponent<T>(Entity entity) where T : struct
     {
-        _entityStore.RemoveComponent<T>(entity);
+        Entities.RemoveComponent<T>(entity);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ref T GetComponent<T>(Entity entity) where T : struct
     {
-        return ref _entityStore.GetComponent<T>(entity);
+        return ref Entities.GetComponent<T>(entity);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool HasComponent<T>(Entity entity) where T : struct
     {
-        return _entityStore.HasComponent<T>(entity);
+        return Entities.HasComponent<T>(entity);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryGetComponent<T>(Entity entity, out T component) where T : struct
     {
-        return _entityStore.TryGetComponent(entity, out component);
+        return Entities.TryGetComponent(entity, out component);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Query<T1> Query<T1>() where T1 : struct
     {
-        return _entityStore.Query<T1>();
+        return Entities.Query<T1>();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Query<T1, T2> Query<T1, T2>() where T1 : struct where T2 : struct
     {
-        return _entityStore.Query<T1, T2>();
+        return Entities.Query<T1, T2>();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Query<T1, T2, T3> Query<T1, T2, T3>() where T1 : struct where T2 : struct where T3 : struct
     {
-        return _entityStore.Query<T1, T2, T3>();
+        return Entities.Query<T1, T2, T3>();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Query<T1, T2, T3, T4> Query<T1, T2, T3, T4>() where T1 : struct where T2 : struct where T3 : struct where T4 : struct
+    public Query<T1, T2, T3, T4> Query<T1, T2, T3, T4>()
+        where T1 : struct where T2 : struct where T3 : struct where T4 : struct
     {
-        return _entityStore.Query<T1, T2, T3, T4>();
+        return Entities.Query<T1, T2, T3, T4>();
     }
 
     public void ApplyCommands()
     {
-        _commands.Apply();
-        _sceneManager.CleanupDespawnedEntities();
+        Commands.Apply();
+        Scenes.CleanupDespawnedEntities();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Entity Create<T1>(T1 c1) where T1 : struct
     {
-        return _entityStore.Create(c1);
+        return Entities.Create(c1);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Entity Create<T1, T2>(T1 c1, T2 c2) where T1 : struct where T2 : struct
     {
-        return _entityStore.Create(c1, c2);
+        return Entities.Create(c1, c2);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Entity Create<T1, T2, T3>(T1 c1, T2 c2, T3 c3) where T1 : struct where T2 : struct where T3 : struct
     {
-        return _entityStore.Create(c1, c2, c3);
+        return Entities.Create(c1, c2, c3);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Entity Create<T1, T2, T3, T4>(T1 c1, T2 c2, T3 c3, T4 c4) where T1 : struct where T2 : struct where T3 : struct where T4 : struct
+    public Entity Create<T1, T2, T3, T4>(T1 c1, T2 c2, T3 c3, T4 c4) where T1 : struct
+        where T2 : struct
+        where T3 : struct
+        where T4 : struct
     {
-        return _entityStore.Create(c1, c2, c3, c4);
+        return Entities.Create(c1, c2, c3, c4);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Entity Create<T1, T2, T3, T4, T5>(T1 c1, T2 c2, T3 c3, T4 c4, T5 c5) where T1 : struct where T2 : struct where T3 : struct where T4 : struct where T5 : struct
+    public Entity Create<T1, T2, T3, T4, T5>(T1 c1, T2 c2, T3 c3, T4 c4, T5 c5) where T1 : struct
+        where T2 : struct
+        where T3 : struct
+        where T4 : struct
+        where T5 : struct
     {
-        return _entityStore.Create(c1, c2, c3, c4, c5);
+        return Entities.Create(c1, c2, c3, c4, c5);
     }
 
     public void Shutdown()
     {
-        for (var i = _allSystems.Count - 1; i >= 0; i--)
-        {
-            _allSystems[i].Shutdown();
-        }
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        for (var i = _allSystems.Count - 1; i >= 0; i--)
-        {
-            _allSystems[i].Dispose();
-        }
-
-        foreach (var context in _contexts.Values)
-        {
-            if (context is IDisposable disposable)
-            {
-                disposable.Dispose();
-            }
-        }
-
-        GC.SuppressFinalize(this);
+        for (var i = _allSystems.Count - 1; i >= 0; i--) _allSystems[i].Shutdown();
     }
 }

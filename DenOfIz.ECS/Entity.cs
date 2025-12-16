@@ -27,17 +27,35 @@ public readonly struct Entity : IEquatable<Entity>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Equals(Entity other) => Index == other.Index && Generation == other.Generation;
+    public bool Equals(Entity other)
+    {
+        return Index == other.Index && Generation == other.Generation;
+    }
 
-    public override bool Equals(object? obj) => obj is Entity other && Equals(other);
+    public override bool Equals(object? obj)
+    {
+        return obj is Entity other && Equals(other);
+    }
 
-    public override int GetHashCode() => HashCode.Combine(Index, Generation);
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Index, Generation);
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator ==(Entity left, Entity right) => left.Equals(right);
+    public static bool operator ==(Entity left, Entity right)
+    {
+        return left.Equals(right);
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator !=(Entity left, Entity right) => !left.Equals(right);
+    public static bool operator !=(Entity left, Entity right)
+    {
+        return !left.Equals(right);
+    }
 
-    public override string ToString() => $"Entity({Index}v{Generation})";
+    public override string ToString()
+    {
+        return $"Entity({Index}v{Generation})";
+    }
 }

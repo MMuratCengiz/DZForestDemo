@@ -2,32 +2,32 @@ using System.Runtime.InteropServices;
 using System.Text;
 using DenOfIz;
 using Graphics.RenderGraph;
+using RuntimeAssets;
 using Buffer = DenOfIz.Buffer;
-using Texture = DenOfIz.Texture;
 
 namespace DZForestDemo;
 
 public class RenderGraphDemo : IDisposable
 {
-    private readonly LogicalDevice _logicalDevice;
-    private readonly Window _window;
     private readonly CommandQueue _commandQueue;
-    private readonly SwapChain _swapChain;
+    private readonly LogicalDevice _logicalDevice;
+    private readonly uint _numFrames = 3;
     private readonly RenderGraph _renderGraph;
-    private readonly Viewport _viewport;
-    private readonly StepTimer _stepTimer = new();
-
-    private InputLayout _inputLayout = null!;
-    private RootSignature _rootSignature = null!;
-    private Pipeline _pipeline = null!;
-    private Buffer _vertexBuffer = null!;
 
     private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments = new(1);
+    private readonly StepTimer _stepTimer = new();
+    private readonly SwapChain _swapChain;
+    private readonly Viewport _viewport;
+    private readonly Window _window;
 
     private uint _currentFrameIndex;
     private uint _currentImageIndex;
-    private readonly uint _numFrames = 3;
     private bool _disposed;
+
+    private InputLayout _inputLayout = null!;
+    private Pipeline _pipeline = null!;
+    private RootSignature _rootSignature = null!;
+    private Buffer _vertexBuffer = null!;
 
     public RenderGraphDemo(LogicalDevice logicalDevice, uint width, uint height, string title)
     {
@@ -66,19 +66,42 @@ public class RenderGraphDemo : IDisposable
         _renderGraph.SetDimensions(width, height);
 
         for (uint i = 0; i < _numFrames; ++i)
-        {
             _renderGraph.ResourceTracking.TrackTexture(
                 _swapChain.GetRenderTarget(i),
                 (uint)ResourceUsageFlagBits.Common,
                 QueueType.Graphics
             );
-        }
 
         _window.Show();
         _viewport = _swapChain.GetViewport();
 
         CreateBuffers();
         CreatePipeline();
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        _renderGraph.WaitIdle();
+        _commandQueue.WaitIdle();
+
+        _vertexBuffer.Dispose();
+        _pipeline.Dispose();
+        _rootSignature.Dispose();
+        _inputLayout.Dispose();
+
+        _rtAttachments.Dispose();
+        _renderGraph.Dispose();
+        _swapChain.Dispose();
+        _commandQueue.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 
     public bool PollAndRender()
@@ -109,7 +132,7 @@ public class RenderGraphDemo : IDisposable
         _renderGraph.AddPass("MainRender",
             (ref RenderPassSetupContext ctx, ref PassBuilder builder) =>
             {
-                builder.WriteTexture(swapchainRt, (uint)ResourceUsageFlagBits.RenderTarget);
+                builder.WriteTexture(swapchainRt);
                 builder.HasSideEffects();
             },
             (ref RenderPassExecuteContext ctx) =>
@@ -171,13 +194,11 @@ public class RenderGraphDemo : IDisposable
         _renderGraph.SetDimensions(width, height);
 
         for (uint i = 0; i < _numFrames; ++i)
-        {
             _renderGraph.ResourceTracking.TrackTexture(
                 _swapChain.GetRenderTarget(i),
                 (uint)ResourceUsageFlagBits.Common,
                 QueueType.Graphics
             );
-        }
     }
 
     private void CreateBuffers()
@@ -219,19 +240,23 @@ public class RenderGraphDemo : IDisposable
 
     private void CreatePipeline()
     {
+        var shaderLoader = new ShaderLoader();
+        var vsSource = shaderLoader.Load("debug_vs.hlsl");
+        var psSource = shaderLoader.Load("debug_ps.hlsl");
+
         var programDesc = new ShaderProgramDesc
         {
             ShaderStages = ShaderStageDescArray.Create([
                 new ShaderStageDesc
                 {
                     EntryPoint = StringView.Create("VSMain"),
-                    Data = ByteArray.Create(Encoding.UTF8.GetBytes(Shaders.VertexShaderSource)),
+                    Data = ByteArray.Create(Encoding.UTF8.GetBytes(vsSource)),
                     Stage = ShaderStage.Vertex
                 },
                 new ShaderStageDesc
                 {
                     EntryPoint = StringView.Create("PSMain"),
-                    Data = ByteArray.Create(Encoding.UTF8.GetBytes(Shaders.PixelShaderSource)),
+                    Data = ByteArray.Create(Encoding.UTF8.GetBytes(psSource)),
                     Stage = ShaderStage.Pixel
                 }
             ])
@@ -257,32 +282,7 @@ public class RenderGraphDemo : IDisposable
                         Blend = new BlendDesc { RenderTargetWriteMask = 0x0F }
                     }
                 ])
-            },
+            }
         });
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        _renderGraph.WaitIdle();
-        _commandQueue.WaitIdle();
-
-        _vertexBuffer.Dispose();
-        _pipeline.Dispose();
-        _rootSignature.Dispose();
-        _inputLayout.Dispose();
-
-        _rtAttachments.Dispose();
-        _renderGraph.Dispose();
-        _swapChain.Dispose();
-        _commandQueue.Dispose();
-
-        GC.SuppressFinalize(this);
     }
 }

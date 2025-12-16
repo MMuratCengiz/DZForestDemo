@@ -74,6 +74,7 @@ public ref struct QueryEnumerator<T1> where T1 : struct
                     _entityIndex = 0;
                     return true;
                 }
+
                 _archetypeIndex++;
             }
 
@@ -158,7 +159,8 @@ public ref struct QueryEnumerator<T1, T2> where T1 : struct where T2 : struct
     public QueryItem<T1, T2> Current
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new(_currentArchetype!.GetEntity(_entityIndex), ref _column1!.Get(_entityIndex), ref _column2!.Get(_entityIndex));
+        get => new(_currentArchetype!.GetEntity(_entityIndex), ref _column1!.Get(_entityIndex),
+            ref _column2!.Get(_entityIndex));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -187,6 +189,7 @@ public ref struct QueryEnumerator<T1, T2> where T1 : struct where T2 : struct
                     _entityIndex = 0;
                     return true;
                 }
+
                 _archetypeIndex++;
             }
 
@@ -286,7 +289,8 @@ public ref struct QueryEnumerator<T1, T2, T3> where T1 : struct where T2 : struc
     public QueryItem<T1, T2, T3> Current
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new(_currentArchetype!.GetEntity(_entityIndex), ref _column1!.Get(_entityIndex), ref _column2!.Get(_entityIndex), ref _column3!.Get(_entityIndex));
+        get => new(_currentArchetype!.GetEntity(_entityIndex), ref _column1!.Get(_entityIndex),
+            ref _column2!.Get(_entityIndex), ref _column3!.Get(_entityIndex));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -307,7 +311,8 @@ public ref struct QueryEnumerator<T1, T2, T3> where T1 : struct where T2 : struc
             while (_archetypeIndex < _archetypes.Length)
             {
                 var archetype = _archetypes[_archetypeIndex];
-                if (archetype.HasComponent(_c1) && archetype.HasComponent(_c2) && archetype.HasComponent(_c3) && archetype.EntityCount > 0)
+                if (archetype.HasComponent(_c1) && archetype.HasComponent(_c2) && archetype.HasComponent(_c3) &&
+                    archetype.EntityCount > 0)
                 {
                     _currentArchetype = archetype;
                     _column1 = archetype.GetColumn<T1>();
@@ -316,6 +321,7 @@ public ref struct QueryEnumerator<T1, T2, T3> where T1 : struct where T2 : struc
                     _entityIndex = 0;
                     return true;
                 }
+
                 _archetypeIndex++;
             }
 
@@ -393,7 +399,8 @@ public ref struct Query<T1, T2, T3, T4> where T1 : struct where T2 : struct wher
     }
 }
 
-public ref struct QueryEnumerator<T1, T2, T3, T4> where T1 : struct where T2 : struct where T3 : struct where T4 : struct
+public ref struct QueryEnumerator<T1, T2, T3, T4>
+    where T1 : struct where T2 : struct where T3 : struct where T4 : struct
 {
     private readonly EntityStore _store;
     private readonly ComponentId _c1;
@@ -430,7 +437,8 @@ public ref struct QueryEnumerator<T1, T2, T3, T4> where T1 : struct where T2 : s
     public QueryItem<T1, T2, T3, T4> Current
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new(_currentArchetype!.GetEntity(_entityIndex), ref _column1!.Get(_entityIndex), ref _column2!.Get(_entityIndex), ref _column3!.Get(_entityIndex), ref _column4!.Get(_entityIndex));
+        get => new(_currentArchetype!.GetEntity(_entityIndex), ref _column1!.Get(_entityIndex),
+            ref _column2!.Get(_entityIndex), ref _column3!.Get(_entityIndex), ref _column4!.Get(_entityIndex));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -451,7 +459,8 @@ public ref struct QueryEnumerator<T1, T2, T3, T4> where T1 : struct where T2 : s
             while (_archetypeIndex < _archetypes.Length)
             {
                 var archetype = _archetypes[_archetypeIndex];
-                if (archetype.HasComponent(_c1) && archetype.HasComponent(_c2) && archetype.HasComponent(_c3) && archetype.HasComponent(_c4) && archetype.EntityCount > 0)
+                if (archetype.HasComponent(_c1) && archetype.HasComponent(_c2) && archetype.HasComponent(_c3) &&
+                    archetype.HasComponent(_c4) && archetype.EntityCount > 0)
                 {
                     _currentArchetype = archetype;
                     _column1 = archetype.GetColumn<T1>();
@@ -461,6 +470,7 @@ public ref struct QueryEnumerator<T1, T2, T3, T4> where T1 : struct where T2 : s
                     _entityIndex = 0;
                     return true;
                 }
+
                 _archetypeIndex++;
             }
 
@@ -537,13 +547,17 @@ public static class QueryExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Query<T1, T2, T3> Query<T1, T2, T3>(this EntityStore store) where T1 : struct where T2 : struct where T3 : struct
+    public static Query<T1, T2, T3> Query<T1, T2, T3>(this EntityStore store)
+        where T1 : struct where T2 : struct where T3 : struct
     {
         return new Query<T1, T2, T3>(store);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Query<T1, T2, T3, T4> Query<T1, T2, T3, T4>(this EntityStore store) where T1 : struct where T2 : struct where T3 : struct where T4 : struct
+    public static Query<T1, T2, T3, T4> Query<T1, T2, T3, T4>(this EntityStore store) where T1 : struct
+        where T2 : struct
+        where T3 : struct
+        where T4 : struct
     {
         return new Query<T1, T2, T3, T4>(store);
     }

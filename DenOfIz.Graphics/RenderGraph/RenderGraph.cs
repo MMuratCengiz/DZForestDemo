@@ -14,52 +14,48 @@ public struct RenderGraphDesc
     public uint MaxPasses = 64;
     public uint MaxResources = 256;
 
-    public RenderGraphDesc() { }
+    public RenderGraphDesc()
+    {
+    }
 }
 
 public class RenderGraph : IDisposable
 {
-    private readonly LogicalDevice _logicalDevice;
-    private readonly CommandQueue _commandQueue;
-    private readonly uint _numFrames;
-    private readonly uint _maxPasses;
-    private readonly uint _maxResources;
-
-    private readonly List<RenderGraphResourceEntry> _resources;
-    private readonly Dictionary<string, ResourceHandle> _namedResources;
-    private int _resourceCount;
-
-    private readonly List<RenderPassData> _passes;
-    private readonly List<int> _executionOrder;
-    private int _passCount;
+    private readonly Queue<int> _algorithmQueue;
+    private readonly CommandList[][] _cachedCommandLists;
+    private readonly ulong[] _commandListHandles;
 
     private readonly CommandListPool[] _commandListPools;
-    private readonly List<Semaphore>[] _frameSemaphores;
+    private readonly CommandQueue _commandQueue;
+    private readonly List<int> _executionOrder;
     private readonly Fence[] _frameFences;
-    private bool _isFrameActive;
-    private bool _isCompiled;
+    private readonly List<Semaphore>[] _frameSemaphores;
+    private readonly LogicalDevice _logicalDevice;
+    private readonly uint _maxPasses;
+    private readonly uint _maxResources;
+    private readonly Dictionary<string, ResourceHandle> _namedResources;
+    private readonly uint _numFrames;
 
-    private readonly List<TextureResource>[] _transientTextures;
+    private readonly List<RenderPassData> _passes;
+
+    private readonly List<RenderGraphResourceEntry> _resources;
+    private readonly ulong[] _signalSemaphoreHandles;
+    private readonly Semaphore[] _signalSemaphoresBuffer;
     private readonly List<Buffer>[] _transientBuffers;
 
-    private readonly Semaphore[] _waitSemaphoresBuffer;
-    private readonly Semaphore[] _signalSemaphoresBuffer;
-
-    // Pre-pinned handle arrays for zero-allocation submission
-    private readonly ulong[] _commandListHandles;
+    private readonly List<Texture>[] _transientTextures;
     private readonly ulong[] _waitSemaphoreHandles;
-    private readonly ulong[] _signalSemaphoreHandles;
+
+    private readonly Semaphore[] _waitSemaphoresBuffer;
     private GCHandle _commandListPin;
-    private GCHandle _waitSemaphorePin;
-    private GCHandle _signalSemaphorePin;
-
-    // Pre-allocated queue for graph algorithms
-    private readonly Queue<int> _algorithmQueue;
-
-    // Cached command lists per frame - initialized once to avoid ToArray() allocation
-    private readonly CommandList[][] _cachedCommandLists;
 
     private bool _disposed;
+    private bool _isCompiled;
+    private bool _isFrameActive;
+    private int _passCount;
+    private int _resourceCount;
+    private GCHandle _signalSemaphorePin;
+    private GCHandle _waitSemaphorePin;
 
     public RenderGraph(RenderGraphDesc desc)
     {
@@ -84,7 +80,7 @@ public class RenderGraph : IDisposable
         _commandListPools = new CommandListPool[_numFrames];
         _frameSemaphores = new List<Semaphore>[_numFrames];
         _frameFences = new Fence[_numFrames];
-        _transientTextures = new List<TextureResource>[_numFrames];
+        _transientTextures = new List<Texture>[_numFrames];
         _transientBuffers = new List<Buffer>[_numFrames];
 
         for (var i = 0; i < _numFrames; i++)
@@ -98,25 +94,19 @@ public class RenderGraph : IDisposable
             for (var j = 0; j < _maxPasses; j++)
                 _frameSemaphores[i].Add(_logicalDevice.CreateSemaphore());
             _frameFences[i] = _logicalDevice.CreateFence();
-            _transientTextures[i] = new List<TextureResource>(32);
+            _transientTextures[i] = new List<Texture>(32);
             _transientBuffers[i] = new List<Buffer>(32);
         }
 
         _waitSemaphoresBuffer = new Semaphore[_maxPasses];
         _signalSemaphoresBuffer = new Semaphore[1];
-
-        // Pre-allocate and pin handle arrays for zero-allocation submission
         _commandListHandles = new ulong[1];
         _waitSemaphoreHandles = new ulong[_maxPasses];
         _signalSemaphoreHandles = new ulong[1];
         _commandListPin = GCHandle.Alloc(_commandListHandles, GCHandleType.Pinned);
         _waitSemaphorePin = GCHandle.Alloc(_waitSemaphoreHandles, GCHandleType.Pinned);
         _signalSemaphorePin = GCHandle.Alloc(_signalSemaphoreHandles, GCHandleType.Pinned);
-
-        // Pre-allocate queue for graph algorithms
         _algorithmQueue = new Queue<int>((int)_maxPasses);
-
-        // Cache command lists per frame - call ToArray() once at init, not per frame
         _cachedCommandLists = new CommandList[_numFrames][];
         for (var i = 0; i < _numFrames; i++)
             _cachedCommandLists[i] = _commandListPools[i].GetCommandLists().ToArray();
@@ -129,6 +119,57 @@ public class RenderGraph : IDisposable
     public uint CurrentFrameIndex { get; private set; }
 
     public ResourceTracking ResourceTracking { get; }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        WaitIdle();
+
+        for (var i = 0; i < _numFrames; i++)
+        {
+            foreach (var texture in _transientTextures[i])
+            {
+                texture.Dispose();
+            }
+
+            foreach (var buffer in _transientBuffers[i])
+            {
+                buffer.Dispose();
+            }
+
+            foreach (var semaphore in _frameSemaphores[i])
+            {
+                semaphore.Dispose();
+            }
+
+            _frameFences[i].Dispose();
+            _commandListPools[i].Dispose();
+        }
+
+        ResourceTracking.Dispose();
+        if (_commandListPin.IsAllocated)
+        {
+            _commandListPin.Free();
+        }
+
+        if (_waitSemaphorePin.IsAllocated)
+        {
+            _waitSemaphorePin.Free();
+        }
+
+        if (_signalSemaphorePin.IsAllocated)
+        {
+            _signalSemaphorePin.Free();
+        }
+
+        GC.SuppressFinalize(this);
+    }
 
     public void SetDimensions(uint width, uint height)
     {
@@ -152,7 +193,7 @@ public class RenderGraph : IDisposable
         _isCompiled = false;
     }
 
-    public ResourceHandle ImportTexture(string name, TextureResource texture)
+    public ResourceHandle ImportTexture(string name, Texture texture)
     {
         if (_resourceCount >= _maxResources)
         {
@@ -236,11 +277,13 @@ public class RenderGraph : IDisposable
         return handle;
     }
 
-    public ResourceHandle GetResource(string name) =>
-        _namedResources.TryGetValue(name, out var handle) ? handle : ResourceHandle.Invalid;
+    public ResourceHandle GetResource(string name)
+    {
+        return _namedResources.TryGetValue(name, out var handle) ? handle : ResourceHandle.Invalid;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public TextureResource GetTexture(ResourceHandle handle)
+    public Texture GetTexture(ResourceHandle handle)
     {
         if (!handle.IsValid || handle.Index >= _resourceCount)
         {
@@ -301,13 +344,12 @@ public class RenderGraph : IDisposable
 
     public void AddPass(string name, RenderPassExecuteDelegate execute)
     {
-        AddPass(name, static (ref RenderPassSetupContext _, ref PassBuilder builder) =>
-        {
-            builder.HasSideEffects();
-        }, execute);
+        AddPass(name, static (ref RenderPassSetupContext _, ref PassBuilder builder) => { builder.HasSideEffects(); },
+            execute);
     }
 
-    public ResourceHandle AddExternalPass(string name, ExternalPassExecuteDelegate execute, TransientTextureDesc outputDesc)
+    public ResourceHandle AddExternalPass(string name, ExternalPassExecuteDelegate execute,
+        TransientTextureDesc outputDesc)
     {
         if (_passCount >= _maxPasses)
         {
@@ -330,7 +372,8 @@ public class RenderGraph : IDisposable
         return outputHandle;
     }
 
-    public ResourceHandle AddExternalPass(string name, RenderPassSetupDelegate setup, ExternalPassExecuteDelegate execute, TransientTextureDesc outputDesc)
+    public ResourceHandle AddExternalPass(string name, RenderPassSetupDelegate setup,
+        ExternalPassExecuteDelegate execute, TransientTextureDesc outputDesc)
     {
         if (_passCount >= _maxPasses)
         {
@@ -364,7 +407,7 @@ public class RenderGraph : IDisposable
         return outputHandle;
     }
 
-    internal void SetExternalTexture(ResourceHandle handle, TextureResource texture)
+    internal void SetExternalTexture(ResourceHandle handle, Texture texture)
     {
         if (!handle.IsValid || handle.Index >= _resourceCount)
         {
@@ -385,6 +428,7 @@ public class RenderGraph : IDisposable
                 return pass.ExternalResult.Semaphore;
             }
         }
+
         return null;
     }
 
@@ -524,7 +568,9 @@ public class RenderGraph : IDisposable
             }
 
             foreach (var output in pass.Outputs)
+            {
                 lastWriter[output.Handle.Index] = passIdx;
+            }
         }
     }
 
@@ -535,13 +581,11 @@ public class RenderGraph : IDisposable
 
         _algorithmQueue.Clear();
         for (var i = 0; i < _passCount; i++)
-        {
             if (_passes[i].HasSideEffects)
             {
                 _passes[i].IsCulled = false;
                 _algorithmQueue.Enqueue(i);
             }
-        }
 
         while (_algorithmQueue.Count > 0)
         {
@@ -572,10 +616,12 @@ public class RenderGraph : IDisposable
 
             var count = 0;
             foreach (var dep in _passes[i].DependsOnPasses)
+            {
                 if (!_passes[dep].IsCulled)
                 {
                     count++;
                 }
+            }
 
             inDegree[i] = count;
         }
@@ -667,6 +713,7 @@ public class RenderGraph : IDisposable
                     transientTextures.Add(texture);
                     entry.Texture = texture;
                 }
+
                 textureIndex++;
             }
             else if (entry.Type == RenderGraphResourceType.Buffer)
@@ -689,6 +736,7 @@ public class RenderGraph : IDisposable
                     transientBuffers.Add(buffer);
                     entry.Buffer = buffer;
                 }
+
                 bufferIndex++;
             }
         }
@@ -755,14 +803,10 @@ public class RenderGraph : IDisposable
             }
 
             _signalSemaphoresBuffer[0] = pass.CompletionSemaphore!;
-
-            // Update pre-pinned handle arrays - zero allocation (implicit conversion to ulong)
             _commandListHandles[0] = pass.CommandList;
             for (var w = 0; w < waitCount; w++)
                 _waitSemaphoreHandles[w] = _waitSemaphoresBuffer[w];
             _signalSemaphoreHandles[0] = pass.CompletionSemaphore!;
-
-            // Create array structs from pre-pinned memory - no allocation
             var commandListArray = CommandListArray.FromPinned(_commandListPin, 1);
             var waitSemaphores = SemaphoreArray.FromPinned(_waitSemaphorePin, waitCount);
             var signalSemaphores = SemaphoreArray.FromPinned(_signalSemaphorePin, 1);
@@ -788,49 +832,5 @@ public class RenderGraph : IDisposable
         _commandQueue.WaitIdle();
         for (var i = 0; i < _numFrames; i++)
             _frameFences[i].Wait();
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        WaitIdle();
-
-        for (var i = 0; i < _numFrames; i++)
-        {
-            foreach (var texture in _transientTextures[i])
-                texture.Dispose();
-            foreach (var buffer in _transientBuffers[i])
-                buffer.Dispose();
-            foreach (var semaphore in _frameSemaphores[i])
-                semaphore.Dispose();
-            _frameFences[i].Dispose();
-            _commandListPools[i].Dispose();
-        }
-
-        ResourceTracking.Dispose();
-
-        // Free pinned handles
-        if (_commandListPin.IsAllocated)
-        {
-            _commandListPin.Free();
-        }
-
-        if (_waitSemaphorePin.IsAllocated)
-        {
-            _waitSemaphorePin.Free();
-        }
-
-        if (_signalSemaphorePin.IsAllocated)
-        {
-            _signalSemaphorePin.Free();
-        }
-
-        GC.SuppressFinalize(this);
     }
 }

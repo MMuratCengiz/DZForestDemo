@@ -26,17 +26,32 @@ public readonly struct SceneId : IEquatable<SceneId>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Equals(SceneId other) => Id == other.Id;
+    public bool Equals(SceneId other)
+    {
+        return Id == other.Id;
+    }
 
-    public override bool Equals(object? obj) => obj is SceneId other && Equals(other);
+    public override bool Equals(object? obj)
+    {
+        return obj is SceneId other && Equals(other);
+    }
 
-    public override int GetHashCode() => (int)Id;
+    public override int GetHashCode()
+    {
+        return (int)Id;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator ==(SceneId left, SceneId right) => left.Equals(right);
+    public static bool operator ==(SceneId left, SceneId right)
+    {
+        return left.Equals(right);
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool operator !=(SceneId left, SceneId right) => !left.Equals(right);
+    public static bool operator !=(SceneId left, SceneId right)
+    {
+        return !left.Equals(right);
+    }
 }
 
 public struct SceneComponent(SceneId sceneId)
@@ -46,9 +61,19 @@ public struct SceneComponent(SceneId sceneId)
 
 public sealed class Scene
 {
-    private readonly EntityStore _store;
     private readonly List<Entity> _entities;
     private readonly HashSet<uint> _entityIndices;
+    private readonly EntityStore _store;
+
+    internal Scene(SceneId id, string name, EntityStore store)
+    {
+        Id = id;
+        Name = name;
+        _store = store;
+        _entities = new List<Entity>();
+        _entityIndices = new HashSet<uint>();
+        IsLoaded = false;
+    }
 
     public SceneId Id { get; }
     public string Name { get; }
@@ -64,16 +89,6 @@ public sealed class Scene
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => CollectionsMarshal.AsSpan(_entities);
-    }
-
-    internal Scene(SceneId id, string name, EntityStore store)
-    {
-        Id = id;
-        Name = name;
-        _store = store;
-        _entities = new List<Entity>();
-        _entityIndices = new HashSet<uint>();
-        IsLoaded = false;
     }
 
     public Entity Spawn()
@@ -113,13 +128,11 @@ public sealed class Scene
         _entityIndices.Remove(entity.Index);
 
         for (var i = _entities.Count - 1; i >= 0; i--)
-        {
             if (_entities[i].Index == entity.Index)
             {
                 _entities.RemoveAt(i);
                 break;
             }
-        }
     }
 
     public void Despawn(Entity entity)
@@ -131,13 +144,11 @@ public sealed class Scene
 
         _entityIndices.Remove(entity.Index);
         for (var i = _entities.Count - 1; i >= 0; i--)
-        {
             if (_entities[i].Index == entity.Index)
             {
                 _entities.RemoveAt(i);
                 break;
             }
-        }
 
         _store.Despawn(entity);
     }
@@ -151,10 +162,7 @@ public sealed class Scene
     {
         IsLoaded = false;
         var entities = CollectionsMarshal.AsSpan(_entities);
-        for (var i = entities.Length - 1; i >= 0; i--)
-        {
-            _store.Despawn(entities[i]);
-        }
+        for (var i = entities.Length - 1; i >= 0; i--) _store.Despawn(entities[i]);
         _entities.Clear();
         _entityIndices.Clear();
     }
@@ -181,15 +189,15 @@ public sealed class Scene
 
 public sealed class SceneManager(EntityStore store)
 {
-    private readonly List<Scene> _scenes = new();
     private readonly Dictionary<string, SceneId> _nameToId = new();
+    private readonly List<Scene> _scenes = new();
     private uint _nextId = 1;
-    private Scene? _activeScene;
 
     public Scene? ActiveScene
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _activeScene;
+        get;
+        private set;
     }
 
     public int SceneCount
@@ -220,6 +228,7 @@ public sealed class SceneManager(EntityStore store)
         {
             return null;
         }
+
         return _scenes[index];
     }
 
@@ -230,17 +239,18 @@ public sealed class SceneManager(EntityStore store)
         {
             return GetScene(id);
         }
+
         return null;
     }
 
     public void SetActiveScene(Scene scene)
     {
-        _activeScene = scene;
+        ActiveScene = scene;
     }
 
     public void SetActiveScene(string name)
     {
-        _activeScene = GetScene(name);
+        ActiveScene = GetScene(name);
     }
 
     public void LoadScene(Scene scene)
@@ -250,10 +260,11 @@ public sealed class SceneManager(EntityStore store)
 
     public void UnloadScene(Scene scene)
     {
-        if (_activeScene == scene)
+        if (ActiveScene == scene)
         {
-            _activeScene = null;
+            ActiveScene = null;
         }
+
         scene.Unload();
     }
 

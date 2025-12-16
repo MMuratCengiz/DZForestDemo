@@ -4,15 +4,38 @@ using ECS;
 
 namespace RuntimeAssets;
 
-public sealed class AssetContext(LogicalDevice device) : IContext, IDisposable
+public sealed class AssetContext : IContext, IDisposable
 {
-    private readonly RuntimeMeshStore _meshStore = new(device);
-    private readonly RuntimeTextureStore _textureStore = new(device);
+    private readonly LogicalDevice _device;
     private readonly GeometryBuilder _geometryBuilder = new();
+    private readonly GltfLoader _gltfLoader = new();
+    private readonly RuntimeMeshStore _meshStore;
+    private readonly RuntimeTextureStore _textureStore;
 
     private BatchResourceCopy? _batchCopy;
-    private bool _uploading;
     private bool _disposed;
+    private bool _uploading;
+
+    public AssetContext(LogicalDevice device)
+    {
+        _device = device;
+        _meshStore = new RuntimeMeshStore(device);
+        _textureStore = new RuntimeTextureStore(device);
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        _batchCopy?.Dispose();
+        _meshStore.Dispose();
+        _textureStore.Dispose();
+    }
 
     public void BeginUpload()
     {
@@ -23,7 +46,7 @@ public sealed class AssetContext(LogicalDevice device) : IContext, IDisposable
 
         _batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
         {
-            Device = device,
+            Device = _device,
             IssueBarriers = false
         });
         _batchCopy.Begin();
@@ -62,7 +85,51 @@ public sealed class AssetContext(LogicalDevice device) : IContext, IDisposable
     public RuntimeTextureHandle AddTexture(string path)
     {
         EnsureUploading();
-        return _textureStore.Add(path, _batchCopy!);
+        var resolvedPath = AssetPaths.ResolveTexture(path);
+        return _textureStore.Add(resolvedPath, _batchCopy!);
+    }
+
+    public RuntimeTextureHandle AddTextureAbsolute(string absolutePath)
+    {
+        EnsureUploading();
+        return _textureStore.Add(absolutePath, _batchCopy!);
+    }
+
+    public ModelLoadResult AddModel(string modelPath)
+    {
+        EnsureUploading();
+        var resolvedPath = AssetPaths.ResolveModel(modelPath);
+        return LoadModelInternal(resolvedPath);
+    }
+
+    public ModelLoadResult AddModelAbsolute(string absolutePath)
+    {
+        EnsureUploading();
+        return LoadModelInternal(absolutePath);
+    }
+
+    private ModelLoadResult LoadModelInternal(string path)
+    {
+        var gltfResult = _gltfLoader.Load(path);
+        if (!gltfResult.Success)
+        {
+            return ModelLoadResult.Failed(gltfResult.ErrorMessage ?? "Unknown error loading model");
+        }
+
+        var meshHandles = new List<RuntimeMeshHandle>();
+        foreach (var meshData in gltfResult.Meshes)
+        {
+            var handle = _meshStore.Add(meshData, _batchCopy!);
+            meshHandles.Add(handle);
+        }
+
+        return new ModelLoadResult
+        {
+            Success = true,
+            MeshHandles = meshHandles,
+            Materials = gltfResult.Materials,
+            InverseBindMatrices = gltfResult.InverseBindMatrices
+        };
     }
 
     public void EndUpload()
@@ -85,10 +152,7 @@ public sealed class AssetContext(LogicalDevice device) : IContext, IDisposable
         _batchCopy = null;
         _uploading = false;
 
-        return Task.Run(() =>
-        {
-            batchCopy.Dispose();
-        });
+        return Task.Run(() => { batchCopy.Dispose(); });
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -131,19 +195,5 @@ public sealed class AssetContext(LogicalDevice device) : IContext, IDisposable
         {
             throw new InvalidOperationException("Call BeginUpload() first.");
         }
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        _batchCopy?.Dispose();
-        _meshStore.Dispose();
-        _textureStore.Dispose();
     }
 }

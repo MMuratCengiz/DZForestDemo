@@ -6,10 +6,10 @@ namespace RuntimeAssets;
 
 public readonly struct RuntimeTexture
 {
-    public readonly TextureResource Resource;
+    public readonly Texture Resource;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal RuntimeTexture(TextureResource resource)
+    internal RuntimeTexture(Texture resource)
     {
         Resource = resource;
     }
@@ -24,9 +24,29 @@ public readonly struct RuntimeTexture
 public sealed class RuntimeTextureStore(LogicalDevice device) : IDisposable
 {
     private readonly LogicalDevice _device = device;
-    private readonly List<TextureSlot> _slots = [];
     private readonly Queue<uint> _freeIndices = new();
+    private readonly List<TextureSlot> _slots = [];
     private bool _disposed;
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        foreach (var slot in _slots)
+        {
+            if (slot.IsOccupied)
+            {
+                slot.Texture.Resource.Dispose();
+            }
+        }
+
+        _slots.Clear();
+    }
 
     public RuntimeTextureHandle Add(string path, BatchResourceCopy batchCopy)
     {
@@ -34,7 +54,7 @@ public sealed class RuntimeTextureStore(LogicalDevice device) : IDisposable
         return AllocateSlot(new RuntimeTexture(texture));
     }
 
-    public RuntimeTextureHandle Add(TextureResource texture)
+    public RuntimeTextureHandle Add(Texture texture)
     {
         return AllocateSlot(new RuntimeTexture(texture));
     }
@@ -89,6 +109,7 @@ public sealed class RuntimeTextureStore(LogicalDevice device) : IDisposable
         {
             ThrowInvalidHandle();
         }
+
         return texture;
     }
 
@@ -134,25 +155,6 @@ public sealed class RuntimeTextureStore(LogicalDevice device) : IDisposable
         const uint initialGeneration = 1;
         _slots.Add(new TextureSlot(texture, initialGeneration, true));
         return new RuntimeTextureHandle(index, initialGeneration);
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        foreach (var slot in _slots)
-        {
-            if (slot.IsOccupied)
-            {
-                slot.Texture.Resource.Dispose();
-            }
-        }
-        _slots.Clear();
     }
 
     [StructLayout(LayoutKind.Sequential)]

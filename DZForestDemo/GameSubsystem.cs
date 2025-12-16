@@ -13,34 +13,43 @@ namespace DZForestDemo;
 
 public sealed class GameSystem : ISystem
 {
-    private World _world = null!;
-    private GraphicsContext _ctx = null!;
+    private const float LightMoveSpeed = 10f;
+    private readonly List<ShadowPass.ShadowData> _shadowData = [];
     private AssetContext _assets = null!;
-    private PhysicsContext _physics = null!;
-
-    private StepTimer _stepTimer = null!;
     private Camera _camera = null!;
-    private float _totalTime;
-
-    private SceneRenderPass _scenePass = null!;
-    private UiRenderPass _uiPass = null!;
     private CompositeRenderPass _compositePass = null!;
-    private DebugRenderPass _debugPass = null!;
-
-    private ResourceHandle _sceneRt;
-    private ResourceHandle _depthRt;
-    private ResourceHandle _uiRt;
-
-    private RuntimeMeshHandle _cubeMesh;
-    private RuntimeMeshHandle _platformMesh;
-    private RuntimeMeshHandle _sphereMesh;
-    private Random _random = new();
+    private GraphicsContext _ctx = null!;
     private int _cubeCount;
 
-    // Material palette for spawned objects
-    private StandardMaterial[] _materialPalette = null!;
+    private RuntimeMeshHandle _cubeMesh;
+    private Entity _debugLightEntity;
+    private Vector3 _debugLightPosition = new(0, 10, 0);
+    private DebugRenderPass _debugPass = null!;
+    private ResourceHandle _depthRt;
 
     private bool _disposed;
+    private Vector3 _lightCameraPosition;
+    private Matrix4x4 _lightViewProjection;
+    private StandardMaterial[] _materialPalette = null!;
+    private PhysicsContext _physics = null!;
+    private RuntimeMeshHandle _platformMesh;
+    private readonly Random _random = new();
+    private SceneRenderPass _scenePass = null!;
+
+    private ResourceHandle _sceneRt;
+    private ResourceHandle _shadowAtlas;
+    private ResourceBindGroup? _shadowBindGroup;
+
+    private ShadowPass _shadowPass = null!;
+    private RuntimeMeshHandle _smallSphereMesh;
+    private RuntimeMeshHandle _sphereMesh;
+
+    private StepTimer _stepTimer = null!;
+    private float _totalTime;
+    private UiRenderPass _uiPass = null!;
+    private ResourceHandle _uiRt;
+    private bool _useLightCamera;
+    private World _world = null!;
 
     public void Initialize(World world)
     {
@@ -57,14 +66,13 @@ public sealed class GameSystem : ISystem
         );
         _camera.SetAspectRatio(_ctx.Width, _ctx.Height);
 
-        _uiPass = new UiRenderPass(_ctx, _stepTimer);
+        _shadowPass = new ShadowPass(_ctx, _assets, _world);
         _scenePass = new SceneRenderPass(_ctx, _assets, _world);
+        _uiPass = new UiRenderPass(_ctx, _stepTimer);
         _compositePass = new CompositeRenderPass(_ctx);
         _debugPass = new DebugRenderPass(_ctx);
 
         _uiPass.OnAddCubeClicked += AddCube;
-
-        // Initialize material palette for varied object colors
         _materialPalette =
         [
             Materials.Red,
@@ -83,43 +91,6 @@ public sealed class GameSystem : ISystem
         CreateScene();
     }
 
-    private void CreateLights()
-    {
-        // Main directional light (sun)
-        var sunEntity = _world.Spawn();
-        _world.AddComponent(sunEntity, new DirectionalLight(
-            new Vector3(0.4f, -0.8f, 0.3f),
-            new Vector3(1.0f, 0.95f, 0.9f),
-            1.2f
-        ));
-
-        // Ambient light settings
-        var ambientEntity = _world.Spawn();
-        _world.AddComponent(ambientEntity, new AmbientLight(
-            new Vector3(0.5f, 0.6f, 0.7f),  // Sky color
-            new Vector3(0.25f, 0.2f, 0.15f), // Ground color
-            0.35f
-        ));
-
-        // Add a warm point light
-        var pointLight1 = _world.Spawn();
-        _world.AddComponent(pointLight1, new Transform(new Vector3(5, 5, 5)));
-        _world.AddComponent(pointLight1, new PointLight(
-            new Vector3(1.0f, 0.7f, 0.4f), // Warm orange
-            2.0f,
-            15.0f
-        ));
-
-        // Add a cool point light
-        var pointLight2 = _world.Spawn();
-        _world.AddComponent(pointLight2, new Transform(new Vector3(-5, 4, -3)));
-        _world.AddComponent(pointLight2, new PointLight(
-            new Vector3(0.4f, 0.6f, 1.0f), // Cool blue
-            1.5f,
-            12.0f
-        ));
-    }
-
     public bool OnEvent(ref Event ev)
     {
         _uiPass.HandleEvent(ev);
@@ -130,25 +101,33 @@ public sealed class GameSystem : ISystem
             HandleResize((uint)ev.Window.Data1, (uint)ev.Window.Data2);
         }
 
-        return false;
-    }
-
-    private void HandleResize(uint width, uint height)
-    {
-        if (width == 0 || height == 0)
+        if (ev.Type == EventType.KeyDown)
         {
-            return;
+            var delta = LightMoveSpeed * 0.016f;
+            switch (ev.Key.KeyCode)
+            {
+                case KeyCode.W: _debugLightPosition.Z -= delta; break;
+                case KeyCode.S: _debugLightPosition.Z += delta; break;
+                case KeyCode.A: _debugLightPosition.X -= delta; break;
+                case KeyCode.D: _debugLightPosition.X += delta; break;
+                case KeyCode.Q: _debugLightPosition.Y -= delta; break;
+                case KeyCode.E: _debugLightPosition.Y += delta; break;
+                case KeyCode.L:
+                    _useLightCamera = !_useLightCamera;
+                    Console.WriteLine($"Light camera: {(_useLightCamera ? "ON" : "OFF")}");
+                    break;
+            }
+
+            UpdateDebugLight();
         }
 
-        _debugPass.SetScreenSize(width, height);
-        _uiPass.HandleResize(width, height);
-        _camera.SetAspectRatio(width, height);
+        return false;
     }
 
     public void Run()
     {
         _stepTimer.Tick();
-        _totalTime += 0.016f; // Approximate frame time
+        _totalTime += 0.016f;
 
         var renderGraph = _ctx.RenderGraph;
         var swapchainRt = _ctx.SwapchainRenderTarget;
@@ -166,9 +145,9 @@ public sealed class GameSystem : ISystem
 
         _depthRt = renderGraph.CreateTransientTexture(TransientTextureDesc.DepthStencil(
             _ctx.Width, _ctx.Height, Format.D32Float, "DepthRT"));
-
-        var viewProjection = _camera.ViewProjectionMatrix;
-        var cameraPosition = _camera.Position;
+        UpdateLightCamera();
+        var viewProjection = _useLightCamera ? _lightViewProjection : _camera.ViewProjectionMatrix;
+        var cameraPosition = _useLightCamera ? _lightCameraPosition : _camera.Position;
 
         AddScenePass(renderGraph, viewport, viewProjection, cameraPosition);
         _uiRt = _uiPass.AddPass(renderGraph);
@@ -176,20 +155,167 @@ public sealed class GameSystem : ISystem
         _compositePass.AddPass(renderGraph, _sceneRt, _uiRt, debugRt, swapchainRt, viewport);
     }
 
-    private void AddScenePass(RenderGraph renderGraph, Viewport viewport, Matrix4x4 viewProjection, Vector3 cameraPosition)
+    public void Shutdown()
+    {
+        _ctx.RenderGraph.WaitIdle();
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        _shadowBindGroup?.Dispose();
+        _debugPass.Dispose();
+        _compositePass.Dispose();
+        _scenePass.Dispose();
+        _shadowPass.Dispose();
+        _uiPass.Dispose();
+
+        GC.SuppressFinalize(this);
+    }
+
+    private void CreateLights()
+    {
+        var sunEntity = _world.Spawn();
+        _world.AddComponent(sunEntity, new DirectionalLight(
+            new Vector3(0.4f, -0.8f, 0.3f),
+            new Vector3(1.0f, 0.95f, 0.9f),
+            0.6f
+        ));
+
+        var ambientEntity = _world.Spawn();
+        _world.AddComponent(ambientEntity, new AmbientLight(
+            new Vector3(0.5f, 0.6f, 0.7f),
+            new Vector3(0.25f, 0.2f, 0.15f),
+            0.4f
+        ));
+
+        var pointLight1 = _world.Spawn();
+        _world.AddComponent(pointLight1, new Transform(new Vector3(6, 6, 6)));
+        _world.AddComponent(pointLight1, new PointLight(
+            new Vector3(1.0f, 0.7f, 0.4f),
+            2.5f,
+            18.0f
+        ));
+
+        var pointLight2 = _world.Spawn();
+        _world.AddComponent(pointLight2, new Transform(new Vector3(-6, 5, -4)));
+        _world.AddComponent(pointLight2, new PointLight(
+            new Vector3(0.4f, 0.6f, 1.0f),
+            2.0f,
+            15.0f
+        ));
+
+        var pointLight3 = _world.Spawn();
+        _world.AddComponent(pointLight3, new Transform(new Vector3(-5, 4, 6)));
+        _world.AddComponent(pointLight3, new PointLight(
+            new Vector3(0.9f, 0.3f, 0.5f),
+            1.8f,
+            14.0f
+        ));
+
+        var pointLight4 = _world.Spawn();
+        _world.AddComponent(pointLight4, new Transform(new Vector3(5, 3, -5)));
+        _world.AddComponent(pointLight4, new PointLight(
+            new Vector3(0.4f, 0.9f, 0.5f),
+            1.6f,
+            12.0f
+        ));
+        _debugLightEntity = _world.Spawn();
+        _world.AddComponent(_debugLightEntity, new Transform(_debugLightPosition));
+        _world.AddComponent(_debugLightEntity, new PointLight(
+            new Vector3(1.0f, 1.0f, 0.8f),
+            5.0f,
+            30.0f
+        ));
+    }
+
+    private void UpdateDebugLight()
+    {
+        ref var transform = ref _world.GetComponent<Transform>(_debugLightEntity);
+        transform.Position = _debugLightPosition;
+    }
+
+    private void UpdateLightCamera()
+    {
+        foreach (var (_, light) in _world.Query<DirectionalLight>())
+        {
+            if (!light.CastShadows)
+            {
+                continue;
+            }
+
+            var sceneCenter = new Vector3(0, 5, 0);
+            var sceneRadius = 15f;
+
+            var lightDir = Vector3.Normalize(light.Direction);
+            var lightDistance = sceneRadius * 1.5f;
+            _lightCameraPosition = sceneCenter - lightDir * lightDistance;
+
+            var up = MathF.Abs(lightDir.Y) < 0.99f ? Vector3.UnitY : Vector3.UnitX;
+            var view = Matrix4x4.CreateLookAtLeftHanded(_lightCameraPosition, sceneCenter, up);
+
+            var size = sceneRadius * 2.0f;
+            var nearPlane = MathF.Max(0.1f, lightDistance - sceneRadius);
+            var farPlane = lightDistance + sceneRadius;
+            var proj = Matrix4x4.CreateOrthographicLeftHanded(size, size, nearPlane, farPlane);
+
+            _lightViewProjection = view * proj;
+            break;
+        }
+    }
+
+    private void HandleResize(uint width, uint height)
+    {
+        if (width == 0 || height == 0)
+        {
+            return;
+        }
+
+        _debugPass.SetScreenSize(width, height);
+        _uiPass.HandleResize(width, height);
+        _camera.SetAspectRatio(width, height);
+    }
+
+    private void AddScenePass(RenderGraph renderGraph, Viewport viewport, Matrix4x4 viewProjection,
+        Vector3 cameraPosition)
     {
         var time = _totalTime;
+
+        _shadowAtlas = _shadowPass.CreateShadowAtlas(renderGraph);
+
+        renderGraph.AddPass("Shadows",
+            (ref RenderPassSetupContext ctx, ref PassBuilder builder) =>
+            {
+                builder.WriteTexture(_shadowAtlas, (uint)ResourceUsageFlagBits.DepthWrite);
+                builder.HasSideEffects();
+            },
+            (ref RenderPassExecuteContext ctx) =>
+            {
+                _shadowPass.Execute(ref ctx, _shadowAtlas, _shadowData, new Vector3(0, 5, 0), 15f);
+
+                var atlas = ctx.GetTexture(_shadowAtlas);
+                _shadowBindGroup?.Dispose();
+                _shadowBindGroup = _scenePass.CreateShadowBindGroup(atlas);
+            });
 
         renderGraph.AddPass("Scene",
             (ref RenderPassSetupContext ctx, ref PassBuilder builder) =>
             {
-                builder.WriteTexture(_sceneRt, (uint)ResourceUsageFlagBits.RenderTarget);
+                builder.ReadTexture(_shadowAtlas);
+                builder.WriteTexture(_sceneRt);
                 builder.WriteTexture(_depthRt, (uint)ResourceUsageFlagBits.DepthWrite);
                 builder.HasSideEffects();
             },
             (ref RenderPassExecuteContext ctx) =>
             {
-                _scenePass.Execute(ref ctx, _sceneRt, _depthRt, viewport, viewProjection, cameraPosition, time);
+                _scenePass.Execute(ref ctx, _sceneRt, _depthRt, _shadowAtlas, _shadowBindGroup, _shadowData, viewport,
+                    viewProjection, cameraPosition, time);
             });
     }
 
@@ -198,13 +324,18 @@ public sealed class GameSystem : ISystem
         _assets.BeginUpload();
         _cubeMesh = _assets.AddBox(1.0f, 1.0f, 1.0f);
         _platformMesh = _assets.AddBox(20.0f, 1.0f, 20.0f);
-        _sphereMesh = _assets.AddSphere(1.0f, 16);
+        _sphereMesh = _assets.AddSphere(1.0f);
+        _smallSphereMesh = _assets.AddSphere(0.3f, 8);
         _assets.EndUpload();
-
-        // Create static platform with concrete material
         SpawnStaticBox(new Vector3(0, -2, 0), new Vector3(20f, 1f, 20f), _platformMesh, Materials.Concrete);
-
-        // Spawn initial falling cubes with varied materials
+        _world.AddComponent(_debugLightEntity, new MeshComponent(_smallSphereMesh));
+        _world.AddComponent(_debugLightEntity, new StandardMaterial
+        {
+            BaseColor = new Vector4(1f, 1f, 0.5f, 1f),
+            Metallic = 0f,
+            Roughness = 1f,
+            AmbientOcclusion = 1f
+        });
         for (var i = 0; i < 5; i++)
         {
             var position = new Vector3(
@@ -234,15 +365,12 @@ public sealed class GameSystem : ISystem
         );
 
         var material = _materialPalette[_random.Next(_materialPalette.Length)];
-
-        // Randomly spawn cubes or spheres
         if (_random.NextSingle() > 0.5f)
         {
             SpawnDynamicBox(position, Vector3.One, _cubeMesh, material, rotation);
         }
         else
         {
-            // Spheres get a shinier material
             var sphereMaterial = material with { Roughness = 0.2f, Metallic = 0.3f };
             SpawnDynamicSphere(position, 1f, _sphereMesh, sphereMaterial);
         }
@@ -263,7 +391,8 @@ public sealed class GameSystem : ISystem
         return entity;
     }
 
-    private Entity SpawnDynamicBox(Vector3 position, Vector3 size, RuntimeMeshHandle mesh, StandardMaterial material, Quaternion? rotation = null, float mass = 1f)
+    private Entity SpawnDynamicBox(Vector3 position, Vector3 size, RuntimeMeshHandle mesh, StandardMaterial material,
+        Quaternion? rotation = null, float mass = 1f)
     {
         var rot = rotation ?? Quaternion.Identity;
         var entity = _world.Spawn();
@@ -277,38 +406,18 @@ public sealed class GameSystem : ISystem
         return entity;
     }
 
-    private Entity SpawnDynamicSphere(Vector3 position, float diameter, RuntimeMeshHandle mesh, StandardMaterial material, float mass = 1f)
+    private Entity SpawnDynamicSphere(Vector3 position, float diameter, RuntimeMeshHandle mesh,
+        StandardMaterial material, float mass = 1f)
     {
         var entity = _world.Spawn();
         _world.AddComponent(entity, new MeshComponent(mesh));
         _world.AddComponent(entity, new Transform(position, Quaternion.Identity, Vector3.One));
         _world.AddComponent(entity, material);
 
-        var handle = _physics.CreateBody(entity, position, Quaternion.Identity, PhysicsBodyDesc.Dynamic(PhysicsShape.Sphere(diameter), mass));
+        var handle = _physics.CreateBody(entity, position, Quaternion.Identity,
+            PhysicsBodyDesc.Dynamic(PhysicsShape.Sphere(diameter), mass));
         _world.AddComponent(entity, new RigidBody(handle));
 
         return entity;
-    }
-
-    public void Shutdown()
-    {
-        _ctx.RenderGraph.WaitIdle();
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        _debugPass.Dispose();
-        _compositePass.Dispose();
-        _scenePass.Dispose();
-        _uiPass.Dispose();
-
-        GC.SuppressFinalize(this);
     }
 }

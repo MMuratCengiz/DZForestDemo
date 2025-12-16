@@ -5,9 +5,9 @@ namespace Physics;
 
 public class PhysicsPlugin
 {
-    private readonly int _threadCount;
     private readonly Vector3 _gravity;
     private readonly bool _syncVelocity;
+    private readonly int _threadCount;
 
     public PhysicsPlugin(Vector3? gravity = null, int threadCount = -1, bool syncVelocity = false)
     {

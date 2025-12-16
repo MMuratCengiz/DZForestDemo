@@ -10,12 +10,16 @@ namespace Application;
 
 public sealed class App(ApplicationOptions options) : IDisposable
 {
-    private readonly ApplicationOptions _options = options ?? throw new ArgumentNullException(nameof(options));
     private readonly EventQueue _eventQueue = new();
     private readonly FixedTimestep _fixedTimestep = new(options.FixedUpdateRate);
+    private readonly ApplicationOptions _options = options ?? throw new ArgumentNullException(nameof(options));
+    private bool _disposed;
 
     private bool _initialized;
-    private bool _disposed;
+
+    public App() : this(new ApplicationOptions())
+    {
+    }
 
     public AppWindow Window { get; } = new(options.Title, options.Width, options.Height);
     public FrameClock Clock { get; } = new();
@@ -25,8 +29,20 @@ public sealed class App(ApplicationOptions options) : IDisposable
 
     private bool IsRunning { get; set; }
 
-    public App() : this(new ApplicationOptions())
+    public void Dispose()
     {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        World.Dispose();
+        Window.Dispose();
+        Engine.Shutdown();
+
+        GC.SuppressFinalize(this);
     }
 
     public SystemDescriptor AddSystem<T>(T system, Schedule schedule) where T : ISystem
@@ -91,10 +107,7 @@ public sealed class App(ApplicationOptions options) : IDisposable
         World.RunSchedule(Schedule.PreUpdate);
 
         var fixedSteps = _fixedTimestep.Accumulate(Clock.DeltaTime);
-        for (var i = 0; i < fixedSteps; i++)
-        {
-            World.RunSchedule(Schedule.FixedUpdate);
-        }
+        for (var i = 0; i < fixedSteps; i++) World.RunSchedule(Schedule.FixedUpdate);
 
         World.RunSchedule(Schedule.Update);
         World.RunSchedule(Schedule.PostUpdate);
@@ -127,21 +140,5 @@ public sealed class App(ApplicationOptions options) : IDisposable
     private void Shutdown()
     {
         World.Shutdown();
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        World.Dispose();
-        Window.Dispose();
-        Engine.Shutdown();
-
-        GC.SuppressFinalize(this);
     }
 }

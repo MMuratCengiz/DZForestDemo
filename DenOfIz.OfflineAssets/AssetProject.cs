@@ -2,13 +2,6 @@ namespace OfflineAssets;
 
 public sealed class AssetProject
 {
-    public string RootDirectory { get; }
-    public string SourceDirectory { get; }
-    public string OutputDirectory { get; }
-    public string ModelsDirectory { get; }
-    public string TexturesDirectory { get; }
-    public string AnimationsDirectory { get; }
-
     public AssetProject(string rootDirectory)
     {
         RootDirectory = Path.GetFullPath(rootDirectory);
@@ -17,6 +10,35 @@ public sealed class AssetProject
         ModelsDirectory = Path.Combine(OutputDirectory, "Models");
         TexturesDirectory = Path.Combine(OutputDirectory, "Textures");
         AnimationsDirectory = Path.Combine(OutputDirectory, "Animations");
+        ShadersDirectory = Path.Combine(OutputDirectory, "Shaders");
+    }
+
+    private AssetProject(string rootDirectory, string sourceDirectory, string outputDirectory)
+    {
+        RootDirectory = Path.GetFullPath(rootDirectory);
+        SourceDirectory = Path.GetFullPath(sourceDirectory);
+        OutputDirectory = Path.GetFullPath(outputDirectory);
+        ModelsDirectory = Path.Combine(OutputDirectory, "Models");
+        TexturesDirectory = Path.Combine(OutputDirectory, "Textures");
+        AnimationsDirectory = Path.Combine(OutputDirectory, "Animations");
+        ShadersDirectory = Path.Combine(OutputDirectory, "Shaders");
+    }
+
+    public string RootDirectory { get; }
+    public string SourceDirectory { get; }
+    public string OutputDirectory { get; }
+    public string ModelsDirectory { get; }
+    public string TexturesDirectory { get; }
+    public string AnimationsDirectory { get; }
+    public string ShadersDirectory { get; }
+
+    public static AssetProject ForProjectAssets(string projectDirectory, string? sourceDirectory = null)
+    {
+        var fullProjectDir = Path.GetFullPath(projectDirectory);
+        var assetsDir = Path.Combine(fullProjectDir, "Assets");
+        sourceDirectory ??= Path.Combine(fullProjectDir, "AssetSources");
+
+        return new AssetProject(fullProjectDir, sourceDirectory, assetsDir);
     }
 
     public void EnsureDirectories()
@@ -26,6 +48,62 @@ public sealed class AssetProject
         Directory.CreateDirectory(ModelsDirectory);
         Directory.CreateDirectory(TexturesDirectory);
         Directory.CreateDirectory(AnimationsDirectory);
+        Directory.CreateDirectory(ShadersDirectory);
+    }
+
+    public void CopyShaders(string shaderSourceDirectory, bool recursive = true)
+    {
+        EnsureDirectories();
+
+        var searchOption = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
+        var shaderExtensions = new[] { ".hlsl", ".glsl", ".frag", ".vert", ".comp", ".geom", ".tesc", ".tese" };
+
+        foreach (var file in Directory.EnumerateFiles(shaderSourceDirectory, "*.*", searchOption))
+        {
+            var extension = Path.GetExtension(file).ToLowerInvariant();
+            if (!shaderExtensions.Contains(extension))
+            {
+                continue;
+            }
+
+            var relativePath = Path.GetRelativePath(shaderSourceDirectory, file);
+            var destPath = Path.Combine(ShadersDirectory, relativePath);
+            var destDir = Path.GetDirectoryName(destPath);
+
+            if (!string.IsNullOrEmpty(destDir))
+            {
+                Directory.CreateDirectory(destDir);
+            }
+
+            File.Copy(file, destPath, true);
+        }
+    }
+
+    public void CopyShaderLibrary(string libraryDirectory, string? libraryName = null)
+    {
+        EnsureDirectories();
+
+        libraryName ??= Path.GetFileName(libraryDirectory);
+        var destDir = Path.Combine(ShadersDirectory, libraryName);
+
+        CopyDirectoryRecursive(libraryDirectory, destDir);
+    }
+
+    private static void CopyDirectoryRecursive(string sourceDir, string destDir)
+    {
+        Directory.CreateDirectory(destDir);
+
+        foreach (var file in Directory.GetFiles(sourceDir))
+        {
+            var destFile = Path.Combine(destDir, Path.GetFileName(file));
+            File.Copy(file, destFile, true);
+        }
+
+        foreach (var subDir in Directory.GetDirectories(sourceDir))
+        {
+            var destSubDir = Path.Combine(destDir, Path.GetFileName(subDir));
+            CopyDirectoryRecursive(subDir, destSubDir);
+        }
     }
 
     public AssetExportSettings CreateExportSettings(string sourceFile, string? assetName = null)

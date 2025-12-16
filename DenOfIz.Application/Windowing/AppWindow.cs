@@ -11,6 +11,7 @@ public sealed class AppWindow(string title, uint width, uint height) : IDisposab
     public bool IsMinimized { get; private set; }
     public bool HasFocus { get; private set; } = true;
     public GraphicsWindowHandle GraphicsHandle => NativeWindow.GetGraphicsWindowHandle();
+
     public Window NativeWindow { get; } = new(new WindowDesc
     {
         Width = (int)width,
@@ -18,9 +19,27 @@ public sealed class AppWindow(string title, uint width, uint height) : IDisposab
         Title = StringView.Create(title)
     });
 
-    public void Show() => NativeWindow.Show();
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
 
-    public void Hide() => NativeWindow.Hide();
+        _disposed = true;
+        NativeWindow.Dispose();
+        GC.SuppressFinalize(this);
+    }
+
+    public void Show()
+    {
+        NativeWindow.Show();
+    }
+
+    public void Hide()
+    {
+        NativeWindow.Hide();
+    }
 
     internal void HandleWindowEvent(WindowEventType eventType, int data1, int data2)
     {
@@ -43,17 +62,5 @@ public sealed class AppWindow(string title, uint width, uint height) : IDisposab
                 HasFocus = false;
                 break;
         }
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-        NativeWindow.Dispose();
-        GC.SuppressFinalize(this);
     }
 }

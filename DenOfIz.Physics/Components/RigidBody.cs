@@ -42,27 +42,36 @@ public struct ColliderDesc
     public float Mass;
     public bool IsStatic;
 
-    public static ColliderDesc Box(Vector3 size, float mass = 1f) => new()
+    public static ColliderDesc Box(Vector3 size, float mass = 1f)
     {
-        Shape = ColliderShape.Box,
-        Size = size,
-        Mass = mass,
-        IsStatic = false
-    };
+        return new ColliderDesc
+        {
+            Shape = ColliderShape.Box,
+            Size = size,
+            Mass = mass,
+            IsStatic = false
+        };
+    }
 
-    public static ColliderDesc StaticBox(Vector3 size) => new()
+    public static ColliderDesc StaticBox(Vector3 size)
     {
-        Shape = ColliderShape.Box,
-        Size = size,
-        Mass = 0f,
-        IsStatic = true
-    };
+        return new ColliderDesc
+        {
+            Shape = ColliderShape.Box,
+            Size = size,
+            Mass = 0f,
+            IsStatic = true
+        };
+    }
 
-    public static ColliderDesc Sphere(float radius, float mass = 1f) => new()
+    public static ColliderDesc Sphere(float radius, float mass = 1f)
     {
-        Shape = ColliderShape.Sphere,
-        Size = new Vector3(radius, radius, radius),
-        Mass = mass,
-        IsStatic = false
-    };
+        return new ColliderDesc
+        {
+            Shape = ColliderShape.Sphere,
+            Size = new Vector3(radius, radius, radius),
+            Mass = mass,
+            IsStatic = false
+        };
+    }
 }

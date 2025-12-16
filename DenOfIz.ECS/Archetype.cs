@@ -9,6 +9,15 @@ public sealed class Archetype
     private readonly List<Entity> _entities;
     private readonly Dictionary<uint, int> _entityIndexMap;
 
+    internal Archetype(ArchetypeId id, ArchetypeSignature signature)
+    {
+        Id = id;
+        Signature = signature;
+        _columns = new Dictionary<ComponentId, IComponentColumn>();
+        _entities = new List<Entity>();
+        _entityIndexMap = new Dictionary<uint, int>();
+    }
+
     public ArchetypeId Id { get; }
     public ArchetypeSignature Signature { get; }
 
@@ -22,15 +31,6 @@ public sealed class Archetype
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => CollectionsMarshal.AsSpan(_entities);
-    }
-
-    internal Archetype(ArchetypeId id, ArchetypeSignature signature)
-    {
-        Id = id;
-        Signature = signature;
-        _columns = new Dictionary<ComponentId, IComponentColumn>();
-        _entities = new List<Entity>();
-        _entityIndexMap = new Dictionary<uint, int>();
     }
 
     public void RegisterColumn<T>() where T : struct
@@ -78,6 +78,7 @@ public sealed class Archetype
             column = (ComponentColumn<T>)col;
             return true;
         }
+
         column = null;
         return false;
     }

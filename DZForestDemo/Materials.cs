@@ -19,20 +19,29 @@ public struct StandardMaterial
         _padding = 0;
     }
 
-    public static StandardMaterial FromColor(Vector3 color) => new()
+    public static StandardMaterial FromColor(Vector3 color)
     {
-        BaseColor = new Vector4(color, 1.0f)
-    };
+        return new StandardMaterial
+        {
+            BaseColor = new Vector4(color, 1.0f)
+        };
+    }
 
-    public static StandardMaterial FromColor(Vector4 color) => new()
+    public static StandardMaterial FromColor(Vector4 color)
     {
-        BaseColor = color
-    };
+        return new StandardMaterial
+        {
+            BaseColor = color
+        };
+    }
 
-    public static StandardMaterial FromColor(float r, float g, float b, float a = 1.0f) => new()
+    public static StandardMaterial FromColor(float r, float g, float b, float a = 1.0f)
     {
-        BaseColor = new Vector4(r, g, b, a)
-    };
+        return new StandardMaterial
+        {
+            BaseColor = new Vector4(r, g, b, a)
+        };
+    }
 }
 
 public struct Unlit;

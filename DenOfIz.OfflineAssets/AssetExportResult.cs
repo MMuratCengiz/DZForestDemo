@@ -8,17 +8,24 @@ public sealed class AssetExportResult
     public string? SkeletonPath { get; init; }
     public IReadOnlyList<string> AnimationPaths { get; init; } = [];
 
-    public static AssetExportResult Failed(string error) => new()
+    public static AssetExportResult Failed(string error)
     {
-        Success = false,
-        ErrorMessage = error
-    };
+        return new AssetExportResult
+        {
+            Success = false,
+            ErrorMessage = error
+        };
+    }
 
-    public static AssetExportResult Succeeded(string outputPath, string? skeletonPath = null, IReadOnlyList<string>? animationPaths = null) => new()
+    public static AssetExportResult Succeeded(string outputPath, string? skeletonPath = null,
+        IReadOnlyList<string>? animationPaths = null)
     {
-        Success = true,
-        OutputPath = outputPath,
-        SkeletonPath = skeletonPath,
-        AnimationPaths = animationPaths ?? []
-    };
+        return new AssetExportResult
+        {
+            Success = true,
+            OutputPath = outputPath,
+            SkeletonPath = skeletonPath,
+            AnimationPaths = animationPaths ?? []
+        };
+    }
 }

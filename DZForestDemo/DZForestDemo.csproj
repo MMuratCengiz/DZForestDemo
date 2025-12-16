@@ -9,15 +9,23 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="DenOfIzGraphics" Version="0.3.0-alpha" />
-      <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
+        <PackageReference Include="DenOfIzGraphics" Version="0.3.2-alpha"/>
+        <PackageReference Include="ImGui.NET" Version="1.91.6.1"/>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\DenOfIz.Application\DenOfIz.Application.csproj" />
-      <ProjectReference Include="..\DenOfIz.Graphics\DenOfIz.Graphics.csproj" />
-      <ProjectReference Include="..\DenOfIz.Physics\DenOfIz.Physics.csproj" />
-      <ProjectReference Include="..\DenOfIz.UI\DenOfIz.UI.csproj" />
+        <ProjectReference Include="..\DenOfIz.Application\DenOfIz.Application.csproj"/>
+        <ProjectReference Include="..\DenOfIz.Graphics\DenOfIz.Graphics.csproj"/>
+        <ProjectReference Include="..\DenOfIz.Physics\DenOfIz.Physics.csproj"/>
+        <ProjectReference Include="..\DenOfIz.UI\DenOfIz.UI.csproj"/>
+    </ItemGroup>
+
+    <!-- Copy Assets directory to output -->
+    <ItemGroup>
+        <Content Include="Assets\**\*" Exclude="Assets\**\.gitkeep">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
+        </Content>
     </ItemGroup>
 
 </Project>

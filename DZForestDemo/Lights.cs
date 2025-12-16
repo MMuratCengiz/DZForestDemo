@@ -19,8 +19,7 @@ public struct DirectionalLight
 
     public static DirectionalLight Sun => new(
         new Vector3(0.5f, -1.0f, 0.3f),
-        new Vector3(1.0f, 0.98f, 0.95f),
-        1.0f
+        new Vector3(1.0f, 0.98f, 0.95f)
     );
 }
 

@@ -10,14 +10,22 @@ public struct ResourceDependency
     public ResourceAccess Access;
     public uint UsageFlags;
 
-    public static ResourceDependency Read(ResourceHandle handle, uint usageFlags = (uint)ResourceUsageFlagBits.ShaderResource) =>
-        new() { Handle = handle, Access = ResourceAccess.Read, UsageFlags = usageFlags };
+    public static ResourceDependency Read(ResourceHandle handle,
+        uint usageFlags = (uint)ResourceUsageFlagBits.ShaderResource)
+    {
+        return new ResourceDependency { Handle = handle, Access = ResourceAccess.Read, UsageFlags = usageFlags };
+    }
 
-    public static ResourceDependency Write(ResourceHandle handle, uint usageFlags = (uint)ResourceUsageFlagBits.RenderTarget) =>
-        new() { Handle = handle, Access = ResourceAccess.Write, UsageFlags = usageFlags };
+    public static ResourceDependency Write(ResourceHandle handle,
+        uint usageFlags = (uint)ResourceUsageFlagBits.RenderTarget)
+    {
+        return new ResourceDependency { Handle = handle, Access = ResourceAccess.Write, UsageFlags = usageFlags };
+    }
 
-    public static ResourceDependency ReadWrite(ResourceHandle handle, uint usageFlags) =>
-        new() { Handle = handle, Access = ResourceAccess.ReadWrite, UsageFlags = usageFlags };
+    public static ResourceDependency ReadWrite(ResourceHandle handle, uint usageFlags)
+    {
+        return new ResourceDependency { Handle = handle, Access = ResourceAccess.ReadWrite, UsageFlags = usageFlags };
+    }
 }
 
 public ref struct RenderPassSetupContext
@@ -37,16 +45,24 @@ public ref struct RenderPassExecuteContext
     public uint Height;
     public uint FrameIndex;
 
-    public TextureResource GetTexture(ResourceHandle handle) => Graph.GetTexture(handle);
-    public Buffer GetBuffer(ResourceHandle handle) => Graph.GetBuffer(handle);
+    public Texture GetTexture(ResourceHandle handle)
+    {
+        return Graph.GetTexture(handle);
+    }
+
+    public Buffer GetBuffer(ResourceHandle handle)
+    {
+        return Graph.GetBuffer(handle);
+    }
 }
 
 public delegate void RenderPassSetupDelegate(ref RenderPassSetupContext context, ref PassBuilder builder);
+
 public delegate void RenderPassExecuteDelegate(ref RenderPassExecuteContext context);
 
 public struct ExternalPassResult
 {
-    public TextureResource Texture;
+    public Texture Texture;
     public Semaphore Semaphore;
 }
 
@@ -59,8 +75,15 @@ public ref struct ExternalPassExecuteContext
     public uint Height;
     public uint FrameIndex;
 
-    public TextureResource GetTexture(ResourceHandle handle) => Graph.GetTexture(handle);
-    public Buffer GetBuffer(ResourceHandle handle) => Graph.GetBuffer(handle);
+    public Texture GetTexture(ResourceHandle handle)
+    {
+        return Graph.GetTexture(handle);
+    }
+
+    public Buffer GetBuffer(ResourceHandle handle)
+    {
+        return Graph.GetBuffer(handle);
+    }
 }
 
 public readonly ref struct PassBuilder
@@ -144,39 +167,52 @@ public readonly ref struct PassBuilder
         return handle;
     }
 
-    public void HasSideEffects() => _passData.HasSideEffects = true;
-    public void UseAsyncCompute() => _passData.QueueType = QueueType.Compute;
+    public void HasSideEffects()
+    {
+        _passData.HasSideEffects = true;
+    }
+
+    public void UseAsyncCompute()
+    {
+        _passData.QueueType = QueueType.Compute;
+    }
 }
 
 internal class RenderPassData
 {
-    public int Index;
-    public string Name = "";
-    public RenderPassExecuteDelegate? Execute;
-    public ExternalPassExecuteDelegate? ExternalExecute;
-    public bool IsExternal;
-    public QueueType QueueType = QueueType.Graphics;
-    public bool HasSideEffects;
-    public bool IsCulled;
-
     private readonly List<ResourceDependency> _inputs = new(8);
     private readonly List<ResourceDependency> _outputs = new(8);
-
-    public int ExecutionOrder = -1;
-    public readonly List<int> DependsOnPasses = new(8);
     public readonly List<int> DependentPasses = new(8);
+    public readonly List<int> DependsOnPasses = new(8);
+    public CommandList? CommandList;
 
     public Semaphore? CompletionSemaphore;
-    public CommandList? CommandList;
+    public RenderPassExecuteDelegate? Execute;
+
+    public int ExecutionOrder = -1;
+    public ExternalPassExecuteDelegate? ExternalExecute;
 
     public ResourceHandle ExternalOutputHandle;
     public ExternalPassResult ExternalResult;
+    public bool HasSideEffects;
+    public int Index;
+    public bool IsCulled;
+    public bool IsExternal;
+    public string Name = "";
+    public QueueType QueueType = QueueType.Graphics;
 
     public IReadOnlyList<ResourceDependency> Inputs => _inputs;
     public IReadOnlyList<ResourceDependency> Outputs => _outputs;
 
-    public void AddInput(ResourceDependency dep) => _inputs.Add(dep);
-    public void AddOutput(ResourceDependency dep) => _outputs.Add(dep);
+    public void AddInput(ResourceDependency dep)
+    {
+        _inputs.Add(dep);
+    }
+
+    public void AddOutput(ResourceDependency dep)
+    {
+        _outputs.Add(dep);
+    }
 
     public void Reset()
     {

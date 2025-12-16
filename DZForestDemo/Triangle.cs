@@ -1,4 +1,4 @@
-﻿namespace DZForestDemo;
+namespace DZForestDemo;
 
 public abstract class Triangle
 {

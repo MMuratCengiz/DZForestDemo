@@ -8,11 +8,6 @@ public sealed class AssetExporter : IDisposable
     private readonly OzzExporter _ozzExporter = new();
     private bool _disposed;
 
-    public bool CanProcess(string filePath)
-    {
-        return _gltfExporter.ValidateFile(StringView.Create(filePath));
-    }
-
     public IReadOnlyList<string> SupportedExtensions
     {
         get
@@ -24,8 +19,26 @@ public sealed class AssetExporter : IDisposable
                 var ext = extensions.ToArray()[i];
                 result.Add(ext.ToString());
             }
+
             return result;
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        _gltfExporter.Dispose();
+        _ozzExporter.Dispose();
+    }
+
+    public bool CanProcess(string filePath)
+    {
+        return _gltfExporter.ValidateFile(StringView.Create(filePath));
     }
 
     public AssetExportResult Export(AssetExportSettings settings)
@@ -85,7 +98,6 @@ public sealed class AssetExporter : IDisposable
 
             var error = result.ErrorMessage.ToString();
             return AssetExportResult.Failed(string.IsNullOrEmpty(error) ? "GLTF export failed." : error);
-
         }
         finally
         {
@@ -132,17 +144,5 @@ public sealed class AssetExporter : IDisposable
         {
             OzzExportResult.Free(ref result);
         }
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-        _gltfExporter.Dispose();
-        _ozzExporter.Dispose();
     }
 }

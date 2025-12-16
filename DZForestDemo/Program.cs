@@ -1,7 +1,6 @@
 using Application;
 using DenOfIz;
 using ECS;
-using Graphics;
 
 namespace DZForestDemo;
 

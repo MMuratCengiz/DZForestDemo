@@ -56,6 +56,8 @@ public sealed class Commands(EntityStore store)
 {
     private readonly List<ICommand> _commands = new(64);
 
+    public int PendingCount => _commands.Count;
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Spawn(Action<EntityStore, Entity>? configure = null)
     {
@@ -86,6 +88,7 @@ public sealed class Commands(EntityStore store)
         {
             command.Execute(store);
         }
+
         _commands.Clear();
     }
 
@@ -93,8 +96,6 @@ public sealed class Commands(EntityStore store)
     {
         _commands.Clear();
     }
-
-    public int PendingCount => _commands.Count;
 }
 
 public sealed class EntityBuilder
@@ -127,6 +128,7 @@ public sealed class EntityBuilder
         {
             _store.AddComponent(_entity, in component);
         }
+
         return this;
     }
 

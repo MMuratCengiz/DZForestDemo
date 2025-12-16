@@ -3,10 +3,6 @@ using DenOfIz;
 
 namespace UIFramework;
 
-/// <summary>
-/// Fluent builder for UI elements. This is a ref struct for zero allocations.
-/// Chain methods to configure the element, then call Open() to start adding children.
-/// </summary>
 public ref struct UiElement
 {
     private readonly UiContext _context;
@@ -26,12 +22,7 @@ public ref struct UiElement
         _decl = new ClayElementDeclaration { Id = Id };
     }
 
-    /// <summary>
-    /// Gets the element ID for interaction checking.
-    /// </summary>
     public uint Id { get; }
-
-    // === Layout Direction ===
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElement Direction(UiDirection dir)
@@ -43,12 +34,16 @@ public ref struct UiElement
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Horizontal() => Direction(UiDirection.Horizontal);
+    public UiElement Horizontal()
+    {
+        return Direction(UiDirection.Horizontal);
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Vertical() => Direction(UiDirection.Vertical);
-
-    // === Sizing ===
+    public UiElement Vertical()
+    {
+        return Direction(UiDirection.Vertical);
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElement Width(UiSizing sizing)
@@ -58,9 +53,23 @@ public ref struct UiElement
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiElement Width(float width)
+    {
+        _decl.Layout.Sizing.Width = ClaySizingAxis.Fixed(width);
+        return this;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElement Height(UiSizing sizing)
     {
         _decl.Layout.Sizing.Height = sizing.ToClayAxis();
+        return this;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiElement Height(float height)
+    {
+        _decl.Layout.Sizing.Height = ClaySizingAxis.Fixed(height);
         return this;
     }
 
@@ -138,8 +147,6 @@ public ref struct UiElement
         return this;
     }
 
-    // === Padding ===
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElement Padding(UiPadding padding)
     {
@@ -179,8 +186,6 @@ public ref struct UiElement
         };
         return this;
     }
-
-    // === Alignment ===
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElement AlignChildren(UiAlignX x, UiAlignY y)
@@ -232,16 +237,12 @@ public ref struct UiElement
         return this;
     }
 
-    // === Gap ===
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElement Gap(float gap)
     {
         _decl.Layout.ChildGap = (ushort)gap;
         return this;
     }
-
-    // === Background ===
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElement Background(UiColor color)
@@ -256,8 +257,6 @@ public ref struct UiElement
         _decl.BackgroundColor = ClayColor.Create(r, g, b, a);
         return this;
     }
-
-    // === Border ===
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElement Border(UiBorder border)
@@ -277,8 +276,6 @@ public ref struct UiElement
         return this;
     }
 
-    // === Corner Radius ===
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElement CornerRadius(UiCornerRadius radius)
     {
@@ -292,8 +289,6 @@ public ref struct UiElement
         _decl.BorderRadius = ClayBorderRadius.CreateUniform(radius);
         return this;
     }
-
-    // === Scrolling ===
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElement ScrollVertical()
@@ -317,33 +312,24 @@ public ref struct UiElement
         return this;
     }
 
-    // === Interaction ===
-
-    /// <summary>
-    /// Gets the interaction state for this element (hover, press, click).
-    /// Must be called after Open() for the previous frame's state.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiInteraction GetInteraction() => _context.GetInteraction(Id);
+    public UiInteraction GetInteraction()
+    {
+        return _context.GetInteraction(Id);
+    }
 
-    /// <summary>
-    /// Returns true if this element is being hovered.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool IsHovered() => _context.IsHovered(Id);
+    public bool IsHovered()
+    {
+        return _context.IsHovered(Id);
+    }
 
-    /// <summary>
-    /// Returns true if this element was clicked this frame.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool WasClicked() => _context.IsHovered(Id) && _context.MouseJustReleased;
+    public bool WasClicked()
+    {
+        return _context.IsHovered(Id) && _context.MouseJustReleased;
+    }
 
-    // === Element Control ===
-
-    /// <summary>
-    /// Opens this element and returns a scope that will close it when disposed.
-    /// Use with 'using' for automatic closing.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElementScope Open()
     {
@@ -351,18 +337,12 @@ public ref struct UiElement
         return new UiElementScope(_context);
     }
 
-    /// <summary>
-    /// Opens this element for children. Call Close() when done.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Begin()
     {
         _context.Clay.OpenElement(_decl);
     }
 
-    /// <summary>
-    /// Opens this element, executes the content action, then closes.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Content(Action content)
     {
@@ -371,27 +351,24 @@ public ref struct UiElement
         _context.Clay.CloseElement();
     }
 
-    /// <summary>
-    /// Creates a child panel element.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Panel(string id) => new(_context, id);
+    public UiElement Panel(string id)
+    {
+        return new UiElement(_context, id);
+    }
 
-    /// <summary>
-    /// Creates a child row (horizontal layout).
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Row(string id = "Row") => new UiElement(_context, id).Horizontal();
+    public UiElement Row(string id = "Row")
+    {
+        return new UiElement(_context, id).Horizontal();
+    }
 
-    /// <summary>
-    /// Creates a child column (vertical layout).
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Column(string id = "Column") => new UiElement(_context, id).Vertical();
+    public UiElement Column(string id = "Column")
+    {
+        return new UiElement(_context, id).Vertical();
+    }
 
-    /// <summary>
-    /// Adds text as a child.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Text(string text, UiTextStyle style = default)
     {
@@ -410,19 +387,13 @@ public ref struct UiElement
         _context.Clay.Text(StringView.Intern(text), desc);
     }
 
-    /// <summary>
-    /// Adds an image/texture as a child.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Image(TextureResource texture, uint width, uint height)
+    public void Image(Texture texture, uint width, uint height)
     {
         _context.Clay.Texture(texture, width, height);
     }
 }
 
-/// <summary>
-/// Scope handle for automatic element closing. Use with 'using'.
-/// </summary>
 public ref struct UiElementScope
 {
     private readonly UiContext _context;
@@ -434,33 +405,30 @@ public ref struct UiElementScope
         _disposed = false;
     }
 
-    /// <summary>
-    /// Creates a child panel element.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Panel(string id) => new(_context, id);
+    public UiElement Panel(string id)
+    {
+        return new UiElement(_context, id);
+    }
 
-    /// <summary>
-    /// Creates a child panel element with index.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Panel(string id, uint index) => new(_context, id, index);
+    public UiElement Panel(string id, uint index)
+    {
+        return new UiElement(_context, id, index);
+    }
 
-    /// <summary>
-    /// Creates a child row (horizontal layout).
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Row(string id = "Row") => new UiElement(_context, id).Horizontal();
+    public UiElement Row(string id = "Row")
+    {
+        return new UiElement(_context, id).Horizontal();
+    }
 
-    /// <summary>
-    /// Creates a child column (vertical layout).
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Column(string id = "Column") => new UiElement(_context, id).Vertical();
+    public UiElement Column(string id = "Column")
+    {
+        return new UiElement(_context, id).Vertical();
+    }
 
-    /// <summary>
-    /// Adds text as a child.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Text(string text, UiTextStyle style = default)
     {
@@ -479,18 +447,12 @@ public ref struct UiElementScope
         _context.Clay.Text(StringView.Intern(text), desc);
     }
 
-    /// <summary>
-    /// Adds an image/texture as a child.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Image(TextureResource texture, uint width, uint height)
+    public void Image(Texture texture, uint width, uint height)
     {
         _context.Clay.Texture(texture, width, height);
     }
 
-    /// <summary>
-    /// Closes the element.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose()
     {

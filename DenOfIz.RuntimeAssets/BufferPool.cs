@@ -11,18 +11,33 @@ public sealed class BufferPool(LogicalDevice device, uint usages, ulong blockSiz
     private readonly List<BufferBlock> _blocks = [];
     private bool _disposed;
 
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        foreach (var block in _blocks)
+        {
+            block.Dispose();
+        }
+
+        _blocks.Clear();
+    }
+
     public BufferView Allocate(ulong size, ulong alignment = 16)
     {
         size = AlignUp(size, alignment);
 
         var blocks = CollectionsMarshal.AsSpan(_blocks);
         for (var i = 0; i < blocks.Length; i++)
-        {
             if (blocks[i].TryAllocate(size, alignment, out var view))
             {
                 return view;
             }
-        }
 
         var newBlockSize = Math.Max(blockSize, size);
         var newBlock = new BufferBlock(device, usages, newBlockSize);
@@ -37,22 +52,6 @@ public sealed class BufferPool(LogicalDevice device, uint usages, ulong blockSiz
         return (value + alignment - 1) & ~(alignment - 1);
     }
 
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        foreach (var block in _blocks)
-        {
-            block.Dispose();
-        }
-        _blocks.Clear();
-    }
-
     private sealed class BufferBlock(LogicalDevice device, uint usages, ulong size) : IDisposable
     {
         private readonly Buffer _buffer = device.CreateBuffer(new BufferDesc
@@ -63,6 +62,11 @@ public sealed class BufferPool(LogicalDevice device, uint usages, ulong blockSiz
         });
 
         private ulong _offset;
+
+        public void Dispose()
+        {
+            _buffer.Dispose();
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryAllocate(ulong size1, ulong alignment, out BufferView view)
@@ -78,11 +82,6 @@ public sealed class BufferPool(LogicalDevice device, uint usages, ulong blockSiz
             view = new BufferView(_buffer, alignedOffset, size1);
             _offset = alignedOffset + size1;
             return true;
-        }
-
-        public void Dispose()
-        {
-            _buffer.Dispose();
         }
     }
 }

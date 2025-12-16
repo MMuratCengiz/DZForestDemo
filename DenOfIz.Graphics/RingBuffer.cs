@@ -22,35 +22,24 @@ public sealed class RingBuffer : IDisposable
 {
     private const nuint Alignment = 256;
 
-    private struct ChunkInfo
-    {
-        public Buffer Buffer;
-        public IntPtr MappedMemory;
-        public nuint StartIndex;
-        public nuint EndIndex;
-        public nuint NumBytes;
-    }
-
     private readonly List<ChunkInfo> _chunks = [];
     private readonly nuint _dataNumBytes;
     private readonly nuint _numEntries;
-    private readonly nuint _alignedNumBytes;
-    private readonly nuint _totalNumBytes;
-    private bool _memoryMapped;
     private bool _disposed;
+    private bool _memoryMapped;
 
     public RingBuffer(RingBufferDesc desc)
     {
         _dataNumBytes = desc.DataNumBytes;
         _numEntries = desc.NumEntries;
-        _alignedNumBytes = AlignUp(desc.DataNumBytes, Alignment);
-        _totalNumBytes = _alignedNumBytes * desc.NumEntries;
+        AlignedNumBytes = AlignUp(desc.DataNumBytes, Alignment);
+        TotalNumBytes = AlignedNumBytes * desc.NumEntries;
 
-        var entriesPerChunk = desc.MaxChunkNumBytes / _alignedNumBytes;
+        var entriesPerChunk = desc.MaxChunkNumBytes / AlignedNumBytes;
         if (entriesPerChunk == 0)
         {
             throw new ArgumentException(
-                $"Single entry size {_alignedNumBytes} exceeds MaxChunkNumBytes {desc.MaxChunkNumBytes}");
+                $"Single entry size {AlignedNumBytes} exceeds MaxChunkNumBytes {desc.MaxChunkNumBytes}");
         }
 
         var remainingEntries = desc.NumEntries;
@@ -59,7 +48,7 @@ public sealed class RingBuffer : IDisposable
         while (remainingEntries > 0)
         {
             var entriesInThisChunk = Math.Min(entriesPerChunk, remainingEntries);
-            var chunkNumBytes = entriesInThisChunk * _alignedNumBytes;
+            var chunkNumBytes = entriesInThisChunk * AlignedNumBytes;
 
             var buffer = desc.LogicalDevice.CreateBuffer(new BufferDesc
             {
@@ -82,6 +71,35 @@ public sealed class RingBuffer : IDisposable
         }
     }
 
+    public nuint AlignedNumBytes { get; }
+
+    public nuint TotalNumBytes { get; }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        if (_memoryMapped)
+        {
+            foreach (var chunk in _chunks)
+            {
+                chunk.Buffer.UnmapMemory();
+            }
+        }
+
+        foreach (var chunk in _chunks)
+        {
+            chunk.Buffer.Dispose();
+        }
+
+        GC.SuppressFinalize(this);
+    }
+
     public GPUBufferView GetBufferView(nuint index)
     {
         if (index >= _numEntries)
@@ -97,7 +115,7 @@ public sealed class RingBuffer : IDisposable
 
         var chunk = _chunks[chunkIndex];
         var indexWithinChunk = index - chunk.StartIndex;
-        var offsetWithinChunk = indexWithinChunk * _alignedNumBytes;
+        var offsetWithinChunk = indexWithinChunk * AlignedNumBytes;
 
         return new GPUBufferView
         {
@@ -119,13 +137,10 @@ public sealed class RingBuffer : IDisposable
         var chunkIndex = GetChunkIndexForEntry(index);
         var chunk = _chunks[chunkIndex];
         var indexWithinChunk = index - chunk.StartIndex;
-        var offsetWithinChunk = indexWithinChunk * _alignedNumBytes;
+        var offsetWithinChunk = indexWithinChunk * AlignedNumBytes;
 
         return chunk.MappedMemory + (nint)offsetWithinChunk;
     }
-
-    public nuint AlignedNumBytes => _alignedNumBytes;
-    public nuint TotalNumBytes => _totalNumBytes;
 
     private void MapMemory()
     {
@@ -176,28 +191,12 @@ public sealed class RingBuffer : IDisposable
         return 0;
     }
 
-    public void Dispose()
+    private struct ChunkInfo
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        if (_memoryMapped)
-        {
-            foreach (var chunk in _chunks)
-            {
-                chunk.Buffer.UnmapMemory();
-            }
-        }
-
-        foreach (var chunk in _chunks)
-        {
-            chunk.Buffer.Dispose();
-        }
-
-        GC.SuppressFinalize(this);
+        public Buffer Buffer;
+        public IntPtr MappedMemory;
+        public nuint StartIndex;
+        public nuint EndIndex;
+        public nuint NumBytes;
     }
 }

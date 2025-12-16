@@ -19,11 +19,11 @@ public struct EntityLocation(ArchetypeId archetypeId, int row, uint generation)
 
 public sealed class EntityStore
 {
+    private readonly List<Archetype> _archetypes;
+    private readonly Archetype _emptyArchetype;
     private readonly List<EntityLocation> _entityLocations;
     private readonly Queue<uint> _freeIndices;
-    private readonly List<Archetype> _archetypes;
     private readonly Dictionary<ArchetypeSignature, ArchetypeId> _signatureToArchetype;
-    private readonly Archetype _emptyArchetype;
 
     public EntityStore()
     {
@@ -282,6 +282,7 @@ public sealed class EntityStore
         {
             archetype.Clear();
         }
+
         _entityLocations.Clear();
         _freeIndices.Clear();
     }

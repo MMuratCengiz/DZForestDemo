@@ -32,27 +32,19 @@ public struct CollisionEvent
 
 public class PhysicsContext : IContext, IDisposable
 {
-    private readonly BufferPool _bufferPool;
-    private readonly ThreadDispatcher _threadDispatcher;
-    private readonly Simulation _simulation;
+    private readonly List<CollisionEvent> _collisionEvents = new();
+    private readonly Dictionary<BodyHandle, Entity> _dynamicToEntity = new();
     private readonly Dictionary<Entity, BodyHandle> _entityToDynamic = new();
     private readonly Dictionary<Entity, StaticHandle> _entityToStatic = new();
-    private readonly Dictionary<BodyHandle, Entity> _dynamicToEntity = new();
-    private readonly Dictionary<StaticHandle, Entity> _staticToEntity = new();
-    private readonly List<CollisionEvent> _collisionEvents = new();
     private readonly HashSet<Entity> _pendingRemoval = new();
-
-    public Simulation Simulation => _simulation;
-    public BufferPool BufferPool => _bufferPool;
-    public Vector3 Gravity { get; set; } = new(0, -9.81f, 0);
-    public float FixedTimeStep { get; set; } = 1f / 60f;
-    public IReadOnlyList<CollisionEvent> CollisionEvents => _collisionEvents;
+    private readonly Dictionary<StaticHandle, Entity> _staticToEntity = new();
+    private readonly ThreadDispatcher _threadDispatcher;
 
     private bool _disposed;
 
     public PhysicsContext(int targetThreadCount = -1)
     {
-        _bufferPool = new BufferPool();
+        BufferPool = new BufferPool();
 
         var threadCount = targetThreadCount > 0
             ? targetThreadCount
@@ -64,16 +56,40 @@ public class PhysicsContext : IContext, IDisposable
         var poseIntegratorCallbacks = new PoseIntegratorCallbacks(Gravity);
         var solveDescription = new SolveDescription(8, 1);
 
-        _simulation = Simulation.Create(
-            _bufferPool,
+        Simulation = Simulation.Create(
+            BufferPool,
             narrowPhaseCallbacks,
             poseIntegratorCallbacks,
             solveDescription);
     }
 
+    public Simulation Simulation { get; }
+
+    public BufferPool BufferPool { get; }
+
+    public Vector3 Gravity { get; set; } = new(0, -9.81f, 0);
+    public float FixedTimeStep { get; set; } = 1f / 60f;
+    public IReadOnlyList<CollisionEvent> CollisionEvents => _collisionEvents;
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        Simulation.Dispose();
+        _threadDispatcher.Dispose();
+        BufferPool.Clear();
+
+        GC.SuppressFinalize(this);
+    }
+
     public BodyHandle CreateBody(Entity entity, Vector3 position, Quaternion rotation, PhysicsBodyDesc desc)
     {
-        var shapeIndex = desc.Shape.AddToSimulation(_simulation);
+        var shapeIndex = desc.Shape.AddToSimulation(Simulation);
         var inertia = desc.Shape.ComputeInertia(desc.Mass);
 
         var bodyDescription = desc.BodyType == PhysicsBodyType.Kinematic
@@ -87,7 +103,7 @@ public class PhysicsContext : IContext, IDisposable
                 new CollidableDescription(shapeIndex, desc.SpeculativeMargin),
                 new BodyActivityDescription(desc.SleepThreshold));
 
-        var handle = _simulation.Bodies.Add(bodyDescription);
+        var handle = Simulation.Bodies.Add(bodyDescription);
         _entityToDynamic[entity] = handle;
         _dynamicToEntity[handle] = entity;
         return handle;
@@ -95,9 +111,9 @@ public class PhysicsContext : IContext, IDisposable
 
     public StaticHandle CreateStaticBody(Entity entity, Vector3 position, Quaternion rotation, PhysicsShape shape)
     {
-        var shapeIndex = shape.AddToSimulation(_simulation);
+        var shapeIndex = shape.AddToSimulation(Simulation);
         var staticDescription = new StaticDescription(new RigidPose(position, rotation), shapeIndex);
-        var handle = _simulation.Statics.Add(staticDescription);
+        var handle = Simulation.Statics.Add(staticDescription);
         _entityToStatic[entity] = handle;
         _staticToEntity[handle] = entity;
         return handle;
@@ -148,14 +164,14 @@ public class PhysicsContext : IContext, IDisposable
     {
         if (_entityToDynamic.TryGetValue(entity, out var dynamicHandle))
         {
-            _simulation.Bodies.Remove(dynamicHandle);
+            Simulation.Bodies.Remove(dynamicHandle);
             _entityToDynamic.Remove(entity);
             _dynamicToEntity.Remove(dynamicHandle);
         }
 
         if (_entityToStatic.TryGetValue(entity, out var staticHandle))
         {
-            _simulation.Statics.Remove(staticHandle);
+            Simulation.Statics.Remove(staticHandle);
             _entityToStatic.Remove(entity);
             _staticToEntity.Remove(staticHandle);
         }
@@ -169,21 +185,21 @@ public class PhysicsContext : IContext, IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (Vector3 Position, Quaternion Rotation) GetBodyPose(BodyHandle handle)
     {
-        var bodyRef = _simulation.Bodies.GetBodyReference(handle);
+        var bodyRef = Simulation.Bodies.GetBodyReference(handle);
         return (bodyRef.Pose.Position, bodyRef.Pose.Orientation);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (Vector3 Linear, Vector3 Angular) GetBodyVelocity(BodyHandle handle)
     {
-        var bodyRef = _simulation.Bodies.GetBodyReference(handle);
+        var bodyRef = Simulation.Bodies.GetBodyReference(handle);
         return (bodyRef.Velocity.Linear, bodyRef.Velocity.Angular);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SetBodyVelocity(BodyHandle handle, Vector3 linearVelocity, Vector3 angularVelocity = default)
     {
-        var bodyRef = _simulation.Bodies.GetBodyReference(handle);
+        var bodyRef = Simulation.Bodies.GetBodyReference(handle);
         bodyRef.Velocity.Linear = linearVelocity;
         bodyRef.Velocity.Angular = angularVelocity;
     }
@@ -191,7 +207,7 @@ public class PhysicsContext : IContext, IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SetBodyPose(BodyHandle handle, Vector3 position, Quaternion rotation)
     {
-        var bodyRef = _simulation.Bodies.GetBodyReference(handle);
+        var bodyRef = Simulation.Bodies.GetBodyReference(handle);
         bodyRef.Pose.Position = position;
         bodyRef.Pose.Orientation = rotation;
     }
@@ -199,27 +215,27 @@ public class PhysicsContext : IContext, IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void ApplyImpulse(BodyHandle handle, Vector3 impulse)
     {
-        var bodyRef = _simulation.Bodies.GetBodyReference(handle);
+        var bodyRef = Simulation.Bodies.GetBodyReference(handle);
         bodyRef.ApplyLinearImpulse(impulse);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void ApplyImpulseAt(BodyHandle handle, Vector3 impulse, Vector3 worldPoint)
     {
-        var bodyRef = _simulation.Bodies.GetBodyReference(handle);
+        var bodyRef = Simulation.Bodies.GetBodyReference(handle);
         bodyRef.ApplyImpulse(impulse, worldPoint - bodyRef.Pose.Position);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void WakeBody(BodyHandle handle)
     {
-        _simulation.Awakener.AwakenBody(handle);
+        Simulation.Awakener.AwakenBody(handle);
     }
 
     public bool Raycast(Vector3 origin, Vector3 direction, float maxDistance, out RaycastHit hit)
     {
         var handler = new RayHitHandler(this);
-        _simulation.RayCast(origin, direction, maxDistance, ref handler);
+        Simulation.RayCast(origin, direction, maxDistance, ref handler);
 
         if (handler.Hit)
         {
@@ -234,7 +250,7 @@ public class PhysicsContext : IContext, IDisposable
     public bool RaycastAll(Vector3 origin, Vector3 direction, float maxDistance, List<RaycastHit> hits)
     {
         var handler = new RayHitAllHandler(this, hits);
-        _simulation.RayCast(origin, direction, maxDistance, ref handler);
+        Simulation.RayCast(origin, direction, maxDistance, ref handler);
         return hits.Count > 0;
     }
 
@@ -261,23 +277,7 @@ public class PhysicsContext : IContext, IDisposable
     public void Step(float dt)
     {
         ClearCollisionEvents();
-        _simulation.Timestep(dt, _threadDispatcher);
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        _simulation.Dispose();
-        _threadDispatcher.Dispose();
-        _bufferPool.Clear();
-
-        GC.SuppressFinalize(this);
+        Simulation.Timestep(dt, _threadDispatcher);
     }
 }
 
@@ -294,11 +294,18 @@ internal struct RayHitHandler : IRayHitHandler
         Result = default;
     }
 
-    public bool AllowTest(CollidableReference collidable) => true;
+    public bool AllowTest(CollidableReference collidable)
+    {
+        return true;
+    }
 
-    public bool AllowTest(CollidableReference collidable, int childIndex) => true;
+    public bool AllowTest(CollidableReference collidable, int childIndex)
+    {
+        return true;
+    }
 
-    public void OnRayHit(in RayData ray, ref float maximumT, float t, in Vector3 normal, CollidableReference collidable, int childIndex)
+    public void OnRayHit(in RayData ray, ref float maximumT, float t, in Vector3 normal, CollidableReference collidable,
+        int childIndex)
     {
         if (t < maximumT)
         {
@@ -329,11 +336,18 @@ internal struct RayHitAllHandler : IRayHitHandler
         _hits = hits;
     }
 
-    public bool AllowTest(CollidableReference collidable) => true;
+    public bool AllowTest(CollidableReference collidable)
+    {
+        return true;
+    }
 
-    public bool AllowTest(CollidableReference collidable, int childIndex) => true;
+    public bool AllowTest(CollidableReference collidable, int childIndex)
+    {
+        return true;
+    }
 
-    public void OnRayHit(in RayData ray, ref float maximumT, float t, in Vector3 normal, CollidableReference collidable, int childIndex)
+    public void OnRayHit(in RayData ray, ref float maximumT, float t, in Vector3 normal, CollidableReference collidable,
+        int childIndex)
     {
         var entity = _context.GetEntityFromCollidable(collidable);
         _hits.Add(new RaycastHit
@@ -360,7 +374,8 @@ public struct NarrowPhaseCallbacks : INarrowPhaseCallbacks
     {
     }
 
-    public bool AllowContactGeneration(int workerIndex, CollidableReference a, CollidableReference b, ref float speculativeMargin)
+    public bool AllowContactGeneration(int workerIndex, CollidableReference a, CollidableReference b,
+        ref float speculativeMargin)
     {
         return a.Mobility == CollidableMobility.Dynamic || b.Mobility == CollidableMobility.Dynamic;
     }
@@ -392,7 +407,7 @@ public struct NarrowPhaseCallbacks : INarrowPhaseCallbacks
 
 public struct PoseIntegratorCallbacks : IPoseIntegratorCallbacks
 {
-    private Vector3 _gravity;
+    private readonly Vector3 _gravity;
     private Vector3Wide _gravityWideDt;
     private Vector<float> _linearDampingDt;
     private Vector<float> _angularDampingDt;

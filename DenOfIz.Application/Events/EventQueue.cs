@@ -7,6 +7,19 @@ public sealed class EventQueue
 {
     private Event[] _events = new Event[64];
 
+    private int Count
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get;
+        set;
+    }
+
+    public ReadOnlySpan<Event> Events
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => new(_events, 0, Count);
+    }
+
     public void Poll()
     {
         Count = 0;
@@ -21,24 +34,17 @@ public sealed class EventQueue
         }
     }
 
-    private int Count
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ref Event GetEvent(int index)
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get;
-        set;
+        return ref _events[index];
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ref Event GetEvent(int index) => ref _events[index];
-
-    public ReadOnlySpan<Event> Events
+    public EventEnumerator GetEnumerator()
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new ReadOnlySpan<Event>(_events, 0, Count);
+        return new EventEnumerator(this);
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public EventEnumerator GetEnumerator() => new(this);
 
     public ref struct EventEnumerator
     {
@@ -53,7 +59,10 @@ public sealed class EventQueue
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool MoveNext() => ++_index < _queue.Count;
+        public bool MoveNext()
+        {
+            return ++_index < _queue.Count;
+        }
 
         public ref Event Current
         {

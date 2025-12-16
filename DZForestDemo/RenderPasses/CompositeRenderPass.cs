@@ -2,22 +2,23 @@ using System.Text;
 using DenOfIz;
 using Graphics;
 using Graphics.RenderGraph;
+using RuntimeAssets;
 
 namespace DZForestDemo.RenderPasses;
 
 public sealed class CompositeRenderPass : IDisposable
 {
+    private readonly ResourceBindGroup[] _bindGroups;
+    private readonly Texture?[] _boundDebugTextures;
+
+    private readonly Texture?[] _boundSceneTextures;
+    private readonly Texture?[] _boundUiTextures;
     private readonly GraphicsContext _ctx;
+    private readonly Sampler _linearSampler;
+    private readonly Pipeline _pipeline;
 
     private readonly RootSignature _rootSignature;
-    private readonly Pipeline _pipeline;
-    private readonly Sampler _linearSampler;
-    private readonly ResourceBindGroup[] _bindGroups;
     private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments;
-
-    private readonly TextureResource?[] _boundSceneTextures;
-    private readonly TextureResource?[] _boundUiTextures;
-    private readonly TextureResource?[] _boundDebugTextures;
 
     private bool _disposed;
 
@@ -28,9 +29,13 @@ public sealed class CompositeRenderPass : IDisposable
         var numFrames = ctx.NumFrames;
 
         _rtAttachments = new PinnedArray<RenderingAttachmentDesc>(1);
-        _boundSceneTextures = new TextureResource?[numFrames];
-        _boundUiTextures = new TextureResource?[numFrames];
-        _boundDebugTextures = new TextureResource?[numFrames];
+        _boundSceneTextures = new Texture?[numFrames];
+        _boundUiTextures = new Texture?[numFrames];
+        _boundDebugTextures = new Texture?[numFrames];
+
+        var shaderLoader = new ShaderLoader();
+        var vsSource = shaderLoader.Load("fullscreen_vs.hlsl");
+        var psSource = shaderLoader.Load("composite_ps.hlsl");
 
         var programDesc = new ShaderProgramDesc
         {
@@ -38,13 +43,13 @@ public sealed class CompositeRenderPass : IDisposable
                 new ShaderStageDesc
                 {
                     EntryPoint = StringView.Create("VSMain"),
-                    Data = ByteArray.Create(Encoding.UTF8.GetBytes(Shaders.FullscreenVertexShader)),
+                    Data = ByteArray.Create(Encoding.UTF8.GetBytes(vsSource)),
                     Stage = ShaderStage.Vertex
                 },
                 new ShaderStageDesc
                 {
                     EntryPoint = StringView.Create("PSMain"),
-                    Data = ByteArray.Create(Encoding.UTF8.GetBytes(Shaders.CompositePixelShader)),
+                    Data = ByteArray.Create(Encoding.UTF8.GetBytes(psSource)),
                     Stage = ShaderStage.Pixel
                 }
             ])
@@ -82,12 +87,32 @@ public sealed class CompositeRenderPass : IDisposable
 
         _bindGroups = new ResourceBindGroup[numFrames];
         for (var i = 0; i < numFrames; i++)
-        {
             _bindGroups[i] = logicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
             {
                 RootSignature = _rootSignature
             });
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
         }
+
+        _disposed = true;
+
+        foreach (var bindGroup in _bindGroups)
+        {
+            bindGroup?.Dispose();
+        }
+
+        _linearSampler.Dispose();
+        _pipeline.Dispose();
+        _rootSignature.Dispose();
+        _rtAttachments.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 
     public void AddPass(
@@ -101,16 +126,13 @@ public sealed class CompositeRenderPass : IDisposable
         renderGraph.AddPass("Composite",
             (ref RenderPassSetupContext ctx, ref PassBuilder builder) =>
             {
-                builder.ReadTexture(sceneRt, (uint)ResourceUsageFlagBits.ShaderResource);
-                builder.ReadTexture(uiRt, (uint)ResourceUsageFlagBits.ShaderResource);
-                builder.ReadTexture(debugRt, (uint)ResourceUsageFlagBits.ShaderResource);
-                builder.WriteTexture(swapchainRt, (uint)ResourceUsageFlagBits.RenderTarget);
+                builder.ReadTexture(sceneRt);
+                builder.ReadTexture(uiRt);
+                builder.ReadTexture(debugRt);
+                builder.WriteTexture(swapchainRt);
                 builder.HasSideEffects();
             },
-            (ref RenderPassExecuteContext ctx) =>
-            {
-                Execute(ref ctx, sceneRt, uiRt, debugRt, swapchainRt, viewport);
-            });
+            (ref RenderPassExecuteContext ctx) => { Execute(ref ctx, sceneRt, uiRt, debugRt, swapchainRt, viewport); });
     }
 
     private void Execute(
@@ -159,9 +181,9 @@ public sealed class CompositeRenderPass : IDisposable
     }
 
     private void UpdateBindGroupIfNeeded(
-        TextureResource sceneTexture,
-        TextureResource uiTexture,
-        TextureResource debugTexture,
+        Texture sceneTexture,
+        Texture uiTexture,
+        Texture debugTexture,
         uint frameIndex)
     {
         if (_boundSceneTextures[frameIndex] == sceneTexture &&
@@ -182,27 +204,5 @@ public sealed class CompositeRenderPass : IDisposable
         bindGroup.SrvTexture(2, debugTexture);
         bindGroup.Sampler(0, _linearSampler);
         bindGroup.EndUpdate();
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        foreach (var bindGroup in _bindGroups)
-        {
-            bindGroup?.Dispose();
-        }
-
-        _linearSampler.Dispose();
-        _pipeline.Dispose();
-        _rootSignature.Dispose();
-        _rtAttachments.Dispose();
-
-        GC.SuppressFinalize(this);
     }
 }
