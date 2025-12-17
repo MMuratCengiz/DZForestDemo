@@ -15,10 +15,12 @@ struct Light
     uint Type;
     float3 Color;
     float Intensity;
+    float3 SpotDirection;
     float Radius;
     float InnerConeAngle;
     float OuterConeAngle;
     int ShadowIndex;
+    float _Pad0;
 };
 
 struct ShadowData

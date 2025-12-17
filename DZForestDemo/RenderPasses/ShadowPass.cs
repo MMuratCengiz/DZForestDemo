@@ -31,14 +31,17 @@ public sealed class ShadowPass : IDisposable
     private readonly RenderBatcher _batcher;
     private readonly Dictionary<RuntimeMeshHandle, BatchInstanceData>[] _perFrameBatchData;
 
-    private readonly InputLayout _inputLayout;
+    // Pipeline variants for different mesh types
+    private readonly InputLayout _geometryInputLayout;
+    private readonly InputLayout _modelInputLayout;
+    private readonly Pipeline _geometryPipeline;
+    private readonly Pipeline _modelPipeline;
 
     // One buffer/bindgroup per light per frame to avoid overwrite during command recording
     private readonly Buffer[][] _lightMatrixBuffers;
     private readonly ResourceBindGroup[][] _lightMatrixBindGroups;
     private readonly IntPtr[][] _lightMatrixMappedPtrs;
 
-    private readonly Pipeline _pipeline;
     private readonly RootSignature _rootSignature;
     private readonly World _world;
     private bool _disposed;
@@ -56,10 +59,13 @@ public sealed class ShadowPass : IDisposable
 
         var logicalDevice = ctx.LogicalDevice;
 
-        CreatePipeline(logicalDevice, out _inputLayout, out _rootSignature, out _pipeline);
+        // Create geometry pipeline (for built-in primitives)
+        CreatePipeline(logicalDevice, "shadow_vs.hlsl", out _geometryInputLayout, out var rootSig, out _geometryPipeline);
+        _rootSignature = rootSig!;
 
-        // Create per-frame, per-light matrix buffers and bind groups
-        // Each light needs its own buffer to avoid overwriting during command recording
+        // Create model pipeline (for imported models)
+        CreatePipeline(logicalDevice, "shadow_vs_model.hlsl", out _modelInputLayout, out _, out _modelPipeline);
+
         var numFrames = (int)ctx.NumFrames;
         _lightMatrixBuffers = new Buffer[numFrames][];
         _lightMatrixBindGroups = new ResourceBindGroup[numFrames][];
@@ -122,18 +128,20 @@ public sealed class ShadowPass : IDisposable
             }
         }
 
-        _pipeline.Dispose();
+        _geometryPipeline.Dispose();
+        _modelPipeline.Dispose();
         _rootSignature.Dispose();
-        _inputLayout.Dispose();
+        _geometryInputLayout.Dispose();
+        _modelInputLayout.Dispose();
 
         GC.SuppressFinalize(this);
     }
 
-    private void CreatePipeline(LogicalDevice logicalDevice, out InputLayout inputLayout,
-        out RootSignature rootSignature, out Pipeline pipeline)
+    private void CreatePipeline(LogicalDevice logicalDevice, string vsFilename, out InputLayout inputLayout,
+        out RootSignature? rootSignature, out Pipeline pipeline)
     {
         var shaderLoader = new ShaderLoader();
-        var vsSource = shaderLoader.Load("shadow_vs.hlsl");
+        var vsSource = shaderLoader.Load(vsFilename);
 
         var programDesc = new ShaderProgramDesc
         {
@@ -150,12 +158,16 @@ public sealed class ShadowPass : IDisposable
         var program = new ShaderProgram(programDesc);
         var reflection = program.Reflect();
         inputLayout = logicalDevice.CreateInputLayout(reflection.InputLayout);
-        rootSignature = logicalDevice.CreateRootSignature(reflection.RootSignature);
+
+        // Create root signature only if not already created (all variants share the same root signature)
+        rootSignature = _rootSignature == null
+            ? logicalDevice.CreateRootSignature(reflection.RootSignature)
+            : null;
 
         pipeline = logicalDevice.CreatePipeline(new PipelineDesc
         {
             InputLayout = inputLayout,
-            RootSignature = rootSignature,
+            RootSignature = _rootSignature ?? rootSignature!,
             ShaderProgram = program,
             Graphics = new GraphicsPipelineDesc
             {
@@ -419,10 +431,12 @@ public sealed class ShadowPass : IDisposable
         };
 
         cmd.BeginRendering(renderingDesc);
-        cmd.BindPipeline(_pipeline);
         cmd.BindViewport(atlasOffset.X, atlasOffset.Y, ShadowMapSize, ShadowMapSize);
         cmd.BindScissorRect((int)atlasOffset.X, (int)atlasOffset.Y, ShadowMapSize, ShadowMapSize);
         cmd.BindResourceGroup(_lightMatrixBindGroups[frameIndex][shadowIndex]);
+
+        // Track current pipeline to minimize state changes
+        var currentMeshType = (MeshType)255; // Invalid value to force first bind
 
         foreach (var batch in _batcher.Batches)
         {
@@ -430,6 +444,14 @@ public sealed class ShadowPass : IDisposable
             if (Unsafe.IsNullRef(ref Unsafe.AsRef(in runtimeMesh)))
             {
                 continue;
+            }
+
+            // Bind appropriate pipeline based on mesh type
+            if (runtimeMesh.MeshType != currentMeshType)
+            {
+                currentMeshType = runtimeMesh.MeshType;
+                var pipeline = currentMeshType == MeshType.Geometry ? _geometryPipeline : _modelPipeline;
+                cmd.BindPipeline(pipeline);
             }
 
             var batchData = batchDataDict[batch.MeshHandle];
@@ -459,7 +481,7 @@ public sealed class ShadowPass : IDisposable
         var lightDir = Vector3.Normalize(direction);
         var lightDistance = sceneRadius * 1.5f;
         var lightPos = sceneCenter - lightDir * lightDistance;
-        var up = MathF.Abs(lightDir.Y) < 0.99f ? Vector3.UnitY : Vector3.UnitX;
+        var up = ComputeStableUpVector(lightDir);
 
         var view = Matrix4x4.CreateLookAtLeftHanded(lightPos, sceneCenter, up);
         var size = sceneRadius * 2.0f;
@@ -473,33 +495,37 @@ public sealed class ShadowPass : IDisposable
 
     private static Matrix4x4 CalculatePointLightMatrix(Vector3 position, Vector3 sceneCenter, float radius)
     {
-        // Look toward scene center from light position
-        var direction = Vector3.Normalize(sceneCenter - position);
-        var target = position + direction;
-
-        // Choose up vector that isn't parallel to direction
-        var up = MathF.Abs(direction.Y) < 0.99f ? Vector3.UnitY : Vector3.UnitX;
-
-        var view = Matrix4x4.CreateLookAtLeftHanded(position, target, up);
-
-        // Use perspective projection with 90-degree FOV for good coverage
-        var nearPlane = 0.1f;
-        var farPlane = radius * 2f;
+        var forward = Vector3.Normalize(sceneCenter - position);
+        var up = ComputeStableUpVector(forward);
+        var view = Matrix4x4.CreateLookAtLeftHanded(position, sceneCenter, up);
+        var nearPlane = 0.01f;
+        var farPlane = MathF.Max(radius * 2f, 1.0f);
         var proj = Matrix4x4.CreatePerspectiveFieldOfViewLeftHanded(MathF.PI / 2f, 1f, nearPlane, farPlane);
-
         return view * proj;
     }
 
     private static Matrix4x4 CalculateSpotLightMatrix(Vector3 position, Vector3 direction, float outerAngle,
         float radius)
     {
-        var target = position + Vector3.Normalize(direction);
-        var up = MathF.Abs(Vector3.Dot(direction, Vector3.UnitY)) > 0.99f ? Vector3.UnitZ : Vector3.UnitY;
-
+        var forward = Vector3.Normalize(direction);
+        var target = position + forward;
+        var up = ComputeStableUpVector(forward);
         var view = Matrix4x4.CreateLookAtLeftHanded(position, target, up);
-        var proj = Matrix4x4.CreatePerspectiveFieldOfViewLeftHanded(outerAngle * 2f, 1f, 0.1f, radius);
-
+        var fov = MathF.Min(outerAngle * 2f + 0.1f, MathF.PI * 0.99f);
+        var nearPlane = 0.01f;
+        var farPlane = MathF.Max(radius, 1.0f);
+        var proj = Matrix4x4.CreatePerspectiveFieldOfViewLeftHanded(fov, 1f, nearPlane, farPlane);
         return view * proj;
+    }
+
+    private static Vector3 ComputeStableUpVector(Vector3 forward)
+    {
+        if (MathF.Abs(forward.Y) > 0.999f)
+        {
+            return Vector3.UnitZ;
+        }
+        var right = Vector3.Normalize(Vector3.Cross(Vector3.UnitY, forward));
+        return Vector3.Cross(forward, right);
     }
 
     private BatchInstanceData GetOrCreateBatchData(Dictionary<RuntimeMeshHandle, BatchInstanceData> dict, RuntimeMeshHandle meshHandle, int requiredCapacity, int frameIndex)

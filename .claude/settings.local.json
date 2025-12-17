@@ -15,7 +15,11 @@
       "WebFetch(domain:rastertek.com)",
       "WebFetch(domain:www.ogldev.org)",
       "Bash(findstr:*)",
-      "WebFetch(domain:raw.githubusercontent.com)"
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:learnopengl.com)",
+      "WebFetch(domain:ogldev.org)",
+      "WebFetch(domain:docs.rs)",
+      "WebFetch(domain:bevy.org)"
     ]
   }
 }

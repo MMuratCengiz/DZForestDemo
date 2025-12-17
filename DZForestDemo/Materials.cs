@@ -1,4 +1,5 @@
 using System.Numerics;
+using RuntimeAssets;
 
 namespace DZForestDemo;
 
@@ -8,7 +9,7 @@ public struct StandardMaterial()
     public float Metallic = 0.0f;
     public float Roughness = 0.5f;
     public float AmbientOcclusion = 1.0f;
-    private float _padding = 0;
+    public RuntimeTextureHandle AlbedoTexture = RuntimeTextureHandle.Invalid;
 
     public static StandardMaterial FromColor(Vector3 color)
     {

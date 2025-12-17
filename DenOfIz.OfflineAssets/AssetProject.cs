@@ -117,6 +117,17 @@ public sealed class AssetProject
         };
     }
 
+    public TextureExportSettings CreateTextureExportSettings(string sourceFile, string? assetName = null)
+    {
+        var name = assetName ?? Path.GetFileNameWithoutExtension(sourceFile);
+        return new TextureExportSettings
+        {
+            SourcePath = Path.IsPathRooted(sourceFile) ? sourceFile : Path.Combine(SourceDirectory, sourceFile),
+            OutputDirectory = TexturesDirectory,
+            AssetName = name
+        };
+    }
+
     public void CopyToOutput(AssetExportResult result, bool separateAnimations = true)
     {
         if (!result.Success)

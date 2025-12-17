@@ -1,3 +1,4 @@
+using System.Numerics;
 using RuntimeAssets;
 
 namespace ECS.Components;
@@ -19,4 +20,86 @@ public struct AnimatorComponent(RuntimeSkeletonHandle skeleton)
     public bool Loop = true;
 
     public bool IsValid => Skeleton.IsValid;
+
+    public void Play(RuntimeAnimationHandle animation)
+    {
+        CurrentAnimation = animation;
+        CurrentTime = 0.0f;
+        IsPlaying = true;
+    }
+
+    public void Stop()
+    {
+        IsPlaying = false;
+        CurrentTime = 0.0f;
+    }
+
+    public void Pause()
+    {
+        IsPlaying = false;
+    }
+
+    public void Resume()
+    {
+        IsPlaying = true;
+    }
+}
+
+public sealed class BoneMatricesData
+{
+    public const int MaxBones = 128;
+
+    public readonly Matrix4x4[] LocalTransforms;
+    public readonly Matrix4x4[] ModelTransforms;
+    public readonly Matrix4x4[] FinalBoneMatrices;
+    public readonly Matrix4x4[] InverseBindMatrices;
+    public readonly int NumBones;
+    public bool IsDirty = true;
+
+    public BoneMatricesData(int numBones, IReadOnlyList<Matrix4x4>? inverseBindMatrices = null)
+    {
+        NumBones = Math.Min(numBones, MaxBones);
+        LocalTransforms = new Matrix4x4[MaxBones];
+        ModelTransforms = new Matrix4x4[MaxBones];
+        FinalBoneMatrices = new Matrix4x4[MaxBones];
+        InverseBindMatrices = new Matrix4x4[MaxBones];
+
+        for (var i = 0; i < MaxBones; i++)
+        {
+            LocalTransforms[i] = Matrix4x4.Identity;
+            ModelTransforms[i] = Matrix4x4.Identity;
+            FinalBoneMatrices[i] = Matrix4x4.Identity;
+            InverseBindMatrices[i] = Matrix4x4.Identity;
+        }
+
+        if (inverseBindMatrices != null)
+        {
+            var count = Math.Min(inverseBindMatrices.Count, MaxBones);
+            for (var i = 0; i < count; i++)
+            {
+                InverseBindMatrices[i] = inverseBindMatrices[i];
+            }
+        }
+    }
+
+    public void ComputeFinalMatrices()
+    {
+        for (var i = 0; i < NumBones; i++)
+        {
+            FinalBoneMatrices[i] = InverseBindMatrices[i] * ModelTransforms[i];
+        }
+        IsDirty = false;
+    }
+}
+
+public struct BoneMatricesComponent
+{
+    public BoneMatricesData Data;
+
+    public BoneMatricesComponent(int numBones, IReadOnlyList<Matrix4x4>? inverseBindMatrices = null)
+    {
+        Data = new BoneMatricesData(numBones, inverseBindMatrices);
+    }
+
+    public readonly bool IsValid => Data != null;
 }

@@ -5,6 +5,7 @@ using Application.Windowing;
 using DenOfIz;
 using ECS;
 using Graphics;
+using RuntimeAssets;
 
 namespace Application;
 
@@ -66,6 +67,10 @@ public sealed class App(ApplicationOptions options) : IDisposable
         Engine.Init(new EngineDesc());
 
         Window.Show();
+
+        var timeResource = new TimeResource(Clock);
+        World.RegisterContext(timeResource);
+        World.RegisterContext<ITimeResource>(timeResource);
 
         World.Initialize();
         _initialized = true;

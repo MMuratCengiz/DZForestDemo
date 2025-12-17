@@ -17,6 +17,7 @@ public sealed class SceneRenderPass : IDisposable
     private const int MaxInstancesPerFrame = 4096;
     private const int MaxLights = 8;
     private const int MaxShadowLights = 4;
+    private const int MaxBones = 128;
 
     private const uint LightTypeDirectional = 0;
     private const uint LightTypePoint = 1;
@@ -38,13 +39,36 @@ public sealed class SceneRenderPass : IDisposable
     // Per-batch instance buffers (one per unique mesh, per frame)
     private readonly Dictionary<RuntimeMeshHandle, BatchInstanceData>[] _perFrameBatchData;
 
-    private readonly InputLayout _inputLayout;
-    private readonly Pipeline _pipeline;
+    // Pipeline variants for different mesh types
+    private readonly InputLayout _geometryInputLayout;
+    private readonly InputLayout _modelInputLayout;
+    private readonly Pipeline _geometryPipeline;
+    private readonly Pipeline _modelPipeline;
     private readonly RootSignature _rootSignature;
     private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments;
 
+    // Skinned mesh rendering
+    private readonly Pipeline _skinnedPipeline;
+    private readonly RootSignature _skinnedRootSignature;
+    private readonly Buffer[] _boneMatricesBuffers;
+    private readonly ResourceBindGroup[] _boneMatricesBindGroups;
+    private readonly IntPtr[] _boneMatricesMappedPtrs;
+
+    // Skinned pipeline bind groups (same underlying resources, different root signature)
+    private readonly ResourceBindGroup[] _skinnedFrameBindGroups;
+    private readonly ResourceBindGroup[] _skinnedLightBindGroups;
+    private readonly ResourceBindGroup[] _skinnedTextureBindGroups;
+    private readonly Dictionary<RuntimeMeshHandle, BatchInstanceData>[] _perFrameSkinnedBatchData;
+    private ResourceBindGroup? _skinnedShadowBindGroup;
+
     private readonly Sampler _shadowSampler;
+    private readonly Sampler _textureSampler;
     private readonly World _world;
+
+    // Texture support
+    private readonly NullTexture _nullTexture;
+    private readonly ResourceBindGroup[] _textureBindGroups;
+    private Texture? _activeTexture;
 
     private bool _disposed;
 
@@ -59,10 +83,48 @@ public sealed class SceneRenderPass : IDisposable
 
         _rtAttachments = new PinnedArray<RenderingAttachmentDesc>(1);
 
-        CreatePipeline(logicalDevice, out _inputLayout, out _rootSignature, out _pipeline);
+        CreatePipeline(logicalDevice, "scene_vs.hlsl", out _geometryInputLayout, out var rootSig,
+            out _geometryPipeline);
+        _rootSignature = rootSig!;
 
-        // Create per-frame buffers and bind groups
+        CreatePipeline(logicalDevice, "scene_vs_model.hlsl", out _modelInputLayout, out _, out _modelPipeline);
+        CreatePipeline(logicalDevice, "scene_vs_skinned.hlsl", out _, out var skinnedRootSig, out _skinnedPipeline,
+            forceNewRootSignature: true);
+        _skinnedRootSignature = skinnedRootSig!;
+
         var numFrames = (int)ctx.NumFrames;
+
+        _boneMatricesBuffers = new Buffer[numFrames];
+        _boneMatricesBindGroups = new ResourceBindGroup[numFrames];
+        _boneMatricesMappedPtrs = new IntPtr[numFrames];
+
+        _skinnedFrameBindGroups = new ResourceBindGroup[numFrames];
+        _skinnedLightBindGroups = new ResourceBindGroup[numFrames];
+        _skinnedTextureBindGroups = new ResourceBindGroup[numFrames];
+        _perFrameSkinnedBatchData = new Dictionary<RuntimeMeshHandle, BatchInstanceData>[numFrames];
+
+        for (var i = 0; i < numFrames; i++)
+        {
+            _boneMatricesBuffers[i] = logicalDevice.CreateBuffer(new BufferDesc
+            {
+                Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
+                HeapType = HeapType.CpuGpu,
+                NumBytes = (ulong)(MaxBones * Unsafe.SizeOf<Matrix4x4>()),
+                DebugName = StringView.Create($"BoneMatrices_{i}")
+            });
+            _boneMatricesMappedPtrs[i] = _boneMatricesBuffers[i].MapMemory();
+
+            _boneMatricesBindGroups[i] = logicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
+            {
+                RootSignature = _skinnedRootSignature,
+                RegisterSpace = 5
+            });
+            _boneMatricesBindGroups[i].BeginUpdate();
+            _boneMatricesBindGroups[i].Cbv(0, _boneMatricesBuffers[i]);
+            _boneMatricesBindGroups[i].EndUpdate();
+
+            _perFrameSkinnedBatchData[i] = new Dictionary<RuntimeMeshHandle, BatchInstanceData>();
+        }
 
         _frameConstantsBuffers = new Buffer[numFrames];
         _frameBindGroups = new ResourceBindGroup[numFrames];
@@ -125,6 +187,64 @@ public sealed class SceneRenderPass : IDisposable
             MipmapMode = MipmapMode.Nearest,
             CompareOp = CompareOp.LessOrEqual
         });
+
+        _textureSampler = logicalDevice.CreateSampler(new SamplerDesc
+        {
+            AddressModeU = SamplerAddressMode.Repeat,
+            AddressModeV = SamplerAddressMode.Repeat,
+            AddressModeW = SamplerAddressMode.Repeat,
+            MinFilter = Filter.Linear,
+            MagFilter = Filter.Linear,
+            MipmapMode = MipmapMode.Linear,
+            MaxAnisotropy = 8
+        });
+
+        _nullTexture = new NullTexture(logicalDevice);
+        _textureBindGroups = new ResourceBindGroup[numFrames];
+        for (var i = 0; i < numFrames; i++)
+        {
+            _textureBindGroups[i] = logicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
+            {
+                RootSignature = _rootSignature,
+                RegisterSpace = 3
+            });
+            _textureBindGroups[i].BeginUpdate();
+            _textureBindGroups[i].SrvTexture(0, _nullTexture.Texture);
+            _textureBindGroups[i].Sampler(0, _textureSampler);
+            _textureBindGroups[i].EndUpdate();
+        }
+
+        // Create skinned pipeline bind groups (same resources, different root signature)
+        for (var i = 0; i < numFrames; i++)
+        {
+            _skinnedFrameBindGroups[i] = logicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
+            {
+                RootSignature = _skinnedRootSignature,
+                RegisterSpace = 0
+            });
+            _skinnedFrameBindGroups[i].BeginUpdate();
+            _skinnedFrameBindGroups[i].Cbv(0, _frameConstantsBuffers[i]);
+            _skinnedFrameBindGroups[i].EndUpdate();
+
+            _skinnedLightBindGroups[i] = logicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
+            {
+                RootSignature = _skinnedRootSignature,
+                RegisterSpace = 1
+            });
+            _skinnedLightBindGroups[i].BeginUpdate();
+            _skinnedLightBindGroups[i].Cbv(0, _lightConstantsBuffers[i]);
+            _skinnedLightBindGroups[i].EndUpdate();
+
+            _skinnedTextureBindGroups[i] = logicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
+            {
+                RootSignature = _skinnedRootSignature,
+                RegisterSpace = 3
+            });
+            _skinnedTextureBindGroups[i].BeginUpdate();
+            _skinnedTextureBindGroups[i].SrvTexture(0, _nullTexture.Texture);
+            _skinnedTextureBindGroups[i].Sampler(0, _textureSampler);
+            _skinnedTextureBindGroups[i].EndUpdate();
+        }
     }
 
     public void Dispose()
@@ -135,40 +255,59 @@ public sealed class SceneRenderPass : IDisposable
         }
 
         _disposed = true;
-
-        // Dispose per-frame resources
         for (var i = 0; i < _frameConstantsBuffers.Length; i++)
         {
             _frameConstantsBuffers[i].UnmapMemory();
             _lightConstantsBuffers[i].UnmapMemory();
+            _boneMatricesBuffers[i].UnmapMemory();
 
             _frameBindGroups[i].Dispose();
             _lightBindGroups[i].Dispose();
+            _textureBindGroups[i].Dispose();
+            _boneMatricesBindGroups[i].Dispose();
+
+            // Dispose skinned bind groups
+            _skinnedFrameBindGroups[i].Dispose();
+            _skinnedLightBindGroups[i].Dispose();
+            _skinnedTextureBindGroups[i].Dispose();
 
             _frameConstantsBuffers[i].Dispose();
             _lightConstantsBuffers[i].Dispose();
+            _boneMatricesBuffers[i].Dispose();
 
-            // Dispose per-batch instance data
             foreach (var batchData in _perFrameBatchData[i].Values)
+            {
+                batchData.Dispose();
+            }
+
+            foreach (var batchData in _perFrameSkinnedBatchData[i].Values)
             {
                 batchData.Dispose();
             }
         }
 
+        _skinnedShadowBindGroup?.Dispose();
+
+        _nullTexture.Dispose();
+        _textureSampler.Dispose();
         _shadowSampler.Dispose();
-        _pipeline.Dispose();
+        _geometryPipeline.Dispose();
+        _modelPipeline.Dispose();
+        _skinnedPipeline.Dispose();
         _rootSignature.Dispose();
-        _inputLayout.Dispose();
+        _skinnedRootSignature.Dispose();
+        _geometryInputLayout.Dispose();
+        _modelInputLayout.Dispose();
         _rtAttachments.Dispose();
 
         GC.SuppressFinalize(this);
     }
 
-    private void CreatePipeline(LogicalDevice logicalDevice, out InputLayout inputLayout,
-        out RootSignature rootSignature, out Pipeline pipeline)
+    private void CreatePipeline(LogicalDevice logicalDevice, string vsFilename, out InputLayout inputLayout,
+        out RootSignature? rootSignature, out Pipeline pipeline, bool forceNewRootSignature = false)
     {
         var shaderLoader = new ShaderLoader();
-        var vsSource = shaderLoader.Load("scene_vs.hlsl");
+        var vsSource = shaderLoader.Load(vsFilename);
         var psSource = shaderLoader.Load("scene_ps.hlsl");
 
         var programDesc = new ShaderProgramDesc
@@ -192,12 +331,16 @@ public sealed class SceneRenderPass : IDisposable
         var program = new ShaderProgram(programDesc);
         var reflection = program.Reflect();
         inputLayout = logicalDevice.CreateInputLayout(reflection.InputLayout);
-        rootSignature = logicalDevice.CreateRootSignature(reflection.RootSignature);
 
+        rootSignature = (forceNewRootSignature)
+            ? logicalDevice.CreateRootSignature(reflection.RootSignature)
+            : null;
+
+        var effectiveRootSig = forceNewRootSignature ? rootSignature! : (_rootSignature ?? rootSignature!);
         pipeline = logicalDevice.CreatePipeline(new PipelineDesc
         {
             InputLayout = inputLayout,
-            RootSignature = rootSignature,
+            RootSignature = effectiveRootSig,
             ShaderProgram = program,
             Graphics = new GraphicsPipelineDesc
             {
@@ -232,7 +375,44 @@ public sealed class SceneRenderPass : IDisposable
         bindGroup.SrvTexture(0, shadowAtlas);
         bindGroup.Sampler(0, _shadowSampler);
         bindGroup.EndUpdate();
+
+        // Also create skinned shadow bind group
+        _skinnedShadowBindGroup?.Dispose();
+        _skinnedShadowBindGroup = _ctx.LogicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
+        {
+            RootSignature = _skinnedRootSignature,
+            RegisterSpace = 4
+        });
+        _skinnedShadowBindGroup.BeginUpdate();
+        _skinnedShadowBindGroup.SrvTexture(0, shadowAtlas);
+        _skinnedShadowBindGroup.Sampler(0, _shadowSampler);
+        _skinnedShadowBindGroup.EndUpdate();
+
         return bindGroup;
+    }
+
+    public void SetActiveTexture(Texture? texture)
+    {
+        var newTexture = texture ?? _nullTexture.Texture;
+        if (_activeTexture == newTexture)
+        {
+            return;
+        }
+
+        _activeTexture = newTexture;
+        for (var i = 0; i < _textureBindGroups.Length; i++)
+        {
+            _textureBindGroups[i].BeginUpdate();
+            _textureBindGroups[i].SrvTexture(0, newTexture);
+            _textureBindGroups[i].Sampler(0, _textureSampler);
+            _textureBindGroups[i].EndUpdate();
+
+            // Also update skinned texture bind groups
+            _skinnedTextureBindGroups[i].BeginUpdate();
+            _skinnedTextureBindGroups[i].SrvTexture(0, newTexture);
+            _skinnedTextureBindGroups[i].Sampler(0, _textureSampler);
+            _skinnedTextureBindGroups[i].EndUpdate();
+        }
     }
 
     public unsafe void Execute(
@@ -278,7 +458,6 @@ public sealed class SceneRenderPass : IDisposable
         var batchDataDict = _perFrameBatchData[frameIndex];
         var allInstances = _batcher.AllInstances;
 
-        // Write instance data - material is already cached in batcher, no per-entity lookups!
         foreach (var batch in _batcher.Batches)
         {
             var batchData = GetOrCreateBatchData(batchDataDict, batch.MeshHandle, batch.InstanceCount, frameIndex);
@@ -293,7 +472,8 @@ public sealed class SceneRenderPass : IDisposable
                     BaseColor = inst.BaseColor,
                     Metallic = inst.Metallic,
                     Roughness = inst.Roughness,
-                    AmbientOcclusion = inst.AmbientOcclusion
+                    AmbientOcclusion = inst.AmbientOcclusion,
+                    UseAlbedoTexture = inst.AlbedoTexture.IsValid ? 1u : 0u
                 };
             }
         }
@@ -318,18 +498,19 @@ public sealed class SceneRenderPass : IDisposable
         };
 
         cmd.BeginRendering(renderingDesc);
-        cmd.BindPipeline(_pipeline);
         cmd.BindViewport(viewport.X, viewport.Y, viewport.Width, viewport.Height);
         cmd.BindScissorRect(viewport.X, viewport.Y, viewport.Width, viewport.Height);
 
         cmd.BindResourceGroup(_frameBindGroups[frameIndex]);
         cmd.BindResourceGroup(_lightBindGroups[frameIndex]);
+        cmd.BindResourceGroup(_textureBindGroups[frameIndex]);
 
         if (shadowBindGroup != null)
         {
             cmd.BindResourceGroup(shadowBindGroup);
         }
 
+        var currentMeshType = (MeshType)255;
         foreach (var batch in _batcher.Batches)
         {
             ref readonly var runtimeMesh = ref _assets.GetMeshRef(batch.MeshHandle);
@@ -338,22 +519,103 @@ public sealed class SceneRenderPass : IDisposable
                 continue;
             }
 
+            if (runtimeMesh.MeshType != currentMeshType)
+            {
+                currentMeshType = runtimeMesh.MeshType;
+                var pipeline = currentMeshType == MeshType.Geometry ? _geometryPipeline : _modelPipeline;
+                cmd.BindPipeline(pipeline);
+            }
+
             var batchData = batchDataDict[batch.MeshHandle];
             cmd.BindResourceGroup(batchData.BindGroup);
 
             var vb = runtimeMesh.VertexBuffer;
             var ib = runtimeMesh.IndexBuffer;
 
-            cmd.BindVertexBuffer(vb.View.Buffer, (uint)vb.View.Offset, 0, 0);
+            cmd.BindVertexBuffer(vb.View.Buffer, (uint)vb.View.Offset, vb.Stride, 0);
             cmd.BindIndexBuffer(ib.View.Buffer, ib.IndexType, ib.View.Offset);
             cmd.DrawIndexed(ib.Count, (uint)batch.InstanceCount, 0, 0, 0);
         }
 
+        RenderAnimatedInstances(cmd, frameIndex);
         cmd.EndRendering();
     }
 
+    private unsafe void RenderAnimatedInstances(CommandList cmd, int frameIndex)
+    {
+        var animatedInstances = _batcher.AnimatedInstances;
+        if (animatedInstances.Count == 0)
+        {
+            return;
+        }
 
-    private BatchInstanceData GetOrCreateBatchData(Dictionary<RuntimeMeshHandle, BatchInstanceData> dict, RuntimeMeshHandle meshHandle, int requiredCapacity, int frameIndex)
+        cmd.BindPipeline(_skinnedPipeline);
+
+        // Bind all required resources for skinned pipeline
+        cmd.BindResourceGroup(_skinnedFrameBindGroups[frameIndex]);
+        cmd.BindResourceGroup(_skinnedLightBindGroups[frameIndex]);
+        cmd.BindResourceGroup(_skinnedTextureBindGroups[frameIndex]);
+
+        if (_skinnedShadowBindGroup != null)
+        {
+            cmd.BindResourceGroup(_skinnedShadowBindGroup);
+        }
+
+        var boneMatricesPtr = (Matrix4x4*)_boneMatricesMappedPtrs[frameIndex].ToPointer();
+        var skinnedBatchDataDict = _perFrameSkinnedBatchData[frameIndex];
+
+        foreach (var animInst in animatedInstances)
+        {
+            ref readonly var runtimeMesh = ref _assets.GetMeshRef(animInst.MeshHandle);
+            if (Unsafe.IsNullRef(ref Unsafe.AsRef(in runtimeMesh)))
+            {
+                continue;
+            }
+
+            if (animInst.BoneMatrices != null)
+            {
+                var numBones = Math.Min(animInst.BoneMatrices.NumBones, MaxBones);
+                for (var i = 0; i < numBones; i++)
+                {
+                    boneMatricesPtr[i] = animInst.BoneMatrices.FinalBoneMatrices[i];
+                }
+            }
+            else
+            {
+                for (var i = 0; i < MaxBones; i++)
+                {
+                    boneMatricesPtr[i] = Matrix4x4.Identity;
+                }
+            }
+
+            cmd.BindResourceGroup(_boneMatricesBindGroups[frameIndex]);
+
+            var batchData = GetOrCreateSkinnedBatchData(skinnedBatchDataDict, animInst.MeshHandle, 1, frameIndex);
+            var instancePtr = (GpuInstanceData*)batchData.MappedPtr.ToPointer();
+            instancePtr[0] = new GpuInstanceData
+            {
+                Model = animInst.WorldMatrix,
+                BaseColor = animInst.BaseColor,
+                Metallic = animInst.Metallic,
+                Roughness = animInst.Roughness,
+                AmbientOcclusion = animInst.AmbientOcclusion,
+                UseAlbedoTexture = animInst.AlbedoTexture.IsValid ? 1u : 0u
+            };
+
+            cmd.BindResourceGroup(batchData.BindGroup);
+
+            var vb = runtimeMesh.VertexBuffer;
+            var ib = runtimeMesh.IndexBuffer;
+
+            cmd.BindVertexBuffer(vb.View.Buffer, (uint)vb.View.Offset, vb.Stride, 0);
+            cmd.BindIndexBuffer(ib.View.Buffer, ib.IndexType, ib.View.Offset);
+            cmd.DrawIndexed(ib.Count, 1, 0, 0, 0);
+        }
+    }
+
+
+    private BatchInstanceData GetOrCreateBatchData(Dictionary<RuntimeMeshHandle, BatchInstanceData> dict,
+        RuntimeMeshHandle meshHandle, int requiredCapacity, int frameIndex)
     {
         if (dict.TryGetValue(meshHandle, out var existing) && existing.Capacity >= requiredCapacity)
         {
@@ -388,12 +650,60 @@ public sealed class SceneRenderPass : IDisposable
         bindGroup.EndUpdate();
 
         var batchData = new BatchInstanceData
+        (
+            buffer,
+            bindGroup,
+            buffer.MapMemory(),
+            capacity
+        );
+
+        dict[meshHandle] = batchData;
+        return batchData;
+    }
+
+    private BatchInstanceData GetOrCreateSkinnedBatchData(Dictionary<RuntimeMeshHandle, BatchInstanceData> dict,
+        RuntimeMeshHandle meshHandle, int requiredCapacity, int frameIndex)
+    {
+        if (dict.TryGetValue(meshHandle, out var existing) && existing.Capacity >= requiredCapacity)
         {
-            Buffer = buffer,
-            BindGroup = bindGroup,
-            MappedPtr = buffer.MapMemory(),
-            Capacity = capacity
-        };
+            return existing;
+        }
+
+        existing?.Dispose();
+
+        var capacity = Math.Max(requiredCapacity, 64);
+        var stride = (ulong)Unsafe.SizeOf<GpuInstanceData>();
+        var buffer = _ctx.LogicalDevice.CreateBuffer(new BufferDesc
+        {
+            Descriptor = (uint)ResourceDescriptorFlagBits.StructuredBuffer,
+            HeapType = HeapType.CpuGpu,
+            NumBytes = stride * (ulong)capacity,
+            StructureDesc = new StructuredBufferDesc
+            {
+                Offset = 0,
+                NumElements = (ulong)capacity,
+                Stride = stride
+            },
+            DebugName = StringView.Create($"SkinnedBatchInstance_{frameIndex}_{meshHandle.Index}")
+        });
+
+        // Use skinned root signature for skinned mesh instances
+        var bindGroup = _ctx.LogicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
+        {
+            RootSignature = _skinnedRootSignature,
+            RegisterSpace = 2
+        });
+        bindGroup.BeginUpdate();
+        bindGroup.SrvBuffer(0, buffer);
+        bindGroup.EndUpdate();
+
+        var batchData = new BatchInstanceData
+        (
+            buffer,
+            bindGroup,
+            buffer.MapMemory(),
+            capacity
+        );
 
         dict[meshHandle] = batchData;
         return batchData;
@@ -461,6 +771,7 @@ public sealed class SceneRenderPass : IDisposable
                 Type = LightTypeDirectional,
                 Color = light.Color,
                 Intensity = light.Intensity,
+                SpotDirection = Vector3.Zero,
                 Radius = 0,
                 InnerConeAngle = 0,
                 OuterConeAngle = 0,
@@ -476,16 +787,18 @@ public sealed class SceneRenderPass : IDisposable
                 break;
             }
 
+            var hasShadow = currentShadowIndex < shadowIndex;
             lightPtr[lightIndex] = new GpuLight
             {
                 PositionOrDirection = transform.Position,
                 Type = LightTypePoint,
                 Color = light.Color,
                 Intensity = light.Intensity,
+                SpotDirection = Vector3.Zero,
                 Radius = light.Radius,
                 InnerConeAngle = 0,
                 OuterConeAngle = 0,
-                ShadowIndex = -1
+                ShadowIndex = hasShadow ? currentShadowIndex++ : -1
             };
             lightIndex++;
         }
@@ -497,16 +810,18 @@ public sealed class SceneRenderPass : IDisposable
                 break;
             }
 
+            var hasShadow = currentShadowIndex < shadowIndex;
             lightPtr[lightIndex] = new GpuLight
             {
                 PositionOrDirection = transform.Position,
                 Type = LightTypeSpot,
                 Color = light.Color,
                 Intensity = light.Intensity,
+                SpotDirection = light.Direction,
                 Radius = light.Radius,
                 InnerConeAngle = MathF.Cos(light.InnerConeAngle),
                 OuterConeAngle = MathF.Cos(light.OuterConeAngle),
-                ShadowIndex = -1
+                ShadowIndex = hasShadow ? currentShadowIndex++ : -1
             };
             lightIndex++;
         }
@@ -531,10 +846,12 @@ public sealed class SceneRenderPass : IDisposable
         public uint Type;
         public Vector3 Color;
         public float Intensity;
+        public Vector3 SpotDirection;
         public float Radius;
         public float InnerConeAngle;
         public float OuterConeAngle;
         public int ShadowIndex;
+        public float Pad0;
     }
 
     [StructLayout(LayoutKind.Sequential)]
@@ -550,7 +867,7 @@ public sealed class SceneRenderPass : IDisposable
     [StructLayout(LayoutKind.Sequential)]
     private unsafe struct LightConstants
     {
-        public fixed byte Lights[MaxLights * 48];
+        public fixed byte Lights[MaxLights * 64];
         public fixed byte Shadows[MaxShadowLights * 96];
         public Vector3 AmbientSkyColor;
         public uint NumLights;
@@ -570,15 +887,16 @@ public sealed class SceneRenderPass : IDisposable
         public float Metallic; // 4 bytes
         public float Roughness; // 4 bytes
         public float AmbientOcclusion; // 4 bytes
-        public float Padding; // 4 bytes -> 96 bytes total
+        public uint UseAlbedoTexture; // 4 bytes -> 96 bytes total
     }
 
-    private sealed class BatchInstanceData : IDisposable
+    private sealed class BatchInstanceData(Buffer buffer, ResourceBindGroup bindGroup, IntPtr mappedPtr, int capacity)
+        : IDisposable
     {
-        public Buffer Buffer;
-        public ResourceBindGroup BindGroup;
-        public IntPtr MappedPtr;
-        public int Capacity;
+        public readonly Buffer Buffer = buffer;
+        public readonly ResourceBindGroup BindGroup = bindGroup;
+        public readonly IntPtr MappedPtr = mappedPtr;
+        public readonly int Capacity = capacity;
 
         public void Dispose()
         {

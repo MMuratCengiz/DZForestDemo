@@ -170,7 +170,7 @@ public sealed partial class ShaderLoader
 public static class ShaderLoaderExtensions
 {
     private static ShaderLoader? _defaultLoader;
-    private static readonly object Lock = new();
+    private static readonly Lock Lock = new();
 
     public static ShaderLoader Default
     {

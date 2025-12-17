@@ -78,7 +78,24 @@ public static class AssetPaths
             return animationPath;
         }
 
-        return Path.GetFullPath(Path.Combine(Animations, animationPath));
+        var animPath = Path.GetFullPath(Path.Combine(Animations, animationPath));
+        if (File.Exists(animPath))
+        {
+            return animPath;
+        }
+
+        return Path.GetFullPath(Path.Combine(Models, animationPath));
+    }
+
+    public static string ResolveSkeleton(string skeletonPath)
+    {
+        if (Path.IsPathRooted(skeletonPath))
+        {
+            return skeletonPath;
+        }
+
+        var modelPath = Path.GetFullPath(Path.Combine(Models, skeletonPath));
+        return File.Exists(modelPath) ? modelPath : Path.GetFullPath(Path.Combine(Animations, skeletonPath));
     }
 
     public static bool Exists(string relativePath)

@@ -16,7 +16,7 @@ struct InstanceData
     float Metallic;
     float Roughness;
     float AmbientOcclusion;
-    float Padding;
+    uint UseAlbedoTexture;
 };
 
 cbuffer FrameConstants : register(b0, space0)
@@ -42,6 +42,11 @@ cbuffer LightConstants : register(b0, space1)
 
 StructuredBuffer<InstanceData> Instances : register(t0, space2);
 
+// Material textures (space3)
+Texture2D<float4> AlbedoTexture : register(t0, space3);
+SamplerState AlbedoSampler : register(s0, space3);
+
+// Shadow map (space4)
 Texture2D<float> ShadowAtlas : register(t0, space4);
 SamplerComparisonState ShadowSampler : register(s0, space4);
 
@@ -131,8 +136,8 @@ float3 CalculateSpotLight(Light light, float3 worldPos, float3 normal, float3 vi
     }
 
     float3 lightDir = lightVec / dist;
-    float3 spotDir = float3(0, -1, 0);
-    float theta = dot(lightDir, -spotDir);
+    float3 spotDir = normalize(light.SpotDirection);
+    float theta = dot(-lightDir, spotDir);
     float epsilon = light.InnerConeAngle - light.OuterConeAngle;
     float spotFactor = saturate((theta - light.OuterConeAngle) / max(epsilon, 0.001));
 
@@ -159,7 +164,22 @@ float4 PSMain(PSInput input) : SV_TARGET
 {
     // Load material properties from instance data
     InstanceData inst = Instances[input.InstanceID];
-    float3 albedo = inst.BaseColor.rgb;
+
+    // Sample albedo from texture or use base color
+    float3 albedo;
+    float alpha;
+    if (inst.UseAlbedoTexture != 0)
+    {
+        float4 texColor = AlbedoTexture.Sample(AlbedoSampler, input.TexCoord);
+        albedo = texColor.rgb * inst.BaseColor.rgb; // Multiply texture with tint color
+        alpha = texColor.a * inst.BaseColor.a;
+    }
+    else
+    {
+        albedo = inst.BaseColor.rgb;
+        alpha = inst.BaseColor.a;
+    }
+
     float metallic = inst.Metallic;
     float roughness = inst.Roughness;
     float ao = inst.AmbientOcclusion;
@@ -197,5 +217,5 @@ float4 PSMain(PSInput input) : SV_TARGET
     totalLight = totalLight / (totalLight + 1.0);
     totalLight = pow(totalLight, 1.0 / 2.2);
 
-    return float4(totalLight, inst.BaseColor.a);
+    return float4(totalLight, alpha);
 }

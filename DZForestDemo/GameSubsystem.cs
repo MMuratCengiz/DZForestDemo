@@ -16,6 +16,7 @@ public sealed class GameSystem : ISystem
     private const float LightMoveSpeed = 10f;
     private readonly List<ShadowPass.ShadowData> _shadowData = [];
     private AssetContext _assets = null!;
+    private AnimationContext _animation = null!;
     private Camera _camera = null!;
     private CompositeRenderPass _compositePass = null!;
     private GraphicsContext _ctx = null!;
@@ -44,6 +45,10 @@ public sealed class GameSystem : ISystem
     private RuntimeMeshHandle _smallSphereMesh;
     private RuntimeMeshHandle _sphereMesh;
     private RenderBatcher _batcher = null!;
+    private ModelLoadResult? _vikingModel;
+    private RuntimeTextureHandle _vikingTexture;
+    private RuntimeSkeletonHandle _vikingSkeleton;
+    private RuntimeAnimationHandle _vikingAnimation;
 
     private StepTimer _stepTimer = null!;
     private float _totalTime;
@@ -58,6 +63,7 @@ public sealed class GameSystem : ISystem
         _ctx = world.GetContext<GraphicsContext>();
         _assets = world.GetContext<AssetContext>();
         _physics = world.GetContext<PhysicsContext>();
+        _animation = world.GetContext<AnimationContext>();
 
         _stepTimer = new StepTimer();
 
@@ -335,8 +341,57 @@ public sealed class GameSystem : ISystem
         _platformMesh = _assets.AddBox(20.0f, 1.0f, 20.0f);
         _sphereMesh = _assets.AddSphere(1.0f);
         _smallSphereMesh = _assets.AddSphere(0.3f, 8);
+
+        // Load Viking characters model
+        _vikingModel = _assets.AddModel("VikingRealm_Characters.glb");
+        if (!_vikingModel.Success)
+        {
+            Console.WriteLine($"Failed to load Viking model: {_vikingModel.ErrorMessage}");
+        }
+        else
+        {
+            Console.WriteLine($"Loaded Viking model: {_vikingModel.MeshHandles.Count} meshes, {_vikingModel.Materials.Count} materials");
+        }
+
+        // Load Viking texture (for future texture support)
+        _vikingTexture = _assets.AddTexture("VikingRealm_Texture_01_A_PolygonVikingRealm_Texture_01_A.dztex");
+        if (!_vikingTexture.IsValid)
+        {
+            Console.WriteLine("Failed to load Viking texture");
+        }
+        else
+        {
+            Console.WriteLine("Loaded Viking texture");
+        }
+
         _assets.EndUpload();
+
+        // Load Viking skeleton and animation
+        _vikingSkeleton = _animation.LoadSkeleton("VikingRealm_Characters_skeleton.ozz");
+        if (_vikingSkeleton.IsValid)
+        {
+            Console.WriteLine("Loaded Viking skeleton");
+            _vikingAnimation = _animation.LoadAnimation(_vikingSkeleton, "VikingRealm_Characters_Take 001.ozz");
+            if (_vikingAnimation.IsValid)
+            {
+                Console.WriteLine("Loaded Viking animation");
+            }
+            else
+            {
+                Console.WriteLine("Failed to load Viking animation");
+            }
+        }
+        else
+        {
+            Console.WriteLine("Failed to load Viking skeleton");
+        }
         SpawnStaticBox(new Vector3(0, -2, 0), new Vector3(20f, 1f, 20f), _platformMesh, Materials.Concrete);
+
+        // Spawn Viking model meshes
+        if (_vikingModel is { Success: true })
+        {
+            SpawnVikingModel();
+        }
         _world.AddComponent(_debugLightEntity, new MeshComponent(_smallSphereMesh));
         _world.AddComponent(_debugLightEntity, new StandardMaterial
         {
@@ -383,7 +438,6 @@ public sealed class GameSystem : ISystem
             var sphereMaterial = material with { Roughness = 0.2f, Metallic = 0.3f };
             SpawnDynamicSphere(position, 1f, _sphereMesh, sphereMaterial);
         }
-
         _cubeCount++;
     }
 
@@ -393,6 +447,128 @@ public sealed class GameSystem : ISystem
         {
             AddCube();
         }
+    }
+
+    private void SpawnVikingModel()
+    {
+        if (_vikingModel == null || !_vikingModel.Success)
+        {
+            return;
+        }
+
+        // Hand-placed positions for each mesh (character) in the scene
+        // Arranged in a semi-circle formation
+        var meshPositions = new[]
+        {
+            new Vector3(-8f, -1.5f, -6f),
+            new Vector3(-4f, -1.5f, -8f),
+            new Vector3(0f, -1.5f, -9f),
+            new Vector3(4f, -1.5f, -8f),
+            new Vector3(8f, -1.5f, -6f),
+            new Vector3(-6f, -1.5f, 2f),
+            new Vector3(-2f, -1.5f, 4f),
+            new Vector3(2f, -1.5f, 4f),
+            new Vector3(6f, -1.5f, 2f),
+            new Vector3(0f, -1.5f, 0f),
+        };
+
+        // Rotations to face roughly towards center
+        var meshRotations = new[]
+        {
+            Quaternion.CreateFromAxisAngle(Vector3.UnitY, MathF.PI * 0.15f),
+            Quaternion.CreateFromAxisAngle(Vector3.UnitY, MathF.PI * 0.08f),
+            Quaternion.CreateFromAxisAngle(Vector3.UnitY, 0f),
+            Quaternion.CreateFromAxisAngle(Vector3.UnitY, -MathF.PI * 0.08f),
+            Quaternion.CreateFromAxisAngle(Vector3.UnitY, -MathF.PI * 0.15f),
+            Quaternion.CreateFromAxisAngle(Vector3.UnitY, MathF.PI * 0.85f),
+            Quaternion.CreateFromAxisAngle(Vector3.UnitY, MathF.PI),
+            Quaternion.CreateFromAxisAngle(Vector3.UnitY, MathF.PI),
+            Quaternion.CreateFromAxisAngle(Vector3.UnitY, -MathF.PI * 0.85f),
+            Quaternion.CreateFromAxisAngle(Vector3.UnitY, MathF.PI * 0.5f),
+        };
+
+        var modelScale = Vector3.One;
+
+        // Set the Viking texture as active for rendering if available
+        if (_vikingTexture.IsValid && _assets.TryGetTexture(_vikingTexture, out var texture))
+        {
+            _scenePass.SetActiveTexture(texture.Resource);
+            Console.WriteLine("Set Viking texture as active texture");
+        }
+
+        // Viking material with texture (use white base color to show texture as-is)
+        var vikingMaterial = new StandardMaterial
+        {
+            BaseColor = new Vector4(1.0f, 1.0f, 1.0f, 1.0f),
+            Metallic = 0.0f,
+            Roughness = 0.7f,
+            AmbientOcclusion = 1.0f,
+            AlbedoTexture = _vikingTexture
+        };
+
+        for (var i = 0; i < _vikingModel.MeshHandles.Count; i++)
+        {
+            var meshHandle = _vikingModel.MeshHandles[i];
+
+            // Get position - cycle through available positions if we have more meshes than positions
+            var positionIndex = i % meshPositions.Length;
+            var position = meshPositions[positionIndex];
+            var rotation = meshRotations[positionIndex];
+
+            // If we have more meshes than positions, offset them in Z
+            if (i >= meshPositions.Length)
+            {
+                var row = i / meshPositions.Length;
+                position += new Vector3(0f, 0f, row * 6f);
+            }
+
+            // Get material from the model if available, with texture
+            StandardMaterial material;
+            if (i < _vikingModel.Materials.Count)
+            {
+                var matData = _vikingModel.Materials[i];
+                material = new StandardMaterial
+                {
+                    BaseColor = new Vector4(1.0f, 1.0f, 1.0f, 1.0f), // White to show texture
+                    Metallic = matData.Metallic,
+                    Roughness = matData.Roughness,
+                    AmbientOcclusion = 1.0f,
+                    AlbedoTexture = _vikingTexture
+                };
+            }
+            else
+            {
+                material = vikingMaterial;
+            }
+
+            var entity = _world.Spawn();
+            _world.AddComponent(entity, new MeshComponent(meshHandle));
+            _world.AddComponent(entity, new Transform(position, rotation, modelScale));
+            _world.AddComponent(entity, material);
+
+            // Add animation components if skeleton is valid
+            if (_vikingSkeleton.IsValid && _animation.TryGetSkeleton(_vikingSkeleton, out var skeleton))
+            {
+                var animator = new AnimatorComponent(_vikingSkeleton)
+                {
+                    CurrentAnimation = _vikingAnimation,
+                    IsPlaying = true,
+                    Loop = true,
+                    PlaybackSpeed = 1.0f + (i * 0.1f) // Slightly different speeds for variety
+                };
+                _world.AddComponent(entity, animator);
+
+                var numJoints = skeleton.NumJoints;
+                var boneMatrices = new BoneMatricesComponent(numJoints, _vikingModel.InverseBindMatrices);
+                _world.AddComponent(entity, boneMatrices);
+
+                Console.WriteLine($"Added animation to Viking mesh {i} with {numJoints} joints");
+            }
+
+            Console.WriteLine($"Spawned Viking mesh {i} at {position}");
+        }
+
+        Console.WriteLine($"Spawned {_vikingModel.MeshHandles.Count} Viking mesh entities");
     }
 
     private Entity SpawnStaticBox(Vector3 position, Vector3 size, RuntimeMeshHandle mesh, StandardMaterial material)

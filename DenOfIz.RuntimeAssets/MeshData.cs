@@ -3,6 +3,29 @@ using System.Runtime.InteropServices;
 
 namespace RuntimeAssets;
 
+/// <summary>
+/// Mesh type determines which pipeline variant to use for rendering.
+/// </summary>
+public enum MeshType : byte
+{
+    /// <summary>
+    /// Built-in geometry primitives (box, sphere, quad) using GeometryVertexData layout.
+    /// </summary>
+    Geometry = 0,
+
+    /// <summary>
+    /// Static mesh with full vertex data but no animation.
+    /// Uses Vertex struct (Position, Normal, TexCoord, Tangent).
+    /// </summary>
+    Static = 1,
+
+    /// <summary>
+    /// Skinned mesh with bone weights and indices for skeletal animation.
+    /// Uses full Vertex struct including BoneWeights and BoneIndices.
+    /// </summary>
+    Skinned = 2
+}
+
 [StructLayout(LayoutKind.Sequential)]
 public struct Vertex
 {

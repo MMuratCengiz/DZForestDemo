@@ -9,8 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="DenOfIzGraphics" Version="0.3.4-alpha" />
-        <PackageReference Include="SharpGLTF.Core" Version="1.0.5"/>
+        <PackageReference Include="DenOfIzGraphics" Version="0.3.5-alpha" />
     </ItemGroup>
 
     <ItemGroup>

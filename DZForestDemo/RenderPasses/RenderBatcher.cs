@@ -28,7 +28,7 @@ public readonly struct InstanceData
     public readonly float Metallic;
     public readonly float Roughness;
     public readonly float AmbientOcclusion;
-    private readonly float _padding;
+    public readonly RuntimeTextureHandle AlbedoTexture;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public InstanceData(Entity entity, Matrix4x4 worldMatrix, StandardMaterial material)
@@ -39,7 +39,7 @@ public readonly struct InstanceData
         Metallic = material.Metallic;
         Roughness = material.Roughness;
         AmbientOcclusion = material.AmbientOcclusion;
-        _padding = 0;
+        AlbedoTexture = material.AlbedoTexture;
     }
 
     public static InstanceData Default => new(
@@ -50,9 +50,32 @@ public readonly struct InstanceData
             BaseColor = new Vector4(0.7f, 0.7f, 0.7f, 1.0f),
             Metallic = 0.0f,
             Roughness = 0.5f,
-            AmbientOcclusion = 1.0f
+            AmbientOcclusion = 1.0f,
+            AlbedoTexture = RuntimeTextureHandle.Invalid
         }
     );
+}
+
+/// <summary>
+/// Data for animated/skinned mesh entities that need individual bone matrices
+/// </summary>
+[method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+public readonly struct AnimatedInstanceData(
+    Entity entity,
+    RuntimeMeshHandle meshHandle,
+    Matrix4x4 worldMatrix,
+    StandardMaterial material,
+    BoneMatricesData? boneMatrices)
+{
+    public readonly Entity Entity = entity;
+    public readonly RuntimeMeshHandle MeshHandle = meshHandle;
+    public readonly Matrix4x4 WorldMatrix = worldMatrix;
+    public readonly Vector4 BaseColor = material.BaseColor;
+    public readonly float Metallic = material.Metallic;
+    public readonly float Roughness = material.Roughness;
+    public readonly float AmbientOcclusion = material.AmbientOcclusion;
+    public readonly RuntimeTextureHandle AlbedoTexture = material.AlbedoTexture;
+    public readonly BoneMatricesData? BoneMatrices = boneMatrices;
 }
 
 public sealed class RenderBatcher : IDisposable
@@ -62,7 +85,8 @@ public sealed class RenderBatcher : IDisposable
         BaseColor = new Vector4(0.7f, 0.7f, 0.7f, 1.0f),
         Metallic = 0.0f,
         Roughness = 0.5f,
-        AmbientOcclusion = 1.0f
+        AmbientOcclusion = 1.0f,
+        AlbedoTexture = RuntimeTextureHandle.Invalid
     };
 
     private readonly World _world;
@@ -71,6 +95,7 @@ public sealed class RenderBatcher : IDisposable
     private readonly List<RuntimeMeshHandle> _sortedMeshKeys = [];
     private readonly List<MeshBatch> _batches = [];
     private readonly List<InstanceData> _allInstances = [];
+    private readonly List<AnimatedInstanceData> _animatedInstances = [];
 
     private bool _disposed;
 
@@ -84,7 +109,11 @@ public sealed class RenderBatcher : IDisposable
 
     public IReadOnlyList<InstanceData> AllInstances => _allInstances;
 
+    public IReadOnlyList<AnimatedInstanceData> AnimatedInstances => _animatedInstances;
+
     public int TotalInstanceCount => _allInstances.Count;
+
+    public int AnimatedInstanceCount => _animatedInstances.Count;
 
     public void Dispose()
     {
@@ -99,13 +128,13 @@ public sealed class RenderBatcher : IDisposable
         _sortedMeshKeys.Clear();
         _batches.Clear();
         _allInstances.Clear();
+        _animatedInstances.Clear();
 
         GC.SuppressFinalize(this);
     }
 
     public void BuildBatches()
     {
-        // Clear previous frame data
         foreach (var list in _meshBatches.Values)
         {
             list.Clear();
@@ -113,13 +142,25 @@ public sealed class RenderBatcher : IDisposable
         _sortedMeshKeys.Clear();
         _batches.Clear();
         _allInstances.Clear();
+        _animatedInstances.Clear();
 
-        // Query for entities with mesh, transform, AND material in one pass
-        // This eliminates per-entity TryGetComponent calls during rendering!
         foreach (var (entity, mesh, transform, material) in _world.Query<MeshComponent, Transform, StandardMaterial>())
         {
             if (!mesh.IsValid)
             {
+                continue;
+            }
+
+            if (_world.HasComponent<AnimatorComponent>(entity) &&
+                _world.TryGetComponent<BoneMatricesComponent>(entity, out var boneMatrices) &&
+                boneMatrices.IsValid)
+            {
+                _animatedInstances.Add(new AnimatedInstanceData(
+                    entity,
+                    mesh.Mesh,
+                    transform.Matrix,
+                    material,
+                    boneMatrices.Data));
                 continue;
             }
 
@@ -132,7 +173,6 @@ public sealed class RenderBatcher : IDisposable
             list.Add(new InstanceData(entity, transform.Matrix, material));
         }
 
-        // Also handle entities without materials (use default)
         foreach (var (entity, mesh, transform) in _world.Query<MeshComponent, Transform>())
         {
             if (!mesh.IsValid)
@@ -140,9 +180,21 @@ public sealed class RenderBatcher : IDisposable
                 continue;
             }
 
-            // Skip if already processed (has material)
             if (_world.HasComponent<StandardMaterial>(entity))
             {
+                continue;
+            }
+
+            if (_world.HasComponent<AnimatorComponent>(entity) &&
+                _world.TryGetComponent<BoneMatricesComponent>(entity, out var boneMatrices) &&
+                boneMatrices.IsValid)
+            {
+                _animatedInstances.Add(new AnimatedInstanceData(
+                    entity,
+                    mesh.Mesh,
+                    transform.Matrix,
+                    DefaultMaterial,
+                    boneMatrices.Data));
                 continue;
             }
 

@@ -50,7 +50,83 @@ public sealed class RuntimeTextureStore(LogicalDevice device) : IDisposable
 
     public RuntimeTextureHandle Add(string path, BatchResourceCopy batchCopy)
     {
+        if (path.EndsWith(".dztex", StringComparison.OrdinalIgnoreCase))
+        {
+            return AddDzTex(path, batchCopy);
+        }
         var texture = batchCopy.CreateAndLoadTexture(StringView.Create(path));
+        return AllocateSlot(new RuntimeTexture(texture));
+    }
+
+    private RuntimeTextureHandle AddDzTex(string path, BatchResourceCopy batchCopy)
+    {
+        var readerDesc = new BinaryReaderDesc();
+        using var reader = DenOfIz.BinaryReader.CreateFromFile(StringView.Create(path), in readerDesc);
+
+        using var assetReader = new TextureAssetReader(new TextureAssetReaderDesc
+        {
+            Reader = reader
+        });
+
+        var asset = assetReader.Read();
+
+        var texture = _device.CreateTexture(new TextureDesc
+        {
+            Width = asset.Width(),
+            Height = asset.Height(),
+            Depth = Math.Max(1u, asset.Depth()),
+            MipLevels = asset.MipLevels(),
+            ArraySize = asset.ArraySize(),
+            Format = asset.GetFormat(),
+            Descriptor = (uint)ResourceDescriptorFlagBits.Texture,
+            InitialUsage = (uint)ResourceUsageFlagBits.CopyDst,
+            Usages = (uint)(ResourceUsageFlagBits.CopyDst | ResourceUsageFlagBits.ShaderResource),
+            DebugName = StringView.Create(asset.Name().ToString())
+        });
+
+        var constants = _device.DeviceInfo().Constants;
+        var bufferSize = assetReader.AlignedTotalNumBytes(in constants);
+
+        var stagingBuffer = _device.CreateBuffer(new BufferDesc
+        {
+            NumBytes = bufferSize,
+            HeapType = HeapType.CpuGpu,
+            Descriptor = (uint)ResourceDescriptorFlagBits.None,
+            DebugName = StringView.Create("TextureStagingBuffer")
+        });
+
+        var commandQueue = _device.CreateCommandQueue(new CommandQueueDesc
+        {
+            QueueType = QueueType.Graphics
+        });
+
+        var commandListPool = _device.CreateCommandListPool(new CommandListPoolDesc
+        {
+            CommandQueue = commandQueue,
+            NumCommandLists = 1
+        });
+
+        var commandLists = commandListPool.GetCommandLists();
+        var commandList = commandLists.ToArray()[0];
+
+        commandList.Begin();
+        assetReader.LoadIntoGpuTexture(new LoadIntoGpuTextureDesc
+        {
+            CommandList = commandList,
+            StagingBuffer = stagingBuffer,
+            Texture = texture
+        });
+
+        commandList.End();
+        commandQueue.ExecuteCommandLists(new ExecuteCommandListsDesc
+        {
+            CommandLists = commandLists
+        });
+        commandQueue.WaitIdle();
+        commandListPool.Dispose();
+        commandQueue.Dispose();
+        stagingBuffer.Dispose();
+
         return AllocateSlot(new RuntimeTexture(texture));
     }
 

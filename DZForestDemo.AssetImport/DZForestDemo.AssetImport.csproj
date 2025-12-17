@@ -5,11 +5,15 @@
         <TargetFramework>net9.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
+        <RootNamespace>ImportAssets</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="DenOfIzGraphics" Version="0.3.4-alpha" />
-        <PackageReference Include="ImGui.NET" Version="1.91.6.1"/>
+        <PackageReference Include="DenOfIzGraphics" Version="0.3.5-alpha" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\DenOfIz.OfflineAssets\DenOfIz.OfflineAssets.csproj" />
     </ItemGroup>
 
 </Project>

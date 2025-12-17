@@ -8,12 +8,14 @@ public readonly struct RuntimeMesh
 {
     public readonly VertexBufferView VertexBuffer;
     public readonly IndexBufferView IndexBuffer;
+    public readonly MeshType MeshType;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal RuntimeMesh(VertexBufferView vertexBuffer, IndexBufferView indexBuffer)
+    internal RuntimeMesh(VertexBufferView vertexBuffer, IndexBufferView indexBuffer, MeshType meshType)
     {
         VertexBuffer = vertexBuffer;
         IndexBuffer = indexBuffer;
+        MeshType = meshType;
     }
 
     public bool IsValid
@@ -53,7 +55,7 @@ public sealed class RuntimeMeshStore(
         _slots.Clear();
     }
 
-    public RuntimeMeshHandle Add(MeshData meshData, BatchResourceCopy batchCopy)
+    public RuntimeMeshHandle Add(MeshData meshData, BatchResourceCopy batchCopy, MeshType meshType = MeshType.Static)
     {
         var allVertices = new List<Vertex>();
         var allIndices = new List<uint>();
@@ -69,10 +71,10 @@ public sealed class RuntimeMeshStore(
             }
         }
 
-        return AddRaw(allVertices.ToArray(), allIndices.ToArray(), batchCopy);
+        return AddRaw(allVertices.ToArray(), allIndices.ToArray(), batchCopy, meshType);
     }
 
-    public RuntimeMeshHandle AddRaw(Vertex[] vertices, uint[] indices, BatchResourceCopy batchCopy)
+    public RuntimeMeshHandle AddRaw(Vertex[] vertices, uint[] indices, BatchResourceCopy batchCopy, MeshType meshType = MeshType.Static)
     {
         var vertexStride = (uint)Unsafe.SizeOf<Vertex>();
         var vertexSize = (ulong)(vertices.Length * vertexStride);
@@ -114,7 +116,8 @@ public sealed class RuntimeMeshStore(
 
         var mesh = new RuntimeMesh(
             new VertexBufferView(vertexView, vertexStride, (uint)vertices.Length),
-            new IndexBufferView(indexView, IndexType.Uint32, (uint)indices.Length)
+            new IndexBufferView(indexView, IndexType.Uint32, (uint)indices.Length),
+            meshType
         );
 
         return AllocateSlot(mesh);
@@ -170,7 +173,8 @@ public sealed class RuntimeMeshStore(
 
         var mesh = new RuntimeMesh(
             new VertexBufferView(vertexView, vertexStride, vertexCount),
-            new IndexBufferView(indexView, IndexType.Uint32, indexCount)
+            new IndexBufferView(indexView, IndexType.Uint32, indexCount),
+            MeshType.Geometry
         );
 
         return AllocateSlot(mesh);

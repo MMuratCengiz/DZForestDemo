@@ -108,10 +108,13 @@ public sealed class AssetContext(LogicalDevice device) : IContext, IDisposable
             return ModelLoadResult.Failed(gltfResult.ErrorMessage ?? "Unknown error loading model");
         }
 
+        var hasSkinning = gltfResult.Skins.Count > 0;
+        var meshType = hasSkinning ? MeshType.Skinned : MeshType.Static;
+
         var meshHandles = new List<RuntimeMeshHandle>();
         foreach (var meshData in gltfResult.Meshes)
         {
-            var handle = _meshStore.Add(meshData, _batchCopy!);
+            var handle = _meshStore.Add(meshData, _batchCopy!, meshType);
             meshHandles.Add(handle);
         }
 

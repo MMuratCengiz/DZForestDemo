@@ -21,6 +21,7 @@ internal static class Program
             .WithGraphics()
             .WithPhysics()
             .WithAssets()
+            .WithAnimation()
             .AddSystem(new GameSystem(), Schedule.Render)
             .Run();
     }
