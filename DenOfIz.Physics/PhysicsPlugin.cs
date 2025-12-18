@@ -9,12 +9,12 @@ public class PhysicsPlugin(Vector3? gravity = null, int threadCount = -1, bool s
 
     public void Build(World world)
     {
-        var context = new PhysicsContext(threadCount)
+        var context = new PhysicsResource(threadCount)
         {
             Gravity = _gravity
         };
 
-        world.RegisterContext(context);
+        world.RegisterResource(context);
 
         world.AddSystem(new PhysicsCleanupSystem(), Schedule.FixedUpdate);
 

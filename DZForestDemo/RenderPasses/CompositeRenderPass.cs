@@ -13,7 +13,7 @@ public sealed class CompositeRenderPass : IDisposable
 
     private readonly Texture?[] _boundSceneTextures;
     private readonly Texture?[] _boundUiTextures;
-    private readonly GraphicsContext _ctx;
+    private readonly GraphicsResource _ctx;
     private readonly Sampler _linearSampler;
     private readonly Pipeline _pipeline;
 
@@ -22,7 +22,7 @@ public sealed class CompositeRenderPass : IDisposable
 
     private bool _disposed;
 
-    public CompositeRenderPass(GraphicsContext ctx)
+    public CompositeRenderPass(GraphicsResource ctx)
     {
         _ctx = ctx;
         var logicalDevice = ctx.LogicalDevice;
@@ -87,10 +87,12 @@ public sealed class CompositeRenderPass : IDisposable
 
         _bindGroups = new ResourceBindGroup[numFrames];
         for (var i = 0; i < numFrames; i++)
+        {
             _bindGroups[i] = logicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
             {
                 RootSignature = _rootSignature
             });
+        }
     }
 
     public void Dispose()

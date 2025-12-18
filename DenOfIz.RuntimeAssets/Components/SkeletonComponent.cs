@@ -1,7 +1,6 @@
 using System.Numerics;
-using RuntimeAssets;
 
-namespace ECS.Components;
+namespace RuntimeAssets.Components;
 
 public struct SkeletonComponent(RuntimeSkeletonHandle skeleton)
 {
@@ -82,6 +81,17 @@ public sealed class BoneMatricesData
         }
     }
 
+    /// <summary>
+    /// Computes final bone matrices for skinning.
+    /// Formula: FinalMatrix = InverseBindMatrix * ModelTransform
+    ///
+    /// This works because both matrices are stored with columns-as-rows (transposed from glTF/ozz):
+    /// - InverseBindMatrices: glTF column-major read as row-major = transposed
+    /// - ModelTransforms: ozz columns stored as Matrix4x4 rows = transposed
+    ///
+    /// For row-vector skinning (mul(vertex, matrix) in HLSL with /Zpr):
+    /// skinned = vertex * FinalMatrix
+    /// </summary>
     public void ComputeFinalMatrices()
     {
         for (var i = 0; i < NumBones; i++)
@@ -92,14 +102,9 @@ public sealed class BoneMatricesData
     }
 }
 
-public struct BoneMatricesComponent
+public struct BoneMatricesComponent(int numBones, IReadOnlyList<Matrix4x4>? inverseBindMatrices = null)
 {
-    public BoneMatricesData Data;
-
-    public BoneMatricesComponent(int numBones, IReadOnlyList<Matrix4x4>? inverseBindMatrices = null)
-    {
-        Data = new BoneMatricesData(numBones, inverseBindMatrices);
-    }
+    public BoneMatricesData Data = new(numBones, inverseBindMatrices);
 
     public readonly bool IsValid => Data != null;
 }

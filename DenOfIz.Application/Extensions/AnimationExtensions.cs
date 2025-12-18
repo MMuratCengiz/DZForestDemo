@@ -1,7 +1,7 @@
 using ECS;
 using RuntimeAssets;
 
-namespace Application;
+namespace Application.Extensions;
 
 public static class AnimationExtensions
 {
@@ -9,8 +9,8 @@ public static class AnimationExtensions
     {
         return builder.AddPlugin(app =>
         {
-            var animationContext = new AnimationContext();
-            app.World.RegisterContext(animationContext);
+            var animation = new AnimationResource();
+            app.World.RegisterResource(animation);
             app.AddSystem(new AnimationSystem(), Schedule.Update);
         });
     }

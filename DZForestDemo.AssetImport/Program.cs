@@ -1,43 +1,62 @@
 using OfflineAssets;
 
-const string vikingSourceDir = @"C:\Users\cengi\Downloads\POLYGON_Viking_Realm_SourceFiles_v3\SourceFiles";
-const string fbxPath = @"C:\Users\cengi\Downloads\POLYGON_Viking_Realm_SourceFiles_v3\SourceFiles\FBX\VikingRealm_Characters.fbx";
-const string texturePath = @"C:\Users\cengi\Downloads\POLYGON_Viking_Realm_SourceFiles_v3\SourceFiles\Textures\Alts\PolygonVikingRealm_Texture_01_A.png";
 const string projectDir = @"C:\Workspace\DZForestDemo\DZForestDemo";
+
+// Viking asset paths
+const string vikingSourceDir = @"C:\Users\cengi\Downloads\POLYGON_Viking_Realm_SourceFiles_v3\SourceFiles";
+const string vikingFbxPath = @"C:\Users\cengi\Downloads\POLYGON_Viking_Realm_SourceFiles_v3\SourceFiles\FBX\VikingRealm_Characters.fbx";
+const string vikingTexturePath = @"C:\Users\cengi\Downloads\POLYGON_Viking_Realm_SourceFiles_v3\SourceFiles\Textures\Alts\PolygonVikingRealm_Texture_01_A.png";
+
+// Fox asset paths
+const string foxSourceDir = @"C:\Workspace\DenOfIz\Examples\Assets\Models";
+const string foxGltfPath = @"C:\Workspace\DenOfIz\Examples\Assets\Models\Fox.gltf";
+const string foxTexturePath = @"C:\Workspace\DenOfIz\Examples\Assets\Models\Texture.png";
 
 var assetProject = AssetProject.ForProjectAssets(projectDir, vikingSourceDir);
 assetProject.EnsureDirectories();
 
 Console.WriteLine("Asset Import Tool");
 Console.WriteLine("=================");
-Console.WriteLine($"Source: {vikingSourceDir}");
 Console.WriteLine($"Output Models: {assetProject.ModelsDirectory}");
 Console.WriteLine($"Output Textures: {assetProject.TexturesDirectory}");
 Console.WriteLine($"Output Animations: {assetProject.AnimationsDirectory}");
+Console.WriteLine($"Output Skeletons: {assetProject.SkeletonsDirectory}");
 Console.WriteLine();
 
-var modelResult = ImportModel(assetProject, fbxPath);
-if (!modelResult)
+// Import Fox assets
+Console.WriteLine("=== FOX ASSETS ===");
+var foxModelResult = ImportModel(assetProject, foxGltfPath, "Fox", scale: 0.1f);
+if (foxModelResult)
 {
-    return 1;
+    ImportTexture(assetProject, foxTexturePath, "Fox");
 }
 
-var textureResult = ImportTexture(assetProject, texturePath);
-if (!textureResult)
+Console.WriteLine();
+
+// Import Viking assets
+Console.WriteLine("=== VIKING ASSETS ===");
+var vikingModelResult = ImportModel(assetProject, vikingFbxPath, "VikingRealm_Characters", scale: 1.0f);
+if (vikingModelResult)
 {
-    return 1;
+    ImportTexture(assetProject, vikingTexturePath, "VikingRealm_Texture_01_A");
 }
 
 Console.WriteLine();
 Console.WriteLine("Import complete!");
 return 0;
 
-bool ImportModel(AssetProject project, string sourcePath)
+bool ImportModel(AssetProject project, string sourcePath, string assetName, float scale = 1.0f)
 {
     using var exporter = new AssetExporter();
 
     Console.WriteLine($"Supported model extensions: {string.Join(", ", exporter.SupportedExtensions)}");
     Console.WriteLine();
+
+    if (!File.Exists(sourcePath))
+    {
+        Console.WriteLine($"ERROR: Model file not found: {sourcePath}");
+        return false;
+    }
 
     if (!exporter.CanProcess(sourcePath))
     {
@@ -45,11 +64,11 @@ bool ImportModel(AssetProject project, string sourcePath)
         return false;
     }
 
-    Console.WriteLine($"Importing model: {Path.GetFileName(sourcePath)}");
+    Console.WriteLine($"Importing model: {Path.GetFileName(sourcePath)} as '{assetName}'");
 
-    var settings = project.CreateExportSettings(sourcePath, "VikingRealm_Characters");
+    var settings = project.CreateExportSettings(sourcePath, assetName);
     settings.Format = ExportFormat.Glb;
-    settings.Scale = 1.0f;
+    settings.Scale = scale;
     settings.EmbedTextures = false;
     settings.OverwriteExisting = true;
     settings.OptimizeMeshes = true;
@@ -90,7 +109,7 @@ bool ImportModel(AssetProject project, string sourcePath)
             }
         }
 
-        project.CopyToOutput(result, separateAnimations: true);
+        project.CopyToOutput(result, separateAnimations: true, separateSkeletons: true);
         return true;
     }
 
@@ -98,7 +117,7 @@ bool ImportModel(AssetProject project, string sourcePath)
     return false;
 }
 
-bool ImportTexture(AssetProject project, string sourcePath)
+bool ImportTexture(AssetProject project, string sourcePath, string assetName)
 {
     using var textureExporter = new TextureExporter();
 
@@ -111,9 +130,9 @@ bool ImportTexture(AssetProject project, string sourcePath)
         return false;
     }
 
-    Console.WriteLine($"Importing texture: {Path.GetFileName(sourcePath)}");
+    Console.WriteLine($"Importing texture: {Path.GetFileName(sourcePath)} as '{assetName}'");
 
-    var settings = project.CreateTextureExportSettings(sourcePath, "VikingRealm_Texture_01_A");
+    var settings = project.CreateTextureExportSettings(sourcePath, assetName);
     settings.GenerateMips = true;
     settings.FlipY = false;
 

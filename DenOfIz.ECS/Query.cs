@@ -585,18 +585,11 @@ public interface IChunkJob<T1, T2, T3> where T1 : struct where T2 : struct where
 /// <summary>
 /// Archetype chunk info for parallel processing.
 /// </summary>
-public readonly struct ArchetypeChunk
+public readonly struct ArchetypeChunk(Archetype archetype, int start, int count)
 {
-    public readonly Archetype Archetype;
-    public readonly int Start;
-    public readonly int Count;
-
-    public ArchetypeChunk(Archetype archetype, int start, int count)
-    {
-        Archetype = archetype;
-        Start = start;
-        Count = count;
-    }
+    public readonly Archetype Archetype = archetype;
+    public readonly int Start = start;
+    public readonly int Count = count;
 }
 
 /// <summary>

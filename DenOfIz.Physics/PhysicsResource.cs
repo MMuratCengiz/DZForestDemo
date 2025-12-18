@@ -30,7 +30,7 @@ public struct CollisionEvent
     public float Depth;
 }
 
-public class PhysicsContext : IContext, IDisposable
+public class PhysicsResource : IResource, IDisposable
 {
     private readonly List<CollisionEvent> _collisionEvents = [];
     private readonly Dictionary<BodyHandle, Entity> _dynamicToEntity = new();
@@ -42,7 +42,7 @@ public class PhysicsContext : IContext, IDisposable
 
     private bool _disposed;
 
-    public PhysicsContext(int targetThreadCount = -1)
+    public PhysicsResource(int targetThreadCount = -1)
     {
         BufferPool = new BufferPool();
 
@@ -281,7 +281,7 @@ public class PhysicsContext : IContext, IDisposable
     }
 }
 
-internal struct RayHitHandler(PhysicsContext context) : IRayHitHandler
+internal struct RayHitHandler(PhysicsResource resource) : IRayHitHandler
 {
     public bool Hit = false;
     public RaycastHit Result = default;
@@ -304,7 +304,7 @@ internal struct RayHitHandler(PhysicsContext context) : IRayHitHandler
             maximumT = t;
             Hit = true;
 
-            var entity = context.GetEntityFromCollidable(collidable);
+            var entity = resource.GetEntityFromCollidable(collidable);
             Result = new RaycastHit
             {
                 Entity = entity ?? default,
@@ -317,7 +317,7 @@ internal struct RayHitHandler(PhysicsContext context) : IRayHitHandler
     }
 }
 
-internal struct RayHitAllHandler(PhysicsContext context, List<RaycastHit> hits) : IRayHitHandler
+internal struct RayHitAllHandler(PhysicsResource resource, List<RaycastHit> hits) : IRayHitHandler
 {
     public bool AllowTest(CollidableReference collidable)
     {
@@ -332,7 +332,7 @@ internal struct RayHitAllHandler(PhysicsContext context, List<RaycastHit> hits) 
     public void OnRayHit(in RayData ray, ref float maximumT, float t, in Vector3 normal, CollidableReference collidable,
         int childIndex)
     {
-        var entity = context.GetEntityFromCollidable(collidable);
+        var entity = resource.GetEntityFromCollidable(collidable);
         hits.Add(new RaycastHit
         {
             Entity = entity ?? default,
@@ -344,9 +344,9 @@ internal struct RayHitAllHandler(PhysicsContext context, List<RaycastHit> hits) 
     }
 }
 
-public struct NarrowPhaseCallbacks(PhysicsContext context) : INarrowPhaseCallbacks
+public struct NarrowPhaseCallbacks(PhysicsResource resource) : INarrowPhaseCallbacks
 {
-    private PhysicsContext _context = context;
+    private PhysicsResource _resource = resource;
 
     public void Initialize(Simulation simulation)
     {

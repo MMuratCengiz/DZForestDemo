@@ -26,7 +26,7 @@ public sealed class App(ApplicationOptions options) : IDisposable
     public FrameClock Clock { get; } = new();
     public World World { get; } = new();
 
-    public GraphicsOptions Graphics => _options.Graphics;
+    public GraphicsDesc Graphics => _options.Graphics;
 
     private bool IsRunning { get; set; }
 
@@ -69,8 +69,8 @@ public sealed class App(ApplicationOptions options) : IDisposable
         Window.Show();
 
         var timeResource = new TimeResource(Clock);
-        World.RegisterContext(timeResource);
-        World.RegisterContext<ITimeResource>(timeResource);
+        World.RegisterResource(timeResource);
+        World.RegisterResource<ITimeResource>(timeResource);
 
         World.Initialize();
         _initialized = true;
@@ -112,7 +112,10 @@ public sealed class App(ApplicationOptions options) : IDisposable
         World.RunSchedule(Schedule.PreUpdate);
 
         var fixedSteps = _fixedTimestep.Accumulate(Clock.DeltaTime);
-        for (var i = 0; i < fixedSteps; i++) World.RunSchedule(Schedule.FixedUpdate);
+        for (var i = 0; i < fixedSteps; i++)
+        {
+            World.RunSchedule(Schedule.FixedUpdate);
+        }
 
         World.RunSchedule(Schedule.Update);
         World.RunSchedule(Schedule.PostUpdate);

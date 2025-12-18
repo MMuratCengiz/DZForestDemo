@@ -6,17 +6,13 @@ using Semaphore = DenOfIz.Semaphore;
 
 namespace Graphics.RenderGraph;
 
-public struct RenderGraphDesc
+public struct RenderGraphDesc(LogicalDevice logicalDevice, CommandQueue commandQueue)
 {
-    public LogicalDevice LogicalDevice;
-    public CommandQueue CommandQueue;
+    public LogicalDevice LogicalDevice = logicalDevice;
+    public CommandQueue CommandQueue = commandQueue;
     public uint NumFrames = 3;
-    public readonly uint MaxPasses = 64;
-    public readonly uint MaxResources = 256;
-
-    public RenderGraphDesc()
-    {
-    }
+    public const uint MaxPasses = 64;
+    public const uint MaxResources = 256;
 }
 
 public class RenderGraph : IDisposable
@@ -62,19 +58,25 @@ public class RenderGraph : IDisposable
         _logicalDevice = desc.LogicalDevice;
         _commandQueue = desc.CommandQueue;
         _numFrames = desc.NumFrames;
-        _maxPasses = desc.MaxPasses;
-        _maxResources = desc.MaxResources;
+        _maxPasses = RenderGraphDesc.MaxPasses;
+        _maxResources = RenderGraphDesc.MaxResources;
 
         ResourceTracking = new ResourceTracking();
 
         _resources = new List<RenderGraphResourceEntry>((int)_maxResources);
         for (var i = 0; i < _maxResources; i++)
+        {
             _resources.Add(new RenderGraphResourceEntry());
+        }
+
         _namedResources = new Dictionary<string, ResourceHandle>((int)_maxResources);
 
         _passes = new List<RenderPassData>((int)_maxPasses);
         for (var i = 0; i < _maxPasses; i++)
+        {
             _passes.Add(new RenderPassData { Index = i });
+        }
+
         _executionOrder = new List<int>((int)_maxPasses);
 
         _commandListPools = new CommandListPool[_numFrames];
@@ -92,7 +94,10 @@ public class RenderGraph : IDisposable
             });
             _frameSemaphores[i] = new List<Semaphore>((int)_maxPasses);
             for (var j = 0; j < _maxPasses; j++)
+            {
                 _frameSemaphores[i].Add(_logicalDevice.CreateSemaphore());
+            }
+
             _frameFences[i] = _logicalDevice.CreateFence();
             _transientTextures[i] = new List<Texture>(32);
             _transientBuffers[i] = new List<Buffer>(32);
@@ -109,7 +114,9 @@ public class RenderGraph : IDisposable
         _algorithmQueue = new Queue<int>((int)_maxPasses);
         _cachedCommandLists = new CommandList[_numFrames][];
         for (var i = 0; i < _numFrames; i++)
-            _cachedCommandLists[i] = _commandListPools[i].GetCommandLists().ToArray();
+        {
+            _cachedCommandLists[i] = _commandListPools[i].GetCommandLists().ToArray()!;
+        }
     }
 
     public uint Width { get; private set; }
@@ -577,15 +584,19 @@ public class RenderGraph : IDisposable
     private void CullPasses()
     {
         for (var i = 0; i < _passCount; i++)
+        {
             _passes[i].IsCulled = true;
+        }
 
         _algorithmQueue.Clear();
         for (var i = 0; i < _passCount; i++)
+        {
             if (_passes[i].HasSideEffects)
             {
                 _passes[i].IsCulled = false;
                 _algorithmQueue.Enqueue(i);
             }
+        }
 
         while (_algorithmQueue.Count > 0)
         {
@@ -628,10 +639,12 @@ public class RenderGraph : IDisposable
 
         _algorithmQueue.Clear();
         for (var i = 0; i < _passCount; i++)
+        {
             if (inDegree[i] == 0)
             {
                 _algorithmQueue.Enqueue(i);
             }
+        }
 
         var order = 0;
         while (_algorithmQueue.Count > 0)
@@ -659,10 +672,12 @@ public class RenderGraph : IDisposable
 
         var culledCount = 0;
         for (var i = 0; i < _passCount; i++)
+        {
             if (_passes[i].IsCulled)
             {
                 culledCount++;
             }
+        }
 
         if (_executionOrder.Count < _passCount - culledCount)
         {
@@ -805,7 +820,10 @@ public class RenderGraph : IDisposable
             _signalSemaphoresBuffer[0] = pass.CompletionSemaphore!;
             _commandListHandles[0] = pass.CommandList;
             for (var w = 0; w < waitCount; w++)
+            {
                 _waitSemaphoreHandles[w] = _waitSemaphoresBuffer[w];
+            }
+
             _signalSemaphoreHandles[0] = pass.CompletionSemaphore!;
             var commandListArray = CommandListArray.FromPinned(_commandListPin, 1);
             var waitSemaphores = SemaphoreArray.FromPinned(_waitSemaphorePin, waitCount);
@@ -831,6 +849,8 @@ public class RenderGraph : IDisposable
     {
         _commandQueue.WaitIdle();
         for (var i = 0; i < _numFrames; i++)
+        {
             _frameFences[i].Wait();
+        }
     }
 }

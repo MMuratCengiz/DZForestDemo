@@ -4,9 +4,9 @@ using Graphics.RenderGraph;
 
 namespace Graphics;
 
-public class GraphicsContext : IContext, IDisposable
+public class GraphicsResource : IResource, IDisposable
 {
-    public GraphicsContext(
+    public GraphicsResource(
         GraphicsApi graphicsApi,
         LogicalDevice logicalDevice,
         SwapChain swapChain,
@@ -42,10 +42,12 @@ public class GraphicsContext : IContext, IDisposable
         RenderGraph.SetDimensions(width, height);
 
         for (uint i = 0; i < numFrames; ++i)
+        {
             ResourceTracking.TrackTexture(
                 swapChain.GetRenderTarget(i),
                 (uint)ResourceUsageFlagBits.Common,
                 QueueType.Graphics);
+        }
     }
 
     public GraphicsApi GraphicsApi { get; }

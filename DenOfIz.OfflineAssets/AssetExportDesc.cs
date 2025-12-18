@@ -14,7 +14,7 @@ public enum Handedness
     Left
 }
 
-public sealed class AssetExportSettings
+public sealed class AssetExportDesc
 {
     public string SourcePath { get; set; } = string.Empty;
     public string OutputDirectory { get; set; } = string.Empty;

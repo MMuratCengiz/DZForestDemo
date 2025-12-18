@@ -5,6 +5,7 @@ using DenOfIz;
 using ECS;
 using ECS.Components;
 using RuntimeAssets;
+using RuntimeAssets.Components;
 using Buffer = DenOfIz.Buffer;
 
 namespace DZForestDemo.RenderPasses;
@@ -20,27 +21,16 @@ public readonly struct MeshBatch(RuntimeMeshHandle meshHandle, int startInstance
 /// Cached instance data including transform AND material - no per-frame component lookups needed!
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct InstanceData
+[method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+public readonly struct InstanceData(Entity entity, Matrix4x4 worldMatrix, StandardMaterial material)
 {
-    public readonly Entity Entity;
-    public readonly Matrix4x4 WorldMatrix;
-    public readonly Vector4 BaseColor;
-    public readonly float Metallic;
-    public readonly float Roughness;
-    public readonly float AmbientOcclusion;
-    public readonly RuntimeTextureHandle AlbedoTexture;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public InstanceData(Entity entity, Matrix4x4 worldMatrix, StandardMaterial material)
-    {
-        Entity = entity;
-        WorldMatrix = worldMatrix;
-        BaseColor = material.BaseColor;
-        Metallic = material.Metallic;
-        Roughness = material.Roughness;
-        AmbientOcclusion = material.AmbientOcclusion;
-        AlbedoTexture = material.AlbedoTexture;
-    }
+    public readonly Entity Entity = entity;
+    public readonly Matrix4x4 WorldMatrix = worldMatrix;
+    public readonly Vector4 BaseColor = material.BaseColor;
+    public readonly float Metallic = material.Metallic;
+    public readonly float Roughness = material.Roughness;
+    public readonly float AmbientOcclusion = material.AmbientOcclusion;
+    public readonly RuntimeTextureHandle AlbedoTexture = material.AlbedoTexture;
 
     public static InstanceData Default => new(
         default,
@@ -78,7 +68,7 @@ public readonly struct AnimatedInstanceData(
     public readonly BoneMatricesData? BoneMatrices = boneMatrices;
 }
 
-public sealed class RenderBatcher : IDisposable
+public sealed class RenderBatcher(World world, int maxInstances = 4096) : IDisposable
 {
     private static readonly StandardMaterial DefaultMaterial = new()
     {
@@ -89,8 +79,6 @@ public sealed class RenderBatcher : IDisposable
         AlbedoTexture = RuntimeTextureHandle.Invalid
     };
 
-    private readonly World _world;
-    private readonly int _maxInstances;
     private readonly Dictionary<RuntimeMeshHandle, List<InstanceData>> _meshBatches = new();
     private readonly List<RuntimeMeshHandle> _sortedMeshKeys = [];
     private readonly List<MeshBatch> _batches = [];
@@ -98,12 +86,6 @@ public sealed class RenderBatcher : IDisposable
     private readonly List<AnimatedInstanceData> _animatedInstances = [];
 
     private bool _disposed;
-
-    public RenderBatcher(World world, int maxInstances = 4096)
-    {
-        _world = world;
-        _maxInstances = maxInstances;
-    }
 
     public IReadOnlyList<MeshBatch> Batches => _batches;
 
@@ -144,15 +126,15 @@ public sealed class RenderBatcher : IDisposable
         _allInstances.Clear();
         _animatedInstances.Clear();
 
-        foreach (var (entity, mesh, transform, material) in _world.Query<MeshComponent, Transform, StandardMaterial>())
+        foreach (var (entity, mesh, transform, material) in world.Query<MeshComponent, Transform, StandardMaterial>())
         {
             if (!mesh.IsValid)
             {
                 continue;
             }
 
-            if (_world.HasComponent<AnimatorComponent>(entity) &&
-                _world.TryGetComponent<BoneMatricesComponent>(entity, out var boneMatrices) &&
+            if (world.HasComponent<AnimatorComponent>(entity) &&
+                world.TryGetComponent<BoneMatricesComponent>(entity, out var boneMatrices) &&
                 boneMatrices.IsValid)
             {
                 _animatedInstances.Add(new AnimatedInstanceData(
@@ -173,20 +155,20 @@ public sealed class RenderBatcher : IDisposable
             list.Add(new InstanceData(entity, transform.Matrix, material));
         }
 
-        foreach (var (entity, mesh, transform) in _world.Query<MeshComponent, Transform>())
+        foreach (var (entity, mesh, transform) in world.Query<MeshComponent, Transform>())
         {
             if (!mesh.IsValid)
             {
                 continue;
             }
 
-            if (_world.HasComponent<StandardMaterial>(entity))
+            if (world.HasComponent<StandardMaterial>(entity))
             {
                 continue;
             }
 
-            if (_world.HasComponent<AnimatorComponent>(entity) &&
-                _world.TryGetComponent<BoneMatricesComponent>(entity, out var boneMatrices) &&
+            if (world.HasComponent<AnimatorComponent>(entity) &&
+                world.TryGetComponent<BoneMatricesComponent>(entity, out var boneMatrices) &&
                 boneMatrices.IsValid)
             {
                 _animatedInstances.Add(new AnimatedInstanceData(
@@ -226,7 +208,7 @@ public sealed class RenderBatcher : IDisposable
                 continue;
             }
 
-            var instanceCount = Math.Min(instances.Count, _maxInstances - totalInstances);
+            var instanceCount = Math.Min(instances.Count, maxInstances - totalInstances);
             if (instanceCount <= 0)
             {
                 break;
@@ -241,7 +223,7 @@ public sealed class RenderBatcher : IDisposable
             _batches.Add(new MeshBatch(meshHandle, startInstance, instanceCount));
             totalInstances += instanceCount;
 
-            if (totalInstances >= _maxInstances)
+            if (totalInstances >= maxInstances)
             {
                 break;
             }

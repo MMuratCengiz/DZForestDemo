@@ -24,9 +24,9 @@ public sealed class SceneRenderPass : IDisposable
     private const uint LightTypeSpot = 2;
 
 
-    private readonly AssetContext _assets;
+    private readonly AssetResource _assets;
     private readonly RenderBatcher _batcher;
-    private readonly GraphicsContext _ctx;
+    private readonly GraphicsResource _ctx;
 
     private readonly Buffer[] _frameConstantsBuffers;
     private readonly ResourceBindGroup[] _frameBindGroups;
@@ -72,7 +72,7 @@ public sealed class SceneRenderPass : IDisposable
 
     private bool _disposed;
 
-    public SceneRenderPass(GraphicsContext ctx, AssetContext assets, World world, RenderBatcher batcher)
+    public SceneRenderPass(GraphicsResource ctx, AssetResource assets, World world, RenderBatcher batcher)
     {
         _ctx = ctx;
         _assets = assets;
@@ -332,11 +332,11 @@ public sealed class SceneRenderPass : IDisposable
         var reflection = program.Reflect();
         inputLayout = logicalDevice.CreateInputLayout(reflection.InputLayout);
 
-        rootSignature = (forceNewRootSignature)
+        rootSignature = (forceNewRootSignature || _rootSignature == null)
             ? logicalDevice.CreateRootSignature(reflection.RootSignature)
             : null;
 
-        var effectiveRootSig = forceNewRootSignature ? rootSignature! : (_rootSignature ?? rootSignature!);
+        var effectiveRootSig = rootSignature ?? _rootSignature!;
         pipeline = logicalDevice.CreatePipeline(new PipelineDesc
         {
             InputLayout = inputLayout,
@@ -532,8 +532,8 @@ public sealed class SceneRenderPass : IDisposable
             var vb = runtimeMesh.VertexBuffer;
             var ib = runtimeMesh.IndexBuffer;
 
-            cmd.BindVertexBuffer(vb.View.Buffer, (uint)vb.View.Offset, vb.Stride, 0);
-            cmd.BindIndexBuffer(ib.View.Buffer, ib.IndexType, ib.View.Offset);
+            cmd.BindVertexBuffer(vb.View.GetBuffer(), (uint)vb.View.Offset, vb.Stride, 0);
+            cmd.BindIndexBuffer(ib.View.GetBuffer(), ib.IndexType, ib.View.Offset);
             cmd.DrawIndexed(ib.Count, (uint)batch.InstanceCount, 0, 0, 0);
         }
 
@@ -607,8 +607,8 @@ public sealed class SceneRenderPass : IDisposable
             var vb = runtimeMesh.VertexBuffer;
             var ib = runtimeMesh.IndexBuffer;
 
-            cmd.BindVertexBuffer(vb.View.Buffer, (uint)vb.View.Offset, vb.Stride, 0);
-            cmd.BindIndexBuffer(ib.View.Buffer, ib.IndexType, ib.View.Offset);
+            cmd.BindVertexBuffer(vb.View.GetBuffer(), (uint)vb.View.Offset, vb.Stride, 0);
+            cmd.BindIndexBuffer(ib.View.GetBuffer(), ib.IndexType, ib.View.Offset);
             cmd.DrawIndexed(ib.Count, 1, 0, 0, 0);
         }
     }

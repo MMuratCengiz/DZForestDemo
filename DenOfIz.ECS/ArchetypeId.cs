@@ -150,10 +150,12 @@ public readonly struct ArchetypeSignature : IEquatable<ArchetypeSignature>
         }
 
         for (var i = 0; i < _componentIds.Length; i++)
+        {
             if (_componentIds[i] != other._componentIds[i])
             {
                 return false;
             }
+        }
 
         return true;
     }

@@ -128,11 +128,13 @@ public sealed class Scene
         _entityIndices.Remove(entity.Index);
 
         for (var i = _entities.Count - 1; i >= 0; i--)
+        {
             if (_entities[i].Index == entity.Index)
             {
                 _entities.RemoveAt(i);
                 break;
             }
+        }
     }
 
     public void Despawn(Entity entity)
@@ -144,11 +146,13 @@ public sealed class Scene
 
         _entityIndices.Remove(entity.Index);
         for (var i = _entities.Count - 1; i >= 0; i--)
+        {
             if (_entities[i].Index == entity.Index)
             {
                 _entities.RemoveAt(i);
                 break;
             }
+        }
 
         _store.Despawn(entity);
     }
@@ -162,7 +166,11 @@ public sealed class Scene
     {
         IsLoaded = false;
         var entities = CollectionsMarshal.AsSpan(_entities);
-        for (var i = entities.Length - 1; i >= 0; i--) _store.Despawn(entities[i]);
+        for (var i = entities.Length - 1; i >= 0; i--)
+        {
+            _store.Despawn(entities[i]);
+        }
+
         _entities.Clear();
         _entityIndices.Clear();
     }

@@ -10,6 +10,7 @@ public sealed class AssetProject
         ModelsDirectory = Path.Combine(OutputDirectory, "Models");
         TexturesDirectory = Path.Combine(OutputDirectory, "Textures");
         AnimationsDirectory = Path.Combine(OutputDirectory, "Animations");
+        SkeletonsDirectory = Path.Combine(OutputDirectory, "Skeletons");
         ShadersDirectory = Path.Combine(OutputDirectory, "Shaders");
     }
 
@@ -21,6 +22,7 @@ public sealed class AssetProject
         ModelsDirectory = Path.Combine(OutputDirectory, "Models");
         TexturesDirectory = Path.Combine(OutputDirectory, "Textures");
         AnimationsDirectory = Path.Combine(OutputDirectory, "Animations");
+        SkeletonsDirectory = Path.Combine(OutputDirectory, "Skeletons");
         ShadersDirectory = Path.Combine(OutputDirectory, "Shaders");
     }
 
@@ -30,6 +32,7 @@ public sealed class AssetProject
     public string ModelsDirectory { get; }
     public string TexturesDirectory { get; }
     public string AnimationsDirectory { get; }
+    public string SkeletonsDirectory { get; }
     public string ShadersDirectory { get; }
 
     public static AssetProject ForProjectAssets(string projectDirectory, string? sourceDirectory = null)
@@ -48,6 +51,7 @@ public sealed class AssetProject
         Directory.CreateDirectory(ModelsDirectory);
         Directory.CreateDirectory(TexturesDirectory);
         Directory.CreateDirectory(AnimationsDirectory);
+        Directory.CreateDirectory(SkeletonsDirectory);
         Directory.CreateDirectory(ShadersDirectory);
     }
 
@@ -106,10 +110,10 @@ public sealed class AssetProject
         }
     }
 
-    public AssetExportSettings CreateExportSettings(string sourceFile, string? assetName = null)
+    public AssetExportDesc CreateExportSettings(string sourceFile, string? assetName = null)
     {
         var name = assetName ?? Path.GetFileNameWithoutExtension(sourceFile);
-        return new AssetExportSettings
+        return new AssetExportDesc
         {
             SourcePath = Path.IsPathRooted(sourceFile) ? sourceFile : Path.Combine(SourceDirectory, sourceFile),
             OutputDirectory = ModelsDirectory,
@@ -128,7 +132,7 @@ public sealed class AssetProject
         };
     }
 
-    public void CopyToOutput(AssetExportResult result, bool separateAnimations = true)
+    public void CopyToOutput(AssetExportResult result, bool separateAnimations = true, bool separateSkeletons = true)
     {
         if (!result.Success)
         {
@@ -145,6 +149,12 @@ public sealed class AssetProject
                     File.Copy(animPath, destPath, true);
                 }
             }
+        }
+
+        if (separateSkeletons && !string.IsNullOrEmpty(result.SkeletonPath) && File.Exists(result.SkeletonPath))
+        {
+            var destPath = Path.Combine(SkeletonsDirectory, Path.GetFileName(result.SkeletonPath));
+            File.Copy(result.SkeletonPath, destPath, true);
         }
     }
 

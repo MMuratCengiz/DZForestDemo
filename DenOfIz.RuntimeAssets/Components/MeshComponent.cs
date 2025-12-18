@@ -1,6 +1,4 @@
-using RuntimeAssets;
-
-namespace ECS.Components;
+namespace RuntimeAssets.Components;
 
 public struct MeshComponent(RuntimeMeshHandle mesh)
 {

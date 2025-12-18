@@ -19,7 +19,10 @@
       "WebFetch(domain:learnopengl.com)",
       "WebFetch(domain:ogldev.org)",
       "WebFetch(domain:docs.rs)",
-      "WebFetch(domain:bevy.org)"
+      "WebFetch(domain:bevy.org)",
+      "Bash(del \"C:\\Workspace\\DZForestDemo\\DenOfIz.ECS\\IContext.cs\")",
+      "Bash(cmd /c del \"C:\\Workspace\\DZForestDemo\\DenOfIz.ECS\\IContext.cs\")",
+      "Bash(cmd /c \"del /f C:\\Workspace\\DZForestDemo\\DenOfIz.ECS\\IContext.cs\")"
     ]
   }
 }

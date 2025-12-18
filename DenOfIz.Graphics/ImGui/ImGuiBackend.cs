@@ -180,7 +180,10 @@ float4 main(PSInput input) : SV_TARGET
         _frameData = new ImGuiFrameData[desc.NumFrames];
         _pixelConstantsBindGroups = new ResourceBindGroup?[desc.MaxTextures];
 
-        for (var i = 0; i < desc.NumFrames; i++) _frameData[i] = new ImGuiFrameData();
+        for (var i = 0; i < desc.NumFrames; i++)
+        {
+            _frameData[i] = new ImGuiFrameData();
+        }
 
         CreateCommandInfrastructure();
         CreateShaderProgram();

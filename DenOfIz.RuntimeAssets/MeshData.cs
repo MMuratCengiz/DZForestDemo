@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
+using DenOfIz;
 
 namespace RuntimeAssets;
 
@@ -35,15 +36,6 @@ public struct Vertex
     public Vector4 Tangent;
     public Vector4 BoneWeights;
     public UInt4 BoneIndices;
-}
-
-[StructLayout(LayoutKind.Sequential)]
-public struct UInt4
-{
-    public uint X;
-    public uint Y;
-    public uint Z;
-    public uint W;
 }
 
 public sealed class MeshPrimitive

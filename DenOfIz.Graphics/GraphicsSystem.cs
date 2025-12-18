@@ -6,11 +6,11 @@ namespace Graphics;
 
 public class PrepareFrameSystem : ISystem
 {
-    private GraphicsContext _ctx = null!;
+    private GraphicsResource _ctx = null!;
 
     public void Initialize(World world)
     {
-        _ctx = world.GetContext<GraphicsContext>();
+        _ctx = world.GetResource<GraphicsResource>();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -59,20 +59,22 @@ public class PrepareFrameSystem : ISystem
         _ctx.RenderGraph.SetDimensions(width, height);
 
         for (uint i = 0; i < _ctx.NumFrames; ++i)
+        {
             _ctx.ResourceTracking.TrackTexture(
                 _ctx.SwapChain.GetRenderTarget(i),
                 (uint)ResourceUsageFlagBits.Common,
                 QueueType.Graphics);
+        }
     }
 }
 
 public class PresentFrameSystem : ISystem
 {
-    private GraphicsContext _ctx = null!;
+    private GraphicsResource _ctx = null!;
 
     public void Initialize(World world)
     {
-        _ctx = world.GetContext<GraphicsContext>();
+        _ctx = world.GetResource<GraphicsResource>();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -134,7 +136,7 @@ public class GraphicsPlugin(
             NumBuffers = numFrames
         });
 
-        var context = new GraphicsContext(
+        var context = new GraphicsResource(
             graphicsApi,
             logicalDevice,
             swapChain,
@@ -148,7 +150,7 @@ public class GraphicsPlugin(
             width,
             height);
 
-        world.RegisterContext(context);
+        world.RegisterResource(context);
         world.AddSystem(new PrepareFrameSystem(), Schedule.PreRender);
         world.AddSystem(new PresentFrameSystem(), Schedule.PostRender);
     }

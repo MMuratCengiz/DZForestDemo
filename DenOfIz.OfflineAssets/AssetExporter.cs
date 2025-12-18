@@ -41,37 +41,37 @@ public sealed class AssetExporter : IDisposable
         return _gltfExporter.ValidateFile(StringView.Create(filePath));
     }
 
-    public AssetExportResult Export(AssetExportSettings settings)
+    public AssetExportResult Export(AssetExportDesc desc)
     {
-        if (string.IsNullOrEmpty(settings.SourcePath))
+        if (string.IsNullOrEmpty(desc.SourcePath))
         {
             return AssetExportResult.Failed("Source path is required.");
         }
 
-        if (!File.Exists(settings.SourcePath))
+        if (!File.Exists(desc.SourcePath))
         {
-            return AssetExportResult.Failed($"Source file not found: {settings.SourcePath}");
+            return AssetExportResult.Failed($"Source file not found: {desc.SourcePath}");
         }
 
-        if (string.IsNullOrEmpty(settings.OutputDirectory))
+        if (string.IsNullOrEmpty(desc.OutputDirectory))
         {
             return AssetExportResult.Failed("Output directory is required.");
         }
 
-        if (string.IsNullOrEmpty(settings.AssetName))
+        if (string.IsNullOrEmpty(desc.AssetName))
         {
-            settings.AssetName = Path.GetFileNameWithoutExtension(settings.SourcePath);
+            desc.AssetName = Path.GetFileNameWithoutExtension(desc.SourcePath);
         }
 
-        Directory.CreateDirectory(settings.OutputDirectory);
+        Directory.CreateDirectory(desc.OutputDirectory);
 
-        var gltfResult = ExportGltf(settings);
-        if (!gltfResult.Success || settings is { ExportSkeleton: false, ExportAnimations: false })
+        var gltfResult = ExportGltf(desc);
+        if (!gltfResult.Success || desc is { ExportSkeleton: false, ExportAnimations: false })
         {
             return gltfResult;
         }
 
-        var ozzResult = ExportOzz(settings, gltfResult.OutputPath!);
+        var ozzResult = ExportOzz(desc, gltfResult.OutputPath!);
         if (!ozzResult.Success)
         {
             return AssetExportResult.Failed($"GLTF exported but Ozz export failed: {ozzResult.ErrorMessage}");
@@ -84,10 +84,10 @@ public sealed class AssetExporter : IDisposable
         );
     }
 
-    private AssetExportResult ExportGltf(AssetExportSettings settings)
+    private AssetExportResult ExportGltf(AssetExportDesc desc)
     {
-        var desc = settings.ToGltfExportDesc();
-        var result = _gltfExporter.Export(ref desc);
+        var gltfExportDesc = desc.ToGltfExportDesc();
+        var result = _gltfExporter.Export(in gltfExportDesc);
 
         try
         {
@@ -105,15 +105,15 @@ public sealed class AssetExporter : IDisposable
         }
     }
 
-    private AssetExportResult ExportOzz(AssetExportSettings settings, string gltfOutputPath)
+    private AssetExportResult ExportOzz(AssetExportDesc desc, string gltfOutputPath)
     {
         if (!_ozzExporter.ValidateGltf(StringView.Create(gltfOutputPath)))
         {
             return AssetExportResult.Failed("GLTF file is not valid for Ozz export.");
         }
 
-        var desc = settings.ToOzzExportDesc(gltfOutputPath);
-        var result = _ozzExporter.Export(ref desc);
+        var gltfExportDesc = desc.ToOzzExportDesc(gltfOutputPath);
+        var result = _ozzExporter.Export(in gltfExportDesc);
 
         try
         {

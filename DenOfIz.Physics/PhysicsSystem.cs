@@ -7,11 +7,11 @@ namespace Physics;
 
 public sealed class PhysicsStepSystem : ISystem
 {
-    private PhysicsContext _physics = null!;
+    private PhysicsResource _physics = null!;
 
     public void Initialize(World world)
     {
-        _physics = world.GetContext<PhysicsContext>();
+        _physics = world.GetResource<PhysicsResource>();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -29,13 +29,13 @@ public sealed class PhysicsStepSystem : ISystem
 
 public sealed class PhysicsSyncSystem : ISystem
 {
-    private PhysicsContext _physics = null!;
+    private PhysicsResource _physics = null!;
     private World _world = null!;
 
     public void Initialize(World world)
     {
         _world = world;
-        _physics = world.GetContext<PhysicsContext>();
+        _physics = world.GetResource<PhysicsResource>();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -65,13 +65,13 @@ public sealed class PhysicsSyncSystem : ISystem
 public sealed class PhysicsCleanupSystem : ISystem
 {
     private readonly List<Entity> _entitiesToRemove = [];
-    private PhysicsContext _physics = null!;
+    private PhysicsResource _physics = null!;
     private World _world = null!;
 
     public void Initialize(World world)
     {
         _world = world;
-        _physics = world.GetContext<PhysicsContext>();
+        _physics = world.GetResource<PhysicsResource>();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -111,13 +111,13 @@ public sealed class PhysicsCleanupSystem : ISystem
 
 public sealed class PhysicsVelocitySyncSystem : ISystem
 {
-    private PhysicsContext _physics = null!;
+    private PhysicsResource _physics = null!;
     private World _world = null!;
 
     public void Initialize(World world)
     {
         _world = world;
-        _physics = world.GetContext<PhysicsContext>();
+        _physics = world.GetResource<PhysicsResource>();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

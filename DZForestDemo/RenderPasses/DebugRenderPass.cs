@@ -4,7 +4,7 @@ using Graphics.RenderGraph;
 
 namespace DZForestDemo.RenderPasses;
 
-public sealed class DebugRenderPass(GraphicsContext ctx) : IDisposable
+public sealed class DebugRenderPass(GraphicsResource ctx) : IDisposable
 {
     private readonly FrameDebugRenderer _debugRenderer = new(new FrameDebugRendererDesc
     {

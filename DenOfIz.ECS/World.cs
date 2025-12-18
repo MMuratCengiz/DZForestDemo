@@ -6,7 +6,7 @@ namespace ECS;
 public class World : IDisposable
 {
     private readonly List<ISystem> _allSystems = [];
-    private readonly Dictionary<Type, IContext> _contexts = new();
+    private readonly Dictionary<Type, IResource> _resources = new();
     private readonly List<SystemDescriptor> _descriptors = [];
 
     private readonly Dictionary<Schedule, ISystem[]> _schedules = new();
@@ -37,11 +37,14 @@ public class World : IDisposable
 
         _disposed = true;
 
-        for (var i = _allSystems.Count - 1; i >= 0; i--) _allSystems[i].Dispose();
-
-        foreach (var context in _contexts.Values)
+        for (var i = _allSystems.Count - 1; i >= 0; i--)
         {
-            if (context is IDisposable disposable)
+            _allSystems[i].Dispose();
+        }
+
+        foreach (var resource in _resources.Values)
+        {
+            if (resource is IDisposable disposable)
             {
                 disposable.Dispose();
             }
@@ -50,19 +53,19 @@ public class World : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    public void RegisterContext<T>(T context) where T : class, IContext
+    public void RegisterResource<T>(T resource) where T : class, IResource
     {
-        _contexts[typeof(T)] = context;
+        _resources[typeof(T)] = resource;
     }
 
-    public T GetContext<T>() where T : class, IContext
+    public T GetResource<T>() where T : class, IResource
     {
-        return (T)_contexts[typeof(T)];
+        return (T)_resources[typeof(T)];
     }
 
-    public T? TryGetContext<T>() where T : class, IContext
+    public T? TryGetResource<T>() where T : class, IResource
     {
-        return _contexts.TryGetValue(typeof(T), out var context) ? (T)context : null;
+        return _resources.TryGetValue(typeof(T), out var resource) ? (T)resource : null;
     }
 
     public SystemDescriptor AddSystem<T>(T system, Schedule schedule) where T : ISystem
@@ -194,7 +197,10 @@ public class World : IDisposable
         }
 
         ReadOnlySpan<ISystem> span = systems;
-        for (var i = 0; i < span.Length; i++) span[i].Run();
+        for (var i = 0; i < span.Length; i++)
+        {
+            span[i].Run();
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -202,10 +208,12 @@ public class World : IDisposable
     {
         ReadOnlySpan<ISystem> systems = _allSystemsArray;
         for (var i = 0; i < systems.Length; i++)
+        {
             if (systems[i].OnEvent(ref ev))
             {
                 return true;
             }
+        }
 
         return false;
     }
@@ -322,6 +330,9 @@ public class World : IDisposable
 
     public void Shutdown()
     {
-        for (var i = _allSystems.Count - 1; i >= 0; i--) _allSystems[i].Shutdown();
+        for (var i = _allSystems.Count - 1; i >= 0; i--)
+        {
+            _allSystems[i].Shutdown();
+        }
     }
 }

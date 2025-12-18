@@ -2,7 +2,7 @@ using DenOfIz;
 
 namespace Graphics;
 
-public sealed class GraphicsOptions
+public sealed class GraphicsDesc
 {
     public uint NumFrames { get; set; } = 3;
     public Format BackBufferFormat { get; set; } = Format.B8G8R8A8Unorm;

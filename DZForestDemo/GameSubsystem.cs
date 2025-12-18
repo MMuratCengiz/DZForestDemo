@@ -8,6 +8,7 @@ using Graphics.RenderGraph;
 using Physics;
 using Physics.Components;
 using RuntimeAssets;
+using RuntimeAssets.Components;
 
 namespace DZForestDemo;
 
@@ -15,11 +16,11 @@ public sealed class GameSystem : ISystem
 {
     private const float LightMoveSpeed = 10f;
     private readonly List<ShadowPass.ShadowData> _shadowData = [];
-    private AssetContext _assets = null!;
-    private AnimationContext _animation = null!;
+    private AssetResource _assets = null!;
+    private AnimationResource _animation = null!;
     private Camera _camera = null!;
     private CompositeRenderPass _compositePass = null!;
-    private GraphicsContext _ctx = null!;
+    private GraphicsResource _ctx = null!;
     private int _cubeCount;
 
     private RuntimeMeshHandle _cubeMesh;
@@ -32,7 +33,7 @@ public sealed class GameSystem : ISystem
     private Vector3 _lightCameraPosition;
     private Matrix4x4 _lightViewProjection;
     private StandardMaterial[] _materialPalette = null!;
-    private PhysicsContext _physics = null!;
+    private PhysicsResource _physics = null!;
     private RuntimeMeshHandle _platformMesh;
     private readonly Random _random = new();
     private SceneRenderPass _scenePass = null!;
@@ -50,6 +51,12 @@ public sealed class GameSystem : ISystem
     private RuntimeSkeletonHandle _vikingSkeleton;
     private RuntimeAnimationHandle _vikingAnimation;
 
+    // Fox model for animation testing
+    private ModelLoadResult? _foxModel;
+    private RuntimeTextureHandle _foxTexture;
+    private RuntimeSkeletonHandle _foxSkeleton;
+    private RuntimeAnimationHandle _foxAnimation;
+
     private StepTimer _stepTimer = null!;
     private float _totalTime;
     private UiRenderPass _uiPass = null!;
@@ -60,10 +67,10 @@ public sealed class GameSystem : ISystem
     public void Initialize(World world)
     {
         _world = world;
-        _ctx = world.GetContext<GraphicsContext>();
-        _assets = world.GetContext<AssetContext>();
-        _physics = world.GetContext<PhysicsContext>();
-        _animation = world.GetContext<AnimationContext>();
+        _ctx = world.GetResource<GraphicsResource>();
+        _assets = world.GetResource<AssetResource>();
+        _physics = world.GetResource<PhysicsResource>();
+        _animation = world.GetResource<AnimationResource>();
 
         _stepTimer = new StepTimer();
 
@@ -115,12 +122,13 @@ public sealed class GameSystem : ISystem
             const float delta = LightMoveSpeed * 0.016f;
             switch (ev.Key.KeyCode)
             {
-                case KeyCode.W: _debugLightPosition.Z -= delta; break;
-                case KeyCode.S: _debugLightPosition.Z += delta; break;
-                case KeyCode.A: _debugLightPosition.X -= delta; break;
-                case KeyCode.D: _debugLightPosition.X += delta; break;
-                case KeyCode.Q: _debugLightPosition.Y -= delta; break;
-                case KeyCode.E: _debugLightPosition.Y += delta; break;
+                // Use arrow keys and Page Up/Down for debug light (WASD is used by camera)
+                case KeyCode.Up: _debugLightPosition.Z -= delta; break;
+                case KeyCode.Down: _debugLightPosition.Z += delta; break;
+                case KeyCode.Left: _debugLightPosition.X -= delta; break;
+                case KeyCode.Right: _debugLightPosition.X += delta; break;
+                case KeyCode.Pagedown: _debugLightPosition.Y -= delta; break;
+                case KeyCode.Pageup: _debugLightPosition.Y += delta; break;
                 case KeyCode.L:
                     _useLightCamera = !_useLightCamera;
                     Console.WriteLine($"Light camera: {(_useLightCamera ? "ON" : "OFF")}");
@@ -136,7 +144,11 @@ public sealed class GameSystem : ISystem
     public void Run()
     {
         _stepTimer.Tick();
-        _totalTime += 0.016f;
+        var deltaTime = (float)_stepTimer.GetElapsedSeconds();
+        _totalTime += deltaTime;
+
+        // Update camera
+        _camera.Update(deltaTime);
 
         // Build batches once per frame for all render passes
         _batcher.BuildBatches();
@@ -342,56 +354,61 @@ public sealed class GameSystem : ISystem
         _sphereMesh = _assets.AddSphere(1.0f);
         _smallSphereMesh = _assets.AddSphere(0.3f, 8);
 
-        // Load Viking characters model
-        _vikingModel = _assets.AddModel("VikingRealm_Characters.glb");
-        if (!_vikingModel.Success)
+        // // Load Viking characters model (commented out for Fox testing)
+        // _vikingModel = _assets.AddModel("VikingRealm_Characters.glb");
+        // if (!_vikingModel.Success)
+        // {
+        //     Console.WriteLine($"Failed to load Viking model: {_vikingModel.ErrorMessage}");
+        // }
+        // else
+        // {
+        //     Console.WriteLine($"Loaded Viking model: {_vikingModel.MeshHandles.Count} meshes, {_vikingModel.Materials.Count} materials");
+        // }
+        //
+        // // Load Viking texture (for future texture support)
+        // _vikingTexture = _assets.AddTexture("VikingRealm_Texture_01_A_PolygonVikingRealm_Texture_01_A.dztex");
+
+        // Load Fox model for animation testing
+        _foxModel = _assets.AddModel("Fox.glb");
+        if (!_foxModel.Success)
         {
-            Console.WriteLine($"Failed to load Viking model: {_vikingModel.ErrorMessage}");
+            Console.WriteLine($"Failed to load Fox model: {_foxModel.ErrorMessage}");
         }
         else
         {
-            Console.WriteLine($"Loaded Viking model: {_vikingModel.MeshHandles.Count} meshes, {_vikingModel.Materials.Count} materials");
+            Console.WriteLine($"Loaded Fox model: {_foxModel.MeshHandles.Count} meshes, {_foxModel.Materials.Count} materials, {_foxModel.InverseBindMatrices.Count} inverse bind matrices");
         }
 
-        // Load Viking texture (for future texture support)
-        _vikingTexture = _assets.AddTexture("VikingRealm_Texture_01_A_PolygonVikingRealm_Texture_01_A.dztex");
-        if (!_vikingTexture.IsValid)
+        _foxTexture = _assets.AddTexture("Fox_Texture.dztex");
+        if (!_foxTexture.IsValid)
         {
-            Console.WriteLine("Failed to load Viking texture");
+            Console.WriteLine("Failed to load Fox texture");
         }
         else
         {
-            Console.WriteLine("Loaded Viking texture");
+            Console.WriteLine("Loaded Fox texture");
         }
 
         _assets.EndUpload();
 
-        // Load Viking skeleton and animation
-        _vikingSkeleton = _animation.LoadSkeleton("VikingRealm_Characters_skeleton.ozz");
-        if (_vikingSkeleton.IsValid)
+        // Load Fox skeleton and animation
+        _foxSkeleton = _animation.LoadSkeleton("Fox_skeleton.ozz");
+        if (_foxSkeleton.IsValid)
         {
-            Console.WriteLine("Loaded Viking skeleton");
-            _vikingAnimation = _animation.LoadAnimation(_vikingSkeleton, "VikingRealm_Characters_Take 001.ozz");
-            if (_vikingAnimation.IsValid)
-            {
-                Console.WriteLine("Loaded Viking animation");
-            }
-            else
-            {
-                Console.WriteLine("Failed to load Viking animation");
-            }
+            _foxAnimation = _animation.LoadAnimation(_foxSkeleton, "Fox_Run.ozz");
         }
-        else
-        {
-            Console.WriteLine("Failed to load Viking skeleton");
-        }
-        SpawnStaticBox(new Vector3(0, -2, 0), new Vector3(20f, 1f, 20f), _platformMesh, Materials.Concrete);
 
-        // Spawn Viking model meshes
-        if (_vikingModel is { Success: true })
+        SpawnStaticBox(new Vector3(0, -2, 0), new Vector3(20f, 1f, 20f), _platformMesh, Materials.Concrete);
+        if (_foxModel is { Success: true })
         {
-            SpawnVikingModel();
+            SpawnFoxModel();
         }
+
+        // // Spawn Viking model meshes (commented out for Fox testing)
+        // if (_vikingModel is { Success: true })
+        // {
+        //     SpawnVikingModel();
+        // }
         _world.AddComponent(_debugLightEntity, new MeshComponent(_smallSphereMesh));
         _world.AddComponent(_debugLightEntity, new StandardMaterial
         {
@@ -446,6 +463,62 @@ public sealed class GameSystem : ISystem
         for (var i = 0; i < 100; i++)
         {
             AddCube();
+        }
+    }
+
+    private void SpawnFoxModel()
+    {
+        if (_foxModel == null || !_foxModel.Success)
+        {
+            return;
+        }
+
+        var foxPositions = new[]
+        {
+            new Vector3(-4f, -1.5f, 0f),
+            new Vector3(0f, -1.5f, 0f),
+            new Vector3(4f, -1.5f, 0f),
+        };
+
+        var foxMaterial = new StandardMaterial
+        {
+            BaseColor = new Vector4(1f, 0.6f, 0.3f, 1f),
+            Metallic = 0f,
+            Roughness = 0.8f,
+            AmbientOcclusion = 1f
+        };
+
+        for (var i = 0; i < foxPositions.Length; i++)
+        {
+            var position = foxPositions[i];
+            var rotation = Quaternion.Identity;
+            var modelScale = Vector3.One * 0.1f;
+
+            foreach (var meshHandle in _foxModel.MeshHandles)
+            {
+                var entity = _world.Spawn();
+                _world.AddComponent(entity, new MeshComponent(meshHandle));
+                _world.AddComponent(entity, new Transform(position, rotation, modelScale));
+                _world.AddComponent(entity, foxMaterial);
+
+                if (!_foxSkeleton.IsValid || !_animation.TryGetSkeleton(_foxSkeleton, out var skeleton))
+                {
+                    continue;
+                }
+
+                var animator = new AnimatorComponent(_foxSkeleton)
+                {
+                    CurrentAnimation = _foxAnimation,
+                    IsPlaying = true,
+                    Loop = true,
+                    PlaybackSpeed = 1.0f + (i * 0.2f)
+                };
+                _world.AddComponent(entity, animator);
+
+                var numJoints = skeleton.NumJoints;
+                var boneMatrices = new BoneMatricesComponent(numJoints, _foxModel.InverseBindMatrices);
+                _world.AddComponent(entity, boneMatrices);
+            }
         }
     }
 

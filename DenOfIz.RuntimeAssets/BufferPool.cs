@@ -28,22 +28,24 @@ public sealed class BufferPool(LogicalDevice device, uint usages, ulong blockSiz
         _blocks.Clear();
     }
 
-    public BufferView Allocate(ulong size, ulong alignment = 16)
+    public GPUBufferView Allocate(ulong size, ulong alignment = 16)
     {
         size = AlignUp(size, alignment);
 
         var blocks = CollectionsMarshal.AsSpan(_blocks);
         for (var i = 0; i < blocks.Length; i++)
+        {
             if (blocks[i].TryAllocate(size, alignment, out var view))
             {
                 return view;
             }
+        }
 
         var newBlockSize = Math.Max(blockSize, size);
         var newBlock = new BufferBlock(device, usages, newBlockSize);
         _blocks.Add(newBlock);
 
-        return newBlock.TryAllocate(size, alignment, out var newView) ? newView : BufferView.Invalid;
+        return newBlock.TryAllocate(size, alignment, out var newView) ? newView : new GPUBufferView();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -69,18 +71,18 @@ public sealed class BufferPool(LogicalDevice device, uint usages, ulong blockSiz
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryAllocate(ulong size1, ulong alignment, out BufferView view)
+        public bool TryAllocate(ulong numBytes, ulong alignment, out GPUBufferView view)
         {
             var alignedOffset = AlignUp(_offset, alignment);
 
-            if (alignedOffset + size1 > size)
+            if (alignedOffset + numBytes > size)
             {
-                view = BufferView.Invalid;
+                view = new GPUBufferView();
                 return false;
             }
 
-            view = new BufferView(_buffer, alignedOffset, size1);
-            _offset = alignedOffset + size1;
+            view = new GPUBufferView{ Buffer = _buffer, Offset = alignedOffset, NumBytes = numBytes};
+            _offset = alignedOffset + numBytes;
             return true;
         }
     }

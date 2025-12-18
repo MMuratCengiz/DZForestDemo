@@ -8,5 +8,5 @@ public sealed class ApplicationOptions
     public uint Width { get; set; } = 1920;
     public uint Height { get; set; } = 1080;
     public double FixedUpdateRate { get; set; } = 60.0;
-    public GraphicsOptions Graphics { get; set; } = new();
+    public GraphicsDesc Graphics { get; set; } = new();
 }

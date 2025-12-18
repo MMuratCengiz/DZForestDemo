@@ -83,7 +83,7 @@ public sealed class RuntimeMeshStore(
         var vertexView = _vertexPool.Allocate(vertexSize, vertexStride);
         var indexView = _indexPool.Allocate(indexSize, sizeof(uint));
 
-        if (!vertexView.IsValid || !indexView.IsValid)
+        if (vertexView.Buffer == 0 || indexView.Buffer == 0)
         {
             return RuntimeMeshHandle.Invalid;
         }
@@ -134,7 +134,7 @@ public sealed class RuntimeMeshStore(
         var vertexView = _vertexPool.Allocate(vertexSize, vertexStride);
         var indexView = _indexPool.Allocate(indexSize, sizeof(uint));
 
-        if (!vertexView.IsValid || !indexView.IsValid)
+        if (vertexView.Buffer == 0 || indexView.Buffer == 0)
         {
             return RuntimeMeshHandle.Invalid;
         }

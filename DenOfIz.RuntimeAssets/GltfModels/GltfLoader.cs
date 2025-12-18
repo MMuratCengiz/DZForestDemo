@@ -1,6 +1,7 @@
 using System.Numerics;
+using DenOfIz;
 
-namespace RuntimeAssets;
+namespace RuntimeAssets.GltfModels;
 
 public sealed class GltfLoadResult
 {
@@ -84,6 +85,8 @@ public sealed class GltfLoader
 
         try
         {
+            // Use default options (raw glTF data, no conversions).
+            // GltfLoader applies all coordinate conversions explicitly.
             var options = new GltfLoadOptions
             {
                 LoadExternalBuffers = true,
@@ -279,7 +282,11 @@ public sealed class GltfLoader
             AddWarning($"Mesh {meshIndex} primitive {primIndex} has no POSITION attribute");
             return [];
         }
-        var positions = document.ReadPositions(positionAccessor);
+
+        // Read raw glTF data and convert to left-handed coordinate system
+        var positions = document.ReadAccessorVec3(positionAccessor);
+        GltfCoordinateConversion.ConvertPositionsInPlace(positions);  // Negate Z for left-handed
+
         if (positions.Length == 0)
         {
             return [];
@@ -293,7 +300,8 @@ public sealed class GltfLoader
 
         if (primitive.Attributes.TryGetValue("NORMAL", out var normalAccessor))
         {
-            normals = document.ReadNormals(normalAccessor);
+            normals = document.ReadAccessorVec3(normalAccessor);
+            GltfCoordinateConversion.ConvertNormalsInPlace(normals);  // Negate Z for left-handed
         }
 
         if (primitive.Attributes.TryGetValue("TEXCOORD_0", out var texCoordAccessor))
@@ -303,17 +311,33 @@ public sealed class GltfLoader
 
         if (primitive.Attributes.TryGetValue("TANGENT", out var tangentAccessor))
         {
-            tangents = document.ReadTangents(tangentAccessor);
+            tangents = document.ReadAccessorVec4(tangentAccessor);
+            GltfCoordinateConversion.ConvertTangentsInPlace(tangents);  // Negate Z and W for left-handed
         }
 
         if (primitive.Attributes.TryGetValue("JOINTS_0", out var jointsAccessor))
         {
             joints = ReadJointsAsVector4(document, jointsAccessor);
+            Console.WriteLine($"[GltfLoader] Found JOINTS_0 with {joints?.Length ?? 0} entries");
+        }
+        else
+        {
+            Console.WriteLine("[GltfLoader] WARNING: No JOINTS_0 attribute found - mesh has no skinning data!");
         }
 
         if (primitive.Attributes.TryGetValue("WEIGHTS_0", out var weightsAccessor))
         {
             weights = document.ReadAccessorVec4(weightsAccessor);
+            Console.WriteLine($"[GltfLoader] Found WEIGHTS_0 with {weights?.Length ?? 0} entries");
+            if (weights != null && weights.Length > 0)
+            {
+                var nonZeroWeights = weights.Count(w => w.X + w.Y + w.Z + w.W > 0.001f);
+                Console.WriteLine($"[GltfLoader] Vertices with non-zero weights: {nonZeroWeights}/{weights.Length}");
+            }
+        }
+        else
+        {
+            Console.WriteLine("[GltfLoader] WARNING: No WEIGHTS_0 attribute found - mesh has no skinning data!");
         }
 
         var vertices = new Vertex[positions.Length];
@@ -376,27 +400,29 @@ public sealed class GltfLoader
 
     private uint[] LoadIndices(GltfDocument document, GltfPrimitive primitive, int meshIndex, int primIndex)
     {
+        uint[] indices;
+
         if (primitive.Indices.HasValue)
         {
-            return document.ReadIndicesConverted(primitive.Indices.Value);
+            indices = document.ReadIndices(primitive.Indices.Value);
+        }
+        else
+        {
+            if (!primitive.Attributes.TryGetValue("POSITION", out var posAccessor) ||
+                posAccessor < 0 || posAccessor >= document.Accessors.Count)
+            {
+                return [];
+            }
+
+            var count = document.Accessors[posAccessor].Count;
+            indices = new uint[count];
+            for (var i = 0; i < count; i++)
+            {
+                indices[i] = (uint)i;
+            }
         }
 
-        if (!primitive.Attributes.TryGetValue("POSITION", out var posAccessor) ||
-            posAccessor < 0 || posAccessor >= document.Accessors.Count)
-        {
-            return [];
-        }
-
-        var count = document.Accessors[posAccessor].Count;
-        var indices = new uint[count];
-        for (var i = 0; i < count; i++)
-        {
-            indices[i] = (uint)i;
-        }
-        if (document.ConvertToLeftHanded)
-        {
-            GltfCoordinateConversion.ReverseWindingOrder(indices);
-        }
+        GltfCoordinateConversion.ReverseWindingOrder(indices);
         return indices;
     }
 
@@ -477,10 +503,10 @@ public sealed class GltfLoader
                 var path = channel.Target.Path.ToLowerInvariant();
                 switch (path)
                 {
-                    case "translation" when document.ConvertToLeftHanded:
+                    case "translation":
                     {
-                        // Convert translations: negate Z for each Vec3
-                        var translations = document.ReadTranslations(sampler.Output);
+                        var translations = document.ReadAccessorVec3(sampler.Output);
+                        GltfCoordinateConversion.ConvertPositionsInPlace(translations);
                         values = new float[translations.Length * 3];
                         for (var i = 0; i < translations.Length; i++)
                         {
@@ -488,12 +514,12 @@ public sealed class GltfLoader
                             values[i * 3 + 1] = translations[i].Y;
                             values[i * 3 + 2] = translations[i].Z;
                         }
-
                         break;
                     }
-                    case "rotation" when document.ConvertToLeftHanded:
+                    case "rotation":
                     {
-                        var rotations = document.ReadRotations(sampler.Output);
+                        var rotations = document.ReadAccessorVec4(sampler.Output);
+                        GltfCoordinateConversion.ConvertQuaternionsInPlace(rotations);
                         values = new float[rotations.Length * 4];
                         for (var i = 0; i < rotations.Length; i++)
                         {
@@ -502,7 +528,6 @@ public sealed class GltfLoader
                             values[i * 4 + 2] = rotations[i].Z;
                             values[i * 4 + 3] = rotations[i].W;
                         }
-
                         break;
                     }
                     default:
@@ -544,8 +569,9 @@ public sealed class GltfLoader
         for (var skinIndex = 0; skinIndex < document.Skins.Count; skinIndex++)
         {
             var skin = document.Skins[skinIndex];
+            
             var inverseBindMatrices = skin.InverseBindMatrices.HasValue
-                ? document.ReadMatrices(skin.InverseBindMatrices.Value).ToList()
+                ? document.ReadAccessorMat4(skin.InverseBindMatrices.Value).ToList()
                 : Enumerable.Repeat(Matrix4x4.Identity, skin.Joints.Count).ToList();
 
             while (inverseBindMatrices.Count < skin.Joints.Count)

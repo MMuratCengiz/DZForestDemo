@@ -26,8 +26,8 @@ public sealed class ShadowPass : IDisposable
         0.5f, 0.5f, 0.0f, 1.0f
     );
 
-    private readonly AssetContext _assets;
-    private readonly GraphicsContext _ctx;
+    private readonly AssetResource _assets;
+    private readonly GraphicsResource _ctx;
     private readonly RenderBatcher _batcher;
     private readonly Dictionary<RuntimeMeshHandle, BatchInstanceData>[] _perFrameBatchData;
 
@@ -50,7 +50,7 @@ public sealed class ShadowPass : IDisposable
     private readonly List<LightRenderInfo> _lightRenderInfos = [];
     private ResourceHandle _shadowAtlas;
 
-    public ShadowPass(GraphicsContext ctx, AssetContext assets, World world, RenderBatcher batcher)
+    public ShadowPass(GraphicsResource ctx, AssetResource assets, World world, RenderBatcher batcher)
     {
         _ctx = ctx;
         _assets = assets;
@@ -460,8 +460,8 @@ public sealed class ShadowPass : IDisposable
             var vb = runtimeMesh.VertexBuffer;
             var ib = runtimeMesh.IndexBuffer;
 
-            cmd.BindVertexBuffer(vb.View.Buffer, (uint)vb.View.Offset, vb.Stride, 0);
-            cmd.BindIndexBuffer(ib.View.Buffer, ib.IndexType, ib.View.Offset);
+            cmd.BindVertexBuffer(vb.View.GetBuffer(), (uint)vb.View.Offset, vb.Stride, 0);
+            cmd.BindIndexBuffer(ib.View.GetBuffer(), ib.IndexType, ib.View.Offset);
             cmd.DrawIndexed(ib.Count, (uint)batch.InstanceCount, 0, 0, 0);
         }
 

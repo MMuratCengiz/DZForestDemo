@@ -1,6 +1,6 @@
 using Graphics;
 
-namespace Application;
+namespace Application.Extensions;
 
 public static class GraphicsExtensions
 {

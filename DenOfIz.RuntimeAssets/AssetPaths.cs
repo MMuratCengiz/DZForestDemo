@@ -35,6 +35,7 @@ public static class AssetPaths
     public static string Models => Path.Combine(ContentRoot, "Models");
     public static string Textures => Path.Combine(ContentRoot, "Textures");
     public static string Animations => Path.Combine(ContentRoot, "Animations");
+    public static string Skeletons => Path.Combine(ContentRoot, "Skeletons");
 
     public static string Resolve(string relativePath)
     {
@@ -94,8 +95,22 @@ public static class AssetPaths
             return skeletonPath;
         }
 
+        // Check Skeletons folder first
+        var skelPath = Path.GetFullPath(Path.Combine(Skeletons, skeletonPath));
+        if (File.Exists(skelPath))
+        {
+            return skelPath;
+        }
+
+        // Fallback to Models folder
         var modelPath = Path.GetFullPath(Path.Combine(Models, skeletonPath));
-        return File.Exists(modelPath) ? modelPath : Path.GetFullPath(Path.Combine(Animations, skeletonPath));
+        if (File.Exists(modelPath))
+        {
+            return modelPath;
+        }
+
+        // Fallback to Animations folder
+        return Path.GetFullPath(Path.Combine(Animations, skeletonPath));
     }
 
     public static bool Exists(string relativePath)
