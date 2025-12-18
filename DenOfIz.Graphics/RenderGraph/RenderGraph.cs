@@ -213,7 +213,7 @@ public class RenderGraph : IDisposable
         entry.IsImported = true;
         entry.Texture = texture;
 
-        var handle = new ResourceHandle(_resourceCount, entry.Version);
+        var handle = new ResourceHandle((uint)_resourceCount, entry.Version);
         _namedResources[name] = handle;
         _resourceCount++;
         return handle;
@@ -232,7 +232,7 @@ public class RenderGraph : IDisposable
         entry.IsImported = true;
         entry.Buffer = buffer;
 
-        var handle = new ResourceHandle(_resourceCount, entry.Version);
+        var handle = new ResourceHandle((uint)_resourceCount, entry.Version);
         _namedResources[name] = handle;
         _resourceCount++;
         return handle;
@@ -251,7 +251,7 @@ public class RenderGraph : IDisposable
         entry.IsTransient = true;
         entry.TextureDesc = desc;
 
-        var handle = new ResourceHandle(_resourceCount, entry.Version);
+        var handle = new ResourceHandle((uint)_resourceCount, entry.Version);
         if (!string.IsNullOrEmpty(desc.DebugName))
         {
             _namedResources[desc.DebugName] = handle;
@@ -274,7 +274,7 @@ public class RenderGraph : IDisposable
         entry.IsTransient = true;
         entry.BufferDesc = desc;
 
-        var handle = new ResourceHandle(_resourceCount, entry.Version);
+        var handle = new ResourceHandle((uint)_resourceCount, entry.Version);
         if (!string.IsNullOrEmpty(desc.DebugName))
         {
             _namedResources[desc.DebugName] = handle;
@@ -297,7 +297,7 @@ public class RenderGraph : IDisposable
             throw new ArgumentException("Invalid resource handle");
         }
 
-        var entry = _resources[handle.Index];
+        var entry = _resources[(int)handle.Index];
         if (entry.Version != handle.Version)
         {
             throw new ArgumentException("Stale resource handle");
@@ -314,7 +314,7 @@ public class RenderGraph : IDisposable
             throw new ArgumentException("Invalid resource handle");
         }
 
-        var entry = _resources[handle.Index];
+        var entry = _resources[(int)handle.Index];
         if (entry.Version != handle.Version)
         {
             throw new ArgumentException("Stale resource handle");
@@ -421,7 +421,7 @@ public class RenderGraph : IDisposable
             return;
         }
 
-        var entry = _resources[handle.Index];
+        var entry = _resources[(int)handle.Index];
         entry.Texture = texture;
     }
 
@@ -446,7 +446,7 @@ public class RenderGraph : IDisposable
             return;
         }
 
-        var entry = _resources[handle.Index];
+        var entry = _resources[(int)handle.Index];
         if (entry.FirstPassIndex < 0)
         {
             entry.FirstPassIndex = passIndex;
@@ -566,7 +566,7 @@ public class RenderGraph : IDisposable
 
             foreach (var input in pass.Inputs)
             {
-                var writerPass = lastWriter[input.Handle.Index];
+                var writerPass = lastWriter[(int)input.Handle.Index];
                 if (writerPass >= 0 && writerPass != passIdx && !pass.DependsOnPasses.Contains(writerPass))
                 {
                     pass.DependsOnPasses.Add(writerPass);
@@ -576,7 +576,7 @@ public class RenderGraph : IDisposable
 
             foreach (var output in pass.Outputs)
             {
-                lastWriter[output.Handle.Index] = passIdx;
+                lastWriter[(int)output.Handle.Index] = passIdx;
             }
         }
     }

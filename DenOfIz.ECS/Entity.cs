@@ -4,20 +4,30 @@ namespace ECS;
 
 public readonly struct Entity : IEquatable<Entity>
 {
-    public readonly uint Index;
-    public readonly uint Generation;
+    private readonly Handle<EntityTag> _handle;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal Entity(uint index, uint generation)
     {
-        Index = index;
-        Generation = generation;
+        _handle = new Handle<EntityTag>(index, generation);
+    }
+
+    public uint Index
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _handle.Index;
+    }
+
+    public uint Generation
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _handle.Generation;
     }
 
     public bool IsValid
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => Generation != 0;
+        get => _handle.IsValid;
     }
 
     public static Entity Invalid
@@ -29,7 +39,7 @@ public readonly struct Entity : IEquatable<Entity>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(Entity other)
     {
-        return Index == other.Index && Generation == other.Generation;
+        return _handle.Equals(other._handle);
     }
 
     public override bool Equals(object? obj)
@@ -37,9 +47,10 @@ public readonly struct Entity : IEquatable<Entity>
         return obj is Entity other && Equals(other);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override int GetHashCode()
     {
-        return HashCode.Combine(Index, Generation);
+        return _handle.GetHashCode();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

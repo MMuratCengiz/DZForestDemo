@@ -45,7 +45,7 @@ public sealed class GameSystem : ISystem
     private ShadowPass _shadowPass = null!;
     private RuntimeMeshHandle _smallSphereMesh;
     private RuntimeMeshHandle _sphereMesh;
-    private RenderBatcher _batcher = null!;
+    private MyRenderBatcher _batcher = null!;
     private ModelLoadResult? _vikingModel;
     private RuntimeTextureHandle _vikingTexture;
     private RuntimeSkeletonHandle _vikingSkeleton;
@@ -80,7 +80,7 @@ public sealed class GameSystem : ISystem
         );
         _camera.SetAspectRatio(_ctx.Width, _ctx.Height);
 
-        _batcher = new RenderBatcher(_world);
+        _batcher = new MyRenderBatcher(_world);
         _shadowPass = new ShadowPass(_ctx, _assets, _world, _batcher);
         _scenePass = new SceneRenderPass(_ctx, _assets, _world, _batcher);
         _uiPass = new UiRenderPass(_ctx, _stepTimer);

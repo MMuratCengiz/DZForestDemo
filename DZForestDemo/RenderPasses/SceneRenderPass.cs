@@ -6,6 +6,7 @@ using DenOfIz;
 using ECS;
 using ECS.Components;
 using Graphics;
+using Graphics.Batching;
 using Graphics.RenderGraph;
 using RuntimeAssets;
 using Buffer = DenOfIz.Buffer;
@@ -25,7 +26,7 @@ public sealed class SceneRenderPass : IDisposable
 
 
     private readonly AssetResource _assets;
-    private readonly RenderBatcher _batcher;
+    private readonly MyRenderBatcher _batcher;
     private readonly GraphicsResource _ctx;
 
     private readonly Buffer[] _frameConstantsBuffers;
@@ -72,7 +73,7 @@ public sealed class SceneRenderPass : IDisposable
 
     private bool _disposed;
 
-    public SceneRenderPass(GraphicsResource ctx, AssetResource assets, World world, RenderBatcher batcher)
+    public SceneRenderPass(GraphicsResource ctx, AssetResource assets, World world, MyRenderBatcher batcher)
     {
         _ctx = ctx;
         _assets = assets;
@@ -456,16 +457,17 @@ public sealed class SceneRenderPass : IDisposable
         UpdateLightConstants(shadowData, frameIndex);
 
         var batchDataDict = _perFrameBatchData[frameIndex];
-        var allInstances = _batcher.AllInstances;
+        var staticBatcher = _batcher.StaticBatcher;
+        var allInstances = staticBatcher.Instances;
 
-        foreach (var batch in _batcher.Batches)
+        foreach (var batch in staticBatcher.Batches)
         {
-            var batchData = GetOrCreateBatchData(batchDataDict, batch.MeshHandle, batch.InstanceCount, frameIndex);
+            var batchData = GetOrCreateBatchData(batchDataDict, batch.Key, batch.Count, frameIndex);
             var instancePtr = (GpuInstanceData*)batchData.MappedPtr.ToPointer();
 
-            for (var i = 0; i < batch.InstanceCount; i++)
+            for (var i = 0; i < batch.Count; i++)
             {
-                var inst = allInstances[batch.StartInstance + i];
+                var inst = allInstances[batch.StartIndex + i];
                 instancePtr[i] = new GpuInstanceData
                 {
                     Model = inst.WorldMatrix,
@@ -511,9 +513,9 @@ public sealed class SceneRenderPass : IDisposable
         }
 
         var currentMeshType = (MeshType)255;
-        foreach (var batch in _batcher.Batches)
+        foreach (var batch in staticBatcher.Batches)
         {
-            ref readonly var runtimeMesh = ref _assets.GetMeshRef(batch.MeshHandle);
+            ref readonly var runtimeMesh = ref _assets.GetMeshRef(batch.Key);
             if (Unsafe.IsNullRef(ref Unsafe.AsRef(in runtimeMesh)))
             {
                 continue;
@@ -526,7 +528,7 @@ public sealed class SceneRenderPass : IDisposable
                 cmd.BindPipeline(pipeline);
             }
 
-            var batchData = batchDataDict[batch.MeshHandle];
+            var batchData = batchDataDict[batch.Key];
             cmd.BindResourceGroup(batchData.BindGroup);
 
             var vb = runtimeMesh.VertexBuffer;
@@ -534,7 +536,7 @@ public sealed class SceneRenderPass : IDisposable
 
             cmd.BindVertexBuffer(vb.View.GetBuffer(), (uint)vb.View.Offset, vb.Stride, 0);
             cmd.BindIndexBuffer(ib.View.GetBuffer(), ib.IndexType, ib.View.Offset);
-            cmd.DrawIndexed(ib.Count, (uint)batch.InstanceCount, 0, 0, 0);
+            cmd.DrawIndexed(ib.Count, (uint)batch.Count, 0, 0, 0);
         }
 
         RenderAnimatedInstances(cmd, frameIndex);
@@ -551,7 +553,6 @@ public sealed class SceneRenderPass : IDisposable
 
         cmd.BindPipeline(_skinnedPipeline);
 
-        // Bind all required resources for skinned pipeline
         cmd.BindResourceGroup(_skinnedFrameBindGroups[frameIndex]);
         cmd.BindResourceGroup(_skinnedLightBindGroups[frameIndex]);
         cmd.BindResourceGroup(_skinnedTextureBindGroups[frameIndex]);

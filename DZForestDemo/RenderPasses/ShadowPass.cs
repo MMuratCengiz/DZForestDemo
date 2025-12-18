@@ -6,6 +6,7 @@ using DenOfIz;
 using ECS;
 using ECS.Components;
 using Graphics;
+using Graphics.Batching;
 using Graphics.RenderGraph;
 using RuntimeAssets;
 using Buffer = DenOfIz.Buffer;
@@ -28,7 +29,7 @@ public sealed class ShadowPass : IDisposable
 
     private readonly AssetResource _assets;
     private readonly GraphicsResource _ctx;
-    private readonly RenderBatcher _batcher;
+    private readonly MyRenderBatcher _batcher;
     private readonly Dictionary<RuntimeMeshHandle, BatchInstanceData>[] _perFrameBatchData;
 
     // Pipeline variants for different mesh types
@@ -50,7 +51,7 @@ public sealed class ShadowPass : IDisposable
     private readonly List<LightRenderInfo> _lightRenderInfos = [];
     private ResourceHandle _shadowAtlas;
 
-    public ShadowPass(GraphicsResource ctx, AssetResource assets, World world, RenderBatcher batcher)
+    public ShadowPass(GraphicsResource ctx, AssetResource assets, World world, MyRenderBatcher batcher)
     {
         _ctx = ctx;
         _assets = assets;
@@ -391,29 +392,35 @@ public sealed class ShadowPass : IDisposable
             (uint)ResourceUsageFlagBits.DepthWrite, QueueType.Graphics);
 
         var batchDataDict = _perFrameBatchData[frameIndex];
-        var allInstances = _batcher.AllInstances;
+        var staticBatcher = _batcher.StaticBatcher;
+        var allInstances = staticBatcher.Instances;
 
-        // Update instance data for this light's pass
-        foreach (var batch in _batcher.Batches)
+        foreach (var batch in staticBatcher.Batches)
         {
-            var batchData = GetOrCreateBatchData(batchDataDict, batch.MeshHandle, batch.InstanceCount, frameIndex);
+            var batchData = GetOrCreateBatchData(batchDataDict, batch.Key, batch.Count, frameIndex);
             var instancePtr = (ShadowInstanceData*)batchData.MappedPtr.ToPointer();
 
-            for (var i = 0; i < batch.InstanceCount; i++)
+            for (var i = 0; i < batch.Count; i++)
             {
-                instancePtr[i] = new ShadowInstanceData { Model = allInstances[batch.StartInstance + i].WorldMatrix };
+                instancePtr[i] = new ShadowInstanceData { Model = allInstances[batch.StartIndex + i].WorldMatrix };
             }
         }
 
-        RenderShadowMap(ref ctx, atlas, lightInfo.RenderMatrix, lightInfo.AtlasOffset, frameIndex, lightInfo.ShadowIndex, batchDataDict);
+        RenderShadowMap(ref ctx, atlas, lightInfo.RenderMatrix, lightInfo.AtlasOffset, frameIndex, lightInfo.ShadowIndex, batchDataDict, staticBatcher);
     }
 
-    private unsafe void RenderShadowMap(ref RenderPassExecuteContext ctx, Texture atlas, Matrix4x4 lightViewProj,
-        Vector2 atlasOffset, int frameIndex, int shadowIndex, Dictionary<RuntimeMeshHandle, BatchInstanceData> batchDataDict)
+    private unsafe void RenderShadowMap(
+        ref RenderPassExecuteContext ctx,
+        Texture atlas,
+        Matrix4x4 lightViewProj,
+        Vector2 atlasOffset,
+        int frameIndex,
+        int shadowIndex,
+        Dictionary<RuntimeMeshHandle, BatchInstanceData> batchDataDict,
+        RenderBatcher<RuntimeMeshHandle, StaticInstance> staticBatcher)
     {
         var cmd = ctx.CommandList;
 
-        // Write to this light's dedicated buffer (not shared) to avoid overwrite during command recording
         var lightMatrixConstants = new LightMatrixConstants { LightViewProjection = lightViewProj };
         Unsafe.Write(_lightMatrixMappedPtrs[frameIndex][shadowIndex].ToPointer(), lightMatrixConstants);
 
@@ -435,18 +442,16 @@ public sealed class ShadowPass : IDisposable
         cmd.BindScissorRect((int)atlasOffset.X, (int)atlasOffset.Y, ShadowMapSize, ShadowMapSize);
         cmd.BindResourceGroup(_lightMatrixBindGroups[frameIndex][shadowIndex]);
 
-        // Track current pipeline to minimize state changes
-        var currentMeshType = (MeshType)255; // Invalid value to force first bind
+        var currentMeshType = (MeshType)255;
 
-        foreach (var batch in _batcher.Batches)
+        foreach (var batch in staticBatcher.Batches)
         {
-            ref readonly var runtimeMesh = ref _assets.GetMeshRef(batch.MeshHandle);
+            ref readonly var runtimeMesh = ref _assets.GetMeshRef(batch.Key);
             if (Unsafe.IsNullRef(ref Unsafe.AsRef(in runtimeMesh)))
             {
                 continue;
             }
 
-            // Bind appropriate pipeline based on mesh type
             if (runtimeMesh.MeshType != currentMeshType)
             {
                 currentMeshType = runtimeMesh.MeshType;
@@ -454,7 +459,7 @@ public sealed class ShadowPass : IDisposable
                 cmd.BindPipeline(pipeline);
             }
 
-            var batchData = batchDataDict[batch.MeshHandle];
+            var batchData = batchDataDict[batch.Key];
             cmd.BindResourceGroup(batchData.BindGroup);
 
             var vb = runtimeMesh.VertexBuffer;
@@ -462,7 +467,7 @@ public sealed class ShadowPass : IDisposable
 
             cmd.BindVertexBuffer(vb.View.GetBuffer(), (uint)vb.View.Offset, vb.Stride, 0);
             cmd.BindIndexBuffer(ib.View.GetBuffer(), ib.IndexType, ib.View.Offset);
-            cmd.DrawIndexed(ib.Count, (uint)batch.InstanceCount, 0, 0, 0);
+            cmd.DrawIndexed(ib.Count, (uint)batch.Count, 0, 0, 0);
         }
 
         cmd.EndRendering();

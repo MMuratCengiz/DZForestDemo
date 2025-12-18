@@ -318,28 +318,12 @@ public sealed class GltfLoader
         if (primitive.Attributes.TryGetValue("JOINTS_0", out var jointsAccessor))
         {
             joints = ReadJointsAsVector4(document, jointsAccessor);
-            Console.WriteLine($"[GltfLoader] Found JOINTS_0 with {joints?.Length ?? 0} entries");
-        }
-        else
-        {
-            Console.WriteLine("[GltfLoader] WARNING: No JOINTS_0 attribute found - mesh has no skinning data!");
         }
 
         if (primitive.Attributes.TryGetValue("WEIGHTS_0", out var weightsAccessor))
         {
             weights = document.ReadAccessorVec4(weightsAccessor);
-            Console.WriteLine($"[GltfLoader] Found WEIGHTS_0 with {weights?.Length ?? 0} entries");
-            if (weights != null && weights.Length > 0)
-            {
-                var nonZeroWeights = weights.Count(w => w.X + w.Y + w.Z + w.W > 0.001f);
-                Console.WriteLine($"[GltfLoader] Vertices with non-zero weights: {nonZeroWeights}/{weights.Length}");
-            }
         }
-        else
-        {
-            Console.WriteLine("[GltfLoader] WARNING: No WEIGHTS_0 attribute found - mesh has no skinning data!");
-        }
-
         var vertices = new Vertex[positions.Length];
 
         for (var i = 0; i < positions.Length; i++)

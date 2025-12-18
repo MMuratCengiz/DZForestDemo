@@ -80,7 +80,7 @@ internal class RenderGraphResourceEntry
     public Texture? Texture;
     public TransientTextureDesc TextureDesc;
     public RenderGraphResourceType Type;
-    public int Version;
+    public uint Version;
 
     public void Reset()
     {

@@ -22,7 +22,8 @@
       "WebFetch(domain:bevy.org)",
       "Bash(del \"C:\\Workspace\\DZForestDemo\\DenOfIz.ECS\\IContext.cs\")",
       "Bash(cmd /c del \"C:\\Workspace\\DZForestDemo\\DenOfIz.ECS\\IContext.cs\")",
-      "Bash(cmd /c \"del /f C:\\Workspace\\DZForestDemo\\DenOfIz.ECS\\IContext.cs\")"
+      "Bash(cmd /c \"del /f C:\\Workspace\\DZForestDemo\\DenOfIz.ECS\\IContext.cs\")",
+      "Bash(cmd /c del \"C:\\Workspace\\DZForestDemo\\DZForestDemo\\RenderPasses\\RenderBatcher.cs\")"
     ]
   }
 }
