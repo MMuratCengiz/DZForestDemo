@@ -69,6 +69,7 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
     private readonly RenderBatcher<RuntimeMeshHandle, StaticInstance> _staticBatcher = new(maxInstances);
     private readonly List<AnimatedInstance> _animatedInstances = [];
     private bool _disposed;
+    private SceneId _activeSceneFilter = SceneId.Invalid;
 
     public RenderBatcher<RuntimeMeshHandle, StaticInstance> StaticBatcher => _staticBatcher;
 
@@ -77,6 +78,12 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
     public int StaticInstanceCount => _staticBatcher.InstanceCount;
 
     public int AnimatedInstanceCount => _animatedInstances.Count;
+
+    public SceneId ActiveSceneFilter
+    {
+        get => _activeSceneFilter;
+        set => _activeSceneFilter = value;
+    }
 
     public void Dispose()
     {
@@ -96,9 +103,16 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
         _staticBatcher.Clear();
         _animatedInstances.Clear();
 
-        foreach (var (entity, mesh, transform, material) in world.Query<MeshComponent, Transform, StandardMaterial>())
+        var filterByScene = _activeSceneFilter.IsValid;
+
+        foreach (var (entity, mesh, localToWorld, material) in world.Query<MeshComponent, LocalToWorld, StandardMaterial>())
         {
             if (!mesh.IsValid)
+            {
+                continue;
+            }
+
+            if (filterByScene && !IsInActiveScene(entity))
             {
                 continue;
             }
@@ -110,16 +124,16 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
                 _animatedInstances.Add(new AnimatedInstance(
                     entity,
                     mesh.Mesh,
-                    transform.Matrix,
+                    localToWorld.Matrix,
                     material,
                     boneMatrices.Data));
                 continue;
             }
 
-            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.Matrix, material));
+            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, localToWorld.Matrix, material));
         }
 
-        foreach (var (entity, mesh, transform) in world.Query<MeshComponent, Transform>())
+        foreach (var (entity, mesh, localToWorld) in world.Query<MeshComponent, LocalToWorld>())
         {
             if (!mesh.IsValid)
             {
@@ -131,6 +145,11 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
                 continue;
             }
 
+            if (filterByScene && !IsInActiveScene(entity))
+            {
+                continue;
+            }
+
             if (world.HasComponent<AnimatorComponent>(entity) &&
                 world.TryGetComponent<BoneMatricesComponent>(entity, out var boneMatrices) &&
                 boneMatrices.IsValid)
@@ -138,16 +157,25 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
                 _animatedInstances.Add(new AnimatedInstance(
                     entity,
                     mesh.Mesh,
-                    transform.Matrix,
+                    localToWorld.Matrix,
                     DefaultMaterial,
                     boneMatrices.Data));
                 continue;
             }
 
-            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.Matrix, DefaultMaterial));
+            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, localToWorld.Matrix, DefaultMaterial));
         }
 
         _staticBatcher.Build();
+    }
+
+    private bool IsInActiveScene(Entity entity)
+    {
+        if (!world.TryGetComponent<SceneComponent>(entity, out var sceneComp))
+        {
+            return false;
+        }
+        return sceneComp.SceneId == _activeSceneFilter;
     }
 
     public void BuildBatches<TFilter>(TFilter filter) where TFilter : IInstanceFilter
@@ -155,7 +183,7 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
         _staticBatcher.Clear();
         _animatedInstances.Clear();
 
-        foreach (var (entity, mesh, transform, material) in world.Query<MeshComponent, Transform, StandardMaterial>())
+        foreach (var (entity, mesh, localToWorld, transform, material) in world.Query<MeshComponent, LocalToWorld, Transform, StandardMaterial>())
         {
             if (!mesh.IsValid)
             {
@@ -174,16 +202,16 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
                 _animatedInstances.Add(new AnimatedInstance(
                     entity,
                     mesh.Mesh,
-                    transform.Matrix,
+                    localToWorld.Matrix,
                     material,
                     boneMatrices.Data));
                 continue;
             }
 
-            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.Matrix, material));
+            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, localToWorld.Matrix, material));
         }
 
-        foreach (var (entity, mesh, transform) in world.Query<MeshComponent, Transform>())
+        foreach (var (entity, mesh, localToWorld, transform) in world.Query<MeshComponent, LocalToWorld, Transform>())
         {
             if (!mesh.IsValid)
             {
@@ -207,13 +235,13 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
                 _animatedInstances.Add(new AnimatedInstance(
                     entity,
                     mesh.Mesh,
-                    transform.Matrix,
+                    localToWorld.Matrix,
                     DefaultMaterial,
                     boneMatrices.Data));
                 continue;
             }
 
-            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.Matrix, DefaultMaterial));
+            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, localToWorld.Matrix, DefaultMaterial));
         }
 
         _staticBatcher.Build();

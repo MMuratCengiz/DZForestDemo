@@ -1,4 +1,5 @@
 using System.Numerics;
+using RuntimeAssets.GltfModels;
 
 namespace RuntimeAssets;
 
@@ -9,6 +10,8 @@ public sealed class ModelLoadResult
     public IReadOnlyList<RuntimeMeshHandle> MeshHandles { get; init; } = [];
     public IReadOnlyList<MaterialData> Materials { get; init; } = [];
     public IReadOnlyList<Matrix4x4> InverseBindMatrices { get; init; } = [];
+    public IReadOnlyList<GltfNodeInfo> Nodes { get; init; } = [];
+    public IReadOnlyList<GltfSkinInfo> Skins { get; init; } = [];
 
     public static ModelLoadResult Failed(string error)
     {

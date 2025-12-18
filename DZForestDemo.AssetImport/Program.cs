@@ -80,13 +80,6 @@ bool ImportModel(AssetProject project, string sourcePath, string assetName, floa
     settings.SmoothNormalsAngle = 80.0f;
     settings.ExportSkeleton = true;
     settings.ExportAnimations = true;
-    settings.OutputHandedness = Handedness.Left;
-
-    Console.WriteLine($"  Format: {settings.Format}");
-    Console.WriteLine($"  Scale: {settings.Scale}");
-    Console.WriteLine($"  Embed Textures: {settings.EmbedTextures}");
-    Console.WriteLine($"  Output Handedness: {settings.OutputHandedness}");
-    Console.WriteLine();
 
     var result = exporter.Export(settings);
 

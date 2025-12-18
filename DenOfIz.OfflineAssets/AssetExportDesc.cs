@@ -34,7 +34,6 @@ public sealed class AssetExportDesc
     public float SmoothNormalsAngle { get; set; } = 80.0f;
     public bool ExportSkeleton { get; set; } = true;
     public bool ExportAnimations { get; set; } = true;
-    public Handedness OutputHandedness { get; set; } = Handedness.Left;
 
     internal GltfExportDesc ToGltfExportDesc()
     {
@@ -73,9 +72,6 @@ public sealed class AssetExportDesc
             GltfSourcePath = StringView.Create(gltfOutputPath),
             OutputDirectory = StringView.Create(OutputDirectory),
             AssetNamePrefix = StringView.Create(AssetName),
-            OutputHandedness = OutputHandedness == Handedness.Left
-                ? DenOfIz.Handedness.Left
-                : DenOfIz.Handedness.Right,
             ExportSkeleton = ExportSkeleton,
             ExportAnimations = ExportAnimations,
             OverwriteExisting = OverwriteExisting

@@ -283,9 +283,8 @@ public sealed class GltfLoader
             return [];
         }
 
-        // Read raw glTF data and convert to left-handed coordinate system
         var positions = document.ReadAccessorVec3(positionAccessor);
-        GltfCoordinateConversion.ConvertPositionsInPlace(positions);  // Negate Z for left-handed
+        GltfCoordinateConversion.ConvertPositionsInPlace(positions); // Negate Z for left-handed
 
         if (positions.Length == 0)
         {
@@ -301,7 +300,7 @@ public sealed class GltfLoader
         if (primitive.Attributes.TryGetValue("NORMAL", out var normalAccessor))
         {
             normals = document.ReadAccessorVec3(normalAccessor);
-            GltfCoordinateConversion.ConvertNormalsInPlace(normals);  // Negate Z for left-handed
+            GltfCoordinateConversion.ConvertNormalsInPlace(normals); // Negate Z for left-handed
         }
 
         if (primitive.Attributes.TryGetValue("TEXCOORD_0", out var texCoordAccessor))
@@ -312,7 +311,7 @@ public sealed class GltfLoader
         if (primitive.Attributes.TryGetValue("TANGENT", out var tangentAccessor))
         {
             tangents = document.ReadAccessorVec4(tangentAccessor);
-            GltfCoordinateConversion.ConvertTangentsInPlace(tangents);  // Negate Z and W for left-handed
+            GltfCoordinateConversion.ConvertTangentsInPlace(tangents); // Negate Z and W for left-handed
         }
 
         if (primitive.Attributes.TryGetValue("JOINTS_0", out var jointsAccessor))
@@ -324,6 +323,7 @@ public sealed class GltfLoader
         {
             weights = document.ReadAccessorVec4(weightsAccessor);
         }
+
         var vertices = new Vertex[positions.Length];
 
         for (var i = 0; i < positions.Length; i++)
@@ -421,6 +421,9 @@ public sealed class GltfLoader
             var localTransform = document.GetNodeLocalTransform(i);
             var worldTransform = document.GetNodeWorldTransform(i);
 
+            var convertedLocal = GltfCoordinateConversion.ConvertMatrixHandedness(localTransform);
+            var convertedWorld = GltfCoordinateConversion.ConvertMatrixHandedness(worldTransform);
+
             nodes.Add(new GltfNodeInfo
             {
                 Name = node.Name ?? $"Node_{i}",
@@ -429,8 +432,8 @@ public sealed class GltfLoader
                 SkinIndex = node.Skin,
                 ParentIndex = parentMap.GetValueOrDefault(i, -1) >= 0 ? parentMap[i] : null,
                 ChildIndices = node.Children ?? [],
-                LocalTransform = localTransform,
-                WorldTransform = worldTransform
+                LocalTransform = convertedLocal,
+                WorldTransform = convertedWorld
             });
         }
 
@@ -498,6 +501,7 @@ public sealed class GltfLoader
                             values[i * 3 + 1] = translations[i].Y;
                             values[i * 3 + 2] = translations[i].Z;
                         }
+
                         break;
                     }
                     case "rotation":
@@ -512,6 +516,7 @@ public sealed class GltfLoader
                             values[i * 4 + 2] = rotations[i].Z;
                             values[i * 4 + 3] = rotations[i].W;
                         }
+
                         break;
                     }
                     default:
@@ -553,9 +558,10 @@ public sealed class GltfLoader
         for (var skinIndex = 0; skinIndex < document.Skins.Count; skinIndex++)
         {
             var skin = document.Skins[skinIndex];
-            
+
             var inverseBindMatrices = skin.InverseBindMatrices.HasValue
-                ? document.ReadAccessorMat4(skin.InverseBindMatrices.Value).ToList()
+                ? document.ReadAccessorMat4(skin.InverseBindMatrices.Value)
+                    .Select(GltfCoordinateConversion.ConvertMatrixHandedness).ToList()
                 : Enumerable.Repeat(Matrix4x4.Identity, skin.Joints.Count).ToList();
 
             while (inverseBindMatrices.Count < skin.Joints.Count)
@@ -583,6 +589,7 @@ public sealed class GltfLoader
         {
             allMatrices.AddRange(skin.InverseBindMatrices);
         }
+
         return allMatrices;
     }
 }

@@ -88,6 +88,29 @@ public struct Transform(Vector3 position, Quaternion rotation, Vector3 scale)
 public struct LocalToWorld(Matrix4x4 matrix)
 {
     public Matrix4x4 Matrix = matrix;
+
+    public static LocalToWorld Identity
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => new(Matrix4x4.Identity);
+    }
+}
+
+public struct Parent
+{
+    public Entity Value;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Parent(Entity parent)
+    {
+        Value = parent;
+    }
+
+    public bool HasParent
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => Value.IsValid;
+    }
 }
 
 [method: MethodImpl(MethodImplOptions.AggressiveInlining)]

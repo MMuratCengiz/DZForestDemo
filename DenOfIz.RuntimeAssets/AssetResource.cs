@@ -124,7 +124,9 @@ public sealed class AssetResource(LogicalDevice device) : IResource, IDisposable
             Success = true,
             MeshHandles = meshHandles,
             Materials = gltfResult.Materials,
-            InverseBindMatrices = gltfResult.InverseBindMatrices
+            InverseBindMatrices = gltfResult.InverseBindMatrices,
+            Nodes = gltfResult.Nodes,
+            Skins = gltfResult.Skins
         };
     }
 
