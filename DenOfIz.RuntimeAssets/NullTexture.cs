@@ -25,9 +25,7 @@ public sealed class NullTexture : IDisposable
             MipLevels = 1,
             ArraySize = 1,
             Format = Format.R8G8B8A8Unorm,
-            Descriptor = (uint)ResourceDescriptorFlagBits.Texture,
-            InitialUsage = (uint)ResourceUsageFlagBits.CopyDst,
-            Usages = (uint)(ResourceUsageFlagBits.CopyDst | ResourceUsageFlagBits.ShaderResource),
+            Usage = (uint)(TextureUsageFlagBits.CopyDst | TextureUsageFlagBits.TextureBinding),
             DebugName = StringView.Create("NullTexture_Purple")
         });
         UploadPixelData(device);
@@ -39,7 +37,7 @@ public sealed class NullTexture : IDisposable
         {
             NumBytes = 4, // 4 bytes for RGBA
             HeapType = HeapType.CpuGpu,
-            Descriptor = (uint)ResourceDescriptorFlagBits.None,
+            Usage = (uint)BufferUsageFlagBits.CopySrc,
             DebugName = StringView.Create("NullTexture_Staging")
         });
 

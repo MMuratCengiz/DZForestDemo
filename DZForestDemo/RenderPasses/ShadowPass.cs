@@ -84,7 +84,7 @@ public sealed class ShadowPass : IDisposable
             {
                 _lightMatrixBuffers[i][lightIdx] = logicalDevice.CreateBuffer(new BufferDesc
                 {
-                    Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
+                    Usage = (uint)BufferUsageFlagBits.Uniform,
                     HeapType = HeapType.CpuGpu,
                     NumBytes = (ulong)Unsafe.SizeOf<LightMatrixConstants>(),
                     DebugName = StringView.Create($"ShadowLightMatrix_{i}_{lightIdx}")
@@ -151,7 +151,7 @@ public sealed class ShadowPass : IDisposable
                 {
                     EntryPoint = StringView.Create("VSMain"),
                     Data = ByteArray.Create(Encoding.UTF8.GetBytes(vsSource)),
-                    Stage = ShaderStage.Vertex
+                    Stage = (uint)ShaderStageFlagBits.Vertex
                 }
             ])
         };
@@ -205,8 +205,7 @@ public sealed class ShadowPass : IDisposable
             Format = Format.D32Float,
             MipLevels = 1,
             ArraySize = 1,
-            Usages = (uint)(ResourceUsageFlagBits.DepthWrite | ResourceUsageFlagBits.ShaderResource),
-            Descriptor = (uint)(ResourceDescriptorFlagBits.DepthStencil | ResourceDescriptorFlagBits.Texture),
+            Usage = (uint)TextureUsageFlagBits.TextureBinding,
             DebugName = "ShadowAtlas"
         });
 
@@ -546,7 +545,7 @@ public sealed class ShadowPass : IDisposable
         var stride = (ulong)Unsafe.SizeOf<ShadowInstanceData>();
         var buffer = _ctx.LogicalDevice.CreateBuffer(new BufferDesc
         {
-            Descriptor = (uint)ResourceDescriptorFlagBits.StructuredBuffer,
+            // Descriptor = (uint)ResourceDescriptorFlagBits.StructuredBuffer,
             HeapType = HeapType.CpuGpu,
             NumBytes = stride * (ulong)capacity,
             StructureDesc = new StructuredBufferDesc

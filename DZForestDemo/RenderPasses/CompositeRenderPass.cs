@@ -44,13 +44,13 @@ public sealed class CompositeRenderPass : IDisposable
                 {
                     EntryPoint = StringView.Create("VSMain"),
                     Data = ByteArray.Create(Encoding.UTF8.GetBytes(vsSource)),
-                    Stage = ShaderStage.Vertex
+                    Stage = (uint)ShaderStageFlagBits.Vertex
                 },
                 new ShaderStageDesc
                 {
                     EntryPoint = StringView.Create("PSMain"),
                     Data = ByteArray.Create(Encoding.UTF8.GetBytes(psSource)),
-                    Stage = ShaderStage.Pixel
+                    Stage = (uint)ShaderStageFlagBits.Pixel
                 }
             ])
         };

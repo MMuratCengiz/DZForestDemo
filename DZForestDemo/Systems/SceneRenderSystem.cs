@@ -169,8 +169,7 @@ public sealed class SceneRenderSystem : ISystem
             Width = _ctx.Width,
             Height = _ctx.Height,
             Format = _ctx.BackBufferFormat,
-            Usages = (uint)(ResourceUsageFlagBits.RenderTarget | ResourceUsageFlagBits.ShaderResource),
-            Descriptor = (uint)(ResourceDescriptorFlagBits.RenderTarget | ResourceDescriptorFlagBits.Texture),
+            Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding),
             DebugName = "SceneRT"
         });
 

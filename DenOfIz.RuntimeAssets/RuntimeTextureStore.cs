@@ -78,9 +78,7 @@ public sealed class RuntimeTextureStore(LogicalDevice device) : IDisposable
             MipLevels = asset.MipLevels(),
             ArraySize = asset.ArraySize(),
             Format = asset.GetFormat(),
-            Descriptor = (uint)ResourceDescriptorFlagBits.Texture,
-            InitialUsage = (uint)ResourceUsageFlagBits.CopyDst,
-            Usages = (uint)(ResourceUsageFlagBits.CopyDst | ResourceUsageFlagBits.ShaderResource),
+            Usage = (uint)(TextureUsageFlagBits.CopyDst | TextureUsageFlagBits.TextureBinding),
             DebugName = StringView.Create(asset.Name().ToString())
         });
 
@@ -91,7 +89,7 @@ public sealed class RuntimeTextureStore(LogicalDevice device) : IDisposable
         {
             NumBytes = bufferSize,
             HeapType = HeapType.CpuGpu,
-            Descriptor = (uint)ResourceDescriptorFlagBits.None,
+            Usage = (uint)BufferUsageFlagBits.CopySrc,
             DebugName = StringView.Create("TextureStagingBuffer")
         });
 

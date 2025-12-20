@@ -108,7 +108,7 @@ public sealed class SceneRenderPass : IDisposable
         {
             _boneMatricesBuffers[i] = logicalDevice.CreateBuffer(new BufferDesc
             {
-                Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
+                Usage = (uint)BufferUsageFlagBits.Uniform,
                 HeapType = HeapType.CpuGpu,
                 NumBytes = (ulong)(MaxBones * Unsafe.SizeOf<Matrix4x4>()),
                 DebugName = StringView.Create($"BoneMatrices_{i}")
@@ -141,7 +141,7 @@ public sealed class SceneRenderPass : IDisposable
         {
             _frameConstantsBuffers[i] = logicalDevice.CreateBuffer(new BufferDesc
             {
-                Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
+                Usage = (uint)BufferUsageFlagBits.Uniform,
                 HeapType = HeapType.CpuGpu,
                 NumBytes = (ulong)Unsafe.SizeOf<FrameConstants>(),
                 DebugName = StringView.Create($"FrameConstants_{i}")
@@ -159,7 +159,7 @@ public sealed class SceneRenderPass : IDisposable
 
             _lightConstantsBuffers[i] = logicalDevice.CreateBuffer(new BufferDesc
             {
-                Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
+                Usage = (uint)BufferUsageFlagBits.Uniform,
                 HeapType = HeapType.CpuGpu,
                 NumBytes = (ulong)Unsafe.SizeOf<LightConstants>(),
                 DebugName = StringView.Create($"LightConstants_{i}")
@@ -318,13 +318,13 @@ public sealed class SceneRenderPass : IDisposable
                 {
                     EntryPoint = StringView.Create("VSMain"),
                     Data = ByteArray.Create(Encoding.UTF8.GetBytes(vsSource)),
-                    Stage = ShaderStage.Vertex
+                    Stage = (uint)ShaderStageFlagBits.Vertex
                 },
                 new ShaderStageDesc
                 {
                     EntryPoint = StringView.Create("PSMain"),
                     Data = ByteArray.Create(Encoding.UTF8.GetBytes(psSource)),
-                    Stage = ShaderStage.Pixel
+                    Stage = (uint)ShaderStageFlagBits.Pixel
                 }
             ])
         };
@@ -629,7 +629,7 @@ public sealed class SceneRenderPass : IDisposable
         var stride = (ulong)Unsafe.SizeOf<GpuInstanceData>();
         var buffer = _ctx.LogicalDevice.CreateBuffer(new BufferDesc
         {
-            Descriptor = (uint)ResourceDescriptorFlagBits.StructuredBuffer,
+            // Descriptor = (uint)ResourceDescriptorFlagBits.StructuredBuffer,
             HeapType = HeapType.CpuGpu,
             NumBytes = stride * (ulong)capacity,
             StructureDesc = new StructuredBufferDesc
@@ -676,7 +676,7 @@ public sealed class SceneRenderPass : IDisposable
         var stride = (ulong)Unsafe.SizeOf<GpuInstanceData>();
         var buffer = _ctx.LogicalDevice.CreateBuffer(new BufferDesc
         {
-            Descriptor = (uint)ResourceDescriptorFlagBits.StructuredBuffer,
+            // Descriptor = (uint)ResourceDescriptorFlagBits.StructuredBuffer,
             HeapType = HeapType.CpuGpu,
             NumBytes = stride * (ulong)capacity,
             StructureDesc = new StructuredBufferDesc

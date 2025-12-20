@@ -271,8 +271,7 @@ public sealed class UiRenderPass(GraphicsResource ctx, StepTimer stepTimer) : ID
                 Width = ctx.Width,
                 Height = ctx.Height,
                 Format = ctx.BackBufferFormat,
-                Usages = (uint)(ResourceUsageFlagBits.ShaderResource | ResourceUsageFlagBits.CopySrc),
-                Descriptor = (uint)ResourceDescriptorFlagBits.Texture,
+                Usage = (uint)(TextureUsageFlagBits.TextureBinding | TextureUsageFlagBits.CopySrc),
                 DebugName = "UIRT"
             });
     }

@@ -59,7 +59,7 @@ public sealed class BufferPool(LogicalDevice device, uint usages, ulong blockSiz
         private readonly Buffer _buffer = device.CreateBuffer(new BufferDesc
         {
             NumBytes = size,
-            Usages = usages,
+            Usage = usages,
             HeapType = HeapType.Gpu
         });
 

@@ -312,7 +312,7 @@ float4 main(PSInput input) : SV_TARGET
                 RegisterSpace = 0,
                 Binding = 0,
                 MaxArraySize = _desc.MaxTextures,
-                Type = ResourceBindingType.ShaderResource
+                Descriptor = (uint)ResourceDescriptorFlagBits.Texture
             }
         };
 
@@ -320,13 +320,13 @@ float4 main(PSInput input) : SV_TARGET
 
         var vsDesc = new ShaderStageDesc
         {
-            Stage = ShaderStage.Vertex,
+            Stage = (uint)ShaderStageFlagBits.Vertex,
             Data = vsData
         };
 
         var psDesc = new ShaderStageDesc
         {
-            Stage = ShaderStage.Pixel,
+            Stage = (uint)ShaderStageFlagBits.Pixel,
             Data = psData,
             Bindless = new BindlessDesc
             {
@@ -400,8 +400,7 @@ float4 main(PSInput input) : SV_TARGET
         var vertexBufferDesc = new BufferDesc
         {
             NumBytes = _desc.MaxVertices * 20,
-            Descriptor = (uint)ResourceDescriptorFlagBits.VertexBuffer,
-            Usages = (uint)ResourceUsageFlagBits.VertexAndConstantBuffer,
+            Usage = (uint)(BufferUsageFlagBits.Vertex | BufferUsageFlagBits.Uniform),
             HeapType = HeapType.CpuGpu,
             DebugName = StringView.Intern("ImGui Vertex Buffer")
         };
@@ -411,8 +410,7 @@ float4 main(PSInput input) : SV_TARGET
         var indexBufferDesc = new BufferDesc
         {
             NumBytes = _desc.MaxIndices * 2,
-            Descriptor = (uint)ResourceDescriptorFlagBits.IndexBuffer,
-            Usages = (uint)ResourceUsageFlagBits.IndexBuffer,
+            Usage = (uint)BufferUsageFlagBits.Index,
             HeapType = HeapType.CpuGpu,
             DebugName = StringView.Intern("ImGui Index Buffer")
         };
@@ -423,8 +421,7 @@ float4 main(PSInput input) : SV_TARGET
         var uniformBufferDesc = new BufferDesc
         {
             NumBytes = _alignedUniformSize * _desc.NumFrames,
-            Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
-            Usages = (uint)ResourceUsageFlagBits.VertexAndConstantBuffer,
+            Usage = (uint)ResourceUsageFlagBits.VertexAndConstantBuffer,
             HeapType = HeapType.CpuGpu,
             DebugName = StringView.Intern("ImGui Uniform Buffer")
         };
@@ -435,8 +432,7 @@ float4 main(PSInput input) : SV_TARGET
         var pixelConstantsBufferDesc = new BufferDesc
         {
             NumBytes = _alignedPixelConstantsSize * _desc.MaxTextures,
-            Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
-            Usages = (uint)ResourceUsageFlagBits.VertexAndConstantBuffer,
+            Usage = (uint)ResourceUsageFlagBits.VertexAndConstantBuffer,
             HeapType = HeapType.CpuGpu,
             DebugName = StringView.Intern("ImGui Pixel Constants Buffer")
         };
@@ -513,9 +509,7 @@ float4 main(PSInput input) : SV_TARGET
             ArraySize = 1,
             MipLevels = 1,
             Format = Format.R8G8B8A8Unorm,
-            InitialUsage = (uint)ResourceUsageFlagBits.Common,
-            Usages = (uint)ResourceUsageFlagBits.ShaderResource,
-            Descriptor = (uint)ResourceDescriptorFlagBits.Texture,
+            Usage = (uint)TextureUsageFlagBits.TextureBinding,
             HeapType = HeapType.Gpu,
             DebugName = StringView.Intern("ImGui Null Texture")
         };
@@ -539,9 +533,7 @@ float4 main(PSInput input) : SV_TARGET
             ArraySize = 1,
             MipLevels = 1,
             Format = Format.R8G8B8A8Unorm,
-            InitialUsage = (uint)ResourceUsageFlagBits.CopyDst,
-            Usages = (uint)ResourceUsageFlagBits.ShaderResource | (uint)ResourceUsageFlagBits.CopyDst,
-            Descriptor = (uint)ResourceDescriptorFlagBits.Texture,
+            Usage = (uint)(TextureUsageFlagBits.TextureBinding | TextureUsageFlagBits.CopyDst),
             HeapType = HeapType.Gpu,
             DebugName = StringView.Intern("ImGui Font Texture")
         };
@@ -549,8 +541,7 @@ float4 main(PSInput input) : SV_TARGET
         var uploadBufferDesc = new BufferDesc
         {
             NumBytes = (ulong)fontDataSize,
-            Descriptor = (uint)ResourceDescriptorFlagBits.Buffer,
-            Usages = (uint)ResourceUsageFlagBits.CopySrc,
+            Usage = (uint)BufferUsageFlagBits.CopySrc,
             HeapType = HeapType.CpuGpu,
             DebugName = StringView.Intern("ImGui Font Upload Buffer")
         };
@@ -560,8 +551,8 @@ float4 main(PSInput input) : SV_TARGET
         CopyFontData(fontData, uploadData, fontDataSize);
         uploadBuffer.UnmapMemory();
         using var resourceTracking = new ResourceTracking();
-        resourceTracking.TrackTexture(_fontTexture, (uint)ResourceUsageFlagBits.CopyDst, QueueType.Graphics);
-        resourceTracking.TrackBuffer(uploadBuffer, (uint)ResourceUsageFlagBits.CopySrc, QueueType.Graphics);
+        resourceTracking.TrackTexture(_fontTexture, QueueType.Graphics);
+        resourceTracking.TrackBuffer(uploadBuffer, QueueType.Graphics);
 
         var commandLists = _commandListPool!.GetCommandLists();
         var commandListArray = commandLists.ToArray();

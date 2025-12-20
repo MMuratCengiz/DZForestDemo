@@ -32,7 +32,7 @@ public sealed class InstanceBuffer<T> : IDisposable where T : unmanaged
         {
             _buffers[i] = logicalDevice.CreateBuffer(new BufferDesc
             {
-                Descriptor = (uint)ResourceDescriptorFlagBits.StructuredBuffer,
+                // Descriptor = (uint)ResourceDescriptorFlagBits.StructuredBuffer,
                 HeapType = HeapType.CpuGpu,
                 NumBytes = bufferSize,
                 StructureDesc = new StructuredBufferDesc
@@ -208,7 +208,7 @@ public sealed class DynamicInstanceBuffer<T> : IDisposable where T : unmanaged
         {
             _buffers[i] = _logicalDevice.CreateBuffer(new BufferDesc
             {
-                Descriptor = (uint)ResourceDescriptorFlagBits.StructuredBuffer,
+                // Descriptor = (uint)ResourceDescriptorFlagBits.StructuredBuffer,
                 HeapType = HeapType.CpuGpu,
                 NumBytes = bufferSize,
                 StructureDesc = new StructuredBufferDesc

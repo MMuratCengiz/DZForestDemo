@@ -18,8 +18,7 @@ public struct TransientTextureDesc
     public Format Format;
     public uint MipLevels;
     public uint ArraySize;
-    public uint Usages;
-    public uint Descriptor;
+    public uint Usage;
     public string DebugName;
 
     public static TransientTextureDesc RenderTarget(uint width, uint height, Format format, string debugName = "")
@@ -33,8 +32,7 @@ public struct TransientTextureDesc
             Format = format,
             MipLevels = 1,
             ArraySize = 1,
-            Usages = (uint)(ResourceUsageFlagBits.RenderTarget | ResourceUsageFlagBits.ShaderResource),
-            Descriptor = (uint)(ResourceDescriptorFlagBits.RenderTarget | ResourceDescriptorFlagBits.Texture),
+            Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding),
             DebugName = debugName
         };
     }
@@ -51,8 +49,7 @@ public struct TransientTextureDesc
             Format = format,
             MipLevels = 1,
             ArraySize = 1,
-            Usages = (uint)(ResourceUsageFlagBits.DepthWrite | ResourceUsageFlagBits.DepthRead),
-            Descriptor = (uint)ResourceDescriptorFlagBits.DepthStencil,
+            Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding),
             DebugName = debugName
         };
     }
@@ -61,7 +58,7 @@ public struct TransientTextureDesc
 public struct TransientBufferDesc
 {
     public ulong NumBytes;
-    public uint Usages;
+    public uint Usage;
     public uint Descriptor;
     public HeapType HeapType;
     public string DebugName;

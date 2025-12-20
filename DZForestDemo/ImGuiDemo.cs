@@ -84,11 +84,7 @@ public class ImGuiDemoWindow : IDisposable
         const uint numFrames = 3;
         for (uint i = 0; i < numFrames; ++i)
         {
-            _resourceTracking.TrackTexture(
-                _swapChain.GetRenderTarget(i),
-                (uint)ResourceUsageFlagBits.Common,
-                QueueType.Graphics
-            );
+            _resourceTracking.TrackTexture(_swapChain.GetRenderTarget(i), QueueType.Graphics);
         }
 
         _emptySemaphoreArray = new SemaphoreArray();

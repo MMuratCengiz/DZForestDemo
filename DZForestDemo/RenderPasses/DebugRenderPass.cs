@@ -46,8 +46,7 @@ public sealed class DebugRenderPass(GraphicsResource ctx) : IDisposable
             Width = ctx.Width,
             Height = ctx.Height,
             Format = ctx.BackBufferFormat,
-            Usages = (uint)(ResourceUsageFlagBits.RenderTarget | ResourceUsageFlagBits.ShaderResource),
-            Descriptor = (uint)(ResourceDescriptorFlagBits.RenderTarget | ResourceDescriptorFlagBits.Texture),
+            Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding),
             DebugName = "DebugRT"
         });
 

@@ -711,20 +711,17 @@ public class RenderGraph : IDisposable
                     var desc = entry.TextureDesc;
                     var texture = _logicalDevice.CreateTexture(new TextureDesc
                     {
-                        Aspect = desc.Aspect,
                         Width = desc.Width > 0 ? desc.Width : Width,
                         Height = desc.Height > 0 ? desc.Height : Height,
                         Depth = desc.Depth > 0 ? desc.Depth : 1,
                         Format = desc.Format,
                         MipLevels = desc.MipLevels > 0 ? desc.MipLevels : 1,
                         ArraySize = desc.ArraySize > 0 ? desc.ArraySize : 1,
-                        Usages = desc.Usages,
-                        Descriptor = desc.Descriptor,
+                        Usage = desc.Usage,
                         HeapType = HeapType.Gpu,
-                        InitialUsage = (uint)ResourceUsageFlagBits.Common,
                         DebugName = StringView.Intern(desc.DebugName ?? "TransientTexture")
                     });
-                    ResourceTracking.TrackTexture(texture, (uint)ResourceUsageFlagBits.Common, QueueType.Graphics);
+                    ResourceTracking.TrackTexture(texture, QueueType.Graphics);
                     transientTextures.Add(texture);
                     entry.Texture = texture;
                 }
@@ -743,8 +740,7 @@ public class RenderGraph : IDisposable
                     var buffer = _logicalDevice.CreateBuffer(new BufferDesc
                     {
                         NumBytes = desc.NumBytes,
-                        Usages = desc.Usages,
-                        Descriptor = desc.Descriptor,
+                        Usage = desc.Usage,
                         HeapType = desc.HeapType,
                         DebugName = StringView.Intern(desc.DebugName ?? "TransientBuffer")
                     });

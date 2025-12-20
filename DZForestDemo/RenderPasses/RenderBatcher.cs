@@ -259,7 +259,6 @@ public sealed class InstanceBuffer<T> : IDisposable where T : unmanaged
         {
             _buffers[i] = logicalDevice.CreateBuffer(new BufferDesc
             {
-                Descriptor = (uint)ResourceDescriptorFlagBits.StructuredBuffer,
                 HeapType = HeapType.CpuGpu,
                 NumBytes = bufferSize,
                 StructureDesc = new StructuredBufferDesc

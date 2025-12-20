@@ -43,10 +43,7 @@ public class GraphicsResource : IResource, IDisposable
 
         for (uint i = 0; i < numFrames; ++i)
         {
-            ResourceTracking.TrackTexture(
-                swapChain.GetRenderTarget(i),
-                (uint)ResourceUsageFlagBits.Common,
-                QueueType.Graphics);
+            ResourceTracking.TrackTexture(swapChain.GetRenderTarget(i), QueueType.Graphics);
         }
     }
 

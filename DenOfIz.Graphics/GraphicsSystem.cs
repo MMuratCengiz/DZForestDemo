@@ -60,10 +60,7 @@ public class PrepareFrameSystem : ISystem
 
         for (uint i = 0; i < _ctx.NumFrames; ++i)
         {
-            _ctx.ResourceTracking.TrackTexture(
-                _ctx.SwapChain.GetRenderTarget(i),
-                (uint)ResourceUsageFlagBits.Common,
-                QueueType.Graphics);
+            _ctx.ResourceTracking.TrackTexture(_ctx.SwapChain.GetRenderTarget(i), QueueType.Graphics);
         }
     }
 }
