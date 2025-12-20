@@ -8,7 +8,6 @@ struct PSInput
     float4 Position : SV_POSITION;
 };
 
-// Per-instance data (only need model matrix for shadows)
 struct ShadowInstanceData
 {
     float4x4 Model;
