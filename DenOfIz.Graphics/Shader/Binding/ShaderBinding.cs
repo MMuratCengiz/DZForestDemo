@@ -1,13 +1,13 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 using DenOfIz;
 
 namespace Graphics.Shader.Binding;
 
-public class ShaderBinding
+public sealed class ShaderBinding : IDisposable
 {
     public ResourceBindGroup BindGroup { get; }
 
-    private struct SrvUavData(Texture? texture, GPUBufferView? buffer)
+    private readonly struct SrvUavData(Texture? texture, GPUBufferView? buffer)
     {
         public readonly Texture? Texture = texture;
         public readonly GPUBufferView? Buffer = buffer;
@@ -15,18 +15,25 @@ public class ShaderBinding
 
     private readonly uint _registerSpace;
     private readonly BindingContext _ctx;
+    private readonly IReadOnlyList<ResourceBindingSlot> _slots;
 
-    private readonly List<GPUBufferView> _cbvData = [];
-    private readonly List<SrvUavData> _srvData = [];
-    private readonly List<SrvUavData> _uavData = [];
-    private readonly List<Sampler> _samplers = [];
+    private readonly Dictionary<uint, GPUBufferView> _cbvData = [];
+    private readonly Dictionary<uint, SrvUavData> _srvData = [];
+    private readonly Dictionary<uint, SrvUavData> _uavData = [];
+    private readonly Dictionary<uint, Sampler> _samplers = [];
 
     private bool _isDirty = true;
+    private bool _disposed;
+
+    public int PoolHandle { get; internal set; } = -1;
+    public uint RegisterSpace => _registerSpace;
+    public bool IsInitialized => _cbvData.Count > 0 || _srvData.Count > 0 || _uavData.Count > 0 || _samplers.Count > 0;
 
     public ShaderBinding(BindingContext ctx, uint registerSpace)
     {
         _ctx = ctx;
         _registerSpace = registerSpace;
+        _slots = ctx.GetSlotsForSpace(registerSpace);
 
         ResourceBindGroupDesc groupDesc = new()
         {
@@ -36,6 +43,15 @@ public class ShaderBinding
         BindGroup = _ctx.LogicalDevice.CreateResourceBindGroup(groupDesc);
     }
 
+    public ShaderBinding(BindingContext ctx, uint registerSpace, ResourceBindGroup bindGroup)
+    {
+        _ctx = ctx;
+        _registerSpace = registerSpace;
+        _slots = ctx.GetSlotsForSpace(registerSpace);
+        BindGroup = bindGroup;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Update()
     {
         if (!_isDirty)
@@ -43,150 +59,247 @@ public class ShaderBinding
             return;
         }
 
-        var bindingSlots = _ctx.ResourceBindingSlots;
         BindGroup.BeginUpdate();
-        for (var i = 0; i < bindingSlots.Count; ++i)
+        foreach (var slot in _slots)
         {
-            BindResourceSlotsUpdateSlot(bindingSlots[i]);
+            UpdateSlot(slot);
         }
-
         BindGroup.EndUpdate();
+        _isDirty = false;
     }
 
-    private void BindResourceSlotsUpdateSlot(ResourceBindingSlot slot)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void UpdateSlot(ResourceBindingSlot slot)
     {
         switch (slot.Type)
         {
             case ResourceBindingType.ConstantBuffer:
-                var data = _cbvData[(int)slot.Binding];
-                BindBufferDesc bindBufferDesc = new()
+                if (_cbvData.TryGetValue(slot.Binding, out var cbvData))
                 {
-                    Binding = slot.Binding,
-                    Resource = data.Buffer,
-                    ResourceOffset = data.Offset
-                };
-                BindGroup.CbvWithDesc(bindBufferDesc);
-                break;
-            case ResourceBindingType.ShaderResource:
-                var srvData = _srvData[(int)slot.Binding];
-                if (srvData.Texture != null)
-                {
-                    BindGroup.SrvTexture(slot.Binding, srvData.Texture);
+                    BindGroup.CbvWithDesc(new BindBufferDesc
+                    {
+                        Binding = slot.Binding,
+                        Resource = cbvData.Buffer,
+                        ResourceOffset = cbvData.Offset
+                    });
                 }
-                else if (srvData.Buffer != null)
+                break;
+
+            case ResourceBindingType.ShaderResource:
+                if (_srvData.TryGetValue(slot.Binding, out var srvData))
                 {
-                    BindGroup.SrvBufferWithDesc(
-                        new BindBufferDesc
+                    if (srvData.Texture != null)
+                    {
+                        BindGroup.SrvTexture(slot.Binding, srvData.Texture);
+                    }
+                    else if (srvData.Buffer.HasValue)
+                    {
+                        BindGroup.SrvBufferWithDesc(new BindBufferDesc
                         {
                             Binding = slot.Binding,
                             Resource = srvData.Buffer.Value.Buffer,
                             ResourceOffset = srvData.Buffer.Value.Offset
                         });
+                    }
                 }
-
                 break;
+
             case ResourceBindingType.UnorderedAccess:
-                var uavData = _uavData[(int)slot.Binding];
-                if ((ulong)uavData.Texture == 0)
+                if (_uavData.TryGetValue(slot.Binding, out var uavData))
                 {
-                    BindGroup.UavTexture(slot.Binding, uavData.Texture);
-                }
-                else if (uavData.Buffer != null)
-                {
-                    BindGroup.UavBufferWithDesc(
-                        new BindBufferDesc
+                    if (uavData.Texture != null)
+                    {
+                        BindGroup.UavTexture(slot.Binding, uavData.Texture);
+                    }
+                    else if (uavData.Buffer.HasValue)
+                    {
+                        BindGroup.UavBufferWithDesc(new BindBufferDesc
                         {
                             Binding = slot.Binding,
                             Resource = uavData.Buffer.Value.Buffer,
                             ResourceOffset = uavData.Buffer.Value.Offset
                         });
+                    }
                 }
-
                 break;
+
             case ResourceBindingType.Sampler:
-                var sampler = _samplers[(int)slot.Binding];
-                BindGroup.Sampler(slot.Binding, sampler);
+                if (_samplers.TryGetValue(slot.Binding, out var sampler))
+                {
+                    BindGroup.Sampler(slot.Binding, sampler);
+                }
+                break;
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SetTexture(ResourceBindingSlot slot, Texture texture)
+    {
+        switch (slot.Type)
+        {
+            case ResourceBindingType.ShaderResource:
+                if (!_srvData.TryGetValue(slot.Binding, out var existingSrv) || existingSrv.Texture != texture)
+                {
+                    _srvData[slot.Binding] = new SrvUavData(texture, null);
+                    _isDirty = true;
+                }
+                break;
+            case ResourceBindingType.UnorderedAccess:
+                if (!_uavData.TryGetValue(slot.Binding, out var existingUav) || existingUav.Texture != texture)
+                {
+                    _uavData[slot.Binding] = new SrvUavData(texture, null);
+                    _isDirty = true;
+                }
                 break;
         }
     }
 
     public void SetTexture(string name, Texture texture)
     {
-        _isDirty = true;
-        var slot = _ctx.GetSlot(name);
-        switch (slot.Type)
+        SetTexture(_ctx.GetSlot(name), texture);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public unsafe void SetData<T>(ResourceBindingSlot slot, string allocationKey, in T data) where T : unmanaged
+    {
+        var size = (ulong)Unsafe.SizeOf<T>();
+        var bufferView = _ctx.GetFreeCpuVisibleAddress(this, allocationKey, size);
+        Unsafe.Write(bufferView.MappedMemory.ToPointer(), data);
+
+        if (!_cbvData.TryGetValue(slot.Binding, out var existing) ||
+            existing.Buffer != bufferView.Buffer || existing.Offset != bufferView.Offset)
         {
-            case ResourceBindingType.ConstantBuffer:
-                break;
-            case ResourceBindingType.ShaderResource:
-                _srvData[(int)slot.Binding] = new SrvUavData(texture, null);
-                break;
-            case ResourceBindingType.UnorderedAccess:
-                _uavData[(int)slot.Binding] = new SrvUavData(texture, null);
-                break;
-            case ResourceBindingType.Sampler:
-                break;
+            _cbvData[slot.Binding] = new GPUBufferView
+            {
+                Buffer = bufferView.Buffer,
+                NumBytes = bufferView.NumBytes,
+                Offset = bufferView.Offset
+            };
+            _isDirty = true;
         }
     }
 
-    public void SetData(string name, ReadOnlySpan<byte> data)
+    public unsafe void SetData<T>(string name, in T data) where T : unmanaged
     {
         var slot = _ctx.GetSlot(name);
-        var freeAddress = _ctx.GetFreeCpuVisibleAddress(this, name);
-
-        BindBufferDesc bindBufferDesc = new()
-        {
-            Binding = slot.Binding,
-            Resource = freeAddress.Buffer,
-            ResourceOffset = freeAddress.Offset
-        };
-
         if (slot.Type != ResourceBindingType.ConstantBuffer)
         {
             throw new ArgumentException("Only constant buffers can be set with SetData");
         }
+        SetData(slot, name, data);
+    }
 
-        _cbvData[(int)slot.Binding] = new GPUBufferView
-            { Buffer = freeAddress.Buffer, NumBytes = freeAddress.NumBytes, Offset = freeAddress.Offset };
-
-        unsafe
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SetBuffer(ResourceBindingSlot slot, GPUBufferView buffer)
+    {
+        switch (slot.Type)
         {
-            Unsafe.Write(freeAddress.MappedMemory.ToPointer(), data[..(int)freeAddress.NumBytes]);
+            case ResourceBindingType.ConstantBuffer:
+                if (!_cbvData.TryGetValue(slot.Binding, out var existingCbv) ||
+                    existingCbv.Buffer != buffer.Buffer || existingCbv.Offset != buffer.Offset)
+                {
+                    _cbvData[slot.Binding] = buffer;
+                    _isDirty = true;
+                }
+                break;
+            case ResourceBindingType.ShaderResource:
+                if (!_srvData.TryGetValue(slot.Binding, out var existingSrv) ||
+                    !existingSrv.Buffer.HasValue ||
+                    existingSrv.Buffer.Value.Buffer != buffer.Buffer ||
+                    existingSrv.Buffer.Value.Offset != buffer.Offset)
+                {
+                    _srvData[slot.Binding] = new SrvUavData(null, buffer);
+                    _isDirty = true;
+                }
+                break;
+            case ResourceBindingType.UnorderedAccess:
+                if (!_uavData.TryGetValue(slot.Binding, out var existingUav) ||
+                    !existingUav.Buffer.HasValue ||
+                    existingUav.Buffer.Value.Buffer != buffer.Buffer ||
+                    existingUav.Buffer.Value.Offset != buffer.Offset)
+                {
+                    _uavData[slot.Binding] = new SrvUavData(null, buffer);
+                    _isDirty = true;
+                }
+                break;
         }
     }
 
     public void SetBuffer(string name, GPUBufferView buffer)
     {
-        var slot = _ctx.GetSlot(name);
-        switch (slot.Type)
+        SetBuffer(_ctx.GetSlot(name), buffer);
+    }
+
+    public void SetBuffer(string name, DenOfIz.Buffer buffer, ulong offset = 0, ulong numBytes = 0)
+    {
+        SetBuffer(_ctx.GetSlot(name), new GPUBufferView
         {
-            case ResourceBindingType.ConstantBuffer:
-                _cbvData[(int)slot.Binding] = buffer;
-                break;
-            case ResourceBindingType.ShaderResource:
-                _srvData[(int)slot.Binding] = new SrvUavData(null, buffer);
-                break;
-            case ResourceBindingType.UnorderedAccess:
-                _uavData[(int)slot.Binding] = new SrvUavData(null, buffer);
-                break;
-            case ResourceBindingType.Sampler:
-                break;
+            Buffer = buffer,
+            Offset = offset,
+            NumBytes = numBytes
+        });
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void SetSampler(ResourceBindingSlot slot, Sampler sampler)
+    {
+        if (!_samplers.TryGetValue(slot.Binding, out var existing) || existing != sampler)
+        {
+            _samplers[slot.Binding] = sampler;
+            _isDirty = true;
         }
     }
 
     public void SetSampler(string name, Sampler sampler)
     {
-        var slot = _ctx.GetSlot(name);
-        _samplers[(int)slot.Binding] = sampler;
+        SetSampler(_ctx.GetSlot(name), sampler);
     }
 
     public ShaderBinding Copy()
     {
-        ShaderBinding @new = new(_ctx, _registerSpace);
-        @new._cbvData.AddRange(_cbvData);
-        @new._srvData.AddRange(_srvData);
-        @new._uavData.AddRange(_uavData);
-        @new.Update();
-        return @new;
+        var copy = new ShaderBinding(_ctx, _registerSpace);
+        foreach (var (k, v) in _cbvData)
+        {
+            copy._cbvData[k] = v;
+        }
+
+        foreach (var (k, v) in _srvData)
+        {
+            copy._srvData[k] = v;
+        }
+
+        foreach (var (k, v) in _uavData)
+        {
+            copy._uavData[k] = v;
+        }
+
+        foreach (var (k, v) in _samplers)
+        {
+            copy._samplers[k] = v;
+        }
+
+        copy.Update();
+        return copy;
+    }
+
+    public void Reset()
+    {
+        _cbvData.Clear();
+        _srvData.Clear();
+        _uavData.Clear();
+        _samplers.Clear();
+        _isDirty = true;
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        BindGroup.Dispose();
+        GC.SuppressFinalize(this);
     }
 }
