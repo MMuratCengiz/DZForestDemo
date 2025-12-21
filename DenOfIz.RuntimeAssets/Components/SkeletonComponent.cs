@@ -52,12 +52,14 @@ public sealed class BoneMatricesData
     public readonly Matrix4x4[] ModelTransforms;
     public readonly Matrix4x4[] FinalBoneMatrices;
     public readonly Matrix4x4[] InverseBindMatrices;
+    public readonly Matrix4x4 SkeletonRootTransform;
     public readonly int NumBones;
     public bool IsDirty = true;
 
-    public BoneMatricesData(int numBones, IReadOnlyList<Matrix4x4>? inverseBindMatrices = null)
+    public BoneMatricesData(int numBones, IReadOnlyList<Matrix4x4>? inverseBindMatrices = null, Matrix4x4? skeletonRootTransform = null)
     {
         NumBones = Math.Min(numBones, MaxBones);
+        SkeletonRootTransform = skeletonRootTransform ?? Matrix4x4.Identity;
         LocalTransforms = new Matrix4x4[MaxBones];
         ModelTransforms = new Matrix4x4[MaxBones];
         FinalBoneMatrices = new Matrix4x4[MaxBones];
@@ -81,30 +83,19 @@ public sealed class BoneMatricesData
         }
     }
 
-    /// <summary>
-    /// Computes final bone matrices for skinning.
-    /// Formula: FinalMatrix = InverseBindMatrix * ModelTransform
-    ///
-    /// This works because both matrices are stored with columns-as-rows (transposed from glTF/ozz):
-    /// - InverseBindMatrices: glTF column-major read as row-major = transposed
-    /// - ModelTransforms: ozz columns stored as Matrix4x4 rows = transposed
-    ///
-    /// For row-vector skinning (mul(vertex, matrix) in HLSL with /Zpr):
-    /// skinned = vertex * FinalMatrix
-    /// </summary>
     public void ComputeFinalMatrices()
     {
         for (var i = 0; i < NumBones; i++)
         {
-            FinalBoneMatrices[i] = InverseBindMatrices[i] * ModelTransforms[i];
+            FinalBoneMatrices[i] = InverseBindMatrices[i] * ModelTransforms[i] * SkeletonRootTransform;
         }
         IsDirty = false;
     }
 }
 
-public struct BoneMatricesComponent(int numBones, IReadOnlyList<Matrix4x4>? inverseBindMatrices = null)
+public struct BoneMatricesComponent(int numBones, IReadOnlyList<Matrix4x4>? inverseBindMatrices = null, Matrix4x4? skeletonRootTransform = null)
 {
-    public BoneMatricesData Data = new(numBones, inverseBindMatrices);
+    public readonly BoneMatricesData Data = new(numBones, inverseBindMatrices, skeletonRootTransform);
 
     public readonly bool IsValid => Data != null;
 }

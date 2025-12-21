@@ -157,7 +157,6 @@ public sealed class VikingScene : GameSceneBase
 
         _debugLightEntity = Scene.Spawn();
         World.AddComponent(_debugLightEntity, new Transform(new Vector3(0, 10, 0)));
-        World.AddComponent(_debugLightEntity, LocalToWorld.Identity);
         World.AddComponent(_debugLightEntity, new PointLight(
             new Vector3(1.0f, 1.0f, 0.8f),
             5.0f,
@@ -263,7 +262,6 @@ public sealed class VikingScene : GameSceneBase
             var entity = Scene.Spawn();
             World.AddComponent(entity, new MeshComponent(meshHandle));
             World.AddComponent(entity, new Transform(position, rotation, modelScale));
-            World.AddComponent(entity, LocalToWorld.Identity);
             World.AddComponent(entity, material);
 
             if (_vikingSkeleton.IsValid && _animation.TryGetSkeleton(_vikingSkeleton, out var skeleton))
@@ -291,7 +289,6 @@ public sealed class VikingScene : GameSceneBase
         var entity = Scene.Spawn();
         World.AddComponent(entity, new MeshComponent(mesh));
         World.AddComponent(entity, new Transform(position, Quaternion.Identity, Vector3.One));
-        World.AddComponent(entity, LocalToWorld.Identity);
         World.AddComponent(entity, material);
 
         var handle = _physics.CreateStaticBody(entity, position, Quaternion.Identity, PhysicsShape.Box(size));

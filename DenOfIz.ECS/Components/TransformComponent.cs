@@ -9,6 +9,7 @@ public struct Transform(Vector3 position, Quaternion rotation, Vector3 scale)
     public Vector3 Position = position;
     public Quaternion Rotation = rotation;
     public Vector3 Scale = scale;
+    public Matrix4x4 LocalToWorld = Matrix4x4.Identity;
 
     public static Transform Identity
     {
@@ -17,7 +18,8 @@ public struct Transform(Vector3 position, Quaternion rotation, Vector3 scale)
         {
             Position = Vector3.Zero,
             Rotation = Quaternion.Identity,
-            Scale = Vector3.One
+            Scale = Vector3.One,
+            LocalToWorld = Matrix4x4.Identity
         };
     }
 

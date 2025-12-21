@@ -130,9 +130,9 @@ public sealed class DynamicInstanceBuffer<T> : IDisposable where T : unmanaged
     private readonly uint _binding;
     private readonly int _numFrames;
 
-    private Buffer[] _buffers;
-    private ResourceBindGroup[] _bindGroups;
-    private IntPtr[] _mappedPtrs;
+    private readonly Buffer[] _buffers;
+    private readonly ResourceBindGroup[] _bindGroups;
+    private readonly IntPtr[] _mappedPtrs;
     private int _capacity;
     private bool _disposed;
 

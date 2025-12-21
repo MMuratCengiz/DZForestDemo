@@ -140,7 +140,7 @@ public sealed class RenderBatcher(World world, int maxInstances = 4096) : IDispo
                 _animatedInstances.Add(new AnimatedInstanceData(
                     entity,
                     mesh.Mesh,
-                    transform.Matrix,
+                    transform.LocalToWorld,
                     material,
                     boneMatrices.Data));
                 continue;
@@ -152,7 +152,7 @@ public sealed class RenderBatcher(World world, int maxInstances = 4096) : IDispo
                 _meshBatches[mesh.Mesh] = list;
             }
 
-            list.Add(new InstanceData(entity, transform.Matrix, material));
+            list.Add(new InstanceData(entity, transform.LocalToWorld, material));
         }
 
         foreach (var (entity, mesh, transform) in world.Query<MeshComponent, Transform>())
@@ -174,7 +174,7 @@ public sealed class RenderBatcher(World world, int maxInstances = 4096) : IDispo
                 _animatedInstances.Add(new AnimatedInstanceData(
                     entity,
                     mesh.Mesh,
-                    transform.Matrix,
+                    transform.LocalToWorld,
                     DefaultMaterial,
                     boneMatrices.Data));
                 continue;
@@ -186,7 +186,7 @@ public sealed class RenderBatcher(World world, int maxInstances = 4096) : IDispo
                 _meshBatches[mesh.Mesh] = list;
             }
 
-            list.Add(new InstanceData(entity, transform.Matrix, DefaultMaterial));
+            list.Add(new InstanceData(entity, transform.LocalToWorld, DefaultMaterial));
         }
 
         // Collect non-empty mesh keys

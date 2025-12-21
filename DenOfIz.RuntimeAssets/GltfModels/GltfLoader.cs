@@ -59,6 +59,7 @@ public sealed class GltfSkinInfo
     public int? SkeletonRoot { get; init; }
     public required IReadOnlyList<int> JointIndices { get; init; }
     public required IReadOnlyList<Matrix4x4> InverseBindMatrices { get; init; }
+    public Matrix4x4 SkeletonRootTransform { get; init; } = Matrix4x4.Identity;
 }
 
 public sealed class GltfLoader
@@ -569,13 +570,21 @@ public sealed class GltfLoader
                 inverseBindMatrices.Add(Matrix4x4.Identity);
             }
 
+            var skeletonRootTransform = Matrix4x4.Identity;
+            if (skin.Skeleton.HasValue)
+            {
+                var rootWorldTransform = document.GetNodeWorldTransform(skin.Skeleton.Value);
+                skeletonRootTransform = GltfCoordinateConversion.ConvertMatrixHandedness(rootWorldTransform);
+            }
+
             skins.Add(new GltfSkinInfo
             {
                 Name = skin.Name ?? $"Skin_{skinIndex}",
                 Index = skinIndex,
                 SkeletonRoot = skin.Skeleton,
                 JointIndices = skin.Joints,
-                InverseBindMatrices = inverseBindMatrices
+                InverseBindMatrices = inverseBindMatrices,
+                SkeletonRootTransform = skeletonRootTransform
             });
         }
 

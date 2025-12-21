@@ -27,7 +27,7 @@ public sealed class TransformSystem : ISystem
         _rootEntities.Clear();
         _childrenMap.Clear();
 
-        foreach (var item in _world.Query<Transform, LocalToWorld>())
+        foreach (var item in _world.Query<Transform>())
         {
             var entity = item.Entity;
 
@@ -65,16 +65,11 @@ public sealed class TransformSystem : ISystem
         }
         _processedEntities.Add(entity);
 
-        if (!_world.TryGetComponent<Transform>(entity, out var transform))
-        {
-            return;
-        }
+        ref var transform = ref _world.GetComponent<Transform>(entity);
 
         var localMatrix = transform.Matrix;
         var worldMatrix = localMatrix * parentWorld;
-
-        ref var localToWorld = ref _world.GetComponent<LocalToWorld>(entity);
-        localToWorld.Matrix = worldMatrix;
+        transform.LocalToWorld = worldMatrix;
 
         if (_childrenMap.TryGetValue(entity, out var children))
         {

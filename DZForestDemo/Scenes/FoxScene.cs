@@ -200,7 +200,6 @@ public sealed class FoxScene : GameSceneBase
 
         _debugLightEntity = Scene.Spawn();
         World.AddComponent(_debugLightEntity, new Transform(new Vector3(0, 10, 0)));
-        World.AddComponent(_debugLightEntity, LocalToWorld.Identity);
         World.AddComponent(_debugLightEntity, new PointLight(
             new Vector3(1.0f, 1.0f, 0.8f),
             5.0f,
@@ -245,7 +244,6 @@ public sealed class FoxScene : GameSceneBase
             return;
         }
 
-
         var foxMaterial = new StandardMaterial
         {
             BaseColor = new Vector4(1f, 1f, 1f, 1f),
@@ -255,16 +253,16 @@ public sealed class FoxScene : GameSceneBase
             AlbedoTexture = _foxTexture
         };
 
-        var position =  new Vector3(-4f, 1.5f, 0f);
-        var rotation = Quaternion.Identity;
-        var modelScale = Vector3.One;
+        var position = new Vector3(-4f, -1.5f, 0f);
+
+        var skin = _foxModel.Skins.FirstOrDefault();
+        var skeletonRootTransform = skin?.SkeletonRootTransform ?? Matrix4x4.Identity;
 
         foreach (var meshHandle in _foxModel.MeshHandles)
         {
             var entity = Scene.Spawn();
             World.AddComponent(entity, new MeshComponent(meshHandle));
-            World.AddComponent(entity, new Transform(position, rotation, modelScale));
-            World.AddComponent(entity, LocalToWorld.Identity);
+            World.AddComponent(entity, new Transform(position));
             World.AddComponent(entity, foxMaterial);
 
             if (!_foxSkeleton.IsValid || !_animation.TryGetSkeleton(_foxSkeleton, out var skeleton))
@@ -282,7 +280,8 @@ public sealed class FoxScene : GameSceneBase
             World.AddComponent(entity, animator);
 
             var numJoints = skeleton.NumJoints;
-            var boneMatrices = new BoneMatricesComponent(numJoints, _foxModel.InverseBindMatrices);
+            var inverseBindMatrices = skin?.InverseBindMatrices ?? _foxModel.InverseBindMatrices;
+            var boneMatrices = new BoneMatricesComponent(numJoints, inverseBindMatrices, skeletonRootTransform);
             World.AddComponent(entity, boneMatrices);
         }
     }
@@ -327,7 +326,6 @@ public sealed class FoxScene : GameSceneBase
         var entity = Scene.Spawn();
         World.AddComponent(entity, new MeshComponent(mesh));
         World.AddComponent(entity, new Transform(position, Quaternion.Identity, Vector3.One));
-        World.AddComponent(entity, LocalToWorld.Identity);
         World.AddComponent(entity, material);
 
         var handle = _physics.CreateStaticBody(entity, position, Quaternion.Identity, PhysicsShape.Box(size));
@@ -343,7 +341,6 @@ public sealed class FoxScene : GameSceneBase
         var entity = Scene.Spawn();
         World.AddComponent(entity, new MeshComponent(mesh));
         World.AddComponent(entity, new Transform(position, rot, Vector3.One));
-        World.AddComponent(entity, LocalToWorld.Identity);
         World.AddComponent(entity, material);
 
         var handle = _physics.CreateBody(entity, position, rot, PhysicsBodyDesc.Dynamic(PhysicsShape.Box(size), mass));
@@ -358,7 +355,6 @@ public sealed class FoxScene : GameSceneBase
         var entity = Scene.Spawn();
         World.AddComponent(entity, new MeshComponent(mesh));
         World.AddComponent(entity, new Transform(position, Quaternion.Identity, Vector3.One));
-        World.AddComponent(entity, LocalToWorld.Identity);
         World.AddComponent(entity, material);
 
         var handle = _physics.CreateBody(entity, position, Quaternion.Identity,

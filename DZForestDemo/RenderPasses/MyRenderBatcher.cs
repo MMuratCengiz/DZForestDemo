@@ -105,7 +105,7 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
 
         var filterByScene = _activeSceneFilter.IsValid;
 
-        foreach (var (entity, mesh, localToWorld, material) in world.Query<MeshComponent, LocalToWorld, StandardMaterial>())
+        foreach (var (entity, mesh, transform, material) in world.Query<MeshComponent, Transform, StandardMaterial>())
         {
             if (!mesh.IsValid)
             {
@@ -124,16 +124,16 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
                 _animatedInstances.Add(new AnimatedInstance(
                     entity,
                     mesh.Mesh,
-                    localToWorld.Matrix,
+                    transform.LocalToWorld,
                     material,
                     boneMatrices.Data));
                 continue;
             }
 
-            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, localToWorld.Matrix, material));
+            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, material));
         }
 
-        foreach (var (entity, mesh, localToWorld) in world.Query<MeshComponent, LocalToWorld>())
+        foreach (var (entity, mesh, transform) in world.Query<MeshComponent, Transform>())
         {
             if (!mesh.IsValid)
             {
@@ -157,13 +157,13 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
                 _animatedInstances.Add(new AnimatedInstance(
                     entity,
                     mesh.Mesh,
-                    localToWorld.Matrix,
+                    transform.LocalToWorld,
                     DefaultMaterial,
                     boneMatrices.Data));
                 continue;
             }
 
-            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, localToWorld.Matrix, DefaultMaterial));
+            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, DefaultMaterial));
         }
 
         _staticBatcher.Build();
@@ -183,7 +183,7 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
         _staticBatcher.Clear();
         _animatedInstances.Clear();
 
-        foreach (var (entity, mesh, localToWorld, transform, material) in world.Query<MeshComponent, LocalToWorld, Transform, StandardMaterial>())
+        foreach (var (entity, mesh, transform, material) in world.Query<MeshComponent, Transform, StandardMaterial>())
         {
             if (!mesh.IsValid)
             {
@@ -202,16 +202,16 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
                 _animatedInstances.Add(new AnimatedInstance(
                     entity,
                     mesh.Mesh,
-                    localToWorld.Matrix,
+                    transform.LocalToWorld,
                     material,
                     boneMatrices.Data));
                 continue;
             }
 
-            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, localToWorld.Matrix, material));
+            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, material));
         }
 
-        foreach (var (entity, mesh, localToWorld, transform) in world.Query<MeshComponent, LocalToWorld, Transform>())
+        foreach (var (entity, mesh, transform) in world.Query<MeshComponent, Transform>())
         {
             if (!mesh.IsValid)
             {
@@ -235,13 +235,13 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
                 _animatedInstances.Add(new AnimatedInstance(
                     entity,
                     mesh.Mesh,
-                    localToWorld.Matrix,
+                    transform.LocalToWorld,
                     DefaultMaterial,
                     boneMatrices.Data));
                 continue;
             }
 
-            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, localToWorld.Matrix, DefaultMaterial));
+            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, DefaultMaterial));
         }
 
         _staticBatcher.Build();

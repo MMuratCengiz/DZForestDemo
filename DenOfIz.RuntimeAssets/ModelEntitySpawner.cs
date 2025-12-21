@@ -123,8 +123,6 @@ public static class ModelEntitySpawner
             world.AddComponent(entity, combinedTransform);
         }
 
-        world.AddComponent(entity, LocalToWorld.Identity);
-
         if (node.MeshIndex.HasValue && node.MeshIndex.Value < model.MeshHandles.Count)
         {
             var meshHandle = model.MeshHandles[node.MeshIndex.Value];
@@ -181,8 +179,6 @@ public static class ModelEntitySpawner
             var combinedTransform = CombineTransforms(rootTransform, localTransform);
             world.AddComponent(entity, combinedTransform);
         }
-
-        world.AddComponent(entity, LocalToWorld.Identity);
 
         if (node.MeshIndex.HasValue && node.MeshIndex.Value < model.MeshHandles.Count)
         {

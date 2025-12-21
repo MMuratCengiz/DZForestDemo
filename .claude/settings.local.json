@@ -25,7 +25,8 @@
       "Bash(cmd /c \"del /f C:\\Workspace\\DZForestDemo\\DenOfIz.ECS\\IContext.cs\")",
       "Bash(cmd /c del \"C:\\Workspace\\DZForestDemo\\DZForestDemo\\RenderPasses\\RenderBatcher.cs\")",
       "Bash(grep:*)",
-      "Bash(cmd /c \"mkdir C:\\Workspace\\DZForestDemo\\DZForestDemo\\Scenes\")"
+      "Bash(cmd /c \"mkdir C:\\Workspace\\DZForestDemo\\DZForestDemo\\Scenes\")",
+      "Bash(git checkout:*)"
     ]
   }
 }

@@ -1,12 +1,12 @@
 using DenOfIz;
 
-namespace Graphics.Shaders;
+namespace Graphics.Shader;
 
-public class Shader(RootSignature rootSignature)
+public class Shader(ShaderRootSignature rootSignature)
 {
     private readonly Dictionary<string, ShaderVariant> _variants = new();
 
-    public RootSignature RootSignature { get; } = rootSignature;
+    public ShaderRootSignature RootSignature { get; } = rootSignature;
 
     public Pipeline GetPipeline(string variantName)
     {
