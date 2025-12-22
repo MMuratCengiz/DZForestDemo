@@ -21,15 +21,18 @@ public class FrequencyShaderBindingPools(LogicalDevice logicalDevice)
             return perShaderData.BindingPools[frameIndex];
         }
 
-        var newPerShaderData = new PerShaderData();
-        _perShaderData[rootSignature] = newPerShaderData;
-        newPerShaderData.RootSignature = rootSignature;
-        newPerShaderData.BindingPools = [];
+        var newPerShaderData = new PerShaderData
+        {
+            RootSignature = rootSignature,
+            BindingPools = []
+        };
+
         for (var i = 0; i < NumFrames; i++)
         {
-            newPerShaderData.BindingPools.AddRange(CreateBindingPool(rootSignature));
+            newPerShaderData.BindingPools.Add(CreateBindingPool(rootSignature));
         }
 
+        _perShaderData[rootSignature] = newPerShaderData;
         return newPerShaderData.BindingPools[frameIndex];
     }
 
@@ -45,11 +48,11 @@ public class FrequencyShaderBindingPools(LogicalDevice logicalDevice)
                         new ShaderBindingPool(logicalDevice, rootSignature, registerSpace, 8);
                     break;
                 case (int)BindingFrequency.PerCamera:
-                    bindingPools[(int)BindingFrequency.Never] =
+                    bindingPools[(int)BindingFrequency.PerCamera] =
                         new ShaderBindingPool(logicalDevice, rootSignature, registerSpace, 16);
                     break;
                 case (int)BindingFrequency.PerMaterial:
-                    bindingPools[(int)BindingFrequency.Never] =
+                    bindingPools[(int)BindingFrequency.PerMaterial] =
                         new ShaderBindingPool(logicalDevice, rootSignature, registerSpace, 64);
                     break;
                 case (int)BindingFrequency.PerDraw:

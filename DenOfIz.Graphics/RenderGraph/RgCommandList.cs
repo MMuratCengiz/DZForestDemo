@@ -23,7 +23,7 @@ public class RgCommandList
     private readonly FrequencyShaderBindingPools _freqBindingPools;
     private bool _isRendering = false;
     private int _drawId = 0;
-    
+
     public RgCommandList(LogicalDevice logicalDevice, CommandQueue commandQueue)
     {
         _freqBindingPools = new FrequencyShaderBindingPools(logicalDevice);
@@ -122,7 +122,7 @@ public class RgCommandList
         if (mesh.NumIndices > 0)
         {
             _commandList.BindIndexBuffer(mesh.IndexBuffer.GetBuffer(), mesh.IndexType, mesh.IndexBuffer.Offset);
-            _commandList.DrawIndexed(mesh.NumIndices, instances, (uint)mesh.IndexBuffer.Offset, 0, 0);
+            _commandList.DrawIndexed(mesh.NumIndices, instances, 0, 0, 0);
         }
         else
         {
@@ -168,6 +168,7 @@ public class RgCommandList
                 {
                     continue;
                 }
+
                 shaderBinding = shaderBindingPool.GetOrCreate(bindGroupData);
             }
 
@@ -178,7 +179,129 @@ public class RgCommandList
     }
     // TODO DrawMeshIndirect
 
-    public void Submit(ExecuteCommandListsDesc desc)
+    // Forwarded CommandList methods
+    public void BindViewport(float x, float y, float width, float height)
+    {
+        _commandList.BindViewport(x, y, width, height);
+    }
+
+    public void BindScissorRect(float x, float y, float width, float height)
+    {
+        _commandList.BindScissorRect(x, y, width, height);
+    }
+
+    public void PipelineBarrier(in PipelineBarrierDesc barrier)
+    {
+        _commandList.PipelineBarrier(in barrier);
+    }
+
+    public void CopyBufferRegion(in CopyBufferRegionDesc copyBufferRegionDesc)
+    {
+        _commandList.CopyBufferRegion(in copyBufferRegionDesc);
+    }
+
+    public void CopyTextureRegion(in CopyTextureRegionDesc copyTextureRegionDesc)
+    {
+        _commandList.CopyTextureRegion(in copyTextureRegionDesc);
+    }
+
+    public void CopyBufferToTexture(in CopyBufferToTextureDesc copyBufferToTexture)
+    {
+        _commandList.CopyBufferToTexture(in copyBufferToTexture);
+    }
+
+    public void CopyTextureToBuffer(in CopyTextureToBufferDesc copyTextureToBuffer)
+    {
+        _commandList.CopyTextureToBuffer(in copyTextureToBuffer);
+    }
+
+    public void UpdateTopLevelAS(in UpdateTopLevelASDesc updateDesc)
+    {
+        _commandList.UpdateTopLevelAS(in updateDesc);
+    }
+
+    public void BuildTopLevelAS(in BuildTopLevelASDesc buildTopLevelASDesc)
+    {
+        _commandList.BuildTopLevelAS(in buildTopLevelASDesc);
+    }
+
+    public void BuildBottomLevelAS(in BuildBottomLevelASDesc buildBottomLevelASDesc)
+    {
+        _commandList.BuildBottomLevelAS(in buildBottomLevelASDesc);
+    }
+
+    public void DispatchRays(in DispatchRaysDesc dispatchRaysDesc)
+    {
+        _commandList.DispatchRays(in dispatchRaysDesc);
+    }
+
+    public void Dispatch(uint groupCountX, uint groupCountY, uint groupCountZ)
+    {
+        _commandList.Dispatch(groupCountX, groupCountY, groupCountZ);
+    }
+
+    public void DispatchMesh(uint groupCountX, uint groupCountY, uint groupCountZ)
+    {
+        _commandList.DispatchMesh(groupCountX, groupCountY, groupCountZ);
+    }
+
+    public void DrawIndirect(DenOfIz.Buffer? buffer, ulong offset, uint drawCount, uint stride)
+    {
+        _commandList.DrawIndirect(buffer, offset, drawCount, stride);
+    }
+
+    public void DrawIndexedIndirect(DenOfIz.Buffer? buffer, ulong offset, uint drawCount, uint stride)
+    {
+        _commandList.DrawIndexedIndirect(buffer, offset, drawCount, stride);
+    }
+
+    public void DispatchIndirect(DenOfIz.Buffer? buffer, ulong offset)
+    {
+        _commandList.DispatchIndirect(buffer, offset);
+    }
+
+    public void BeginDebugMarker(float r, float g, float b, StringView name)
+    {
+        _commandList.BeginDebugMarker(r, g, b, name);
+    }
+
+    public void EndDebugMarker()
+    {
+        _commandList.EndDebugMarker();
+    }
+
+    public void InsertDebugMarker(float r, float g, float b, StringView name)
+    {
+        _commandList.InsertDebugMarker(r, g, b, name);
+    }
+
+    public void BeginQuery(QueryPool? queryPool, in QueryDesc queryDesc)
+    {
+        _commandList.BeginQuery(queryPool, in queryDesc);
+    }
+
+    public void EndQuery(QueryPool? queryPool, in QueryDesc queryDesc)
+    {
+        _commandList.EndQuery(queryPool, in queryDesc);
+    }
+
+    public void ResolveQuery(QueryPool? queryPool, uint startQuery, uint queryCount)
+    {
+        _commandList.ResolveQuery(queryPool, startQuery, queryCount);
+    }
+
+    public void ResetQuery(QueryPool? queryPool, uint startQuery, uint queryCount)
+    {
+        _commandList.ResetQuery(queryPool, startQuery, queryCount);
+    }
+
+    public QueueType GetQueueType()
+    {
+        return _commandList.GetQueueType();
+    }
+
+    public void Submit(SemaphoreArray? waitOnSemaphores = null, SemaphoreArray? signalSemaphores = null,
+        Fence? fence = null)
     {
         _commandList.End();
         if (_isRendering)
@@ -186,10 +309,15 @@ public class RgCommandList
             _commandList.EndRendering();
         }
 
-        _signalFence = desc.GetSignal();
+        _signalFence = fence;
 
-        var executeCommandListsDesc = desc;
-        executeCommandListsDesc.Signal = _fences[_currentFrame];
+        ExecuteCommandListsDesc executeCommandListsDesc = new()
+        {
+            CommandLists = CommandListArray.Create([_commandList]),
+            Signal = _fences[_currentFrame],
+            SignalSemaphores = signalSemaphores ?? SemaphoreArray.Create([]),
+            WaitSemaphores = waitOnSemaphores ?? SemaphoreArray.Create([])
+        };
 
         _commandQueue.ExecuteCommandLists(executeCommandListsDesc);
     }

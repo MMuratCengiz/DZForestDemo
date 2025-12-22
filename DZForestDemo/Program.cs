@@ -11,6 +11,11 @@ internal static class Program
 {
     private static void Main(string[] args)
     {
+        if (true)
+        {
+            RgCommandListDemoProgram.RunDemo();
+            return;
+        }
         var app = AppBuilder.Create()
             .WithTitle("DenOfIz Scene Demo - Press F1/F2 to switch scenes")
             .WithSize(1920, 1080)
