@@ -1,26 +1,32 @@
 ﻿using DenOfIz;
+using Graphics.Binding;
 
 namespace Graphics.RenderGraph;
 
-public class RGCommandList
+public class RgCommandList
 {
     private const int NumFrames = 3;
 
-    private CommandQueue _commandQueue;
-    private CommandListPool _commandListPool;
-    private List<Fence> _fences;
+    private readonly CommandQueue _commandQueue;
+
+    // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
+    // Needs to be kept alive for the lifetime of the CommandListPool
+    private readonly CommandListPool _commandListPool;
+    private readonly List<Fence> _fences;
     private Fence? _signalFence;
-    private List<CommandList> _commandLists;
+    private readonly List<CommandList> _commandLists;
     private CommandList _commandList;
     private DrawState _drawState;
     private int _nextFrame = 0;
     private int _currentFrame = 0;
     private Pipeline? _currentPipeline;
+    private readonly FrequencyShaderBindingPools _freqBindingPools;
     private bool _forceFlushBindings = false;
     private bool _isRendering = false;
-
-    public RGCommandList(LogicalDevice logicalDevice, CommandQueue commandQueue)
+    
+    public RgCommandList(LogicalDevice logicalDevice, CommandQueue commandQueue)
     {
+        _freqBindingPools = new FrequencyShaderBindingPools(logicalDevice);
         _commandQueue = commandQueue;
         CommandListPoolDesc commandListPoolDesc = new()
         {
@@ -58,6 +64,7 @@ public class RGCommandList
         {
             _commandList.EndRendering();
         }
+
         _commandList.BeginRendering(desc);
         _isRendering = true;
     }
@@ -70,17 +77,17 @@ public class RGCommandList
 
     public void SetData(string name, byte[] data)
     {
-        _drawState.Data[name] = data;
+        _drawState.Resources[name] = new DrawState.Resource(data);
     }
 
     public void SetTexture(string name, Texture texture)
     {
-        _drawState.Textures[name] = texture;
+        _drawState.Resources[name] = new DrawState.Resource(texture);
     }
 
     public void SetSampler(string name, Sampler sampler)
     {
-        _drawState.Samplers[name] = sampler;
+        _drawState.Resources[name] = new DrawState.Resource(sampler);
     }
 
     public void DrawMesh(GPUMesh mesh, uint instances = 1)
@@ -121,7 +128,24 @@ public class RGCommandList
         {
             return;
         }
-        
+
+        var rootSignature = shader.RootSignature;
+        var shaderBindingPools =
+            _freqBindingPools.GetOrCreateBindingPools(rootSignature, _currentFrame);
+
+        foreach (var registerSpace in rootSignature.GetRegisterSpaces())
+        {
+            var shaderBindingPool = shaderBindingPools[(int)registerSpace];
+            if (shaderBindingPool == null)
+            {
+                throw new InvalidOperationException(
+                    $"ShaderBindingPool for register space {registerSpace} does not exist.");
+            }
+            
+            var slots = rootSignature.GetSlotsForSpace(registerSpace);
+
+            
+        }
     }
     // TODO DrawMeshIndirect
 
@@ -132,11 +156,12 @@ public class RGCommandList
         {
             _commandList.EndRendering();
         }
+
         _signalFence = desc.GetSignal();
-        
+
         var executeCommandListsDesc = desc;
         executeCommandListsDesc.Signal = _fences[_currentFrame];
-        
+
         _commandQueue.ExecuteCommandLists(executeCommandListsDesc);
     }
 }

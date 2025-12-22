@@ -62,7 +62,7 @@ public class ShaderBindingPool : IDisposable
 
     private void CreateBindings(int count)
     {
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             var binding = CreateBinding();
             var handle = Interlocked.Increment(ref _totalCount) - 1;
@@ -168,7 +168,7 @@ public class ShaderBindingPool : IDisposable
             var newBindings = await Task.Run(() =>
             {
                 var bindings = new List<ShaderBinding>(count);
-                for (int i = 0; i < count; i++)
+                for (var i = 0; i < count; i++)
                 {
                     bindings.Add(CreateBinding());
                 }
@@ -202,7 +202,7 @@ public class ShaderBindingPool : IDisposable
         _growLock.EnterWriteLock();
         try
         {
-            for (int i = 0; i < count; i++)
+            for (var i = 0; i < count; i++)
             {
                 var binding = CreateBinding();
                 var handle = Interlocked.Increment(ref _totalCount) - 1;

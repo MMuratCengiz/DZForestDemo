@@ -9,7 +9,7 @@ public sealed class ShaderBinding : IDisposable
 
     private readonly uint _registerSpace;
     private readonly BindingContext _ctx;
-    private readonly IReadOnlyList<ResourceBindingSlot> _slots;
+    private readonly ResourceBindingSlot[] _slots;
 
     private readonly Dictionary<uint, GPUBufferView> _cbvData = [];
     private readonly Dictionary<uint, SrvUavData> _srvData = [];
@@ -27,7 +27,7 @@ public sealed class ShaderBinding : IDisposable
     {
         _ctx = ctx;
         _registerSpace = registerSpace;
-        _slots = ctx.GetSlotsForSpace(registerSpace);
+        _slots = ctx.GetSlotsForSpace(registerSpace).ToArray();
 
         ResourceBindGroupDesc groupDesc = new()
         {
@@ -41,7 +41,7 @@ public sealed class ShaderBinding : IDisposable
     {
         _ctx = ctx;
         _registerSpace = registerSpace;
-        _slots = ctx.GetSlotsForSpace(registerSpace);
+        _slots = ctx.GetSlotsForSpace(registerSpace).ToArray();
         BindGroup = bindGroup;
     }
 
