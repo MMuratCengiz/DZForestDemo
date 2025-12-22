@@ -9,7 +9,6 @@ public sealed class InstanceBuffer<T> : IDisposable where T : unmanaged
     private readonly Buffer[] _buffers;
     private readonly ResourceBindGroup[] _bindGroups;
     private readonly IntPtr[] _mappedPtrs;
-    private readonly int _maxInstances;
     private bool _disposed;
 
     public InstanceBuffer(
@@ -20,7 +19,7 @@ public sealed class InstanceBuffer<T> : IDisposable where T : unmanaged
         int maxInstances,
         int numFrames)
     {
-        _maxInstances = maxInstances;
+        MaxInstances = maxInstances;
         _buffers = new Buffer[numFrames];
         _bindGroups = new ResourceBindGroup[numFrames];
         _mappedPtrs = new IntPtr[numFrames];
@@ -50,7 +49,7 @@ public sealed class InstanceBuffer<T> : IDisposable where T : unmanaged
         }
     }
 
-    public int MaxInstances => _maxInstances;
+    public int MaxInstances { get; }
 
     public void Dispose()
     {
@@ -80,7 +79,7 @@ public sealed class InstanceBuffer<T> : IDisposable where T : unmanaged
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe void WriteInstance(int frameIndex, int instanceIndex, in T data)
     {
-        if (instanceIndex >= _maxInstances)
+        if (instanceIndex >= MaxInstances)
         {
             return;
         }
@@ -92,12 +91,12 @@ public sealed class InstanceBuffer<T> : IDisposable where T : unmanaged
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe void WriteInstances(int frameIndex, int startIndex, ReadOnlySpan<T> data)
     {
-        if (startIndex >= _maxInstances)
+        if (startIndex >= MaxInstances)
         {
             return;
         }
 
-        var count = Math.Min(data.Length, _maxInstances - startIndex);
+        var count = Math.Min(data.Length, MaxInstances - startIndex);
         var ptr = (T*)_mappedPtrs[frameIndex].ToPointer();
         data.Slice(0, count).CopyTo(new Span<T>(ptr + startIndex, count));
     }
@@ -105,12 +104,12 @@ public sealed class InstanceBuffer<T> : IDisposable where T : unmanaged
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe Span<T> GetWriteSpan(int frameIndex, int startIndex, int count)
     {
-        if (startIndex >= _maxInstances)
+        if (startIndex >= MaxInstances)
         {
             return Span<T>.Empty;
         }
 
-        var actualCount = Math.Min(count, _maxInstances - startIndex);
+        var actualCount = Math.Min(count, MaxInstances - startIndex);
         var ptr = (T*)_mappedPtrs[frameIndex].ToPointer();
         return new Span<T>(ptr + startIndex, actualCount);
     }
@@ -127,7 +126,6 @@ public sealed class DynamicInstanceBuffer<T> : IDisposable where T : unmanaged
     private readonly Buffer[] _buffers;
     private readonly ResourceBindGroup[] _bindGroups;
     private readonly IntPtr[] _mappedPtrs;
-    private int _capacity;
     private bool _disposed;
 
     public DynamicInstanceBuffer(
@@ -143,7 +141,7 @@ public sealed class DynamicInstanceBuffer<T> : IDisposable where T : unmanaged
         _registerSpace = registerSpace;
         _binding = binding;
         _numFrames = numFrames;
-        _capacity = initialCapacity;
+        Capacity = initialCapacity;
 
         _buffers = new Buffer[numFrames];
         _bindGroups = new ResourceBindGroup[numFrames];
@@ -152,7 +150,7 @@ public sealed class DynamicInstanceBuffer<T> : IDisposable where T : unmanaged
         AllocateBuffers(initialCapacity);
     }
 
-    public int Capacity => _capacity;
+    public int Capacity { get; private set; }
 
     public void Dispose()
     {
@@ -175,12 +173,12 @@ public sealed class DynamicInstanceBuffer<T> : IDisposable where T : unmanaged
 
     public void EnsureCapacity(int requiredCapacity)
     {
-        if (requiredCapacity <= _capacity)
+        if (requiredCapacity <= Capacity)
         {
             return;
         }
 
-        var newCapacity = Math.Max(requiredCapacity, _capacity * 2);
+        var newCapacity = Math.Max(requiredCapacity, Capacity * 2);
 
         for (var i = 0; i < _numFrames; i++)
         {
@@ -190,7 +188,7 @@ public sealed class DynamicInstanceBuffer<T> : IDisposable where T : unmanaged
         }
 
         AllocateBuffers(newCapacity);
-        _capacity = newCapacity;
+        Capacity = newCapacity;
     }
 
     private void AllocateBuffers(int capacity)
@@ -229,7 +227,7 @@ public sealed class DynamicInstanceBuffer<T> : IDisposable where T : unmanaged
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe void WriteInstance(int frameIndex, int instanceIndex, in T data)
     {
-        if (instanceIndex >= _capacity)
+        if (instanceIndex >= Capacity)
         {
             return;
         }
@@ -241,12 +239,12 @@ public sealed class DynamicInstanceBuffer<T> : IDisposable where T : unmanaged
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe Span<T> GetWriteSpan(int frameIndex, int startIndex, int count)
     {
-        if (startIndex >= _capacity)
+        if (startIndex >= Capacity)
         {
             return Span<T>.Empty;
         }
 
-        var actualCount = Math.Min(count, _capacity - startIndex);
+        var actualCount = Math.Min(count, Capacity - startIndex);
         var ptr = (T*)_mappedPtrs[frameIndex].ToPointer();
         return new Span<T>(ptr + startIndex, actualCount);
     }

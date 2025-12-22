@@ -96,7 +96,6 @@ public static class ComponentRegistry
     private static readonly Dictionary<Type, ComponentId> TypeToId = new();
     private static readonly List<ComponentInfo> Components = [];
     private static readonly object Lock = new();
-    private static int _nextId;
 
     /// <summary>
     /// Maximum component ID currently registered. Used for sizing sparse arrays.
@@ -104,7 +103,8 @@ public static class ComponentRegistry
     public static int MaxId
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _nextId;
+        get;
+        private set;
     }
 
     public static int Count => Components.Count;
@@ -120,7 +120,7 @@ public static class ComponentRegistry
                 return existing;
             }
 
-            var id = new ComponentId(_nextId++);
+            var id = new ComponentId(MaxId++);
             TypeToId[type] = id;
             Components.Add(new ComponentInfo(type, Unsafe.SizeOf<T>()));
             return id;

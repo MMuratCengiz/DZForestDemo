@@ -66,16 +66,15 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
         AlbedoTexture = RuntimeTextureHandle.Invalid
     };
 
-    private readonly RenderBatcher<RuntimeMeshHandle, StaticInstance> _staticBatcher = new(maxInstances);
     private readonly List<AnimatedInstance> _animatedInstances = [];
     private bool _disposed;
     private SceneId _activeSceneFilter = SceneId.Invalid;
 
-    public RenderBatcher<RuntimeMeshHandle, StaticInstance> StaticBatcher => _staticBatcher;
+    public RenderBatcher<RuntimeMeshHandle, StaticInstance> StaticBatcher { get; } = new(maxInstances);
 
     public IReadOnlyList<AnimatedInstance> AnimatedInstances => _animatedInstances;
 
-    public int StaticInstanceCount => _staticBatcher.InstanceCount;
+    public int StaticInstanceCount => StaticBatcher.InstanceCount;
 
     public int AnimatedInstanceCount => _animatedInstances.Count;
 
@@ -93,14 +92,14 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
         }
 
         _disposed = true;
-        _staticBatcher.Dispose();
+        StaticBatcher.Dispose();
         _animatedInstances.Clear();
         GC.SuppressFinalize(this);
     }
 
     public void BuildBatches()
     {
-        _staticBatcher.Clear();
+        StaticBatcher.Clear();
         _animatedInstances.Clear();
 
         var filterByScene = _activeSceneFilter.IsValid;
@@ -130,7 +129,7 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
                 continue;
             }
 
-            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, material));
+            StaticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, material));
         }
 
         foreach (var (entity, mesh, transform) in world.Query<MeshComponent, Transform>())
@@ -163,10 +162,10 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
                 continue;
             }
 
-            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, DefaultMaterial));
+            StaticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, DefaultMaterial));
         }
 
-        _staticBatcher.Build();
+        StaticBatcher.Build();
     }
 
     private bool IsInActiveScene(Entity entity)
@@ -180,7 +179,7 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
 
     public void BuildBatches<TFilter>(TFilter filter) where TFilter : IInstanceFilter
     {
-        _staticBatcher.Clear();
+        StaticBatcher.Clear();
         _animatedInstances.Clear();
 
         foreach (var (entity, mesh, transform, material) in world.Query<MeshComponent, Transform, StandardMaterial>())
@@ -208,7 +207,7 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
                 continue;
             }
 
-            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, material));
+            StaticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, material));
         }
 
         foreach (var (entity, mesh, transform) in world.Query<MeshComponent, Transform>())
@@ -241,10 +240,10 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
                 continue;
             }
 
-            _staticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, DefaultMaterial));
+            StaticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, DefaultMaterial));
         }
 
-        _staticBatcher.Build();
+        StaticBatcher.Build();
     }
 }
 

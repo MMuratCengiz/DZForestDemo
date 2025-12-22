@@ -42,7 +42,6 @@ public sealed class FoxScene : GameSceneBase
 
     private readonly Random _random = new();
     private int _cubeCount;
-    private Entity _debugLightEntity;
     private bool _assetsLoaded;
 
     public override string Name => "FoxScene";
@@ -198,15 +197,15 @@ public sealed class FoxScene : GameSceneBase
             12.0f
         ));
 
-        _debugLightEntity = Scene.Spawn();
-        World.AddComponent(_debugLightEntity, new Transform(new Vector3(0, 10, 0)));
-        World.AddComponent(_debugLightEntity, new PointLight(
+        DebugLightEntity = Scene.Spawn();
+        World.AddComponent(DebugLightEntity, new Transform(new Vector3(0, 10, 0)));
+        World.AddComponent(DebugLightEntity, new PointLight(
             new Vector3(1.0f, 1.0f, 0.8f),
             5.0f,
             30.0f
         ));
-        World.AddComponent(_debugLightEntity, new MeshComponent(_smallSphereMesh));
-        World.AddComponent(_debugLightEntity, new StandardMaterial
+        World.AddComponent(DebugLightEntity, new MeshComponent(_smallSphereMesh));
+        World.AddComponent(DebugLightEntity, new StandardMaterial
         {
             BaseColor = new Vector4(1f, 1f, 0.5f, 1f),
             Metallic = 0f,
@@ -364,5 +363,5 @@ public sealed class FoxScene : GameSceneBase
         return entity;
     }
 
-    public Entity DebugLightEntity => _debugLightEntity;
+    public Entity DebugLightEntity { get; private set; }
 }

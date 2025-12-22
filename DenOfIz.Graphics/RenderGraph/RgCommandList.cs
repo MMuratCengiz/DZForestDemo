@@ -21,8 +21,8 @@ public class RgCommandList
     private int _currentFrame = 0;
     private Pipeline? _currentPipeline;
     private readonly FrequencyShaderBindingPools _freqBindingPools;
-    private bool _forceFlushBindings = false;
     private bool _isRendering = false;
+    private int _drawId = 0;
     
     public RgCommandList(LogicalDevice logicalDevice, CommandQueue commandQueue)
     {
@@ -51,6 +51,7 @@ public class RgCommandList
         _nextFrame = (_nextFrame + 1) % NumFrames;
         _fences[_currentFrame].Wait();
         _drawState = new DrawState();
+        _drawId = 0;
         _commandList = _commandLists[_currentFrame];
         _currentPipeline = null;
         _signalFence?.Reset();
@@ -90,6 +91,16 @@ public class RgCommandList
         _drawState.Resources[name] = new DrawState.Resource(sampler);
     }
 
+    public void SetBuffer(string name, DenOfIz.Buffer buffer, ulong offset = 0, ulong size = 0)
+    {
+        _drawState.Resources[name] = new DrawState.Resource(buffer, offset, size);
+    }
+
+    public void SetBuffer(string name, GPUBufferView bufferView)
+    {
+        _drawState.Resources[name] = new DrawState.Resource(bufferView);
+    }
+
     public void DrawMesh(GPUMesh mesh, uint instances = 1)
     {
         Pipeline? pipeline = null;
@@ -99,12 +110,10 @@ public class RgCommandList
             throw new InvalidOperationException($"Pipeline with variant{_drawState.Variant} does not exist.");
         }
 
-        // Only bind new pipeline if its different from the existing one
         if (_currentPipeline == null || pipeline != _currentPipeline)
         {
             _currentPipeline = pipeline;
             _commandList.BindPipeline(_currentPipeline);
-            _forceFlushBindings = true; // Pipeline changed, we need to rebind
         }
 
         FlushBindings();
@@ -141,11 +150,31 @@ public class RgCommandList
                 throw new InvalidOperationException(
                     $"ShaderBindingPool for register space {registerSpace} does not exist.");
             }
-            
-            var slots = rootSignature.GetSlotsForSpace(registerSpace);
 
-            
+            ShaderBinding shaderBinding;
+            if (registerSpace == (uint)BindingFrequency.PerDraw)
+            {
+                shaderBinding = shaderBindingPool.GetByIndex(_drawId);
+                var bindGroupData = _drawState.BuildBindGroupData(rootSignature, registerSpace);
+                if (!bindGroupData.IsEmpty)
+                {
+                    shaderBinding.ApplyBindGroupData(bindGroupData);
+                }
+            }
+            else
+            {
+                var bindGroupData = _drawState.BuildBindGroupData(rootSignature, registerSpace);
+                if (bindGroupData.IsEmpty)
+                {
+                    continue;
+                }
+                shaderBinding = shaderBindingPool.GetOrCreate(bindGroupData);
+            }
+
+            _commandList.BindResourceGroup(shaderBinding.BindGroup);
         }
+
+        _drawId++;
     }
     // TODO DrawMeshIndirect
 

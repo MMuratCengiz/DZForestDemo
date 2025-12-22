@@ -4,7 +4,6 @@ public sealed class SceneRegistry<T> : IResource, IDisposable where T : struct, 
 {
     private readonly Dictionary<T, IGameScene> _scenes = new();
     private readonly World _world;
-    private IGameScene? _activeScene;
     private bool _disposed;
     private bool _initialized;
 
@@ -13,7 +12,7 @@ public sealed class SceneRegistry<T> : IResource, IDisposable where T : struct, 
         _world = world;
     }
 
-    public IGameScene? ActiveScene => _activeScene;
+    public IGameScene? ActiveScene { get; private set; }
 
     public void Register(T state, IGameScene scene)
     {
@@ -49,13 +48,13 @@ public sealed class SceneRegistry<T> : IResource, IDisposable where T : struct, 
             return;
         }
 
-        if (_activeScene != null && _activeScene != scene)
+        if (ActiveScene != null && ActiveScene != scene)
         {
-            _activeScene.OnExit();
-            _activeScene.Scene.Unload();
+            ActiveScene.OnExit();
+            ActiveScene.Scene.Unload();
         }
 
-        _activeScene = scene;
+        ActiveScene = scene;
         scene.Scene.Load();
         _world.Scenes.SetActiveScene(scene.Scene);
         scene.OnEnter();

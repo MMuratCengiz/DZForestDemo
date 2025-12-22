@@ -7,6 +7,7 @@ public class ShaderBindingPool : IDisposable
 {
     private readonly ConcurrentStack<ShaderBinding> _freePool = new();
     private readonly ConcurrentDictionary<int, ShaderBinding> _allBindings = new();
+    private readonly ConcurrentDictionary<ulong, ShaderBinding> _bindingCache = new();
     private readonly LogicalDevice _logicalDevice;
     private readonly ShaderRootSignature _rootSignature;
     private readonly uint _registerSpace;
@@ -124,8 +125,6 @@ public class ShaderBindingPool : IDisposable
 
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        binding.Reset();
-
         _growLock.EnterReadLock();
         try
         {
@@ -136,6 +135,46 @@ public class ShaderBindingPool : IDisposable
         {
             _growLock.ExitReadLock();
         }
+    }
+
+    public ShaderBinding GetOrCreate(BindGroupData data)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        var hash = data.Hash;
+        if (_bindingCache.TryGetValue(hash, out var cached))
+        {
+            return cached;
+        }
+
+        var binding = Acquire();
+        binding.ApplyBindGroupData(data);
+
+        _bindingCache.TryAdd(hash, binding);
+        return binding;
+    }
+
+    public bool TryGetCached(ulong hash, out ShaderBinding? binding)
+    {
+        return _bindingCache.TryGetValue(hash, out binding);
+    }
+
+    public void ClearCache()
+    {
+        _bindingCache.Clear();
+    }
+
+    public ShaderBinding GetByIndex(int index)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+
+        if (index >= _totalCount)
+        {
+            var needed = index - _totalCount + 1;
+            GrowSync(Math.Max(needed, 64));
+        }
+
+        return _allBindings[index];
     }
 
     private void CheckAndTriggerGrowth()
