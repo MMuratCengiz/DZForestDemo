@@ -1,7 +1,7 @@
 using DenOfIz;
-using Graphics.Shader.Binding;
+using Graphics.Binding;
 
-namespace Graphics.Shader;
+namespace Graphics;
 
 public sealed class ShaderRootSignature : IDisposable
 {

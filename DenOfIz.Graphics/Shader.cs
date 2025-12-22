@@ -1,8 +1,8 @@
 using DenOfIz;
 
-namespace Graphics.Shader;
+namespace Graphics;
 
-public sealed class Shader(ShaderRootSignature rootSignature) : IDisposable
+public class Shader(ShaderRootSignature rootSignature) : IDisposable
 {
     private readonly Dictionary<string, ShaderVariant> _variants = new();
     private bool _disposed;

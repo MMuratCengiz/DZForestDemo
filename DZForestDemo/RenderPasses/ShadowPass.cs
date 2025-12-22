@@ -205,7 +205,7 @@ public sealed class ShadowPass : IDisposable
             Format = Format.D32Float,
             MipLevels = 1,
             ArraySize = 1,
-            Usage = (uint)TextureUsageFlagBits.TextureBinding,
+            Usage = (uint)(TextureUsageFlagBits.TextureBinding | TextureUsageFlagBits.RenderAttachment),
             DebugName = "ShadowAtlas"
         });
 
@@ -545,15 +545,9 @@ public sealed class ShadowPass : IDisposable
         var stride = (ulong)Unsafe.SizeOf<ShadowInstanceData>();
         var buffer = _ctx.LogicalDevice.CreateBuffer(new BufferDesc
         {
-            // Descriptor = (uint)ResourceDescriptorFlagBits.StructuredBuffer,
             HeapType = HeapType.CpuGpu,
             NumBytes = stride * (ulong)capacity,
-            StructureDesc = new StructuredBufferDesc
-            {
-                Offset = 0,
-                NumElements = (ulong)capacity,
-                Stride = stride
-            },
+            Usage = (int)BufferUsageFlagBits.Uniform,
             DebugName = StringView.Create($"ShadowBatchInstance_{frameIndex}_{meshHandle.Index}")
         });
 

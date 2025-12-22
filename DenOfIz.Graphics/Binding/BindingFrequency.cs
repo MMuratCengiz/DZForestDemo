@@ -1,4 +1,4 @@
-﻿namespace Graphics.Shader.Binding;
+﻿namespace Graphics.Binding;
 
 public enum BindingFrequency : uint
 {

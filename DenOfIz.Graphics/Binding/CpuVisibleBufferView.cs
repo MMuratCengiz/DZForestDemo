@@ -1,6 +1,6 @@
 ﻿using Buffer = DenOfIz.Buffer;
 
-namespace Graphics.Shader.Binding;
+namespace Graphics.Binding;
 
 public struct CpuVisibleBufferView(IntPtr mappedMemory, Buffer buffer, ulong offset, ulong numBytes)
 {

@@ -32,15 +32,9 @@ public sealed class InstanceBuffer<T> : IDisposable where T : unmanaged
         {
             _buffers[i] = logicalDevice.CreateBuffer(new BufferDesc
             {
-                // Descriptor = (uint)ResourceDescriptorFlagBits.StructuredBuffer,
                 HeapType = HeapType.CpuGpu,
                 NumBytes = bufferSize,
-                StructureDesc = new StructuredBufferDesc
-                {
-                    Offset = 0,
-                    NumElements = (ulong)maxInstances,
-                    Stride = stride
-                },
+                Usage = (uint)BufferUsageFlagBits.Uniform,
                 DebugName = StringView.Create($"InstanceBuffer_{typeof(T).Name}_{i}")
             });
             _mappedPtrs[i] = _buffers[i].MapMemory();
@@ -208,15 +202,9 @@ public sealed class DynamicInstanceBuffer<T> : IDisposable where T : unmanaged
         {
             _buffers[i] = _logicalDevice.CreateBuffer(new BufferDesc
             {
-                // Descriptor = (uint)ResourceDescriptorFlagBits.StructuredBuffer,
                 HeapType = HeapType.CpuGpu,
                 NumBytes = bufferSize,
-                StructureDesc = new StructuredBufferDesc
-                {
-                    Offset = 0,
-                    NumElements = (ulong)capacity,
-                    Stride = stride
-                },
+                Usage = (int)BufferUsageFlagBits.Uniform,
                 DebugName = StringView.Create($"DynamicInstanceBuffer_{typeof(T).Name}_{i}")
             });
             _mappedPtrs[i] = _buffers[i].MapMemory();

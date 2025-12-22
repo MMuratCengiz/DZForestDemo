@@ -2,7 +2,7 @@ using System.Runtime.CompilerServices;
 using DenOfIz;
 using Buffer = DenOfIz.Buffer;
 
-namespace Graphics.Shader.Binding;
+namespace Graphics.Binding;
 
 public sealed class CpuVisibleBufferAllocator : IDisposable
 {

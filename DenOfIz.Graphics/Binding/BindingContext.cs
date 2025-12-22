@@ -1,11 +1,10 @@
 using System.Runtime.CompilerServices;
 using DenOfIz;
 
-namespace Graphics.Shader.Binding;
+namespace Graphics.Binding;
 
 public sealed class BindingContext : IDisposable
 {
-    private readonly Dictionary<uint, ShaderBindingPool> _pools = [];
     private readonly Dictionary<uint, List<ResourceBindingSlot>> _slotsBySpace = [];
     private readonly CpuVisibleBufferAllocator _cbvAllocator;
     private bool _disposed;
@@ -32,35 +31,12 @@ public sealed class BindingContext : IDisposable
         }
     }
 
-    public ShaderBindingPool GetOrCreatePool(uint registerSpace)
-    {
-        if (!_pools.TryGetValue(registerSpace, out var pool))
-        {
-            pool = new ShaderBindingPool(this, registerSpace);
-            _pools[registerSpace] = pool;
-        }
-        return pool;
-    }
 
     public ShaderBinding CreateBinding(uint registerSpace)
     {
         return new ShaderBinding(this, registerSpace);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ShaderBinding AcquireBinding(uint registerSpace)
-    {
-        return GetOrCreatePool(registerSpace).Acquire();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void ReleaseBinding(ShaderBinding binding)
-    {
-        if (binding.PoolHandle >= 0 && _pools.TryGetValue(binding.RegisterSpace, out var pool))
-        {
-            pool.Release(binding);
-        }
-    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public IReadOnlyList<ResourceBindingSlot> GetSlotsForSpace(uint registerSpace)
@@ -101,14 +77,7 @@ public sealed class BindingContext : IDisposable
         }
 
         _disposed = true;
-
-        foreach (var pool in _pools.Values)
-        {
-            pool.Dispose();
-        }
-        _pools.Clear();
         _cbvAllocator.Dispose();
-
         GC.SuppressFinalize(this);
     }
 }

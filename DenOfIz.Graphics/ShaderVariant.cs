@@ -1,6 +1,6 @@
 using DenOfIz;
 
-namespace Graphics.Shader;
+namespace Graphics;
 
 public struct ShaderVariant(Pipeline pipeline, ShaderProgram program)
 {

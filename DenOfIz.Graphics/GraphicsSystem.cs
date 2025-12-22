@@ -112,7 +112,12 @@ public class GraphicsPlugin(
     public void Build(World world)
     {
         var graphicsApi = new GraphicsApi(_apiPreference);
-        var logicalDevice = graphicsApi.CreateAndLoadOptimalLogicalDevice(new LogicalDeviceDesc());
+        var logicalDevice = graphicsApi.CreateAndLoadOptimalLogicalDevice(new LogicalDeviceDesc()
+        {
+#if DEBUG
+            EnableValidationLayers = true
+#endif
+        });
 
         var graphicsQueue = logicalDevice.CreateCommandQueue(new CommandQueueDesc { QueueType = QueueType.Graphics });
         var computeQueue = logicalDevice.CreateCommandQueue(new CommandQueueDesc { QueueType = QueueType.Compute });

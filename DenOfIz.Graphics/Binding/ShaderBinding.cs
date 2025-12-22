@@ -1,17 +1,11 @@
 using System.Runtime.CompilerServices;
 using DenOfIz;
 
-namespace Graphics.Shader.Binding;
+namespace Graphics.Binding;
 
 public sealed class ShaderBinding : IDisposable
 {
     public ResourceBindGroup BindGroup { get; }
-
-    private readonly struct SrvUavData(Texture? texture, GPUBufferView? buffer)
-    {
-        public readonly Texture? Texture = texture;
-        public readonly GPUBufferView? Buffer = buffer;
-    }
 
     private readonly uint _registerSpace;
     private readonly BindingContext _ctx;
