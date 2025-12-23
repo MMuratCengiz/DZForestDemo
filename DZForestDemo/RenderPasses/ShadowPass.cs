@@ -229,7 +229,7 @@ public sealed class ShadowPass : IDisposable
         var shadowIndex = 0;
 
         // Collect all shadow-casting lights and their matrices
-        _world.Query<DirectionalLight>().Each((ref DirectionalLight light) =>
+        _world.Each((ref DirectionalLight light) =>
         {
             if (!light.CastShadows || shadowIndex >= MaxShadowCastingLights)
             {
@@ -261,7 +261,7 @@ public sealed class ShadowPass : IDisposable
             shadowIndex++;
         });
 
-        _world.Query<PointLight, Transform>().Each((ref PointLight light, ref Transform transform) =>
+        _world.Each((ref PointLight light, ref Transform transform) =>
         {
             if (shadowIndex >= MaxShadowCastingLights)
             {
@@ -292,7 +292,7 @@ public sealed class ShadowPass : IDisposable
             shadowIndex++;
         });
 
-        _world.Query<SpotLight, Transform>().Each((ref SpotLight light, ref Transform transform) =>
+        _world.Each((ref SpotLight light, ref Transform transform) =>
         {
             if (shadowIndex >= MaxShadowCastingLights)
             {

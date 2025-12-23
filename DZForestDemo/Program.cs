@@ -33,6 +33,8 @@ internal static class Program
         world.Component<ActiveScene>().Entity.Add(Ecs.Exclusive);
         world.Component<SceneRoot>();
 
+        TransformSystem.Register(world);
+
         var sceneRenderSystem = new SceneRenderSystem(world);
         VikingScene.OnTextureLoaded = texture => sceneRenderSystem.SetActiveTexture(texture);
 

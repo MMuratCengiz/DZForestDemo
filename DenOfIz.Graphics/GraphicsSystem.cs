@@ -129,7 +129,7 @@ public class GraphicsPlugin(
         var logicalDevice = graphicsApi.CreateAndLoadOptimalLogicalDevice(new LogicalDeviceDesc()
         {
 #if DEBUG
-            EnableValidationLayers = true
+            EnableValidationLayers = false
 #endif
         });
 

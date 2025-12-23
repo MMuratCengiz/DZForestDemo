@@ -742,7 +742,7 @@ public sealed class SceneRenderPass : IDisposable
             }
         }
 
-        _world.Query<AmbientLight>().Each((ref AmbientLight ambient) =>
+        _world.Each((ref AmbientLight ambient) =>
         {
             ambientSkyColor = ambient.SkyColor;
             ambientGroundColor = ambient.GroundColor;
@@ -752,7 +752,7 @@ public sealed class SceneRenderPass : IDisposable
         var currentShadowIndex = 0;
         var numShadows = shadowIndex;
 
-        _world.Query<DirectionalLight>().Each((ref DirectionalLight light) =>
+        _world.Each((ref DirectionalLight light) =>
         {
             if (lightIndex >= MaxLights)
             {
@@ -775,7 +775,7 @@ public sealed class SceneRenderPass : IDisposable
             lightIndex++;
         });
 
-        _world.Query<PointLight, Transform>().Each((ref PointLight light, ref Transform transform) =>
+        _world.Each((ref PointLight light, ref Transform transform) =>
         {
             if (lightIndex >= MaxLights)
             {
@@ -798,7 +798,7 @@ public sealed class SceneRenderPass : IDisposable
             lightIndex++;
         });
 
-        _world.Query<SpotLight, Transform>().Each((ref SpotLight light, ref Transform transform) =>
+        _world.Each((ref SpotLight light, ref Transform transform) =>
         {
             if (lightIndex >= MaxLights)
             {
