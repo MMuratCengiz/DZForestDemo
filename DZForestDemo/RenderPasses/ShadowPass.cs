@@ -5,11 +5,13 @@ using System.Text;
 using DenOfIz;
 using ECS;
 using ECS.Components;
+using Flecs.NET.Core;
 using Graphics;
 using Graphics.Batching;
 using Graphics.RenderGraph;
 using RuntimeAssets;
 using Buffer = DenOfIz.Buffer;
+using Pipeline = DenOfIz.Pipeline;
 
 namespace DZForestDemo.RenderPasses;
 
@@ -198,7 +200,6 @@ public sealed class ShadowPass : IDisposable
 
         _shadowAtlas = renderGraph.CreateTransientTexture(new TransientTextureDesc
         {
-            Aspect = TextureAspect.Depth,
             Width = atlasWidth,
             Height = atlasHeight,
             Depth = 1,
@@ -228,11 +229,11 @@ public sealed class ShadowPass : IDisposable
         var shadowIndex = 0;
 
         // Collect all shadow-casting lights and their matrices
-        foreach (var (entity, light) in _world.Query<DirectionalLight>())
+        _world.Query<DirectionalLight>().Each((ref DirectionalLight light) =>
         {
             if (!light.CastShadows || shadowIndex >= MaxShadowCastingLights)
             {
-                continue;
+                return;
             }
 
             var (renderMatrix, sampleMatrix) =
@@ -258,13 +259,13 @@ public sealed class ShadowPass : IDisposable
             });
 
             shadowIndex++;
-        }
+        });
 
-        foreach (var (entity, light, transform) in _world.Query<PointLight, Transform>())
+        _world.Query<PointLight, Transform>().Each((ref PointLight light, ref Transform transform) =>
         {
             if (shadowIndex >= MaxShadowCastingLights)
             {
-                continue;
+                return;
             }
 
             var lightViewProj = CalculatePointLightMatrix(transform.Position, sceneCenter, light.Radius);
@@ -289,13 +290,13 @@ public sealed class ShadowPass : IDisposable
             });
 
             shadowIndex++;
-        }
+        });
 
-        foreach (var (entity, light, transform) in _world.Query<SpotLight, Transform>())
+        _world.Query<SpotLight, Transform>().Each((ref SpotLight light, ref Transform transform) =>
         {
             if (shadowIndex >= MaxShadowCastingLights)
             {
-                continue;
+                return;
             }
 
             var lightViewProj =
@@ -321,7 +322,7 @@ public sealed class ShadowPass : IDisposable
             });
 
             shadowIndex++;
-        }
+        });
 
         // Add a clear pass first
         renderGraph.AddPass("Shadow_Clear",
@@ -366,7 +367,6 @@ public sealed class ShadowPass : IDisposable
 
         var clearDesc = new RenderingDesc
         {
-            RTAttachments = RenderingAttachmentDescArray.Create([]),
             DepthAttachment = new RenderingAttachmentDesc
             {
                 Resource = atlas,
@@ -425,7 +425,6 @@ public sealed class ShadowPass : IDisposable
 
         var renderingDesc = new RenderingDesc
         {
-            RTAttachments = RenderingAttachmentDescArray.Create([]),
             DepthAttachment = new RenderingAttachmentDesc
             {
                 Resource = atlas,

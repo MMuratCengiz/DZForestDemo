@@ -1,131 +1,84 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using ECS.Components;
+using Flecs.NET.Core;
 
 namespace ECS;
 
-public sealed class TransformSystem : ISystem
+/// <summary>
+/// Factory for creating the transform hierarchy system.
+/// </summary>
+public static class TransformSystem
 {
-    private World _world = null!;
-    private readonly List<Entity> _rootEntities = [];
-    private readonly Dictionary<Entity, List<Entity>> _childrenMap = [];
-    private readonly HashSet<Entity> _processedEntities = [];
-
-    public void Initialize(World world)
+    /// <summary>
+    /// Registers the transform system that updates LocalToWorld matrices.
+    /// Uses Flecs ChildOf relationships for hierarchy.
+    /// </summary>
+    public static void Register(World world)
     {
-        _world = world;
-    }
-
-    public void Run()
-    {
-        BuildHierarchy();
-        UpdateWorldMatrices();
-    }
-
-    private void BuildHierarchy()
-    {
-        _rootEntities.Clear();
-        _childrenMap.Clear();
-
-        foreach (var item in _world.Query<Transform>())
-        {
-            var entity = item.Entity;
-
-            if (_world.TryGetComponent<Parent>(entity, out var parent) && parent.HasParent)
+        world.System<Transform>("TransformSystem")
+            .Without(Ecs.ChildOf, Ecs.Wildcard) // Only root entities
+            .Kind(Ecs.OnUpdate)
+            .Each((Entity entity, ref Transform transform) =>
             {
-                if (!_childrenMap.TryGetValue(parent.Value, out var children))
-                {
-                    children = [];
-                    _childrenMap[parent.Value] = children;
-                }
-                children.Add(entity);
-            }
-            else
+                transform.LocalToWorld = transform.Matrix;
+                UpdateChildren(entity, transform.LocalToWorld);
+            });
+    }
+
+    private static void UpdateChildren(Entity parent, Matrix4x4 parentWorld)
+    {
+        parent.Children(child =>
+        {
+            if (!child.Has<Transform>())
             {
-                _rootEntities.Add(entity);
+                return;
             }
-        }
-    }
 
-    private void UpdateWorldMatrices()
-    {
-        _processedEntities.Clear();
-
-        foreach (var root in _rootEntities)
-        {
-            UpdateEntityAndChildren(root, Matrix4x4.Identity);
-        }
-    }
-
-    private void UpdateEntityAndChildren(Entity entity, Matrix4x4 parentWorld)
-    {
-        if (_processedEntities.Contains(entity))
-        {
-            return;
-        }
-        _processedEntities.Add(entity);
-
-        ref var transform = ref _world.GetComponent<Transform>(entity);
-
-        var localMatrix = transform.Matrix;
-        var worldMatrix = localMatrix * parentWorld;
-        transform.LocalToWorld = worldMatrix;
-
-        if (_childrenMap.TryGetValue(entity, out var children))
-        {
-            foreach (var child in children)
-            {
-                UpdateEntityAndChildren(child, worldMatrix);
-            }
-        }
-    }
-
-    public void Dispose()
-    {
-        _rootEntities.Clear();
-        _childrenMap.Clear();
-        _processedEntities.Clear();
+            ref var transform = ref child.GetMut<Transform>();
+            transform.LocalToWorld = transform.Matrix * parentWorld;
+            UpdateChildren(child, transform.LocalToWorld);
+        });
     }
 }
 
+/// <summary>
+/// Helper methods for transform hierarchy.
+/// </summary>
 public static class TransformHierarchy
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Matrix4x4 ComputeWorldMatrix(World world, Entity entity)
+    public static Matrix4x4 ComputeWorldMatrix(Entity entity)
     {
-        if (!world.TryGetComponent<Transform>(entity, out var transform))
+        if (!entity.Has<Transform>())
         {
             return Matrix4x4.Identity;
         }
 
+        ref readonly var transform = ref entity.Get<Transform>();
         var localMatrix = transform.Matrix;
 
-        if (world.TryGetComponent<Parent>(entity, out var parent) && parent.HasParent)
+        var parent = entity.Parent();
+        if (parent.IsValid() && parent.Has<Transform>())
         {
-            var parentWorld = ComputeWorldMatrix(world, parent.Value);
-            return localMatrix * parentWorld;
+            return localMatrix * ComputeWorldMatrix(parent);
         }
 
         return localMatrix;
     }
 
-    public static void SetParent(World world, Entity child, Entity parent)
+    public static void SetParent(Entity child, Entity parent)
     {
-        if (parent.IsValid)
+        if (parent.IsValid())
         {
-            if (world.HasComponent<Parent>(child))
-            {
-                ref var existingParent = ref world.GetComponent<Parent>(child);
-                existingParent.Value = parent;
-            }
-            else
-            {
-                world.AddComponent(child, new Parent(parent));
-            }
+            child.ChildOf(parent);
         }
-        else if (world.HasComponent<Parent>(child))
+        else
         {
-            world.RemoveComponent<Parent>(child);
+            child.Remove(Ecs.ChildOf, Ecs.Wildcard);
         }
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Entity GetParent(Entity entity) => entity.Parent();
 }

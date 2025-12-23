@@ -1,51 +1,34 @@
-using DenOfIz;
+using Flecs.NET.Core;
 
 namespace ECS;
 
+/// <summary>
+/// Interface for game scenes that respond to enter/exit events.
+/// Scenes are registered with world.RegisterScene(state, scene) and their
+/// OnEnter/OnExit methods are called during state transitions.
+/// </summary>
 public interface IGameScene : IDisposable
 {
-    string Name { get; }
+    /// <summary>
+    /// Called when entering this scene. Use world.SpawnInScene() to create entities.
+    /// </summary>
+    void OnEnter(World world);
 
-    Scene Scene { get; }
-
-    void OnRegister(World world, Scene scene);
-
-    void OnEnter();
-
-    void OnExit();
-
-    void OnUpdate(float deltaTime);
-
-    bool OnEvent(ref Event ev);
-
-    void OnRender();
+    /// <summary>
+    /// Called when exiting this scene. Entities spawned with SpawnInScene are auto-deleted.
+    /// </summary>
+    void OnExit(World world);
 }
 
+/// <summary>
+/// Base class for game scenes with common dispose pattern.
+/// </summary>
 public abstract class GameSceneBase : IGameScene
 {
     private bool _disposed;
 
-    public abstract string Name { get; }
-
-    public Scene Scene { get; private set; } = null!;
-
-    protected World World { get; private set; } = null!;
-
-    public virtual void OnRegister(World world, Scene scene)
-    {
-        World = world;
-        Scene = scene;
-    }
-
-    public virtual void OnEnter() { }
-
-    public virtual void OnExit() { }
-
-    public virtual void OnUpdate(float deltaTime) { }
-
-    public virtual bool OnEvent(ref Event ev) => false;
-
-    public virtual void OnRender() { }
+    public virtual void OnEnter(World world) { }
+    public virtual void OnExit(World world) { }
 
     public void Dispose()
     {
@@ -53,6 +36,7 @@ public abstract class GameSceneBase : IGameScene
         {
             return;
         }
+
         _disposed = true;
         OnDispose();
         GC.SuppressFinalize(this);

@@ -5,11 +5,13 @@ using System.Text;
 using DenOfIz;
 using ECS;
 using ECS.Components;
+using Flecs.NET.Core;
 using Graphics;
 using Graphics.Batching;
 using Graphics.RenderGraph;
 using RuntimeAssets;
 using Buffer = DenOfIz.Buffer;
+using Pipeline = DenOfIz.Pipeline;
 
 namespace DZForestDemo.RenderPasses;
 
@@ -267,7 +269,6 @@ public sealed class SceneRenderPass : IDisposable
             _textureBindGroups[i].Dispose();
             _boneMatricesBindGroups[i].Dispose();
 
-            // Dispose skinned bind groups
             _skinnedFrameBindGroups[i].Dispose();
             _skinnedLightBindGroups[i].Dispose();
             _skinnedTextureBindGroups[i].Dispose();
@@ -712,18 +713,13 @@ public sealed class SceneRenderPass : IDisposable
 
     private unsafe void UpdateLightConstants(List<ShadowPass.ShadowData>? shadowData, int frameIndex)
     {
-        var lightConstants = new LightConstants
-        {
-            AmbientSkyColor = new Vector3(0.4f, 0.5f, 0.6f),
-            AmbientGroundColor = new Vector3(0.2f, 0.18f, 0.15f),
-            AmbientIntensity = 0.3f,
-            NumLights = 0,
-            NumShadows = 0
-        };
+        var ambientSkyColor = new Vector3(0.4f, 0.5f, 0.6f);
+        var ambientGroundColor = new Vector3(0.2f, 0.18f, 0.15f);
+        var ambientIntensity = 0.3f;
 
-        var lightPtr = (GpuLight*)lightConstants.Lights;
-        var shadowPtr = (GpuShadowData*)lightConstants.Shadows;
-        uint lightIndex = 0;
+        var lights = stackalloc GpuLight[MaxLights];
+        var shadows = stackalloc GpuShadowData[MaxShadowLights];
+        var lightIndex = 0;
         var shadowIndex = 0;
 
         if (shadowData != null)
@@ -735,7 +731,7 @@ public sealed class SceneRenderPass : IDisposable
                     break;
                 }
 
-                shadowPtr[shadowIndex] = new GpuShadowData
+                shadows[shadowIndex] = new GpuShadowData
                 {
                     LightViewProjection = shadow.LightViewProjection,
                     AtlasScaleOffset = shadow.AtlasScaleOffset,
@@ -744,29 +740,27 @@ public sealed class SceneRenderPass : IDisposable
                 };
                 shadowIndex++;
             }
-
-            lightConstants.NumShadows = (uint)shadowIndex;
         }
 
-        foreach (var (_, ambient) in _world.Query<AmbientLight>())
+        _world.Query<AmbientLight>().Each((ref AmbientLight ambient) =>
         {
-            lightConstants.AmbientSkyColor = ambient.SkyColor;
-            lightConstants.AmbientGroundColor = ambient.GroundColor;
-            lightConstants.AmbientIntensity = ambient.Intensity;
-            break;
-        }
+            ambientSkyColor = ambient.SkyColor;
+            ambientGroundColor = ambient.GroundColor;
+            ambientIntensity = ambient.Intensity;
+        });
 
         var currentShadowIndex = 0;
+        var numShadows = shadowIndex;
 
-        foreach (var (_, light) in _world.Query<DirectionalLight>())
+        _world.Query<DirectionalLight>().Each((ref DirectionalLight light) =>
         {
             if (lightIndex >= MaxLights)
             {
-                break;
+                return;
             }
 
-            var hasShadow = light.CastShadows && currentShadowIndex < shadowIndex;
-            lightPtr[lightIndex] = new GpuLight
+            var hasShadow = light.CastShadows && currentShadowIndex < numShadows;
+            lights[lightIndex] = new GpuLight
             {
                 PositionOrDirection = light.Direction,
                 Type = LightTypeDirectional,
@@ -779,17 +773,17 @@ public sealed class SceneRenderPass : IDisposable
                 ShadowIndex = hasShadow ? currentShadowIndex++ : -1
             };
             lightIndex++;
-        }
+        });
 
-        foreach (var (_, light, transform) in _world.Query<PointLight, Transform>())
+        _world.Query<PointLight, Transform>().Each((ref PointLight light, ref Transform transform) =>
         {
             if (lightIndex >= MaxLights)
             {
-                break;
+                return;
             }
 
-            var hasShadow = currentShadowIndex < shadowIndex;
-            lightPtr[lightIndex] = new GpuLight
+            var hasShadow = currentShadowIndex < numShadows;
+            lights[lightIndex] = new GpuLight
             {
                 PositionOrDirection = transform.Position,
                 Type = LightTypePoint,
@@ -802,17 +796,17 @@ public sealed class SceneRenderPass : IDisposable
                 ShadowIndex = hasShadow ? currentShadowIndex++ : -1
             };
             lightIndex++;
-        }
+        });
 
-        foreach (var (_, light, transform) in _world.Query<SpotLight, Transform>())
+        _world.Query<SpotLight, Transform>().Each((ref SpotLight light, ref Transform transform) =>
         {
             if (lightIndex >= MaxLights)
             {
-                break;
+                return;
             }
 
-            var hasShadow = currentShadowIndex < shadowIndex;
-            lightPtr[lightIndex] = new GpuLight
+            var hasShadow = currentShadowIndex < numShadows;
+            lights[lightIndex] = new GpuLight
             {
                 PositionOrDirection = transform.Position,
                 Type = LightTypeSpot,
@@ -825,9 +819,29 @@ public sealed class SceneRenderPass : IDisposable
                 ShadowIndex = hasShadow ? currentShadowIndex++ : -1
             };
             lightIndex++;
+        });
+
+        var lightConstants = new LightConstants
+        {
+            AmbientSkyColor = ambientSkyColor,
+            AmbientGroundColor = ambientGroundColor,
+            AmbientIntensity = ambientIntensity,
+            NumLights = (uint)lightIndex,
+            NumShadows = (uint)shadowIndex
+        };
+
+        var lightPtr = (GpuLight*)lightConstants.Lights;
+        var shadowPtr = (GpuShadowData*)lightConstants.Shadows;
+
+        for (var i = 0; i < lightIndex; i++)
+        {
+            lightPtr[i] = lights[i];
         }
 
-        lightConstants.NumLights = lightIndex;
+        for (var i = 0; i < shadowIndex; i++)
+        {
+            shadowPtr[i] = shadows[i];
+        }
 
         Unsafe.Write(_lightBufferMappedPtrs[frameIndex].ToPointer(), lightConstants);
     }

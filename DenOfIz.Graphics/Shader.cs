@@ -4,6 +4,8 @@ namespace Graphics;
 
 public class Shader(ShaderRootSignature rootSignature) : IDisposable
 {
+    private readonly ShaderFlags _flags;
+    
     private readonly Dictionary<string, ShaderVariant> _variants = new();
     private bool _disposed;
 

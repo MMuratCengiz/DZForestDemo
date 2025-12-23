@@ -3,8 +3,9 @@ using Application.Events;
 using Application.Timing;
 using Application.Windowing;
 using DenOfIz;
-using ECS;
+using Flecs.NET.Core;
 using Graphics;
+using Physics;
 using RuntimeAssets;
 
 namespace Application;
@@ -24,7 +25,7 @@ public sealed class App(ApplicationOptions options) : IDisposable
 
     public AppWindow Window { get; } = new(options.Title, options.Width, options.Height);
     public FrameClock Clock { get; } = new();
-    public World World { get; } = new();
+    public World World { get; } = World.Create();
 
     public GraphicsDesc Graphics => _options.Graphics;
 
@@ -39,6 +40,7 @@ public sealed class App(ApplicationOptions options) : IDisposable
 
         _disposed = true;
 
+        GraphicsSystems.WaitIdle(World);
         World.Dispose();
         Window.Dispose();
         Engine.Shutdown();
@@ -46,20 +48,6 @@ public sealed class App(ApplicationOptions options) : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    public SystemDescriptor AddSystem<T>(T system, Schedule schedule) where T : ISystem
-    {
-        if (_initialized)
-        {
-            throw new InvalidOperationException("Cannot add systems after initialization.");
-        }
-
-        return World.AddSystem(system, schedule);
-    }
-
-    public T? GetSystem<T>() where T : class, ISystem
-    {
-        return World.GetSystem<T>();
-    }
 
     public void Run()
     {
@@ -69,10 +57,9 @@ public sealed class App(ApplicationOptions options) : IDisposable
         Window.Show();
 
         var timeResource = new TimeResource(Clock);
-        World.RegisterResource(timeResource);
-        World.RegisterResource<ITimeResource>(timeResource);
+        World.Set(timeResource);
+        World.Set<ITimeResource>(timeResource);
 
-        World.Initialize();
         _initialized = true;
         IsRunning = true;
         Clock.Start();
@@ -108,22 +95,16 @@ public sealed class App(ApplicationOptions options) : IDisposable
             return;
         }
 
-        World.RunSchedule(Schedule.First);
-        World.RunSchedule(Schedule.PreUpdate);
-
+        // Handle fixed timestep for physics
         var fixedSteps = _fixedTimestep.Accumulate(Clock.DeltaTime);
-        for (var i = 0; i < fixedSteps; i++)
+        if (World.Has<PhysicsResource>())
         {
-            World.RunSchedule(Schedule.FixedUpdate);
+            ref var physics = ref World.GetMut<PhysicsResource>();
+            physics.AccumulatedSteps = fixedSteps;
         }
 
-        World.RunSchedule(Schedule.Update);
-        World.RunSchedule(Schedule.PostUpdate);
-        World.RunSchedule(Schedule.Last);
-
-        World.RunSchedule(Schedule.PreRender);
-        World.RunSchedule(Schedule.Render);
-        World.RunSchedule(Schedule.PostRender);
+        // Run all systems via Flecs progress
+        World.Progress((float)Clock.DeltaTime);
     }
 
     private void ProcessEvents()
@@ -139,14 +120,47 @@ public sealed class App(ApplicationOptions options) : IDisposable
             if (ev.Type == EventType.WindowEvent)
             {
                 Window.HandleWindowEvent(ev.Window.Event, ev.Window.Data1, ev.Window.Data2);
+
+                if (ev.Window.Event == WindowEventType.Resized)
+                {
+                    GraphicsSystems.HandleResize(World, (uint)ev.Window.Data1, (uint)ev.Window.Data2);
+                }
             }
 
-            World.OnEvent(ref ev);
+            // Dispatch events to any registered event handlers
+            if (World.Has<EventHandlers>())
+            {
+                World.Get<EventHandlers>().Dispatch(ref ev);
+            }
         }
     }
 
     private void Shutdown()
     {
-        World.Shutdown();
+        GraphicsSystems.WaitIdle(World);
+    }
+}
+
+/// <summary>
+/// Event handler registry for dispatching input events.
+/// </summary>
+public class EventHandlers
+{
+    private readonly List<EventHandler> _handlers = [];
+
+    public delegate bool EventHandler(ref Event ev);
+
+    public void Register(EventHandler handler) => _handlers.Add(handler);
+    public void Unregister(EventHandler handler) => _handlers.Remove(handler);
+
+    public void Dispatch(ref Event ev)
+    {
+        foreach (var handler in _handlers)
+        {
+            if (handler(ref ev))
+            {
+                break; // Event was consumed
+            }
+        }
     }
 }

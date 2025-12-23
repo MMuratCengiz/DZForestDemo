@@ -1,100 +1,114 @@
 using System.Runtime.CompilerServices;
 using DenOfIz;
-using ECS;
+using Flecs.NET.Core;
 
 namespace Graphics;
 
-public class PrepareFrameSystem : ISystem
+/// <summary>
+/// Custom phases for rendering pipeline.
+/// </summary>
+public struct PreRender;
+public struct Render;
+public struct PostRender;
+
+/// <summary>
+/// Registers graphics systems and phases.
+/// </summary>
+public static class GraphicsSystems
 {
-    private GraphicsResource _ctx = null!;
-
-    public void Initialize(World world)
+    /// <summary>
+    /// Initialize graphics phases in the pipeline.
+    /// Call this before registering graphics systems.
+    /// </summary>
+    public static void InitPhases(World world)
     {
-        _ctx = world.GetResource<GraphicsResource>();
+        // PreRender runs after OnUpdate
+        world.Component<PreRender>().Entity
+            .Add(Ecs.DependsOn, Ecs.OnUpdate)
+            .Add(Ecs.Phase);
+
+        // Render runs after PreRender
+        world.Component<Render>().Entity
+            .Add(Ecs.DependsOn, world.Entity<PreRender>())
+            .Add(Ecs.Phase);
+
+        // PostRender runs after Render
+        world.Component<PostRender>().Entity
+            .Add(Ecs.DependsOn, world.Entity<Render>())
+            .Add(Ecs.Phase);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Run()
+    /// <summary>
+    /// Register the frame preparation system.
+    /// </summary>
+    public static void RegisterPrepareFrame(World world)
     {
-        _ctx.FrameIndex = (_ctx.FrameIndex + 1) % _ctx.NumFrames;
-        _ctx.RenderGraph.BeginFrame(_ctx.FrameIndex);
+        world.System("PrepareFrame")
+            .Kind<PreRender>()
+            .Run((Iter _) =>
+            {
+                ref var ctx = ref world.GetMut<GraphicsResource>();
+                ctx.FrameIndex = (ctx.FrameIndex + 1) % ctx.NumFrames;
+                ctx.RenderGraph.BeginFrame(ctx.FrameIndex);
 
-        var imageIndex = _ctx.SwapChain.AcquireNextImage();
-        var renderTarget = _ctx.SwapChain.GetRenderTarget(imageIndex);
-        _ctx.SwapchainRenderTarget = _ctx.RenderGraph.ImportTexture("SwapchainRT", renderTarget);
+                var imageIndex = ctx.SwapChain.AcquireNextImage();
+                var renderTarget = ctx.SwapChain.GetRenderTarget(imageIndex);
+                ctx.SwapchainRenderTarget = ctx.RenderGraph.ImportTexture("SwapchainRT", renderTarget);
+            });
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool OnEvent(ref Event ev)
+    /// <summary>
+    /// Register the frame presentation system.
+    /// </summary>
+    public static void RegisterPresentFrame(World world)
     {
-        if (ev is { Type: EventType.WindowEvent, Window.Event: WindowEventType.Resized })
-        {
-            HandleResize((uint)ev.Window.Data1, (uint)ev.Window.Data2);
-        }
+        world.System("PresentFrame")
+            .Kind<PostRender>()
+            .Run((Iter _) =>
+            {
+                ref var ctx = ref world.GetMut<GraphicsResource>();
+                ctx.RenderGraph.Compile();
+                ctx.RenderGraph.Execute();
 
-        return false;
+                switch (ctx.SwapChain.Present(ctx.FrameIndex))
+                {
+                    case PresentResult.Success:
+                    case PresentResult.Suboptimal:
+                        break;
+                    case PresentResult.Timeout:
+                    case PresentResult.DeviceLost:
+                        ctx.WaitIdle();
+                        break;
+                }
+            });
     }
-
-    public void Shutdown()
-    {
-        _ctx.WaitIdle();
-    }
-
-    public void Dispose()
-    {
-        GC.SuppressFinalize(this);
-    }
-
-    private void HandleResize(uint width, uint height)
+    
+    public static void HandleResize(World world, uint width, uint height)
     {
         if (width == 0 || height == 0)
         {
             return;
         }
 
-        _ctx.WaitIdle();
-        _ctx.SwapChain.Resize(width, height);
-        _ctx.Width = width;
-        _ctx.Height = height;
-        _ctx.RenderGraph.SetDimensions(width, height);
+        ref var ctx = ref world.GetMut<GraphicsResource>();
+        ctx.WaitIdle();
+        ctx.SwapChain.Resize(width, height);
+        ctx.Width = width;
+        ctx.Height = height;
+        ctx.RenderGraph.SetDimensions(width, height);
 
-        for (uint i = 0; i < _ctx.NumFrames; ++i)
+        for (uint i = 0; i < ctx.NumFrames; ++i)
         {
-            _ctx.ResourceTracking.TrackTexture(_ctx.SwapChain.GetRenderTarget(i), QueueType.Graphics);
-        }
-    }
-}
-
-public class PresentFrameSystem : ISystem
-{
-    private GraphicsResource _ctx = null!;
-
-    public void Initialize(World world)
-    {
-        _ctx = world.GetResource<GraphicsResource>();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Run()
-    {
-        _ctx.RenderGraph.Compile();
-        _ctx.RenderGraph.Execute();
-
-        switch (_ctx.SwapChain.Present(_ctx.FrameIndex))
-        {
-            case PresentResult.Success:
-            case PresentResult.Suboptimal:
-                break;
-            case PresentResult.Timeout:
-            case PresentResult.DeviceLost:
-                _ctx.WaitIdle();
-                break;
+            ctx.ResourceTracking.TrackTexture(ctx.SwapChain.GetRenderTarget(i), QueueType.Graphics);
         }
     }
 
-    public void Dispose()
+    public static void WaitIdle(World world)
     {
-        GC.SuppressFinalize(this);
+        if (world.Has<GraphicsResource>())
+        {
+            world.GetMut<GraphicsResource>().WaitIdle();
+        }
     }
 }
 
@@ -152,8 +166,11 @@ public class GraphicsPlugin(
             width,
             height);
 
-        world.RegisterResource(context);
-        world.AddSystem(new PrepareFrameSystem(), Schedule.PreRender);
-        world.AddSystem(new PresentFrameSystem(), Schedule.PostRender);
+        world.Set(context);
+
+        // Initialize phases and register systems
+        GraphicsSystems.InitPhases(world);
+        GraphicsSystems.RegisterPrepareFrame(world);
+        GraphicsSystems.RegisterPresentFrame(world);
     }
 }

@@ -33,10 +33,8 @@ public class GraphicsResource : IResource, IDisposable
         Width = width;
         Height = height;
 
-        RenderGraph = new RenderGraph.RenderGraph(new RenderGraphDesc
+        RenderGraph = new RenderGraph.RenderGraph(new RenderGraphDesc(logicalDevice, graphicsCommandQueue, ResourceTracking)
         {
-            LogicalDevice = logicalDevice,
-            CommandQueue = graphicsCommandQueue,
             NumFrames = numFrames
         });
         RenderGraph.SetDimensions(width, height);
@@ -69,6 +67,7 @@ public class GraphicsResource : IResource, IDisposable
     {
         WaitIdle();
         RenderGraph.Dispose();
+        ResourceTracking.Dispose();
         SwapChain.Dispose();
         CopyCommandQueue.Dispose();
         ComputeCommandQueue.Dispose();

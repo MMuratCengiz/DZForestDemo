@@ -4,6 +4,7 @@ using DenOfIz;
 using DZForestDemo.Scenes;
 using DZForestDemo.Systems;
 using ECS;
+using Flecs.NET.Core;
 
 namespace DZForestDemo;
 
@@ -11,12 +12,7 @@ internal static class Program
 {
     private static void Main(string[] args)
     {
-        if (true)
-        {
-            RgCommandListDemoProgram.RunDemo();
-            return;
-        }
-        var app = AppBuilder.Create()
+        var app = Application.AppBuilder.Create()
             .WithTitle("DenOfIz Scene Demo - Press F1/F2 to switch scenes")
             .WithSize(1920, 1080)
             .WithNumFrames(3)
@@ -34,36 +30,21 @@ internal static class Program
 
         var world = app.World;
 
-        world.RegisterResource(new AssetLoadTracker());
+        world.Component<ActiveScene>().Entity.Add(Ecs.Exclusive);
+        world.Component<SceneRoot>();
 
-        world.InitStateWithScenes(DemoGameState.Fox);
+        var sceneRenderSystem = new SceneRenderSystem(world);
+        VikingScene.OnTextureLoaded = texture => sceneRenderSystem.SetActiveTexture(texture);
 
-        var sceneRenderSystem = new SceneRenderSystem();
+        FoxScene.Register(world);
+        VikingScene.Register(world);
 
-        var foxScene = new FoxScene();
-        var vikingScene = new VikingScene();
+        sceneRenderSystem.Register();
 
-        vikingScene.OnTextureLoaded = texture => sceneRenderSystem.SetActiveTexture(texture);
+        world.Set(new EventHandlers());
+        world.Get<EventHandlers>().Register((ref Event ev) => sceneRenderSystem.HandleEvent(ref ev));
 
-        world.RegisterScene(DemoGameState.Fox, foxScene);
-        world.RegisterScene(DemoGameState.Viking, vikingScene);
-
-        world.InitializeScenes<DemoGameState>();
-
-        world.AddSystem(new StateTransitionSystem<DemoGameState>(), Schedule.PreUpdate);
-        world.AddSystem(new AssetLoadTrackerSystem(), Schedule.PreUpdate);
-        world.AddSystem(new TransformSystem(), Schedule.PostUpdate);
-        world.AddSystem(sceneRenderSystem, Schedule.Render);
-
-        world.AddOnEnter(DemoGameState.Fox, (w, s) =>
-        {
-            Console.WriteLine("Entered Fox Scene - 3 animated foxes with physics cubes");
-        });
-
-        world.AddOnEnter(DemoGameState.Viking, (w, s) =>
-        {
-            Console.WriteLine("Entered Viking Scene - Viking character models");
-        });
+        world.Add<ActiveScene, FoxSceneTag>();
 
         app.Run();
     }

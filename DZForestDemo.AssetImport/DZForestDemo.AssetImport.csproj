@@ -10,6 +10,7 @@
 
     <ItemGroup>
         <PackageReference Include="DenOfIzGraphics" Version="0.4.1-alpha" />
+        <PackageReference Include="Flecs.NET.Release" Version="4.0.4-build.548" />
     </ItemGroup>
 
     <ItemGroup>

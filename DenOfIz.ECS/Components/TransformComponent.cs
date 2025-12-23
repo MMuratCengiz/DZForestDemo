@@ -3,6 +3,9 @@ using System.Runtime.CompilerServices;
 
 namespace ECS.Components;
 
+/// <summary>
+/// Transform component storing position, rotation, scale and computed world matrix.
+/// </summary>
 [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
 public struct Transform(Vector3 position, Quaternion rotation, Vector3 scale)
 {
@@ -86,6 +89,9 @@ public struct Transform(Vector3 position, Quaternion rotation, Vector3 scale)
     }
 }
 
+/// <summary>
+/// Cached world transform matrix.
+/// </summary>
 [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
 public struct LocalToWorld(Matrix4x4 matrix)
 {
@@ -98,23 +104,9 @@ public struct LocalToWorld(Matrix4x4 matrix)
     }
 }
 
-public struct Parent
-{
-    public Entity Value;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Parent(Entity parent)
-    {
-        Value = parent;
-    }
-
-    public bool HasParent
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => Value.IsValid;
-    }
-}
-
+/// <summary>
+/// Velocity component for physics/movement.
+/// </summary>
 [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
 public struct Velocity(Vector3 linear, Vector3 angular)
 {

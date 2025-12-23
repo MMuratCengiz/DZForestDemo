@@ -1,6 +1,6 @@
 using System.Numerics;
-using ECS;
 using ECS.Components;
+using Flecs.NET.Core;
 using RuntimeAssets.Components;
 using RuntimeAssets.GltfModels;
 
@@ -28,7 +28,7 @@ public static class ModelEntitySpawner
 
         var nodeToEntity = new Dictionary<int, Entity>();
         var entities = new List<Entity>();
-        var rootEntity = Entity.Invalid;
+        Entity rootEntity = default;
 
         var rootNodes = model.Nodes
             .Where(n => !n.ParentIndex.HasValue)
@@ -37,10 +37,10 @@ public static class ModelEntitySpawner
         foreach (var rootNode in rootNodes)
         {
             var entity = SpawnNodeHierarchy(
-                world, model, rootNode, Entity.Invalid,
+                world, model, rootNode, default,
                 rootTransform, defaultMaterial, nodeToEntity, entities);
 
-            if (!rootEntity.IsValid)
+            if (!rootEntity.IsValid())
             {
                 rootEntity = entity;
             }
@@ -69,7 +69,7 @@ public static class ModelEntitySpawner
 
         var nodeToEntity = new Dictionary<int, Entity>();
         var entities = new List<Entity>();
-        var rootEntity = Entity.Invalid;
+        Entity rootEntity = default;
 
         var rootNodes = model.Nodes
             .Where(n => !n.ParentIndex.HasValue)
@@ -78,11 +78,11 @@ public static class ModelEntitySpawner
         foreach (var rootNode in rootNodes)
         {
             var entity = SpawnNodeHierarchySkinned(
-                world, model, rootNode, Entity.Invalid,
+                world, model, rootNode, default,
                 rootTransform, skeleton, animation, defaultMaterial,
                 nodeToEntity, entities);
 
-            if (!rootEntity.IsValid)
+            if (!rootEntity.IsValid())
             {
                 rootEntity = entity;
             }
@@ -106,27 +106,27 @@ public static class ModelEntitySpawner
         Dictionary<int, Entity> nodeToEntity,
         List<Entity> entities)
     {
-        var entity = world.Spawn();
+        var entity = world.Entity();
         nodeToEntity[node.Index] = entity;
         entities.Add(entity);
 
         var localTransform = ConvertNodeTransform(node.LocalTransform);
 
-        if (parentEntity.IsValid)
+        if (parentEntity.IsValid())
         {
-            world.AddComponent(entity, localTransform);
-            world.AddComponent(entity, new Parent(parentEntity));
+            entity.Set(localTransform);
+            entity.ChildOf(parentEntity);
         }
         else
         {
             var combinedTransform = CombineTransforms(rootTransform, localTransform);
-            world.AddComponent(entity, combinedTransform);
+            entity.Set(combinedTransform);
         }
 
         if (node.MeshIndex.HasValue && node.MeshIndex.Value < model.MeshHandles.Count)
         {
             var meshHandle = model.MeshHandles[node.MeshIndex.Value];
-            world.AddComponent(entity, new MeshComponent(meshHandle));
+            entity.Set(new MeshComponent(meshHandle));
 
             var material = defaultMaterial ?? new StandardMaterial
             {
@@ -134,7 +134,7 @@ public static class ModelEntitySpawner
                 Metallic = 0f,
                 Roughness = 0.5f
             };
-            world.AddComponent(entity, material);
+            entity.Set(material);
         }
 
         foreach (var childIndex in node.ChildIndices)
@@ -163,27 +163,27 @@ public static class ModelEntitySpawner
         Dictionary<int, Entity> nodeToEntity,
         List<Entity> entities)
     {
-        var entity = world.Spawn();
+        var entity = world.Entity();
         nodeToEntity[node.Index] = entity;
         entities.Add(entity);
 
         var localTransform = ConvertNodeTransform(node.LocalTransform);
 
-        if (parentEntity.IsValid)
+        if (parentEntity.IsValid())
         {
-            world.AddComponent(entity, localTransform);
-            world.AddComponent(entity, new Parent(parentEntity));
+            entity.Set(localTransform);
+            entity.ChildOf(parentEntity);
         }
         else
         {
             var combinedTransform = CombineTransforms(rootTransform, localTransform);
-            world.AddComponent(entity, combinedTransform);
+            entity.Set(combinedTransform);
         }
 
         if (node.MeshIndex.HasValue && node.MeshIndex.Value < model.MeshHandles.Count)
         {
             var meshHandle = model.MeshHandles[node.MeshIndex.Value];
-            world.AddComponent(entity, new MeshComponent(meshHandle));
+            entity.Set(new MeshComponent(meshHandle));
 
             var material = defaultMaterial ?? new StandardMaterial
             {
@@ -191,7 +191,7 @@ public static class ModelEntitySpawner
                 Metallic = 0f,
                 Roughness = 0.5f
             };
-            world.AddComponent(entity, material);
+            entity.Set(material);
 
             if (node.SkinIndex.HasValue && skeleton.IsValid)
             {
@@ -209,10 +209,10 @@ public static class ModelEntitySpawner
                     Loop = true,
                     PlaybackSpeed = 1.0f
                 };
-                world.AddComponent(entity, animator);
+                entity.Set(animator);
 
                 var boneMatrices = new BoneMatricesComponent(numJoints, inverseBindMatrices);
-                world.AddComponent(entity, boneMatrices);
+                entity.Set(boneMatrices);
             }
         }
 

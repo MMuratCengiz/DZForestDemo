@@ -1,8 +1,8 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using ECS;
 using ECS.Components;
+using Flecs.NET.Core;
 using Graphics.Batching;
 using RuntimeAssets;
 using RuntimeAssets.Components;
@@ -68,7 +68,6 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
 
     private readonly List<AnimatedInstance> _animatedInstances = [];
     private bool _disposed;
-    private SceneId _activeSceneFilter = SceneId.Invalid;
 
     public RenderBatcher<RuntimeMeshHandle, StaticInstance> StaticBatcher { get; } = new(maxInstances);
 
@@ -77,12 +76,6 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
     public int StaticInstanceCount => StaticBatcher.InstanceCount;
 
     public int AnimatedInstanceCount => _animatedInstances.Count;
-
-    public SceneId ActiveSceneFilter
-    {
-        get => _activeSceneFilter;
-        set => _activeSceneFilter = value;
-    }
 
     public void Dispose()
     {
@@ -102,79 +95,66 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
         StaticBatcher.Clear();
         _animatedInstances.Clear();
 
-        var filterByScene = _activeSceneFilter.IsValid;
-
-        foreach (var (entity, mesh, transform, material) in world.Query<MeshComponent, Transform, StandardMaterial>())
-        {
-            if (!mesh.IsValid)
+        world.Query<MeshComponent, Transform, StandardMaterial>()
+            .Each((Entity entity, ref MeshComponent mesh, ref Transform transform, ref StandardMaterial material) =>
             {
-                continue;
-            }
+                if (!mesh.IsValid)
+                {
+                    return;
+                }
 
-            if (filterByScene && !IsInActiveScene(entity))
+                if (entity.Has<AnimatorComponent>() && entity.Has<BoneMatricesComponent>())
+                {
+                    ref var boneMatrices = ref entity.GetMut<BoneMatricesComponent>();
+                    if (boneMatrices.IsValid)
+                    {
+                        _animatedInstances.Add(new AnimatedInstance(
+                            entity,
+                            mesh.Mesh,
+                            transform.LocalToWorld,
+                            material,
+                            boneMatrices.Data));
+                        return;
+                    }
+                }
+
+                StaticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, material));
+            });
+
+        // Query entities with mesh and transform but no material (skip those with material)
+        world.Query<MeshComponent, Transform>()
+            .Each((Entity entity, ref MeshComponent mesh, ref Transform transform) =>
             {
-                continue;
-            }
+                // Skip entities that have StandardMaterial (handled in query above)
+                if (entity.Has<StandardMaterial>())
+                {
+                    return;
+                }
 
-            if (world.HasComponent<AnimatorComponent>(entity) &&
-                world.TryGetComponent<BoneMatricesComponent>(entity, out var boneMatrices) &&
-                boneMatrices.IsValid)
-            {
-                _animatedInstances.Add(new AnimatedInstance(
-                    entity,
-                    mesh.Mesh,
-                    transform.LocalToWorld,
-                    material,
-                    boneMatrices.Data));
-                continue;
-            }
+                if (!mesh.IsValid)
+                {
+                    return;
+                }
 
-            StaticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, material));
-        }
+                if (entity.Has<AnimatorComponent>() && entity.Has<BoneMatricesComponent>())
+                {
+                    ref var boneMatrices = ref entity.GetMut<BoneMatricesComponent>();
+                    if (boneMatrices.IsValid)
+                    {
+                        _animatedInstances.Add(new AnimatedInstance(
+                            entity,
+                            mesh.Mesh,
+                            transform.LocalToWorld,
+                            DefaultMaterial,
+                            boneMatrices.Data));
+                        return;
+                    }
+                }
 
-        foreach (var (entity, mesh, transform) in world.Query<MeshComponent, Transform>())
-        {
-            if (!mesh.IsValid)
-            {
-                continue;
-            }
-
-            if (world.HasComponent<StandardMaterial>(entity))
-            {
-                continue;
-            }
-
-            if (filterByScene && !IsInActiveScene(entity))
-            {
-                continue;
-            }
-
-            if (world.HasComponent<AnimatorComponent>(entity) &&
-                world.TryGetComponent<BoneMatricesComponent>(entity, out var boneMatrices) &&
-                boneMatrices.IsValid)
-            {
-                _animatedInstances.Add(new AnimatedInstance(
-                    entity,
-                    mesh.Mesh,
-                    transform.LocalToWorld,
-                    DefaultMaterial,
-                    boneMatrices.Data));
-                continue;
-            }
-
-            StaticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, DefaultMaterial));
-        }
+                StaticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, DefaultMaterial));
+            });
 
         StaticBatcher.Build();
-    }
-
-    private bool IsInActiveScene(Entity entity)
-    {
-        if (!world.TryGetComponent<SceneComponent>(entity, out var sceneComp))
-        {
-            return false;
-        }
-        return sceneComp.SceneId == _activeSceneFilter;
     }
 
     public void BuildBatches<TFilter>(TFilter filter) where TFilter : IInstanceFilter
@@ -182,66 +162,73 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
         StaticBatcher.Clear();
         _animatedInstances.Clear();
 
-        foreach (var (entity, mesh, transform, material) in world.Query<MeshComponent, Transform, StandardMaterial>())
-        {
-            if (!mesh.IsValid)
+        world.Query<MeshComponent, Transform, StandardMaterial>()
+            .Each((Entity entity, ref MeshComponent mesh, ref Transform transform, ref StandardMaterial material) =>
             {
-                continue;
-            }
+                if (!mesh.IsValid)
+                {
+                    return;
+                }
 
-            if (!filter.ShouldInclude(entity, transform.Position))
+                if (!filter.ShouldInclude(entity, transform.Position))
+                {
+                    return;
+                }
+
+                if (entity.Has<AnimatorComponent>() && entity.Has<BoneMatricesComponent>())
+                {
+                    ref var boneMatrices = ref entity.GetMut<BoneMatricesComponent>();
+                    if (boneMatrices.IsValid)
+                    {
+                        _animatedInstances.Add(new AnimatedInstance(
+                            entity,
+                            mesh.Mesh,
+                            transform.LocalToWorld,
+                            material,
+                            boneMatrices.Data));
+                        return;
+                    }
+                }
+
+                StaticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, material));
+            });
+
+        world.Query<MeshComponent, Transform>()
+            .Each((Entity entity, ref MeshComponent mesh, ref Transform transform) =>
             {
-                continue;
-            }
+                // Skip entities that have StandardMaterial (handled in query above)
+                if (entity.Has<StandardMaterial>())
+                {
+                    return;
+                }
 
-            if (world.HasComponent<AnimatorComponent>(entity) &&
-                world.TryGetComponent<BoneMatricesComponent>(entity, out var boneMatrices) &&
-                boneMatrices.IsValid)
-            {
-                _animatedInstances.Add(new AnimatedInstance(
-                    entity,
-                    mesh.Mesh,
-                    transform.LocalToWorld,
-                    material,
-                    boneMatrices.Data));
-                continue;
-            }
+                if (!mesh.IsValid)
+                {
+                    return;
+                }
 
-            StaticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, material));
-        }
+                if (!filter.ShouldInclude(entity, transform.Position))
+                {
+                    return;
+                }
 
-        foreach (var (entity, mesh, transform) in world.Query<MeshComponent, Transform>())
-        {
-            if (!mesh.IsValid)
-            {
-                continue;
-            }
+                if (entity.Has<AnimatorComponent>() && entity.Has<BoneMatricesComponent>())
+                {
+                    ref var boneMatrices = ref entity.GetMut<BoneMatricesComponent>();
+                    if (boneMatrices.IsValid)
+                    {
+                        _animatedInstances.Add(new AnimatedInstance(
+                            entity,
+                            mesh.Mesh,
+                            transform.LocalToWorld,
+                            DefaultMaterial,
+                            boneMatrices.Data));
+                        return;
+                    }
+                }
 
-            if (world.HasComponent<StandardMaterial>(entity))
-            {
-                continue;
-            }
-
-            if (!filter.ShouldInclude(entity, transform.Position))
-            {
-                continue;
-            }
-
-            if (world.HasComponent<AnimatorComponent>(entity) &&
-                world.TryGetComponent<BoneMatricesComponent>(entity, out var boneMatrices) &&
-                boneMatrices.IsValid)
-            {
-                _animatedInstances.Add(new AnimatedInstance(
-                    entity,
-                    mesh.Mesh,
-                    transform.LocalToWorld,
-                    DefaultMaterial,
-                    boneMatrices.Data));
-                continue;
-            }
-
-            StaticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, DefaultMaterial));
-        }
+                StaticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, DefaultMaterial));
+            });
 
         StaticBatcher.Build();
     }

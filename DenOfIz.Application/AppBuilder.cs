@@ -69,18 +69,6 @@ public sealed class AppBuilder
         return this;
     }
 
-    public AppBuilder AddSystem(ISystem system, Schedule schedule)
-    {
-        _systemRegistrations.Add(app => app.AddSystem(system, schedule));
-        return this;
-    }
-
-    public AppBuilder AddSystem(Func<App, ISystem> factory, Schedule schedule)
-    {
-        _systemRegistrations.Add(app => app.AddSystem(factory(app), schedule));
-        return this;
-    }
-
     public App Build()
     {
         var app = new App(_options);

@@ -11,7 +11,6 @@ public enum RenderGraphResourceType
 
 public struct TransientTextureDesc
 {
-    public TextureAspect Aspect;
     public uint Width;
     public uint Height;
     public uint Depth;
@@ -25,7 +24,6 @@ public struct TransientTextureDesc
     {
         return new TransientTextureDesc
         {
-            Aspect = TextureAspect.Color,
             Width = width,
             Height = height,
             Depth = 1,
@@ -42,7 +40,6 @@ public struct TransientTextureDesc
     {
         return new TransientTextureDesc
         {
-            Aspect = TextureAspect.Depth,
             Width = width,
             Height = height,
             Depth = 1,

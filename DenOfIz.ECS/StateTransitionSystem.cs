@@ -1,77 +1,87 @@
-using DenOfIz;
+using Flecs.NET.Core;
 
 namespace ECS;
 
-public sealed class StateTransitionSystem<T> : ISystem where T : struct, IGameState
+/// <summary>
+/// Factory for creating the state transition system.
+/// </summary>
+public static class StateTransitionSystem<T> where T : struct, IGameState
 {
-    private World _world = null!;
-
-    public void Initialize(World world)
+    /// <summary>
+    /// Registers a system that handles game state transitions.
+    /// Checks for pending state changes and invokes callbacks.
+    /// </summary>
+    public static void Register(World world)
     {
-        _world = world;
+        world.System($"StateTransition<{typeof(T).Name}>")
+            .Kind(Ecs.PreUpdate)
+            .Run((Iter _) =>
+            {
+                if (!world.Has<NextState<T>>())
+                {
+                    return;
+                }
+
+                ref var nextState = ref world.GetMut<NextState<T>>();
+                if (!nextState.HasPending)
+                {
+                    return;
+                }
+
+                var pending = nextState.Take();
+                if (!pending.HasValue)
+                {
+                    return;
+                }
+
+                if (!world.Has<State<T>>())
+                {
+                    return;
+                }
+
+                ref var state = ref world.GetMut<State<T>>();
+
+                var oldState = state.Current;
+                var newState = pending.Value;
+
+                if (EqualityComparer<T>.Default.Equals(oldState, newState))
+                {
+                    return;
+                }
+
+                if (world.Has<StateCallbacks<T>>())
+                {
+                    ref var callbacks = ref world.GetMut<StateCallbacks<T>>();
+                    callbacks.InvokeOnExit(world, oldState);
+                    state.Current = newState;
+                    callbacks.InvokeOnEnter(world, newState);
+                }
+                else
+                {
+                    state.Current = newState;
+                }
+            });
     }
-
-    public void Run()
-    {
-        var nextState = _world.TryGetResource<NextState<T>>();
-        if (nextState == null || !nextState.HasPending)
-        {
-            return;
-        }
-
-        var pending = nextState.Take();
-        if (!pending.HasValue)
-        {
-            return;
-        }
-
-        var state = _world.TryGetResource<State<T>>();
-        if (state == null)
-        {
-            return;
-        }
-
-        var callbacks = _world.TryGetResource<StateCallbacks<T>>();
-        var oldState = state.Current;
-        var newState = pending.Value;
-
-        if (EqualityComparer<T>.Default.Equals(oldState, newState))
-        {
-            return;
-        }
-
-        callbacks?.InvokeOnExit(_world, oldState);
-
-        state.Current = newState;
-
-        callbacks?.InvokeOnEnter(_world, newState);
-    }
-
-    public bool OnEvent(ref Event ev) => false;
-
-    public void Shutdown() { }
-
-    public void Dispose() { }
 }
 
-public sealed class AssetLoadTrackerSystem : ISystem
+/// <summary>
+/// Factory for creating the asset load tracker system.
+/// </summary>
+public static class AssetLoadTrackerSystem
 {
-    private World _world = null!;
-
-    public void Initialize(World world)
+    /// <summary>
+    /// Registers a system that updates async asset loading.
+    /// </summary>
+    public static void Register(World world)
     {
-        _world = world;
+        world.System("AssetLoadTracker")
+            .Kind(Ecs.PreUpdate)
+            .Run((Iter _) =>
+            {
+                if (world.Has<AssetLoadTracker>())
+                {
+                    world.GetMut<AssetLoadTracker>().Update();
+                }
+            });
     }
-
-    public void Run()
-    {
-        var tracker = _world.TryGetResource<AssetLoadTracker>();
-        tracker?.Update();
-    }
-
-    public bool OnEvent(ref Event ev) => false;
-
-    public void Shutdown() { }
-
-    public void Dispose() { }
 }

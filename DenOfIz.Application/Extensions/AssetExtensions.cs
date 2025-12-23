@@ -9,9 +9,9 @@ public static class AssetExtensions
     {
         return builder.AddPlugin(app =>
         {
-            var gfxContext = app.World.GetResource<GraphicsResource>();
+            var gfxContext = app.World.Get<GraphicsResource>();
             var assetContext = new AssetResource(gfxContext.LogicalDevice);
-            app.World.RegisterResource(assetContext);
+            app.World.Set(assetContext);
         });
     }
 }

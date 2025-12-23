@@ -44,7 +44,7 @@ public class RgCommandList
         }
     }
 
-    public void NextFrame()
+    public int NextFrame()
     {
         _isRendering = false;
         _currentFrame = _nextFrame;
@@ -57,6 +57,7 @@ public class RgCommandList
         _signalFence?.Reset();
         _signalFence = null;
         _commandList.Begin();
+        return _currentFrame;
     }
 
     public void BeginRendering(RenderingDesc desc)
@@ -303,11 +304,12 @@ public class RgCommandList
     public void Submit(SemaphoreArray? waitOnSemaphores = null, SemaphoreArray? signalSemaphores = null,
         Fence? fence = null)
     {
-        _commandList.End();
         if (_isRendering)
         {
             _commandList.EndRendering();
+            _isRendering = false;
         }
+        _commandList.End();
 
         _signalFence = fence;
 
