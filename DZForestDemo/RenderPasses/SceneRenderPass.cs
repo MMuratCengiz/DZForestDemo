@@ -3,8 +3,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using DenOfIz;
+using ECS;
 using ECS.Components;
-using Flecs.NET.Core;
 using Graphics;
 using Graphics.RenderGraph;
 using RuntimeAssets;
@@ -636,21 +636,21 @@ public sealed class SceneRenderPass : IDisposable
             }
         }
 
-        _world.Query<AmbientLight>().Each((ref AmbientLight ambient) =>
+        foreach (var (_, ambient) in _world.Query<AmbientLight>())
         {
             ambientSkyColor = ambient.SkyColor;
             ambientGroundColor = ambient.GroundColor;
             ambientIntensity = ambient.Intensity;
-        });
+        }
 
         var currentShadowIndex = 0;
         var numShadows = shadowIndex;
 
-        _world.Query<DirectionalLight>().Each((ref DirectionalLight light) =>
+        foreach (var (_, light) in _world.Query<DirectionalLight>())
         {
             if (lightIndex >= MaxLights)
             {
-                return;
+                break;
             }
 
             var hasShadow = light.CastShadows && currentShadowIndex < numShadows;
@@ -667,13 +667,13 @@ public sealed class SceneRenderPass : IDisposable
                 ShadowIndex = hasShadow ? currentShadowIndex++ : -1
             };
             lightIndex++;
-        });
+        }
 
-        _world.Query<PointLight, Transform>().Each((ref PointLight light, ref Transform transform) =>
+        foreach (var (_, light, transform) in _world.Query<PointLight, Transform>())
         {
             if (lightIndex >= MaxLights)
             {
-                return;
+                break;
             }
 
             var hasShadow = currentShadowIndex < numShadows;
@@ -690,13 +690,13 @@ public sealed class SceneRenderPass : IDisposable
                 ShadowIndex = hasShadow ? currentShadowIndex++ : -1
             };
             lightIndex++;
-        });
+        }
 
-        _world.Query<SpotLight, Transform>().Each((ref SpotLight light, ref Transform transform) =>
+        foreach (var (_, light, transform) in _world.Query<SpotLight, Transform>())
         {
             if (lightIndex >= MaxLights)
             {
-                return;
+                break;
             }
 
             var hasShadow = currentShadowIndex < numShadows;
@@ -713,7 +713,7 @@ public sealed class SceneRenderPass : IDisposable
                 ShadowIndex = hasShadow ? currentShadowIndex++ : -1
             };
             lightIndex++;
-        });
+        }
 
         var lightConstants = new LightConstants
         {

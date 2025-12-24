@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using DenOfIz;
 using ECS;
 using ECS.Components;

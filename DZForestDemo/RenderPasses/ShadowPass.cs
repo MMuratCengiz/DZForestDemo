@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using DenOfIz;
+using ECS;
 using ECS.Components;
 using Graphics;
 using Graphics.RenderGraph;

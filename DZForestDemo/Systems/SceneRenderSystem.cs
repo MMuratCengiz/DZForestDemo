@@ -4,46 +4,45 @@ using DZForestDemo.RenderPasses;
 using DZForestDemo.Scenes;
 using ECS;
 using ECS.Components;
-using Flecs.NET.Core;
 using Graphics;
 using Graphics.RenderGraph;
 using RuntimeAssets;
 
 namespace DZForestDemo.Systems;
 
-public sealed class SceneRenderSystem : IDisposable
+public sealed class SceneRenderSystem : ISystem
 {
     private const float LightMoveSpeed = 10f;
 
     private readonly List<ShadowPass.ShadowData> _shadowData = [];
-    private readonly World _world;
-    private AssetResource _assets;
-    private Camera _camera;
-    private CompositeRenderPass _compositePass;
-    private GraphicsResource _ctx;
-    private DebugRenderPass _debugPass;
+    private AssetResource _assets = null!;
+    private Camera _camera = null!;
+    private CompositeRenderPass _compositePass = null!;
+    private GraphicsResource _ctx = null!;
+    private DebugRenderPass _debugPass = null!;
     private ResourceHandle _depthRt;
     private bool _disposed;
     private Vector3 _lightCameraPosition;
     private Matrix4x4 _lightViewProjection;
-    private SceneRenderPass _scenePass;
+    private SceneRenderPass _scenePass = null!;
     private ResourceHandle _sceneRt;
     private ResourceHandle _shadowAtlas;
-    private ShadowPass _shadowPass;
-    private MyRenderBatcher _batcher;
-    private RgCommandList _rgCommandList;
-    private StepTimer _stepTimer;
+    private ShadowPass _shadowPass = null!;
+    private MyRenderBatcher _batcher = null!;
+    private RgCommandList _rgCommandList = null!;
+    private StepTimer _stepTimer = null!;
     private float _totalTime;
-    private UiRenderPass _uiPass;
+    private UiRenderPass _uiPass = null!;
     private ResourceHandle _uiRt;
     private bool _useLightCamera;
+    private World _world = null!;
     private Vector3 _debugLightPosition = new(0, 10, 0);
 
-    public SceneRenderSystem(World world)
+    public void Initialize(World world)
     {
         _world = world;
-        _ctx = world.Get<GraphicsResource>();
-        _assets = world.Get<AssetResource>();
+        _ctx = world.GetResource<GraphicsResource>();
+        _assets = world.GetResource<AssetResource>();
 
         _stepTimer = new StepTimer();
 
@@ -65,33 +64,32 @@ public sealed class SceneRenderSystem : IDisposable
         _uiPass.OnAdd100CubeClicked += OnAdd100CubesClicked;
     }
 
-    public void Register()
-    {
-        _world.System("SceneRender")
-            .Kind<Render>()
-            .Run((Iter _) => Run());
-    }
-
     private void OnAddCubeClicked()
     {
-        if (_world.Has<ActiveScene, FoxSceneTag>())
+        var registry = _world.TryGetResource<SceneRegistry<DemoGameState>>();
+        if (registry?.ActiveScene is FoxScene foxScene)
         {
-            FoxScene.AddCube(_world);
+            foxScene.AddCube();
         }
     }
 
     private void OnAdd100CubesClicked()
     {
-        if (_world.Has<ActiveScene, FoxSceneTag>())
+        var registry = _world.TryGetResource<SceneRegistry<DemoGameState>>();
+        if (registry?.ActiveScene is FoxScene foxScene)
         {
-            FoxScene.Add100Cubes(_world);
+            foxScene.Add100Cubes();
         }
     }
 
-    public bool HandleEvent(ref Event ev)
+    public bool OnEvent(ref Event ev)
     {
         _uiPass.HandleEvent(ev);
         _camera.HandleEvent(ev);
+
+        var registry = _world.TryGetResource<SceneRegistry<DemoGameState>>();
+        var activeScene = registry?.ActiveScene;
+        activeScene?.OnEvent(ref ev);
 
         if (ev is { Type: EventType.WindowEvent, Window.Event: WindowEventType.Resized })
         {
@@ -114,10 +112,10 @@ public sealed class SceneRenderSystem : IDisposable
                     Console.WriteLine($"Light camera: {(_useLightCamera ? "ON" : "OFF")}");
                     break;
                 case KeyCode.F1:
-                    SwitchToScene<FoxSceneTag>();
+                    SwitchToScene(DemoGameState.Fox);
                     break;
                 case KeyCode.F2:
-                    SwitchToScene<VikingSceneTag>();
+                    SwitchToScene(DemoGameState.Viking);
                     break;
             }
 
@@ -127,25 +125,39 @@ public sealed class SceneRenderSystem : IDisposable
         return false;
     }
 
-    private void SwitchToScene<TScene>()
+    private void SwitchToScene(DemoGameState state)
     {
-        if (_world.Has<ActiveScene, TScene>())
+        var currentState = _world.GetCurrentState<DemoGameState>();
+        if (currentState == state)
         {
             return;
         }
 
         _ctx.RenderGraph.WaitIdle();
-        _world.Add<ActiveScene, TScene>();
-        Console.WriteLine($"Switching to {typeof(TScene).Name}...");
+        _world.SetNextState(state);
+        Console.WriteLine($"Switching to {state.State} scene...");
     }
 
-    private void Run()
+    public void Run()
     {
         _stepTimer.Tick();
         var deltaTime = (float)_stepTimer.GetElapsedSeconds();
         _totalTime += deltaTime;
 
         _camera.Update(deltaTime);
+
+        var registry = _world.TryGetResource<SceneRegistry<DemoGameState>>();
+        var activeScene = registry?.ActiveScene;
+
+        if (activeScene != null)
+        {
+            _batcher.ActiveSceneFilter = activeScene.Scene.Id;
+            activeScene.OnUpdate(deltaTime);
+        }
+        else
+        {
+            _batcher.ActiveSceneFilter = SceneId.Invalid;
+        }
 
         _batcher.BuildBatches();
 
@@ -172,6 +184,8 @@ public sealed class SceneRenderSystem : IDisposable
         _uiRt = _uiPass.AddPass(renderGraph);
         var debugRt = _debugPass.AddPass(renderGraph);
         _compositePass.AddPass(renderGraph, _sceneRt, _uiRt, debugRt, swapchainRt, viewport);
+
+        activeScene?.OnRender();
     }
 
     public void Shutdown()
@@ -200,31 +214,33 @@ public sealed class SceneRenderSystem : IDisposable
 
     private void UpdateDebugLight()
     {
+        var registry = _world.TryGetResource<SceneRegistry<DemoGameState>>();
+        var activeScene = registry?.ActiveScene;
+
         Entity debugLightEntity = default;
-
-        if (_world.Has<FoxSceneAssets>())
+        if (activeScene is FoxScene foxScene)
         {
-            debugLightEntity = _world.Get<FoxSceneAssets>().DebugLightEntity;
+            debugLightEntity = foxScene.DebugLightEntity;
         }
-        else if (_world.Has<VikingSceneAssets>())
+        else if (activeScene is VikingScene vikingScene)
         {
-            debugLightEntity = _world.Get<VikingSceneAssets>().DebugLightEntity;
+            debugLightEntity = vikingScene.DebugLightEntity;
         }
 
-        if (debugLightEntity.IsValid() && debugLightEntity.Has<Transform>())
+        if (debugLightEntity.Index != 0 && _world.Entities.IsAlive(debugLightEntity))
         {
-            ref var transform = ref debugLightEntity.GetMut<Transform>();
+            ref var transform = ref _world.GetComponent<Transform>(debugLightEntity);
             transform.Position = _debugLightPosition;
         }
     }
 
     private void UpdateLightCamera()
     {
-        _world.Query<DirectionalLight>().Each((ref DirectionalLight light) =>
+        foreach (var (_, light) in _world.Query<DirectionalLight>())
         {
             if (!light.CastShadows)
             {
-                return;
+                continue;
             }
 
             var sceneCenter = new Vector3(0, 5, 0);
@@ -243,7 +259,8 @@ public sealed class SceneRenderSystem : IDisposable
             var proj = Matrix4x4.CreateOrthographicLeftHanded(size, size, nearPlane, farPlane);
 
             _lightViewProjection = view * proj;
-        });
+            break;
+        }
     }
 
     private void HandleResize(uint width, uint height)

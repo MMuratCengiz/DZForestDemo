@@ -6,10 +6,11 @@ using Semaphore = DenOfIz.Semaphore;
 
 namespace Graphics.RenderGraph;
 
-public struct RenderGraphDesc(LogicalDevice logicalDevice, CommandQueue commandQueue)
+public struct RenderGraphDesc(LogicalDevice logicalDevice, CommandQueue commandQueue, ResourceTracking resourceTracking)
 {
     public LogicalDevice LogicalDevice = logicalDevice;
     public CommandQueue CommandQueue = commandQueue;
+    public ResourceTracking ResourceTracking = resourceTracking;
     public uint NumFrames = 3;
     public const uint MaxPasses = 64;
     public const uint MaxResources = 256;
@@ -61,7 +62,7 @@ public class RenderGraph : IDisposable
         _maxPasses = RenderGraphDesc.MaxPasses;
         _maxResources = RenderGraphDesc.MaxResources;
 
-        ResourceTracking = new ResourceTracking();
+        ResourceTracking = desc.ResourceTracking;
 
         _resources = new List<RenderGraphResourceEntry>((int)_maxResources);
         for (var i = 0; i < _maxResources; i++)
@@ -159,7 +160,6 @@ public class RenderGraph : IDisposable
             _commandListPools[i].Dispose();
         }
 
-        ResourceTracking.Dispose();
         if (_commandListPin.IsAllocated)
         {
             _commandListPin.Free();
