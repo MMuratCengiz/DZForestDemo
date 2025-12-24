@@ -719,7 +719,9 @@ public class RenderGraph : IDisposable
                         ArraySize = desc.ArraySize > 0 ? desc.ArraySize : 1,
                         Usage = desc.Usage,
                         HeapType = HeapType.Gpu,
-                        DebugName = StringView.Intern(desc.DebugName ?? "TransientTexture")
+                        DebugName = StringView.Intern(desc.DebugName ?? "TransientTexture"),
+                        ClearColorHint = desc.ClearColorHint,
+                        ClearDepthStencilHint = desc.ClearDepthStencilHint
                     });
                     ResourceTracking.TrackTexture(texture, QueueType.Graphics);
                     transientTextures.Add(texture);

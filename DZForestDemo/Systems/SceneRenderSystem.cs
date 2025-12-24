@@ -171,7 +171,8 @@ public sealed class SceneRenderSystem : ISystem
             Height = _ctx.Height,
             Format = _ctx.BackBufferFormat,
             Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding),
-            DebugName = "SceneRT"
+            DebugName = "SceneRT",
+            ClearColorHint = new Float4 { X = 0.02f, Y = 0.02f, Z = 0.04f, W = 1.0f }
         });
 
         _depthRt = renderGraph.CreateTransientTexture(TransientTextureDesc.DepthStencil(

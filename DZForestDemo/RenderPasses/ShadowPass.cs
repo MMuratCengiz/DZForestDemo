@@ -198,10 +198,8 @@ public sealed class ShadowPass : IDisposable
     {
         var atlasWidth = (uint)(ShadowMapSize * 2);
         var atlasHeight = (uint)(ShadowMapSize * 2);
-
         return renderGraph.CreateTransientTexture(new TransientTextureDesc
         {
-            Aspect = TextureAspect.Depth,
             Width = atlasWidth,
             Height = atlasHeight,
             Depth = 1,
@@ -209,7 +207,8 @@ public sealed class ShadowPass : IDisposable
             MipLevels = 1,
             ArraySize = 1,
             Usage = (uint)(TextureUsageFlagBits.TextureBinding | TextureUsageFlagBits.RenderAttachment),
-            DebugName = "ShadowAtlas"
+            DebugName = "ShadowAtlas",
+            ClearDepthStencilHint = new Float2 { X = 1.0f, Y = 0.0f }
         });
     }
 

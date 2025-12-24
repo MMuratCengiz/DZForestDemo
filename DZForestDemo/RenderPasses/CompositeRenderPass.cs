@@ -161,7 +161,7 @@ public sealed class CompositeRenderPass : IDisposable
         _rtAttachments[0] = new RenderingAttachmentDesc
         {
             Resource = rt,
-            LoadOp = LoadOp.DontCare
+            LoadOp = LoadOp.DontCare,
         };
 
         var renderingDesc = new RenderingDesc

@@ -47,7 +47,8 @@ public sealed class DebugRenderPass(GraphicsResource ctx) : IDisposable
             Height = ctx.Height,
             Format = ctx.BackBufferFormat,
             Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding),
-            DebugName = "DebugRT"
+            DebugName = "DebugRT",
+            ClearColorHint = new Float4 { X = 0, Y = 0, Z = 0, W = 0 }
         });
 
         var viewport = ctx.SwapChain.GetViewport();
