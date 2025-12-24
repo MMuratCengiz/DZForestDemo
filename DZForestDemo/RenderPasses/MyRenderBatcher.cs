@@ -87,7 +87,6 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
         _disposed = true;
         StaticBatcher.Dispose();
         _animatedInstances.Clear();
-
         GC.SuppressFinalize(this);
     }
 
@@ -96,7 +95,8 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
         StaticBatcher.Clear();
         _animatedInstances.Clear();
 
-        world.Each((Entity entity, ref MeshComponent mesh, ref Transform transform, ref StandardMaterial material) =>
+        world.Query<MeshComponent, Transform, StandardMaterial>()
+            .Each((Entity entity, ref MeshComponent mesh, ref Transform transform, ref StandardMaterial material) =>
             {
                 if (!mesh.IsValid)
                 {
@@ -122,7 +122,8 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
             });
 
         // Query entities with mesh and transform but no material (skip those with material)
-        world.Each((Entity entity, ref MeshComponent mesh, ref Transform transform) =>
+        world.Query<MeshComponent, Transform>()
+            .Each((Entity entity, ref MeshComponent mesh, ref Transform transform) =>
             {
                 // Skip entities that have StandardMaterial (handled in query above)
                 if (entity.Has<StandardMaterial>())
@@ -161,7 +162,8 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
         StaticBatcher.Clear();
         _animatedInstances.Clear();
 
-        world.Each((Entity entity, ref MeshComponent mesh, ref Transform transform, ref StandardMaterial material) =>
+        world.Query<MeshComponent, Transform, StandardMaterial>()
+            .Each((Entity entity, ref MeshComponent mesh, ref Transform transform, ref StandardMaterial material) =>
             {
                 if (!mesh.IsValid)
                 {
@@ -191,7 +193,8 @@ public sealed class MyRenderBatcher(World world, int maxInstances = 4096) : IDis
                 StaticBatcher.Add(mesh.Mesh, new StaticInstance(entity, transform.LocalToWorld, material));
             });
 
-        world.Each((Entity entity, ref MeshComponent mesh, ref Transform transform) =>
+        world.Query<MeshComponent, Transform>()
+            .Each((Entity entity, ref MeshComponent mesh, ref Transform transform) =>
             {
                 // Skip entities that have StandardMaterial (handled in query above)
                 if (entity.Has<StandardMaterial>())

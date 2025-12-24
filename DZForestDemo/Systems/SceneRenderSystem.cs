@@ -220,7 +220,7 @@ public sealed class SceneRenderSystem : IDisposable
 
     private void UpdateLightCamera()
     {
-        _world.Each((ref DirectionalLight light) =>
+        _world.Query<DirectionalLight>().Each((ref DirectionalLight light) =>
         {
             if (!light.CastShadows)
             {

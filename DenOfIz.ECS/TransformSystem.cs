@@ -5,29 +5,46 @@ using Flecs.NET.Core;
 
 namespace ECS;
 
+/// <summary>
+/// Factory for creating the transform hierarchy system.
+/// </summary>
 public static class TransformSystem
 {
+    /// <summary>
+    /// Registers the transform system that updates LocalToWorld matrices.
+    /// Uses Flecs ChildOf relationships for hierarchy.
+    /// </summary>
     public static void Register(World world)
     {
         world.System<Transform>("TransformSystem")
+            .Without(Ecs.ChildOf, Ecs.Wildcard) // Only root entities
             .Kind(Ecs.OnUpdate)
             .Each((Entity entity, ref Transform transform) =>
             {
-                var parent = entity.Parent();
-
-                if (!parent.IsValid() || !parent.Has<Transform>())
-                {
-                    transform.LocalToWorld = transform.Matrix;
-                }
-                else
-                {
-                    ref readonly var parentTransform = ref parent.Get<Transform>();
-                    transform.LocalToWorld = transform.Matrix * parentTransform.LocalToWorld;
-                }
+                transform.LocalToWorld = transform.Matrix;
+                UpdateChildren(entity, transform.LocalToWorld);
             });
+    }
+
+    private static void UpdateChildren(Entity parent, Matrix4x4 parentWorld)
+    {
+        parent.Children(child =>
+        {
+            if (!child.Has<Transform>())
+            {
+                return;
+            }
+
+            ref var transform = ref child.GetMut<Transform>();
+            transform.LocalToWorld = transform.Matrix * parentWorld;
+            UpdateChildren(child, transform.LocalToWorld);
+        });
     }
 }
 
+/// <summary>
+/// Helper methods for transform hierarchy.
+/// </summary>
 public static class TransformHierarchy
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
