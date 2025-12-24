@@ -2,7 +2,6 @@ using System.Numerics;
 using DenOfIz;
 using ECS;
 using ECS.Components;
-using Flecs.NET.Core;
 using Graphics;
 using Physics;
 using Physics.Components;
@@ -11,171 +10,159 @@ using RuntimeAssets.Components;
 
 namespace DZForestDemo.Scenes;
 
-public class VikingSceneAssets : IDisposable
+public sealed class VikingScene : GameSceneBase
 {
-    public RuntimeMeshHandle PlatformMesh;
-    public RuntimeMeshHandle SmallSphereMesh;
-    public ModelLoadResult? VikingModel;
-    public RuntimeTextureHandle VikingTexture;
-    public RuntimeSkeletonHandle VikingSkeleton;
-    public RuntimeAnimationHandle VikingAnimation;
-    public Entity DebugLightEntity;
+    private AssetResource _assets = null!;
+    private AnimationResource _animation = null!;
+    private PhysicsResource _physics = null!;
+    private GraphicsResource _graphics = null!;
 
-    private readonly AssetResource _assets;
-    private readonly GraphicsResource _graphics;
-    private bool _disposed;
+    private RuntimeMeshHandle _platformMesh;
+    private RuntimeMeshHandle _smallSphereMesh;
+    private ModelLoadResult? _vikingModel;
+    private RuntimeTextureHandle _vikingTexture;
+    private RuntimeSkeletonHandle _vikingSkeleton;
+    private RuntimeAnimationHandle _vikingAnimation;
 
-    public VikingSceneAssets(World world)
+    private bool _assetsLoaded;
+
+    public Action<Texture?>? OnTextureLoaded { get; set; }
+
+    public override string Name => "VikingScene";
+
+    public override void OnRegister(World world, Scene scene)
     {
-        _assets = world.Get<AssetResource>();
-        _graphics = world.Get<GraphicsResource>();
-
-        _assets.BeginUpload();
-
-        PlatformMesh = _assets.AddBox(20.0f, 1.0f, 20.0f);
-        SmallSphereMesh = _assets.AddSphere(0.3f, 8);
-
-        VikingModel = _assets.AddModel("VikingRealm_Characters.glb");
-        if (!VikingModel.Success)
-        {
-            Console.WriteLine($"Failed to load Viking model: {VikingModel.ErrorMessage}");
-        }
-        else
-        {
-            Console.WriteLine($"Loaded Viking model: {VikingModel.MeshHandles.Count} meshes, {VikingModel.Materials.Count} materials");
-        }
-
-        VikingTexture = _assets.AddTexture("VikingRealm_Texture_01_A_PolygonVikingRealm_Texture_01_A.dztex");
-
-        _assets.EndUpload();
+        base.OnRegister(world, scene);
+        _assets = world.GetResource<AssetResource>();
+        _animation = world.GetResource<AnimationResource>();
+        _physics = world.GetResource<PhysicsResource>();
+        _graphics = world.GetResource<GraphicsResource>();
     }
 
-    public void Dispose()
+    public override void OnEnter()
     {
-        if (_disposed)
+        if (!_assetsLoaded)
+        {
+            LoadAssets();
+        }
+        CreateLights();
+        CreateEntities();
+    }
+
+    public override void OnExit()
+    {
+        DisposeAssets();
+    }
+
+    private void DisposeAssets()
+    {
+        if (!_assetsLoaded)
         {
             return;
         }
 
-        _disposed = true;
-
         _graphics.WaitIdle();
 
-        if (PlatformMesh.IsValid)
+        if (_platformMesh.IsValid)
         {
-            _assets.RemoveMesh(PlatformMesh);
+            _assets.RemoveMesh(_platformMesh);
+            _platformMesh = default;
         }
-
-        if (SmallSphereMesh.IsValid)
+        if (_smallSphereMesh.IsValid)
         {
-            _assets.RemoveMesh(SmallSphereMesh);
+            _assets.RemoveMesh(_smallSphereMesh);
+            _smallSphereMesh = default;
         }
-
-        if (VikingModel is { Success: true })
+        if (_vikingModel is { Success: true })
         {
-            foreach (var meshHandle in VikingModel.MeshHandles)
+            foreach (var meshHandle in _vikingModel.MeshHandles)
             {
                 if (meshHandle.IsValid)
                 {
                     _assets.RemoveMesh(meshHandle);
                 }
             }
+            _vikingModel = null;
         }
-
-        if (VikingTexture.IsValid)
+        if (_vikingTexture.IsValid)
         {
-            _assets.RemoveTexture(VikingTexture);
+            _assets.RemoveTexture(_vikingTexture);
+            _vikingTexture = default;
         }
-    }
-}
 
-public static class VikingScene
-{
-    public static Action<Texture?>? OnTextureLoaded;
-
-    public static void Register(World world)
-    {
-        world.Observer("VikingScene.OnEnter")
-            .With<ActiveScene, VikingSceneTag>()
-            .Event(Ecs.OnAdd)
-            .Each((Entity _) => OnEnter(world));
-
-        world.Observer("VikingScene.OnExit")
-            .With<ActiveScene, VikingSceneTag>()
-            .Event(Ecs.OnRemove)
-            .Each((Entity _) => OnExit(world));
+        _assetsLoaded = false;
     }
 
-    private static void OnEnter(World world)
+    private void LoadAssets()
     {
-        world.DeleteWith(Ecs.ChildOf, world.Entity<SceneRoot>());
+        _assets.BeginUpload();
 
-        var assets = new VikingSceneAssets(world);
-        world.Set(assets);
+        _platformMesh = _assets.AddBox(20.0f, 1.0f, 20.0f);
+        _smallSphereMesh = _assets.AddSphere(0.3f, 8);
 
-        if (assets.VikingTexture.IsValid)
+        _vikingModel = _assets.AddModel("VikingRealm_Characters.glb");
+        if (!_vikingModel.Success)
         {
-            var assetResource = world.Get<AssetResource>();
-            if (assetResource.TryGetTexture(assets.VikingTexture, out var texture))
-            {
-                OnTextureLoaded?.Invoke(texture.Resource);
-            }
+            Console.WriteLine($"Failed to load Viking model: {_vikingModel.ErrorMessage}");
         }
-
-        CreateLights(world, assets);
-        CreateEntities(world, assets);
-    }
-
-    private static void OnExit(World world)
-    {
-        if (world.Has<VikingSceneAssets>())
+        else
         {
-            world.Get<VikingSceneAssets>().Dispose();
-            world.Remove<VikingSceneAssets>();
+            Console.WriteLine($"Loaded Viking model: {_vikingModel.MeshHandles.Count} meshes, {_vikingModel.Materials.Count} materials");
+        }
+
+        _vikingTexture = _assets.AddTexture("VikingRealm_Texture_01_A_PolygonVikingRealm_Texture_01_A.dztex");
+
+        _assets.EndUpload();
+
+        _assetsLoaded = true;
+
+        if (_vikingTexture.IsValid && _assets.TryGetTexture(_vikingTexture, out var texture))
+        {
+            OnTextureLoaded?.Invoke(texture.Resource);
         }
     }
 
-    private static void CreateLights(World world, VikingSceneAssets assets)
+    private void CreateLights()
     {
-        var sunEntity = world.Entity().ChildOf<SceneRoot>();
-        sunEntity.Set(new DirectionalLight(
+        var sunEntity = Scene.Spawn();
+        World.AddComponent(sunEntity, new DirectionalLight(
             new Vector3(0.4f, -0.8f, 0.3f),
             new Vector3(1.0f, 0.95f, 0.9f),
             0.6f
         ));
 
-        var ambientEntity = world.Entity().ChildOf<SceneRoot>();
-        ambientEntity.Set(new AmbientLight(
+        var ambientEntity = Scene.Spawn();
+        World.AddComponent(ambientEntity, new AmbientLight(
             new Vector3(0.5f, 0.6f, 0.7f),
             new Vector3(0.25f, 0.2f, 0.15f),
             0.4f
         ));
 
-        var pointLight1 = world.Entity().ChildOf<SceneRoot>();
-        pointLight1.Set(new Transform(new Vector3(6, 6, 6)));
-        pointLight1.Set(new PointLight(
+        var pointLight1 = Scene.Spawn();
+        World.AddComponent(pointLight1, new Transform(new Vector3(6, 6, 6)));
+        World.AddComponent(pointLight1, new PointLight(
             new Vector3(1.0f, 0.7f, 0.4f),
             2.5f,
             18.0f
         ));
 
-        var pointLight2 = world.Entity().ChildOf<SceneRoot>();
-        pointLight2.Set(new Transform(new Vector3(-6, 5, -4)));
-        pointLight2.Set(new PointLight(
+        var pointLight2 = Scene.Spawn();
+        World.AddComponent(pointLight2, new Transform(new Vector3(-6, 5, -4)));
+        World.AddComponent(pointLight2, new PointLight(
             new Vector3(0.4f, 0.6f, 1.0f),
             2.0f,
             15.0f
         ));
 
-        assets.DebugLightEntity = world.Entity().ChildOf<SceneRoot>();
-        assets.DebugLightEntity.Set(new Transform(new Vector3(0, 10, 0)));
-        assets.DebugLightEntity.Set(new PointLight(
+        DebugLightEntity = Scene.Spawn();
+        World.AddComponent(DebugLightEntity, new Transform(new Vector3(0, 10, 0)));
+        World.AddComponent(DebugLightEntity, new PointLight(
             new Vector3(1.0f, 1.0f, 0.8f),
             5.0f,
             30.0f
         ));
-        assets.DebugLightEntity.Set(new MeshComponent(assets.SmallSphereMesh));
-        assets.DebugLightEntity.Set(new StandardMaterial
+        World.AddComponent(DebugLightEntity, new MeshComponent(_smallSphereMesh));
+        World.AddComponent(DebugLightEntity, new StandardMaterial
         {
             BaseColor = new Vector4(1f, 1f, 0.5f, 1f),
             Metallic = 0f,
@@ -184,26 +171,22 @@ public static class VikingScene
         });
     }
 
-    private static void CreateEntities(World world, VikingSceneAssets assets)
+    private void CreateEntities()
     {
-        var physics = world.Get<PhysicsResource>();
+        SpawnStaticBox(new Vector3(0, -2, 0), new Vector3(20f, 1f, 20f), _platformMesh, Materials.Concrete);
 
-        SpawnStaticBox(world, physics, new Vector3(0, -2, 0), new Vector3(20f, 1f, 20f), assets.PlatformMesh, Materials.Concrete);
-
-        if (assets.VikingModel is { Success: true })
+        if (_vikingModel is { Success: true })
         {
-            SpawnVikingModels(world, assets);
+            SpawnVikingModels();
         }
     }
 
-    private static void SpawnVikingModels(World world, VikingSceneAssets assets)
+    private void SpawnVikingModels()
     {
-        if (assets.VikingModel == null || !assets.VikingModel.Success)
+        if (_vikingModel == null || !_vikingModel.Success)
         {
             return;
         }
-
-        var animation = world.Get<AnimationResource>();
 
         var meshPositions = new[]
         {
@@ -241,12 +224,12 @@ public static class VikingScene
             Metallic = 0.0f,
             Roughness = 0.7f,
             AmbientOcclusion = 1.0f,
-            AlbedoTexture = assets.VikingTexture
+            AlbedoTexture = _vikingTexture
         };
 
-        for (var i = 0; i < assets.VikingModel.MeshHandles.Count; i++)
+        for (var i = 0; i < _vikingModel.MeshHandles.Count; i++)
         {
-            var meshHandle = assets.VikingModel.MeshHandles[i];
+            var meshHandle = _vikingModel.MeshHandles[i];
             var positionIndex = i % meshPositions.Length;
             var position = meshPositions[positionIndex];
             var rotation = meshRotations[positionIndex];
@@ -258,16 +241,16 @@ public static class VikingScene
             }
 
             StandardMaterial material;
-            if (i < assets.VikingModel.Materials.Count)
+            if (i < _vikingModel.Materials.Count)
             {
-                var matData = assets.VikingModel.Materials[i];
+                var matData = _vikingModel.Materials[i];
                 material = new StandardMaterial
                 {
                     BaseColor = new Vector4(1.0f, 1.0f, 1.0f, 1.0f),
                     Metallic = matData.Metallic,
                     Roughness = matData.Roughness,
                     AmbientOcclusion = 1.0f,
-                    AlbedoTexture = assets.VikingTexture
+                    AlbedoTexture = _vikingTexture
                 };
             }
             else
@@ -275,41 +258,43 @@ public static class VikingScene
                 material = vikingMaterial;
             }
 
-            var entity = world.Entity().ChildOf<SceneRoot>();
-            entity.Set(new MeshComponent(meshHandle));
-            entity.Set(new Transform(position, rotation, modelScale));
-            entity.Set(material);
+            var entity = Scene.Spawn();
+            World.AddComponent(entity, new MeshComponent(meshHandle));
+            World.AddComponent(entity, new Transform(position, rotation, modelScale));
+            World.AddComponent(entity, material);
 
-            if (assets.VikingSkeleton.IsValid && animation.TryGetSkeleton(assets.VikingSkeleton, out var skeleton))
+            if (_vikingSkeleton.IsValid && _animation.TryGetSkeleton(_vikingSkeleton, out var skeleton))
             {
-                var animator = new AnimatorComponent(assets.VikingSkeleton)
+                var animator = new AnimatorComponent(_vikingSkeleton)
                 {
-                    CurrentAnimation = assets.VikingAnimation,
+                    CurrentAnimation = _vikingAnimation,
                     IsPlaying = true,
                     Loop = true,
                     PlaybackSpeed = 1.0f + (i * 0.1f)
                 };
-                entity.Set(animator);
+                World.AddComponent(entity, animator);
 
                 var numJoints = skeleton.NumJoints;
-                var boneMatrices = new BoneMatricesComponent(numJoints, assets.VikingModel.InverseBindMatrices);
-                entity.Set(boneMatrices);
+                var boneMatrices = new BoneMatricesComponent(numJoints, _vikingModel.InverseBindMatrices);
+                World.AddComponent(entity, boneMatrices);
             }
         }
 
-        Console.WriteLine($"Spawned {assets.VikingModel.MeshHandles.Count} Viking mesh entities");
+        Console.WriteLine($"Spawned {_vikingModel.MeshHandles.Count} Viking mesh entities");
     }
 
-    private static Entity SpawnStaticBox(World world, PhysicsResource physics, Vector3 position, Vector3 size, RuntimeMeshHandle mesh, StandardMaterial material)
+    private Entity SpawnStaticBox(Vector3 position, Vector3 size, RuntimeMeshHandle mesh, StandardMaterial material)
     {
-        var entity = world.Entity().ChildOf<SceneRoot>();
-        entity.Set(new MeshComponent(mesh));
-        entity.Set(new Transform(position, Quaternion.Identity, Vector3.One));
-        entity.Set(material);
+        var entity = Scene.Spawn();
+        World.AddComponent(entity, new MeshComponent(mesh));
+        World.AddComponent(entity, new Transform(position, Quaternion.Identity, Vector3.One));
+        World.AddComponent(entity, material);
 
-        var handle = physics.CreateStaticBody(entity, position, Quaternion.Identity, PhysicsShape.Box(size));
-        entity.Set(new StaticBody(handle));
+        var handle = _physics.CreateStaticBody(entity, position, Quaternion.Identity, PhysicsShape.Box(size));
+        World.AddComponent(entity, new StaticBody(handle));
 
         return entity;
     }
+
+    public Entity DebugLightEntity { get; private set; }
 }

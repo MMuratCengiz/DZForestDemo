@@ -10,8 +10,6 @@
 
     <ItemGroup>
         <PackageReference Include="BepuPhysics" Version="2.4.0"/>
-        <PackageReference Include="Flecs.NET" Version="4.0.4-build.548" />
-        <PackageReference Include="Flecs.NET.Release" Version="4.0.4-build.548" />
     </ItemGroup>
 
     <ItemGroup>

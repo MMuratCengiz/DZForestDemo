@@ -1,7 +1,5 @@
 using System.Numerics;
-using ECS.Components;
-using Flecs.NET.Core;
-using Physics.Components;
+using ECS;
 
 namespace Physics;
 
@@ -16,68 +14,20 @@ public class PhysicsPlugin(Vector3? gravity = null, int threadCount = -1, bool s
             Gravity = _gravity
         };
 
-        world.Set(context);
+        world.RegisterResource(context);
 
-        world.System("PhysicsStep")
-            .Kind(Ecs.OnUpdate)
-            .Run((Iter _) =>
-            {
-                if (!world.Has<PhysicsResource>())
-                {
-                    return;
-                }
+        world.AddSystem(new PhysicsCleanupSystem(), Schedule.FixedUpdate);
 
-                ref var physics = ref world.GetMut<PhysicsResource>();
-                for (var i = 0; i < physics.AccumulatedSteps; i++)
-                {
-                    physics.ProcessRemovals();
-                    physics.Step(physics.FixedTimeStep);
-                }
-            });
-        
-        
-        world.System<RigidBody, Transform>("PhysicsSync")
-            .Kind(Ecs.OnUpdate)
-            .Each((ref RigidBody rigidBody, ref Transform transform) =>
-            {
-                if (rigidBody.IsStatic)
-                {
-                    return;
-                }
+        world.AddSystem(new PhysicsStepSystem(), Schedule.FixedUpdate)
+            .After<PhysicsCleanupSystem>();
 
-                var physics = world.Get<PhysicsResource>();
-                var (position, rotation) = physics.GetBodyPose(rigidBody.Handle);
-                transform.Position = position;
-                transform.Rotation = rotation;
-            });
-        
-        
-        world.System("PhysicsCleanup")
-            .Kind(Ecs.OnUpdate)
-            .Run((Iter _) =>
-            {
-                if (!world.Has<PhysicsResource>())
-                {
-                    return;
-                }
+        world.AddSystem(new PhysicsSyncSystem(), Schedule.FixedUpdate)
+            .After<PhysicsStepSystem>();
 
-                ref var physics = ref world.GetMut<PhysicsResource>();
-                physics.ProcessRemovals();
-            });
-        
-        world.System<RigidBody, Velocity>("PhysicsVelocitySync")
-            .Kind(Ecs.OnUpdate)
-            .Each((ref RigidBody rigidBody, ref Velocity velocity) =>
-            {
-                if (rigidBody.IsStatic)
-                {
-                    return;
-                }
-
-                var physics = world.Get<PhysicsResource>();
-                var (linear, angular) = physics.GetBodyVelocity(rigidBody.Handle);
-                velocity.Linear = linear;
-                velocity.Angular = angular;
-            });
+        if (syncVelocity)
+        {
+            world.AddSystem(new PhysicsVelocitySyncSystem(), Schedule.FixedUpdate)
+                .After<PhysicsSyncSystem>();
+        }
     }
 }

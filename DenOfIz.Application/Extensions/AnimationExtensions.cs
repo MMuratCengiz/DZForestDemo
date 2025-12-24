@@ -1,3 +1,4 @@
+using ECS;
 using RuntimeAssets;
 
 namespace Application.Extensions;
@@ -9,8 +10,8 @@ public static class AnimationExtensions
         return builder.AddPlugin(app =>
         {
             var animation = new AnimationResource();
-            app.World.Set(animation);
-            AnimationSystems.Register(app.World);
+            app.World.RegisterResource(animation);
+            app.AddSystem(new AnimationSystem(), Schedule.Update);
         });
     }
 }

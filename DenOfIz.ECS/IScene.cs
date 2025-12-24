@@ -2,17 +2,21 @@ using DenOfIz;
 
 namespace ECS;
 
-public interface IGameScene : IDisposable
+public interface IScene : IDisposable
 {
     string Name { get; }
 
-    Scene Scene { get; }
+    SceneId SceneId { get; set; }
 
     void OnRegister(World world, Scene scene);
 
-    void OnEnter();
+    void OnLoad();
 
-    void OnExit();
+    void OnUnload();
+
+    void OnActivate();
+
+    void OnDeactivate();
 
     void OnUpdate(float deltaTime);
 
@@ -21,25 +25,32 @@ public interface IGameScene : IDisposable
     void OnRender();
 }
 
-public abstract class GameSceneBase : IGameScene
+public abstract class SceneBase : IScene
 {
     private bool _disposed;
 
     public abstract string Name { get; }
 
-    public Scene Scene { get; private set; } = null!;
+    public SceneId SceneId { get; set; }
 
     protected World World { get; private set; } = null!;
+
+    protected Scene Scene { get; private set; } = null!;
 
     public virtual void OnRegister(World world, Scene scene)
     {
         World = world;
         Scene = scene;
+        SceneId = scene.Id;
     }
 
-    public virtual void OnEnter() { }
+    public virtual void OnLoad() { }
 
-    public virtual void OnExit() { }
+    public virtual void OnUnload() { }
+
+    public virtual void OnActivate() { }
+
+    public virtual void OnDeactivate() { }
 
     public virtual void OnUpdate(float deltaTime) { }
 

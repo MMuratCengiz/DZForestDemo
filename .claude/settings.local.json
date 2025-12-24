@@ -26,11 +26,7 @@
       "Bash(cmd /c del \"C:\\Workspace\\DZForestDemo\\DZForestDemo\\RenderPasses\\RenderBatcher.cs\")",
       "Bash(grep:*)",
       "Bash(cmd /c \"mkdir C:\\Workspace\\DZForestDemo\\DZForestDemo\\Scenes\")",
-      "Bash(git checkout:*)",
-      "Bash(del:*)",
-      "WebFetch(domain:www.flecs.dev)",
-      "Bash(curl:*)",
-      "Bash(ls:*)"
+      "Bash(git checkout:*)"
     ]
   }
 }

@@ -1,10 +1,12 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using DenOfIz;
+using ECS;
 using ECS.Components;
-using Flecs.NET.Core;
 using RuntimeAssets;
 using RuntimeAssets.Components;
+using Buffer = DenOfIz.Buffer;
 
 namespace DZForestDemo.RenderPasses;
 
@@ -124,76 +126,70 @@ public sealed class RenderBatcher(World world, int maxInstances = 4096) : IDispo
         _allInstances.Clear();
         _animatedInstances.Clear();
 
-        world.Query<MeshComponent, Transform, StandardMaterial>()
-            .Each((Entity entity, ref MeshComponent mesh, ref Transform transform, ref StandardMaterial material) =>
+        foreach (var (entity, mesh, transform, material) in world.Query<MeshComponent, Transform, StandardMaterial>())
+        {
+            if (!mesh.IsValid)
             {
-                if (!mesh.IsValid)
-                {
-                    return;
-                }
+                continue;
+            }
 
-                if (entity.Has<AnimatorComponent>() && entity.Has<BoneMatricesComponent>())
-                {
-                    ref var boneMatrices = ref entity.GetMut<BoneMatricesComponent>();
-                    if (boneMatrices.IsValid)
-                    {
-                        _animatedInstances.Add(new AnimatedInstanceData(
-                            entity,
-                            mesh.Mesh,
-                            transform.LocalToWorld,
-                            material,
-                            boneMatrices.Data));
-                        return;
-                    }
-                }
-
-                if (!_meshBatches.TryGetValue(mesh.Mesh, out var list))
-                {
-                    list = [];
-                    _meshBatches[mesh.Mesh] = list;
-                }
-
-                list.Add(new InstanceData(entity, transform.LocalToWorld, material));
-            });
-
-        world.Query<MeshComponent, Transform>()
-            .Each((Entity entity, ref MeshComponent mesh, ref Transform transform) =>
+            if (world.HasComponent<AnimatorComponent>(entity) &&
+                world.TryGetComponent<BoneMatricesComponent>(entity, out var boneMatrices) &&
+                boneMatrices.IsValid)
             {
-                // Skip entities that have StandardMaterial (handled in query above)
-                if (entity.Has<StandardMaterial>())
-                {
-                    return;
-                }
+                _animatedInstances.Add(new AnimatedInstanceData(
+                    entity,
+                    mesh.Mesh,
+                    transform.LocalToWorld,
+                    material,
+                    boneMatrices.Data));
+                continue;
+            }
 
-                if (!mesh.IsValid)
-                {
-                    return;
-                }
+            if (!_meshBatches.TryGetValue(mesh.Mesh, out var list))
+            {
+                list = [];
+                _meshBatches[mesh.Mesh] = list;
+            }
 
-                if (entity.Has<AnimatorComponent>() && entity.Has<BoneMatricesComponent>())
-                {
-                    ref var boneMatrices = ref entity.GetMut<BoneMatricesComponent>();
-                    if (boneMatrices.IsValid)
-                    {
-                        _animatedInstances.Add(new AnimatedInstanceData(
-                            entity,
-                            mesh.Mesh,
-                            transform.LocalToWorld,
-                            DefaultMaterial,
-                            boneMatrices.Data));
-                        return;
-                    }
-                }
+            list.Add(new InstanceData(entity, transform.LocalToWorld, material));
+        }
 
-                if (!_meshBatches.TryGetValue(mesh.Mesh, out var list))
-                {
-                    list = [];
-                    _meshBatches[mesh.Mesh] = list;
-                }
+        foreach (var (entity, mesh, transform) in world.Query<MeshComponent, Transform>())
+        {
+            if (!mesh.IsValid)
+            {
+                continue;
+            }
 
-                list.Add(new InstanceData(entity, transform.LocalToWorld, DefaultMaterial));
-            });
+            if (world.HasComponent<StandardMaterial>(entity))
+            {
+                continue;
+            }
 
+            if (world.HasComponent<AnimatorComponent>(entity) &&
+                world.TryGetComponent<BoneMatricesComponent>(entity, out var boneMatrices) &&
+                boneMatrices.IsValid)
+            {
+                _animatedInstances.Add(new AnimatedInstanceData(
+                    entity,
+                    mesh.Mesh,
+                    transform.LocalToWorld,
+                    DefaultMaterial,
+                    boneMatrices.Data));
+                continue;
+            }
+
+            if (!_meshBatches.TryGetValue(mesh.Mesh, out var list))
+            {
+                list = [];
+                _meshBatches[mesh.Mesh] = list;
+            }
+
+            list.Add(new InstanceData(entity, transform.LocalToWorld, DefaultMaterial));
+        }
+
+        // Collect non-empty mesh keys
         foreach (var kvp in _meshBatches)
         {
             if (kvp.Value.Count > 0)
@@ -202,6 +198,7 @@ public sealed class RenderBatcher(World world, int maxInstances = 4096) : IDispo
             }
         }
 
+        // Build final batches
         var totalInstances = 0;
         foreach (var meshHandle in _sortedMeshKeys)
         {
@@ -231,5 +228,91 @@ public sealed class RenderBatcher(World world, int maxInstances = 4096) : IDispo
                 break;
             }
         }
+    }
+}
+
+public sealed class InstanceBuffer<T> : IDisposable where T : unmanaged
+{
+    private readonly Buffer[] _buffers;
+    private readonly ResourceBindGroup[] _bindGroups;
+    private readonly IntPtr[] _mappedPtrs;
+    private readonly int _maxInstances;
+    private bool _disposed;
+
+    public InstanceBuffer(
+        LogicalDevice logicalDevice,
+        RootSignature rootSignature,
+        uint registerSpace,
+        uint binding,
+        int maxInstances,
+        int numFrames)
+    {
+        _maxInstances = maxInstances;
+        _buffers = new Buffer[numFrames];
+        _bindGroups = new ResourceBindGroup[numFrames];
+        _mappedPtrs = new IntPtr[numFrames];
+
+        var stride = (ulong)Unsafe.SizeOf<T>();
+        var bufferSize = stride * (ulong)maxInstances;
+
+        for (var i = 0; i < numFrames; i++)
+        {
+            _buffers[i] = logicalDevice.CreateBuffer(new BufferDesc
+            {
+                HeapType = HeapType.CpuGpu,
+                NumBytes = bufferSize,
+                StructureDesc = new StructuredBufferDesc
+                {
+                    Offset = 0,
+                    NumElements = (ulong)maxInstances,
+                    Stride = stride
+                },
+                DebugName = StringView.Create($"InstanceBuffer_{typeof(T).Name}_{i}")
+            });
+            _mappedPtrs[i] = _buffers[i].MapMemory();
+
+            _bindGroups[i] = logicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
+            {
+                RootSignature = rootSignature,
+                RegisterSpace = registerSpace
+            });
+            _bindGroups[i].BeginUpdate();
+            _bindGroups[i].SrvBuffer(binding, _buffers[i]);
+            _bindGroups[i].EndUpdate();
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        for (var i = 0; i < _buffers.Length; i++)
+        {
+            _buffers[i].UnmapMemory();
+            _bindGroups[i].Dispose();
+            _buffers[i].Dispose();
+        }
+
+        GC.SuppressFinalize(this);
+    }
+
+    public ResourceBindGroup GetBindGroup(int frameIndex) => _bindGroups[frameIndex];
+
+    public unsafe T* GetMappedPtr(int frameIndex) => (T*)_mappedPtrs[frameIndex].ToPointer();
+
+    public unsafe void WriteInstance(int frameIndex, int instanceIndex, in T data)
+    {
+        if (instanceIndex >= _maxInstances)
+        {
+            return;
+        }
+
+        var ptr = (T*)_mappedPtrs[frameIndex].ToPointer();
+        ptr[instanceIndex] = data;
     }
 }

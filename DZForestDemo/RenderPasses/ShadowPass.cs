@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using DenOfIz;
 using ECS.Components;
-using Flecs.NET.Core;
 using Graphics;
 using Graphics.RenderGraph;
 using RuntimeAssets;
@@ -201,6 +200,7 @@ public sealed class ShadowPass : IDisposable
 
         return renderGraph.CreateTransientTexture(new TransientTextureDesc
         {
+            Aspect = TextureAspect.Depth,
             Width = atlasWidth,
             Height = atlasHeight,
             Depth = 1,
@@ -224,11 +224,11 @@ public sealed class ShadowPass : IDisposable
         var shadowIndex = 0;
 
         // Collect all shadow-casting lights and their matrices
-        _world.Query<DirectionalLight>().Each((ref DirectionalLight light) =>
+        foreach (var (entity, light) in _world.Query<DirectionalLight>())
         {
             if (!light.CastShadows || shadowIndex >= MaxShadowCastingLights)
             {
-                return;
+                continue;
             }
 
             var (renderMatrix, sampleMatrix) =
@@ -254,13 +254,13 @@ public sealed class ShadowPass : IDisposable
             });
 
             shadowIndex++;
-        });
+        }
 
-        _world.Query<PointLight, Transform>().Each((ref PointLight light, ref Transform transform) =>
+        foreach (var (entity, light, transform) in _world.Query<PointLight, Transform>())
         {
             if (shadowIndex >= MaxShadowCastingLights)
             {
-                return;
+                continue;
             }
 
             var lightViewProj = CalculatePointLightMatrix(transform.Position, sceneCenter, light.Radius);
@@ -285,13 +285,13 @@ public sealed class ShadowPass : IDisposable
             });
 
             shadowIndex++;
-        });
+        }
 
-        _world.Query<SpotLight, Transform>().Each((ref SpotLight light, ref Transform transform) =>
+        foreach (var (entity, light, transform) in _world.Query<SpotLight, Transform>())
         {
             if (shadowIndex >= MaxShadowCastingLights)
             {
-                return;
+                continue;
             }
 
             var lightViewProj =
@@ -317,7 +317,7 @@ public sealed class ShadowPass : IDisposable
             });
 
             shadowIndex++;
-        });
+        }
 
         // Add a clear pass first
         renderGraph.AddPass("Shadow_Clear",
@@ -360,6 +360,7 @@ public sealed class ShadowPass : IDisposable
 
         var clearDesc = new RenderingDesc
         {
+            RTAttachments = RenderingAttachmentDescArray.Create([]),
             DepthAttachment = new RenderingAttachmentDesc
             {
                 Resource = atlas,
@@ -408,6 +409,7 @@ public sealed class ShadowPass : IDisposable
 
         var renderingDesc = new RenderingDesc
         {
+            RTAttachments = RenderingAttachmentDescArray.Create([]),
             DepthAttachment = new RenderingAttachmentDesc
             {
                 Resource = atlas,

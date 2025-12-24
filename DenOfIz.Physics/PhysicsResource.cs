@@ -7,7 +7,7 @@ using BepuPhysics.Constraints;
 using BepuPhysics.Trees;
 using BepuUtilities;
 using BepuUtilities.Memory;
-using Flecs.NET.Core;
+using ECS;
 using Physics.Components;
 
 namespace Physics;
@@ -30,7 +30,7 @@ public struct CollisionEvent
     public float Depth;
 }
 
-public class PhysicsResource : IDisposable
+public class PhysicsResource : IResource, IDisposable
 {
     private readonly List<CollisionEvent> _collisionEvents = [];
     private readonly Dictionary<BodyHandle, Entity> _dynamicToEntity = new();
@@ -69,7 +69,6 @@ public class PhysicsResource : IDisposable
 
     public Vector3 Gravity { get; set; } = new(0, -9.81f, 0);
     public float FixedTimeStep { get; set; } = 1f / 60f;
-    public int AccumulatedSteps { get; set; }
     public IReadOnlyList<CollisionEvent> CollisionEvents => _collisionEvents;
 
     public void Dispose()

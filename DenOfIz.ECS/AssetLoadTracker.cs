@@ -34,7 +34,7 @@ public readonly struct AssetLoadHandle : IEquatable<AssetLoadHandle>
     public static bool operator !=(AssetLoadHandle left, AssetLoadHandle right) => !left.Equals(right);
 }
 
-public sealed class AssetLoadTracker
+public sealed class AssetLoadTracker : IResource
 {
     private readonly Dictionary<uint, LoadingAsset> _loading = new();
     private readonly Queue<uint> _freeIds = new();

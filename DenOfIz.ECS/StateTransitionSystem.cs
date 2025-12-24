@@ -1,74 +1,77 @@
-using Flecs.NET.Core;
+using DenOfIz;
 
 namespace ECS;
 
-public static class StateTransitionSystem<T> where T : struct, IGameState
+public sealed class StateTransitionSystem<T> : ISystem where T : struct, IGameState
 {
-    public static void Register(World world)
+    private World _world = null!;
+
+    public void Initialize(World world)
     {
-        world.System($"StateTransition<{typeof(T).Name}>")
-            .Kind(Ecs.PreUpdate)
-            .Run((Iter _) =>
-            {
-                if (!world.Has<NextState<T>>())
-                {
-                    return;
-                }
-
-                ref var nextState = ref world.GetMut<NextState<T>>();
-                if (!nextState.HasPending)
-                {
-                    return;
-                }
-
-                var pending = nextState.Take();
-                if (!pending.HasValue)
-                {
-                    return;
-                }
-
-                if (!world.Has<State<T>>())
-                {
-                    return;
-                }
-
-                ref var state = ref world.GetMut<State<T>>();
-
-                var oldState = state.Current;
-                var newState = pending.Value;
-
-                if (EqualityComparer<T>.Default.Equals(oldState, newState))
-                {
-                    return;
-                }
-
-                if (world.Has<StateCallbacks<T>>())
-                {
-                    ref var callbacks = ref world.GetMut<StateCallbacks<T>>();
-                    callbacks.InvokeOnExit(world, oldState);
-                    state.Current = newState;
-                    callbacks.InvokeOnEnter(world, newState);
-                }
-                else
-                {
-                    state.Current = newState;
-                }
-            });
+        _world = world;
     }
+
+    public void Run()
+    {
+        var nextState = _world.TryGetResource<NextState<T>>();
+        if (nextState == null || !nextState.HasPending)
+        {
+            return;
+        }
+
+        var pending = nextState.Take();
+        if (!pending.HasValue)
+        {
+            return;
+        }
+
+        var state = _world.TryGetResource<State<T>>();
+        if (state == null)
+        {
+            return;
+        }
+
+        var callbacks = _world.TryGetResource<StateCallbacks<T>>();
+        var oldState = state.Current;
+        var newState = pending.Value;
+
+        if (EqualityComparer<T>.Default.Equals(oldState, newState))
+        {
+            return;
+        }
+
+        callbacks?.InvokeOnExit(_world, oldState);
+
+        state.Current = newState;
+
+        callbacks?.InvokeOnEnter(_world, newState);
+    }
+
+    public bool OnEvent(ref Event ev) => false;
+
+    public void Shutdown() { }
+
+    public void Dispose() { }
 }
 
-public static class AssetLoadTrackerSystem
+public sealed class AssetLoadTrackerSystem : ISystem
 {
-    public static void Register(World world)
+    private World _world = null!;
+
+    public void Initialize(World world)
     {
-        world.System("AssetLoadTracker")
-            .Kind(Ecs.PreUpdate)
-            .Run((Iter _) =>
-            {
-                if (world.Has<AssetLoadTracker>())
-                {
-                    world.GetMut<AssetLoadTracker>().Update();
-                }
-            });
+        _world = world;
     }
+
+    public void Run()
+    {
+        var tracker = _world.TryGetResource<AssetLoadTracker>();
+        tracker?.Update();
+    }
+
+    public bool OnEvent(ref Event ev) => false;
+
+    public void Shutdown() { }
+
+    public void Dispose() { }
 }
