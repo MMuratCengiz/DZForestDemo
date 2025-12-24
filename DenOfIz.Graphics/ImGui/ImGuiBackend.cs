@@ -321,13 +321,15 @@ float4 main(PSInput input) : SV_TARGET
         var vsDesc = new ShaderStageDesc
         {
             Stage = (uint)ShaderStageFlagBits.Vertex,
-            Data = vsData
+            Data = vsData,
+            EntryPoint = StringView.Create("main")
         };
 
         var psDesc = new ShaderStageDesc
         {
             Stage = (uint)ShaderStageFlagBits.Pixel,
             Data = psData,
+            EntryPoint = StringView.Create("main"),
             Bindless = new BindlessDesc
             {
                 BindlessArrays = bindlessSlotsArray
