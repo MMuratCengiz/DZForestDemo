@@ -266,7 +266,10 @@ public static class ImGuiDemoProgram
             Windows = APIPreferenceWindows.Directx12
         };
         using var graphicsApi = new GraphicsApi(preference);
-        using var logicalDevice = graphicsApi.CreateAndLoadOptimalLogicalDevice(new LogicalDeviceDesc());
+        using var logicalDevice = graphicsApi.CreateAndLoadOptimalLogicalDevice(new LogicalDeviceDesc()
+        {
+            EnableValidationLayers = true
+        });
 
         using var demoWindow = new ImGuiDemoWindow(logicalDevice, 1920, 1080, "ImGui Demo - DenOfIz");
         while (demoWindow.PollAndRender())

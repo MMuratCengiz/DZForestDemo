@@ -400,7 +400,7 @@ float4 main(PSInput input) : SV_TARGET
         var vertexBufferDesc = new BufferDesc
         {
             NumBytes = _desc.MaxVertices * 20,
-            Usage = (uint)(BufferUsageFlagBits.Vertex | BufferUsageFlagBits.Uniform),
+            Usage = (uint)BufferUsageFlagBits.Vertex,
             HeapType = HeapType.CpuGpu,
             DebugName = StringView.Intern("ImGui Vertex Buffer")
         };
