@@ -2,15 +2,8 @@ using Flecs.NET.Core;
 
 namespace ECS;
 
-/// <summary>
-/// Factory for creating the state transition system.
-/// </summary>
 public static class StateTransitionSystem<T> where T : struct, IGameState
 {
-    /// <summary>
-    /// Registers a system that handles game state transitions.
-    /// Checks for pending state changes and invokes callbacks.
-    /// </summary>
     public static void Register(World world)
     {
         world.System($"StateTransition<{typeof(T).Name}>")
@@ -64,14 +57,8 @@ public static class StateTransitionSystem<T> where T : struct, IGameState
     }
 }
 
-/// <summary>
-/// Factory for creating the asset load tracker system.
-/// </summary>
 public static class AssetLoadTrackerSystem
 {
-    /// <summary>
-    /// Registers a system that updates async asset loading.
-    /// </summary>
     public static void Register(World world)
     {
         world.System("AssetLoadTracker")

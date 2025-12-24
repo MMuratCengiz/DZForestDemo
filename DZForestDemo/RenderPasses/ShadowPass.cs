@@ -3,15 +3,12 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using DenOfIz;
-using ECS;
 using ECS.Components;
 using Flecs.NET.Core;
 using Graphics;
-using Graphics.Batching;
 using Graphics.RenderGraph;
 using RuntimeAssets;
 using Buffer = DenOfIz.Buffer;
-using Pipeline = DenOfIz.Pipeline;
 
 namespace DZForestDemo.RenderPasses;
 
@@ -19,8 +16,6 @@ public sealed class ShadowPass : IDisposable
 {
     public const int ShadowMapSize = 1024;
     public const int MaxShadowCastingLights = 4;
-    public const int PointLightFaces = 6;
-    public const int MaxInstancesPerFrame = 4096;
 
     private static readonly Matrix4x4 BiasMatrix = new(
         0.5f, 0.0f, 0.0f, 0.0f,
@@ -32,54 +27,44 @@ public sealed class ShadowPass : IDisposable
     private readonly AssetResource _assets;
     private readonly GraphicsResource _ctx;
     private readonly MyRenderBatcher _batcher;
-    private readonly Dictionary<RuntimeMeshHandle, BatchInstanceData>[] _perFrameBatchData;
-
-    // Pipeline variants for different mesh types
-    private readonly InputLayout _geometryInputLayout;
-    private readonly InputLayout _modelInputLayout;
-    private readonly Pipeline _geometryPipeline;
-    private readonly Pipeline _modelPipeline;
-
-    // One buffer/bindgroup per light per frame to avoid overwrite during command recording
-    private readonly Buffer[][] _lightMatrixBuffers;
-    private readonly ResourceBindGroup[][] _lightMatrixBindGroups;
-    private readonly IntPtr[][] _lightMatrixMappedPtrs;
-
-    private readonly RootSignature _rootSignature;
+    private readonly RgCommandList _rgCommandList;
     private readonly World _world;
-    private bool _disposed;
+
+    // Shader with variants
+    private readonly Shader _shader;
+
+    // Per-frame buffers
+    private readonly Buffer[][] _lightMatrixBuffers;
+    private readonly IntPtr[][] _lightMatrixMappedPtrs;
+    private readonly Dictionary<RuntimeMeshHandle, BatchInstanceData>[] _perFrameBatchData;
 
     // Cached light data for building passes
     private readonly List<LightRenderInfo> _lightRenderInfos = [];
-    private ResourceHandle _shadowAtlas;
 
-    public ShadowPass(GraphicsResource ctx, AssetResource assets, World world, MyRenderBatcher batcher)
+    private bool _disposed;
+
+    public ShadowPass(GraphicsResource ctx, AssetResource assets, World world, MyRenderBatcher batcher, RgCommandList rgCommandList)
     {
         _ctx = ctx;
         _assets = assets;
         _world = world;
         _batcher = batcher;
+        _rgCommandList = rgCommandList;
 
         var logicalDevice = ctx.LogicalDevice;
-
-        // Create geometry pipeline (for built-in primitives)
-        CreatePipeline(logicalDevice, "shadow_vs.hlsl", out _geometryInputLayout, out var rootSig, out _geometryPipeline);
-        _rootSignature = rootSig!;
-
-        // Create model pipeline (for imported models)
-        CreatePipeline(logicalDevice, "shadow_vs_model.hlsl", out _modelInputLayout, out _, out _modelPipeline);
-
         var numFrames = (int)ctx.NumFrames;
-        _lightMatrixBuffers = new Buffer[numFrames][];
-        _lightMatrixBindGroups = new ResourceBindGroup[numFrames][];
-        _lightMatrixMappedPtrs = new IntPtr[numFrames][];
 
+        // Create shader with variants
+        _shader = CreateShader(logicalDevice);
+
+        // Create per-frame buffers
+        _lightMatrixBuffers = new Buffer[numFrames][];
+        _lightMatrixMappedPtrs = new IntPtr[numFrames][];
         _perFrameBatchData = new Dictionary<RuntimeMeshHandle, BatchInstanceData>[numFrames];
 
         for (var i = 0; i < numFrames; i++)
         {
             _lightMatrixBuffers[i] = new Buffer[MaxShadowCastingLights];
-            _lightMatrixBindGroups[i] = new ResourceBindGroup[MaxShadowCastingLights];
             _lightMatrixMappedPtrs[i] = new IntPtr[MaxShadowCastingLights];
 
             for (var lightIdx = 0; lightIdx < MaxShadowCastingLights; lightIdx++)
@@ -92,56 +77,47 @@ public sealed class ShadowPass : IDisposable
                     DebugName = StringView.Create($"ShadowLightMatrix_{i}_{lightIdx}")
                 });
                 _lightMatrixMappedPtrs[i][lightIdx] = _lightMatrixBuffers[i][lightIdx].MapMemory();
-
-                _lightMatrixBindGroups[i][lightIdx] = logicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
-                {
-                    RootSignature = _rootSignature,
-                    RegisterSpace = 0
-                });
-                _lightMatrixBindGroups[i][lightIdx].BeginUpdate();
-                _lightMatrixBindGroups[i][lightIdx].Cbv(0, _lightMatrixBuffers[i][lightIdx]);
-                _lightMatrixBindGroups[i][lightIdx].EndUpdate();
             }
 
             _perFrameBatchData[i] = new Dictionary<RuntimeMeshHandle, BatchInstanceData>();
         }
     }
 
-    public void Dispose()
+    private Shader CreateShader(LogicalDevice logicalDevice)
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        for (var i = 0; i < _lightMatrixBuffers.Length; i++)
-        {
-            for (var lightIdx = 0; lightIdx < MaxShadowCastingLights; lightIdx++)
+        // Build root signature with bindings
+        // space0 (PerFrame): LightMatrix
+        // space3 (PerDraw): Instances
+        var rootSignature = new ShaderRootSignature.Builder(logicalDevice)
+            .AddBinding("LightMatrix", new ResourceBindingDesc
             {
-                _lightMatrixBuffers[i][lightIdx].UnmapMemory();
-                _lightMatrixBindGroups[i][lightIdx].Dispose();
-                _lightMatrixBuffers[i][lightIdx].Dispose();
-            }
-
-            foreach (var batchData in _perFrameBatchData[i].Values)
+                Binding = 0,
+                RegisterSpace = 0,
+                Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
+                Stages = (uint)ShaderStageFlagBits.Vertex,
+                ArraySize = 1
+            })
+            .AddBinding("Instances", new ResourceBindingDesc
             {
-                batchData.Dispose();
-            }
-        }
+                Binding = 0,
+                RegisterSpace = 3,
+                Descriptor = (uint)ResourceDescriptorFlagBits.StructuredBuffer,
+                Stages = (uint)ShaderStageFlagBits.Vertex,
+                ArraySize = 1
+            })
+            .Build();
 
-        _geometryPipeline.Dispose();
-        _modelPipeline.Dispose();
-        _rootSignature.Dispose();
-        _geometryInputLayout.Dispose();
-        _modelInputLayout.Dispose();
+        var shader = new Shader(rootSignature);
 
-        GC.SuppressFinalize(this);
+        // Create geometry and model variants
+        AddVariant(shader, logicalDevice, rootSignature, "shadow_vs.hlsl", "geometry");
+        AddVariant(shader, logicalDevice, rootSignature, "shadow_vs_model.hlsl", "model");
+
+        return shader;
     }
 
-    private void CreatePipeline(LogicalDevice logicalDevice, string vsFilename, out InputLayout inputLayout,
-        out RootSignature? rootSignature, out Pipeline pipeline)
+    private void AddVariant(Shader shader, LogicalDevice logicalDevice, ShaderRootSignature rootSignature,
+        string vsFilename, string variantName)
     {
         var shaderLoader = new ShaderLoader();
         var vsSource = shaderLoader.Load(vsFilename);
@@ -160,17 +136,12 @@ public sealed class ShadowPass : IDisposable
 
         var program = new ShaderProgram(programDesc);
         var reflection = program.Reflect();
-        inputLayout = logicalDevice.CreateInputLayout(reflection.InputLayout);
+        var inputLayout = logicalDevice.CreateInputLayout(reflection.InputLayout);
 
-        // Create root signature only if not already created (all variants share the same root signature)
-        rootSignature = _rootSignature == null
-            ? logicalDevice.CreateRootSignature(reflection.RootSignature)
-            : null;
-
-        pipeline = logicalDevice.CreatePipeline(new PipelineDesc
+        var pipeline = logicalDevice.CreatePipeline(new PipelineDesc
         {
             InputLayout = inputLayout,
-            RootSignature = _rootSignature ?? rootSignature!,
+            RootSignature = rootSignature.Instance,
             ShaderProgram = program,
             Graphics = new GraphicsPipelineDesc
             {
@@ -191,6 +162,36 @@ public sealed class ShadowPass : IDisposable
                 DepthStencilAttachmentFormat = Format.D32Float
             }
         });
+
+        shader.AddVariant(variantName, new ShaderVariant(pipeline, program));
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        for (var i = 0; i < _lightMatrixBuffers.Length; i++)
+        {
+            for (var lightIdx = 0; lightIdx < MaxShadowCastingLights; lightIdx++)
+            {
+                _lightMatrixBuffers[i][lightIdx].UnmapMemory();
+                _lightMatrixBuffers[i][lightIdx].Dispose();
+            }
+
+            foreach (var batchData in _perFrameBatchData[i].Values)
+            {
+                batchData.Dispose();
+            }
+        }
+
+        _shader.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 
     public ResourceHandle CreateShadowAtlas(RenderGraph renderGraph)
@@ -198,7 +199,7 @@ public sealed class ShadowPass : IDisposable
         var atlasWidth = (uint)(ShadowMapSize * 2);
         var atlasHeight = (uint)(ShadowMapSize * 2);
 
-        _shadowAtlas = renderGraph.CreateTransientTexture(new TransientTextureDesc
+        return renderGraph.CreateTransientTexture(new TransientTextureDesc
         {
             Width = atlasWidth,
             Height = atlasHeight,
@@ -209,14 +210,8 @@ public sealed class ShadowPass : IDisposable
             Usage = (uint)(TextureUsageFlagBits.TextureBinding | TextureUsageFlagBits.RenderAttachment),
             DebugName = "ShadowAtlas"
         });
-
-        return _shadowAtlas;
     }
 
-    /// <summary>
-    /// Adds separate render graph passes for each shadow-casting light.
-    /// Each light gets its own pass with dedicated buffers and bind groups.
-    /// </summary>
     public void AddPasses(
         RenderGraph renderGraph,
         ResourceHandle shadowAtlas,
@@ -337,8 +332,6 @@ public sealed class ShadowPass : IDisposable
             });
 
         // Add separate pass for each light
-        // Use ReadWriteTexture to create proper dependency chain - each pass preserves
-        // existing content (renders to different atlas region) so depends on previous writes
         for (var i = 0; i < _lightRenderInfos.Count; i++)
         {
             var lightInfo = _lightRenderInfos[i];
@@ -390,6 +383,7 @@ public sealed class ShadowPass : IDisposable
         ctx.ResourceTracking.TransitionTexture(cmd, atlas,
             (uint)ResourceUsageFlagBits.DepthWrite, QueueType.Graphics);
 
+        // Update instance data for all batches
         var batchDataDict = _perFrameBatchData[frameIndex];
         var staticBatcher = _batcher.StaticBatcher;
         var allInstances = staticBatcher.Instances;
@@ -405,23 +399,12 @@ public sealed class ShadowPass : IDisposable
             }
         }
 
-        RenderShadowMap(ref ctx, atlas, lightInfo.RenderMatrix, lightInfo.AtlasOffset, frameIndex, lightInfo.ShadowIndex, batchDataDict, staticBatcher);
-    }
+        // Update light matrix
+        var lightMatrixConstants = new LightMatrixConstants { LightViewProjection = lightInfo.RenderMatrix };
+        Unsafe.Write(_lightMatrixMappedPtrs[frameIndex][lightInfo.ShadowIndex].ToPointer(), lightMatrixConstants);
 
-    private unsafe void RenderShadowMap(
-        ref RenderPassExecuteContext ctx,
-        Texture atlas,
-        Matrix4x4 lightViewProj,
-        Vector2 atlasOffset,
-        int frameIndex,
-        int shadowIndex,
-        Dictionary<RuntimeMeshHandle, BatchInstanceData> batchDataDict,
-        RenderBatcher<RuntimeMeshHandle, StaticInstance> staticBatcher)
-    {
-        var cmd = ctx.CommandList;
-
-        var lightMatrixConstants = new LightMatrixConstants { LightViewProjection = lightViewProj };
-        Unsafe.Write(_lightMatrixMappedPtrs[frameIndex][shadowIndex].ToPointer(), lightMatrixConstants);
+        // Begin RgCommandList pass
+        _rgCommandList.Begin(cmd, frameIndex);
 
         var renderingDesc = new RenderingDesc
         {
@@ -435,13 +418,11 @@ public sealed class ShadowPass : IDisposable
             RenderAreaHeight = ShadowMapSize * 2
         };
 
-        cmd.BeginRendering(renderingDesc);
-        cmd.BindViewport(atlasOffset.X, atlasOffset.Y, ShadowMapSize, ShadowMapSize);
-        cmd.BindScissorRect((int)atlasOffset.X, (int)atlasOffset.Y, ShadowMapSize, ShadowMapSize);
-        cmd.BindResourceGroup(_lightMatrixBindGroups[frameIndex][shadowIndex]);
+        _rgCommandList.BeginRendering(renderingDesc);
+        _rgCommandList.BindViewport(lightInfo.AtlasOffset.X, lightInfo.AtlasOffset.Y, ShadowMapSize, ShadowMapSize);
+        _rgCommandList.BindScissorRect(lightInfo.AtlasOffset.X, lightInfo.AtlasOffset.Y, ShadowMapSize, ShadowMapSize);
 
-        var currentMeshType = (MeshType)255;
-
+        // Render all batches
         foreach (var batch in staticBatcher.Batches)
         {
             ref readonly var runtimeMesh = ref _assets.GetMeshRef(batch.Key);
@@ -450,25 +431,58 @@ public sealed class ShadowPass : IDisposable
                 continue;
             }
 
-            if (runtimeMesh.MeshType != currentMeshType)
-            {
-                currentMeshType = runtimeMesh.MeshType;
-                var pipeline = currentMeshType == MeshType.Geometry ? _geometryPipeline : _modelPipeline;
-                cmd.BindPipeline(pipeline);
-            }
+            var variant = runtimeMesh.MeshType == MeshType.Geometry ? "geometry" : "model";
+            _rgCommandList.SetShader(_shader, variant);
+
+            _rgCommandList.SetBuffer("LightMatrix", _lightMatrixBuffers[frameIndex][lightInfo.ShadowIndex]);
 
             var batchData = batchDataDict[batch.Key];
-            cmd.BindResourceGroup(batchData.BindGroup);
+            _rgCommandList.SetBuffer("Instances", batchData.Buffer);
 
-            var vb = runtimeMesh.VertexBuffer;
-            var ib = runtimeMesh.IndexBuffer;
+            var gpuMesh = new GPUMesh
+            {
+                IndexType = runtimeMesh.IndexBuffer.IndexType,
+                VertexBuffer = runtimeMesh.VertexBuffer.View,
+                IndexBuffer = runtimeMesh.IndexBuffer.View,
+                VertexStride = runtimeMesh.VertexBuffer.Stride,
+                NumVertices = runtimeMesh.VertexBuffer.Count,
+                NumIndices = runtimeMesh.IndexBuffer.Count
+            };
 
-            cmd.BindVertexBuffer(vb.View.GetBuffer(), (uint)vb.View.Offset, vb.Stride, 0);
-            cmd.BindIndexBuffer(ib.View.GetBuffer(), ib.IndexType, ib.View.Offset);
-            cmd.DrawIndexed(ib.Count, (uint)batch.Count, 0, 0, 0);
+            _rgCommandList.DrawMesh(gpuMesh, (uint)batch.Count);
         }
 
-        cmd.EndRendering();
+        _rgCommandList.End();
+    }
+
+    private BatchInstanceData GetOrCreateBatchData(Dictionary<RuntimeMeshHandle, BatchInstanceData> dict,
+        RuntimeMeshHandle meshHandle, int requiredCapacity, int frameIndex)
+    {
+        if (dict.TryGetValue(meshHandle, out var existing) && existing.Capacity >= requiredCapacity)
+        {
+            return existing;
+        }
+
+        existing?.Dispose();
+
+        var capacity = Math.Max(requiredCapacity, 64);
+        var stride = (ulong)Unsafe.SizeOf<ShadowInstanceData>();
+        var buffer = _ctx.LogicalDevice.CreateBuffer(new BufferDesc
+        {
+            HeapType = HeapType.CpuGpu,
+            NumBytes = stride * (ulong)capacity,
+            StructureDesc = new StructuredBufferDesc
+            {
+                Offset = 0,
+                NumElements = (ulong)capacity,
+                Stride = stride
+            },
+            DebugName = StringView.Create($"ShadowBatchInstance_{frameIndex}_{meshHandle.Index}")
+        });
+
+        var batchData = new BatchInstanceData(buffer, buffer.MapMemory(), capacity);
+        dict[meshHandle] = batchData;
+        return batchData;
     }
 
     private static Vector2 GetAtlasOffset(int shadowIndex)
@@ -531,46 +545,6 @@ public sealed class ShadowPass : IDisposable
         return Vector3.Cross(forward, right);
     }
 
-    private BatchInstanceData GetOrCreateBatchData(Dictionary<RuntimeMeshHandle, BatchInstanceData> dict, RuntimeMeshHandle meshHandle, int requiredCapacity, int frameIndex)
-    {
-        if (dict.TryGetValue(meshHandle, out var existing) && existing.Capacity >= requiredCapacity)
-        {
-            return existing;
-        }
-
-        existing?.Dispose();
-
-        var capacity = Math.Max(requiredCapacity, 64);
-        var stride = (ulong)Unsafe.SizeOf<ShadowInstanceData>();
-        var buffer = _ctx.LogicalDevice.CreateBuffer(new BufferDesc
-        {
-            HeapType = HeapType.CpuGpu,
-            NumBytes = stride * (ulong)capacity,
-            Usage = (int)BufferUsageFlagBits.Uniform,
-            DebugName = StringView.Create($"ShadowBatchInstance_{frameIndex}_{meshHandle.Index}")
-        });
-
-        var bindGroup = _ctx.LogicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
-        {
-            RootSignature = _rootSignature,
-            RegisterSpace = 1
-        });
-        bindGroup.BeginUpdate();
-        bindGroup.SrvBuffer(0, buffer);
-        bindGroup.EndUpdate();
-
-        var batchData = new BatchInstanceData
-        {
-            Buffer = buffer,
-            BindGroup = bindGroup,
-            MappedPtr = buffer.MapMemory(),
-            Capacity = capacity
-        };
-
-        dict[meshHandle] = batchData;
-        return batchData;
-    }
-
     [StructLayout(LayoutKind.Sequential)]
     private struct LightMatrixConstants
     {
@@ -594,17 +568,15 @@ public sealed class ShadowPass : IDisposable
         public float Padding;
     }
 
-    private sealed class BatchInstanceData : IDisposable
+    private sealed class BatchInstanceData(Buffer buffer, IntPtr mappedPtr, int capacity) : IDisposable
     {
-        public Buffer Buffer;
-        public ResourceBindGroup BindGroup;
-        public IntPtr MappedPtr;
-        public int Capacity;
+        public readonly Buffer Buffer = buffer;
+        public readonly IntPtr MappedPtr = mappedPtr;
+        public readonly int Capacity = capacity;
 
         public void Dispose()
         {
             Buffer.UnmapMemory();
-            BindGroup.Dispose();
             Buffer.Dispose();
         }
     }

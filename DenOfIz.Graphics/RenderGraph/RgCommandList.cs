@@ -1,64 +1,45 @@
-﻿using DenOfIz;
+using DenOfIz;
 using Graphics.Binding;
 
 namespace Graphics.RenderGraph;
 
 public class RgCommandList
 {
-    private const int NumFrames = 3;
-
-    private readonly CommandQueue _commandQueue;
-
-    // ReSharper disable once PrivateFieldCanBeConvertedToLocalVariable
-    // Needs to be kept alive for the lifetime of the CommandListPool
-    private readonly CommandListPool _commandListPool;
-    private readonly List<Fence> _fences;
-    private Fence? _signalFence;
-    private readonly List<CommandList> _commandLists;
-    private CommandList _commandList;
-    private DrawState _drawState;
-    private int _nextFrame = 0;
-    private int _currentFrame = 0;
-    private Pipeline? _currentPipeline;
     private readonly FrequencyShaderBindingPools _freqBindingPools;
-    private bool _isRendering = false;
-    private int _drawId = 0;
 
-    public RgCommandList(LogicalDevice logicalDevice, CommandQueue commandQueue)
+    private CommandList _commandList = null!;
+    private DrawState _drawState;
+    private int _currentFrame;
+    private Pipeline? _currentPipeline;
+    private bool _isRendering;
+    private int _drawId;
+
+    public RgCommandList(LogicalDevice logicalDevice)
     {
         _freqBindingPools = new FrequencyShaderBindingPools(logicalDevice);
-        _commandQueue = commandQueue;
-        CommandListPoolDesc commandListPoolDesc = new()
-        {
-            CommandQueue = commandQueue,
-            NumCommandLists = 3
-        };
-
-        _commandListPool = logicalDevice.CreateCommandListPool(commandListPoolDesc);
-        _commandLists = new List<CommandList>(_commandListPool.GetCommandLists().ToArray()!);
-        _commandList = _commandLists[_currentFrame];
-        _fences = [];
-        for (var i = 0; i < 3; i++)
-        {
-            _fences.Add(logicalDevice.CreateFence());
-        }
     }
 
-    public int NextFrame()
+    public void Begin(CommandList commandList, int frameIndex)
     {
-        _isRendering = false;
-        _currentFrame = _nextFrame;
-        _nextFrame = (_nextFrame + 1) % NumFrames;
-        _fences[_currentFrame].Wait();
+        _commandList = commandList;
+        _currentFrame = frameIndex;
         _drawState = new DrawState();
         _drawId = 0;
-        _commandList = _commandLists[_currentFrame];
         _currentPipeline = null;
-        _signalFence?.Reset();
-        _signalFence = null;
-        _commandList.Begin();
-        return _currentFrame;
+        _isRendering = false;
     }
+
+    public void End()
+    {
+        if (_isRendering)
+        {
+            _commandList.EndRendering();
+            _isRendering = false;
+        }
+        _commandList = null!;
+    }
+
+    public int CurrentFrame => _currentFrame;
 
     public void BeginRendering(RenderingDesc desc)
     {
@@ -66,12 +47,20 @@ public class RgCommandList
         {
             _commandList.EndRendering();
         }
-
         _commandList.BeginRendering(desc);
         _isRendering = true;
     }
 
-    public void SetShader(Shader shader, string variant)
+    public void EndRendering()
+    {
+        if (_isRendering)
+        {
+            _commandList.EndRendering();
+            _isRendering = false;
+        }
+    }
+
+    public void SetShader(Shader shader, string variant = "default")
     {
         _drawState.Shader = shader;
         _drawState.Variant = variant;
@@ -79,6 +68,30 @@ public class RgCommandList
 
     public void SetData(string name, byte[] data)
     {
+        _drawState.Resources[name] = new DrawState.Resource(data);
+    }
+
+    public unsafe void SetData<T>(string name, in T value) where T : unmanaged
+    {
+        var size = sizeof(T);
+        var data = new byte[size];
+        fixed (byte* ptr = data)
+        fixed (T* src = &value)
+        {
+            System.Buffer.MemoryCopy(src, ptr, size, size);
+        }
+        _drawState.Resources[name] = new DrawState.Resource(data);
+    }
+
+    public unsafe void SetData<T>(string name, ReadOnlySpan<T> values) where T : unmanaged
+    {
+        var size = sizeof(T) * values.Length;
+        var data = new byte[size];
+        fixed (byte* dst = data)
+        fixed (T* src = values)
+        {
+            System.Buffer.MemoryCopy(src, dst, size, size);
+        }
         _drawState.Resources[name] = new DrawState.Resource(data);
     }
 
@@ -108,7 +121,7 @@ public class RgCommandList
         var newPipeline = _drawState.Shader?.TryGetPipeline(_drawState.Variant, out pipeline);
         if (!newPipeline.HasValue || !newPipeline.Value)
         {
-            throw new InvalidOperationException($"Pipeline with variant{_drawState.Variant} does not exist.");
+            throw new InvalidOperationException($"Pipeline with variant '{_drawState.Variant}' does not exist.");
         }
 
         if (_currentPipeline == null || pipeline != _currentPipeline)
@@ -119,7 +132,7 @@ public class RgCommandList
 
         FlushBindings();
 
-        _commandList.BindVertexBuffer(mesh.VertexBuffer.GetBuffer(), mesh.VertexBuffer.Offset, 0, 0);
+        _commandList.BindVertexBuffer(mesh.VertexBuffer.GetBuffer(), mesh.VertexBuffer.Offset, mesh.VertexStride, 0);
         if (mesh.NumIndices > 0)
         {
             _commandList.BindIndexBuffer(mesh.IndexBuffer.GetBuffer(), mesh.IndexType, mesh.IndexBuffer.Offset);
@@ -140,8 +153,7 @@ public class RgCommandList
         }
 
         var rootSignature = shader.RootSignature;
-        var shaderBindingPools =
-            _freqBindingPools.GetOrCreateBindingPools(rootSignature, _currentFrame);
+        var shaderBindingPools = _freqBindingPools.GetOrCreateBindingPools(rootSignature, _currentFrame);
 
         foreach (var registerSpace in rootSignature.GetRegisterSpaces())
         {
@@ -169,7 +181,6 @@ public class RgCommandList
                 {
                     continue;
                 }
-
                 shaderBinding = shaderBindingPool.GetOrCreate(bindGroupData);
             }
 
@@ -178,7 +189,6 @@ public class RgCommandList
 
         _drawId++;
     }
-    // TODO DrawMeshIndirect
 
     // Forwarded CommandList methods
     public void BindViewport(float x, float y, float width, float height)
@@ -216,51 +226,6 @@ public class RgCommandList
         _commandList.CopyTextureToBuffer(in copyTextureToBuffer);
     }
 
-    public void UpdateTopLevelAS(in UpdateTopLevelASDesc updateDesc)
-    {
-        _commandList.UpdateTopLevelAS(in updateDesc);
-    }
-
-    public void BuildTopLevelAS(in BuildTopLevelASDesc buildTopLevelASDesc)
-    {
-        _commandList.BuildTopLevelAS(in buildTopLevelASDesc);
-    }
-
-    public void BuildBottomLevelAS(in BuildBottomLevelASDesc buildBottomLevelASDesc)
-    {
-        _commandList.BuildBottomLevelAS(in buildBottomLevelASDesc);
-    }
-
-    public void DispatchRays(in DispatchRaysDesc dispatchRaysDesc)
-    {
-        _commandList.DispatchRays(in dispatchRaysDesc);
-    }
-
-    public void Dispatch(uint groupCountX, uint groupCountY, uint groupCountZ)
-    {
-        _commandList.Dispatch(groupCountX, groupCountY, groupCountZ);
-    }
-
-    public void DispatchMesh(uint groupCountX, uint groupCountY, uint groupCountZ)
-    {
-        _commandList.DispatchMesh(groupCountX, groupCountY, groupCountZ);
-    }
-
-    public void DrawIndirect(DenOfIz.Buffer? buffer, ulong offset, uint drawCount, uint stride)
-    {
-        _commandList.DrawIndirect(buffer, offset, drawCount, stride);
-    }
-
-    public void DrawIndexedIndirect(DenOfIz.Buffer? buffer, ulong offset, uint drawCount, uint stride)
-    {
-        _commandList.DrawIndexedIndirect(buffer, offset, drawCount, stride);
-    }
-
-    public void DispatchIndirect(DenOfIz.Buffer? buffer, ulong offset)
-    {
-        _commandList.DispatchIndirect(buffer, offset);
-    }
-
     public void BeginDebugMarker(float r, float g, float b, StringView name)
     {
         _commandList.BeginDebugMarker(r, g, b, name);
@@ -274,53 +239,5 @@ public class RgCommandList
     public void InsertDebugMarker(float r, float g, float b, StringView name)
     {
         _commandList.InsertDebugMarker(r, g, b, name);
-    }
-
-    public void BeginQuery(QueryPool? queryPool, in QueryDesc queryDesc)
-    {
-        _commandList.BeginQuery(queryPool, in queryDesc);
-    }
-
-    public void EndQuery(QueryPool? queryPool, in QueryDesc queryDesc)
-    {
-        _commandList.EndQuery(queryPool, in queryDesc);
-    }
-
-    public void ResolveQuery(QueryPool? queryPool, uint startQuery, uint queryCount)
-    {
-        _commandList.ResolveQuery(queryPool, startQuery, queryCount);
-    }
-
-    public void ResetQuery(QueryPool? queryPool, uint startQuery, uint queryCount)
-    {
-        _commandList.ResetQuery(queryPool, startQuery, queryCount);
-    }
-
-    public QueueType GetQueueType()
-    {
-        return _commandList.GetQueueType();
-    }
-
-    public void Submit(SemaphoreArray? waitOnSemaphores = null, SemaphoreArray? signalSemaphores = null,
-        Fence? fence = null)
-    {
-        if (_isRendering)
-        {
-            _commandList.EndRendering();
-            _isRendering = false;
-        }
-        _commandList.End();
-
-        _signalFence = fence;
-
-        ExecuteCommandListsDesc executeCommandListsDesc = new()
-        {
-            CommandLists = CommandListArray.Create([_commandList]),
-            Signal = _fences[_currentFrame],
-            SignalSemaphores = signalSemaphores ?? SemaphoreArray.Create([]),
-            WaitSemaphores = waitOnSemaphores ?? SemaphoreArray.Create([])
-        };
-
-        _commandQueue.ExecuteCommandLists(executeCommandListsDesc);
     }
 }

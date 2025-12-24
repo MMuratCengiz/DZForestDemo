@@ -33,11 +33,11 @@ public sealed class RuntimeMeshStore(
 {
     private readonly LogicalDevice _device = device;
     private readonly Queue<uint> _freeIndices = new();
-    private readonly BufferPool _indexPool = new(device, (uint)ResourceUsageFlagBits.IndexBuffer, indexPoolSize);
+    private readonly BufferPool _indexPool = new(device, (uint)(BufferUsageFlagBits.Index | BufferUsageFlagBits.CopyDst), indexPoolSize);
     private readonly List<MeshSlot> _slots = [];
 
     private readonly BufferPool _vertexPool =
-        new(device, (uint)ResourceUsageFlagBits.VertexAndConstantBuffer, vertexPoolSize);
+        new(device, (uint)(BufferUsageFlagBits.Vertex | BufferUsageFlagBits.CopyDst), vertexPoolSize);
 
     private bool _disposed;
 

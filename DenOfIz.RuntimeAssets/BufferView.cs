@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using DenOfIz;
-using Buffer = DenOfIz.Buffer;
 
 namespace RuntimeAssets;
 

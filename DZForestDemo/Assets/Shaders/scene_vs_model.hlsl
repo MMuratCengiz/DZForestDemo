@@ -30,7 +30,7 @@ cbuffer FrameConstants : register(b0, space0)
     float Time;
 };
 
-StructuredBuffer<InstanceData> Instances : register(t0, space2);
+StructuredBuffer<InstanceData> Instances : register(t0, space3);
 
 PSInput VSMain(VSInput input, uint instanceID : SV_InstanceID)
 {

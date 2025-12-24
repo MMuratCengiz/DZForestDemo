@@ -18,7 +18,7 @@ cbuffer LightMatrixConstants : register(b0, space0)
     float4x4 LightViewProjection;
 };
 
-StructuredBuffer<ShadowInstanceData> Instances : register(t0, space1);
+StructuredBuffer<ShadowInstanceData> Instances : register(t0, space3);
 
 PSInput VSMain(VSInput input, uint instanceID : SV_InstanceID)
 {

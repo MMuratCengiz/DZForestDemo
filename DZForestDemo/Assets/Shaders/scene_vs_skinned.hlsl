@@ -31,12 +31,12 @@ cbuffer FrameConstants : register(b0, space0)
     float Time;
 };
 
-cbuffer BoneMatrices : register(b0, space5)
+StructuredBuffer<InstanceData> Instances : register(t0, space3);
+
+cbuffer BoneMatrices : register(b0, space3)
 {
     float4x4 Bones[MAX_BONES];
 };
-
-StructuredBuffer<InstanceData> Instances : register(t0, space2);
 
 float4x4 ComputeSkinMatrix(float4 weights, uint4 indices)
 {

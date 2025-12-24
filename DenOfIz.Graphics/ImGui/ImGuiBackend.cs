@@ -421,7 +421,7 @@ float4 main(PSInput input) : SV_TARGET
         var uniformBufferDesc = new BufferDesc
         {
             NumBytes = _alignedUniformSize * _desc.NumFrames,
-            Usage = (uint)ResourceUsageFlagBits.VertexAndConstantBuffer,
+            Usage = (uint)BufferUsageFlagBits.Uniform,
             HeapType = HeapType.CpuGpu,
             DebugName = StringView.Intern("ImGui Uniform Buffer")
         };
@@ -432,7 +432,7 @@ float4 main(PSInput input) : SV_TARGET
         var pixelConstantsBufferDesc = new BufferDesc
         {
             NumBytes = _alignedPixelConstantsSize * _desc.MaxTextures,
-            Usage = (uint)ResourceUsageFlagBits.VertexAndConstantBuffer,
+            Usage = (uint)BufferUsageFlagBits.Uniform,
             HeapType = HeapType.CpuGpu,
             DebugName = StringView.Intern("ImGui Pixel Constants Buffer")
         };

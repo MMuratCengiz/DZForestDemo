@@ -26,7 +26,7 @@ cbuffer FrameConstants : register(b0, space0)
     float Time;
 };
 
-cbuffer LightConstants : register(b0, space1)
+cbuffer LightConstants : register(b1, space0)
 {
     Light Lights[MAX_LIGHTS];
     ShadowData Shadows[MAX_SHADOW_LIGHTS];
@@ -40,15 +40,16 @@ cbuffer LightConstants : register(b0, space1)
     uint _Pad2;
 };
 
-StructuredBuffer<InstanceData> Instances : register(t0, space2);
+// space1 (PerCamera): All textures (SRVs only)
+Texture2D<float> ShadowAtlas : register(t0, space1);
+Texture2D<float4> AlbedoTexture : register(t1, space1);
 
-// Material textures (space3)
-Texture2D<float4> AlbedoTexture : register(t0, space3);
-SamplerState AlbedoSampler : register(s0, space3);
+// space5 (Samplers): All samplers
+SamplerComparisonState ShadowSampler : register(s0, space5);
+SamplerState AlbedoSampler : register(s1, space5);
 
-// Shadow map (space4)
-Texture2D<float> ShadowAtlas : register(t0, space4);
-SamplerComparisonState ShadowSampler : register(s0, space4);
+// space3 (PerDraw): Instance data
+StructuredBuffer<InstanceData> Instances : register(t0, space3);
 
 float SampleShadow(int shadowIndex, float3 worldPos, float3 normal)
 {

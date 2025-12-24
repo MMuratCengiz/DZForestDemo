@@ -1,5 +1,4 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using DenOfIz;
 using Flecs.NET.Core;
 using RuntimeAssets.Components;

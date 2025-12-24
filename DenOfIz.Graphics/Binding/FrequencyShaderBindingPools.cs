@@ -1,4 +1,4 @@
-﻿using DenOfIz;
+using DenOfIz;
 
 namespace Graphics.Binding;
 
@@ -36,9 +36,13 @@ public class FrequencyShaderBindingPools(LogicalDevice logicalDevice)
         return newPerShaderData.BindingPools[frameIndex];
     }
 
+    // Space 5 is reserved for samplers (uses Never frequency behavior)
+    private const int SamplerSpace = 5;
+
     private List<ShaderBindingPool?> CreateBindingPool(ShaderRootSignature rootSignature)
     {
-        List<ShaderBindingPool?> bindingPools = [null, null, null, null];
+        // 6 slots: 0=Never, 1=PerCamera, 2=PerMaterial, 3=PerDraw, 4=unused, 5=Samplers
+        List<ShaderBindingPool?> bindingPools = [null, null, null, null, null, null];
         foreach (var registerSpace in rootSignature.GetRegisterSpaces())
         {
             switch (registerSpace)
@@ -58,6 +62,10 @@ public class FrequencyShaderBindingPools(LogicalDevice logicalDevice)
                 case (int)BindingFrequency.PerDraw:
                     bindingPools[(int)BindingFrequency.PerDraw] =
                         new ShaderBindingPool(logicalDevice, rootSignature, registerSpace, 512);
+                    break;
+                case SamplerSpace:
+                    bindingPools[SamplerSpace] =
+                        new ShaderBindingPool(logicalDevice, rootSignature, registerSpace, 8);
                     break;
             }
         }

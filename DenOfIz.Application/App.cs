@@ -95,7 +95,6 @@ public sealed class App(ApplicationOptions options) : IDisposable
             return;
         }
 
-        // Handle fixed timestep for physics
         var fixedSteps = _fixedTimestep.Accumulate(Clock.DeltaTime);
         if (World.Has<PhysicsResource>())
         {
@@ -103,7 +102,6 @@ public sealed class App(ApplicationOptions options) : IDisposable
             physics.AccumulatedSteps = fixedSteps;
         }
 
-        // Run all systems via Flecs progress
         World.Progress((float)Clock.DeltaTime);
     }
 
@@ -127,7 +125,6 @@ public sealed class App(ApplicationOptions options) : IDisposable
                 }
             }
 
-            // Dispatch events to any registered event handlers
             if (World.Has<EventHandlers>())
             {
                 World.Get<EventHandlers>().Dispatch(ref ev);

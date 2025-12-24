@@ -29,9 +29,9 @@ public sealed class SceneRenderSystem : IDisposable
     private SceneRenderPass _scenePass;
     private ResourceHandle _sceneRt;
     private ResourceHandle _shadowAtlas;
-    private ResourceBindGroup? _shadowBindGroup;
     private ShadowPass _shadowPass;
     private MyRenderBatcher _batcher;
+    private RgCommandList _rgCommandList;
     private StepTimer _stepTimer;
     private float _totalTime;
     private UiRenderPass _uiPass;
@@ -54,8 +54,9 @@ public sealed class SceneRenderSystem : IDisposable
         _camera.SetAspectRatio(_ctx.Width, _ctx.Height);
 
         _batcher = new MyRenderBatcher(_world);
-        _shadowPass = new ShadowPass(_ctx, _assets, _world, _batcher);
-        _scenePass = new SceneRenderPass(_ctx, _assets, _world, _batcher);
+        _rgCommandList = new RgCommandList(_ctx.LogicalDevice);
+        _shadowPass = new ShadowPass(_ctx, _assets, _world, _batcher, _rgCommandList);
+        _scenePass = new SceneRenderPass(_ctx, _assets, _world, _batcher, _rgCommandList);
         _uiPass = new UiRenderPass(_ctx, _stepTimer);
         _compositePass = new CompositeRenderPass(_ctx);
         _debugPass = new DebugRenderPass(_ctx);
@@ -187,7 +188,6 @@ public sealed class SceneRenderSystem : IDisposable
 
         _disposed = true;
 
-        _shadowBindGroup?.Dispose();
         _debugPass.Dispose();
         _compositePass.Dispose();
         _scenePass.Dispose();
@@ -265,19 +265,6 @@ public sealed class SceneRenderSystem : IDisposable
         _shadowAtlas = _shadowPass.CreateShadowAtlas(renderGraph);
         _shadowPass.AddPasses(renderGraph, _shadowAtlas, _shadowData, new Vector3(0, 5, 0), 15f);
 
-        renderGraph.AddPass("ShadowFinalize",
-            (ref RenderPassSetupContext ctx, ref PassBuilder builder) =>
-            {
-                builder.ReadTexture(_shadowAtlas);
-                builder.HasSideEffects();
-            },
-            (ref RenderPassExecuteContext ctx) =>
-            {
-                var atlas = ctx.GetTexture(_shadowAtlas);
-                _shadowBindGroup?.Dispose();
-                _shadowBindGroup = _scenePass.CreateShadowBindGroup(atlas);
-            });
-
         renderGraph.AddPass("Scene",
             (ref RenderPassSetupContext ctx, ref PassBuilder builder) =>
             {
@@ -288,7 +275,7 @@ public sealed class SceneRenderSystem : IDisposable
             },
             (ref RenderPassExecuteContext ctx) =>
             {
-                _scenePass.Execute(ref ctx, _sceneRt, _depthRt, _shadowAtlas, _shadowBindGroup, _shadowData, viewport,
+                _scenePass.Execute(ref ctx, _sceneRt, _depthRt, _shadowAtlas, _shadowData, viewport,
                     viewProjection, cameraPosition, time);
             });
     }

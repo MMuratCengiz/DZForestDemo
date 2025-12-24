@@ -1,46 +1,29 @@
-using System.Runtime.CompilerServices;
 using DenOfIz;
 using Flecs.NET.Core;
 
 namespace Graphics;
 
-/// <summary>
-/// Custom phases for rendering pipeline.
-/// </summary>
 public struct PreRender;
 public struct Render;
 public struct PostRender;
 
-/// <summary>
-/// Registers graphics systems and phases.
-/// </summary>
 public static class GraphicsSystems
 {
-    /// <summary>
-    /// Initialize graphics phases in the pipeline.
-    /// Call this before registering graphics systems.
-    /// </summary>
     public static void InitPhases(World world)
     {
-        // PreRender runs after OnUpdate
         world.Component<PreRender>().Entity
             .Add(Ecs.DependsOn, Ecs.OnUpdate)
             .Add(Ecs.Phase);
 
-        // Render runs after PreRender
         world.Component<Render>().Entity
             .Add(Ecs.DependsOn, world.Entity<PreRender>())
             .Add(Ecs.Phase);
 
-        // PostRender runs after Render
         world.Component<PostRender>().Entity
             .Add(Ecs.DependsOn, world.Entity<Render>())
             .Add(Ecs.Phase);
     }
 
-    /// <summary>
-    /// Register the frame preparation system.
-    /// </summary>
     public static void RegisterPrepareFrame(World world)
     {
         world.System("PrepareFrame")
@@ -57,9 +40,6 @@ public static class GraphicsSystems
             });
     }
 
-    /// <summary>
-    /// Register the frame presentation system.
-    /// </summary>
     public static void RegisterPresentFrame(World world)
     {
         world.System("PresentFrame")
@@ -129,7 +109,7 @@ public class GraphicsPlugin(
         var logicalDevice = graphicsApi.CreateAndLoadOptimalLogicalDevice(new LogicalDeviceDesc()
         {
 #if DEBUG
-            EnableValidationLayers = false
+            EnableValidationLayers = true
 #endif
         });
 
@@ -168,7 +148,6 @@ public class GraphicsPlugin(
 
         world.Set(context);
 
-        // Initialize phases and register systems
         GraphicsSystems.InitPhases(world);
         GraphicsSystems.RegisterPrepareFrame(world);
         GraphicsSystems.RegisterPresentFrame(world);
