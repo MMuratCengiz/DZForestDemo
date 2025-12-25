@@ -48,7 +48,8 @@ public class ImGuiDemoWindow : IDisposable
         {
             Width = (int)width,
             Height = (int)height,
-            Title = StringView.Create(title)
+            Title = StringView.Create(title),
+            Position = WindowPosition.Centered
         });
 
         var commandQueueDesc = new CommandQueueDesc
@@ -145,16 +146,14 @@ public class ImGuiDemoWindow : IDisposable
 
         _stepTimer.Tick();
 
-        var frameIndex = _frameSync.NextFrame();
-        var image = _frameSync.AcquireNextImage();
-
-        var renderTarget = _swapChain.GetRenderTarget(image);
-        var commandList = _frameSync.GetCommandList(frameIndex);
-
         _imGuiRenderer.NewFrame((uint)_viewport.Width, (uint)_viewport.Height, (float)_stepTimer.GetDeltaTime());
+
+        var frameIndex = _frameSync.NextFrame();
+        var commandList = _frameSync.GetCommandList(frameIndex);
+        
         BuildImGuiUi();
 
-        Render(commandList, renderTarget, frameIndex);
+        var image = Render(commandList, frameIndex);
 
         _frameSync.ExecuteCommandList(frameIndex, _emptySemaphoreArray);
         _frameSync.Present(image);
@@ -215,37 +214,15 @@ public class ImGuiDemoWindow : IDisposable
         ImGui.End();
     }
 
-    private void Render(CommandList commandList, Texture renderTarget, uint frameIndex)
+    private uint Render(CommandList commandList, uint frameIndex)
     {
         commandList.Begin();
-
+        
+        var image = _frameSync.AcquireNextImage();
+        var renderTarget = _swapChain.GetRenderTarget(image);
+        
         _resourceTracking.TransitionTexture(commandList, renderTarget,
             (uint)ResourceUsageFlagBits.RenderTarget, QueueType.Graphics);
-
-        using var rtAttachments = new PinnedArray<RenderingAttachmentDesc>(1);
-        rtAttachments[0] = new RenderingAttachmentDesc
-        {
-            Resource = renderTarget,
-            LoadOp = LoadOp.Clear,
-            ClearColor = new Float4
-            {
-                X = _clearColor.X,
-                Y = _clearColor.Y,
-                Z = _clearColor.Z,
-                W = 1.0f
-            }
-        };
-
-        var renderingDesc = new RenderingDesc
-        {
-            RTAttachments = RenderingAttachmentDescArray.FromPinned(rtAttachments.Handle, 1),
-            NumLayers = 1
-        };
-
-        commandList.BeginRendering(renderingDesc);
-        commandList.BindViewport(_viewport.X, _viewport.Y, _viewport.Width, _viewport.Height);
-        commandList.BindScissorRect(_viewport.X, _viewport.Y, _viewport.Width, _viewport.Height);
-        commandList.EndRendering();
 
         _imGuiRenderer.Render(renderTarget, commandList, frameIndex);
 
@@ -253,6 +230,7 @@ public class ImGuiDemoWindow : IDisposable
             (uint)ResourceUsageFlagBits.Present, QueueType.Graphics);
 
         commandList.End();
+        return image;
     }
 }
 
@@ -260,6 +238,7 @@ public static class ImGuiDemoProgram
 {
     public static void RunDemo()
     {
+        DenOfIzRuntime.Initialize();
         Engine.Init(new EngineDesc());
         var preference = new APIPreference
         {

@@ -26,7 +26,21 @@
       "Bash(cmd /c del \"C:\\Workspace\\DZForestDemo\\DZForestDemo\\RenderPasses\\RenderBatcher.cs\")",
       "Bash(grep:*)",
       "Bash(cmd /c \"mkdir C:\\Workspace\\DZForestDemo\\DZForestDemo\\Scenes\")",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(ldd:*)",
+      "Bash(xargs ldd:*)",
+      "Bash(nm -D:*)",
+      "Bash(xargs cat:*)",
+      "Bash(xargs ls:*)",
+      "Bash(echo:*)",
+      "Bash(ldconfig:*)",
+      "Bash(readelf:*)",
+      "Bash(unzip:*)",
+      "Bash(mkdir:*)",
+      "Bash(dotnet search:*)",
+      "Bash(dotnet sln:*)",
+      "Bash(coredumpctl list:*)",
+      "Bash(journalctl:*)"
     ]
   }
 }

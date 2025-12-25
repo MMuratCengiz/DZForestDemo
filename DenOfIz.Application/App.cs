@@ -18,6 +18,12 @@ public sealed class App(ApplicationOptions options) : IDisposable
 
     private bool _initialized;
 
+    static App()
+    {
+        DenOfIzRuntime.Initialize();
+        Engine.Init(new EngineDesc());
+    }
+
     public App() : this(new ApplicationOptions())
     {
     }
@@ -63,9 +69,6 @@ public sealed class App(ApplicationOptions options) : IDisposable
 
     public void Run()
     {
-        DenOfIzRuntime.Initialize();
-        Engine.Init(new EngineDesc());
-
         Window.Show();
 
         var timeResource = new TimeResource(Clock);
