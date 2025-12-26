@@ -607,7 +607,10 @@ float4 main(PSInput input) : SV_TARGET
         {
             AddressModeU = SamplerAddressMode.ClampToEdge,
             AddressModeV = SamplerAddressMode.ClampToEdge,
-            AddressModeW = SamplerAddressMode.ClampToEdge
+            AddressModeW = SamplerAddressMode.ClampToEdge,
+            MinFilter = Filter.Linear,
+            MagFilter = Filter.Linear,
+            MipmapMode = MipmapMode.Nearest
         };
         _sampler = _logicalDevice.CreateSampler(samplerDesc);
     }
@@ -960,7 +963,8 @@ public class ImGuiRenderer : IDisposable
 
         _rtAttachments[0] = new RenderingAttachmentDesc
         {
-            Resource = renderTarget
+            Resource = renderTarget,
+            LoadOp = LoadOp.Load
         };
 
         var renderingDesc = new RenderingDesc

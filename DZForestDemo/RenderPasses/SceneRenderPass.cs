@@ -28,30 +28,24 @@ public sealed class SceneRenderPass : IDisposable
     private readonly RgCommandList _rgCommandList;
     private readonly World _world;
 
-    // Shader with variants
     private readonly Shader _shader;
     private readonly Shader _skinnedShader;
 
-    // Per-frame buffers
     private readonly Buffer[] _frameConstantsBuffers;
     private readonly IntPtr[] _frameBufferMappedPtrs;
 
     private readonly Buffer[] _lightConstantsBuffers;
     private readonly IntPtr[] _lightBufferMappedPtrs;
 
-    // Per-batch instance buffers (one per unique mesh, per frame)
     private readonly Dictionary<RuntimeMeshHandle, BatchInstanceData>[] _perFrameBatchData;
     private readonly Dictionary<RuntimeMeshHandle, BatchInstanceData>[] _perFrameSkinnedBatchData;
 
-    // Skinned mesh rendering
     private readonly Buffer[] _boneMatricesBuffers;
     private readonly IntPtr[] _boneMatricesMappedPtrs;
 
-    // Samplers
     private readonly Sampler _shadowSampler;
     private readonly Sampler _textureSampler;
 
-    // Textures
     private readonly NullTexture _nullTexture;
     private Texture? _activeTexture;
     private Texture? _shadowAtlas;
@@ -73,11 +67,9 @@ public sealed class SceneRenderPass : IDisposable
 
         _rtAttachments = new PinnedArray<RenderingAttachmentDesc>(1);
 
-        // Create shaders with proper root signatures
         _shader = CreateShader(logicalDevice, false);
         _skinnedShader = CreateShader(logicalDevice, true);
 
-        // Create per-frame buffers
         _frameConstantsBuffers = new Buffer[numFrames];
         _frameBufferMappedPtrs = new IntPtr[numFrames];
         _lightConstantsBuffers = new Buffer[numFrames];
@@ -283,7 +275,7 @@ public sealed class SceneRenderPass : IDisposable
             Graphics = new GraphicsPipelineDesc
             {
                 PrimitiveTopology = PrimitiveTopology.Triangle,
-                CullMode = CullMode.BackFace,
+                CullMode = CullMode.None,
                 DepthTest = new DepthTest
                 {
                     Enable = true,
@@ -449,7 +441,6 @@ public sealed class SceneRenderPass : IDisposable
 
         var activeTexture = _activeTexture ?? _nullTexture.Texture;
 
-        // Render static batches
         foreach (var batch in staticBatcher.Batches)
         {
             ref readonly var runtimeMesh = ref _assets.GetMeshRef(batch.Key);
@@ -489,7 +480,6 @@ public sealed class SceneRenderPass : IDisposable
             _rgCommandList.DrawMesh(gpuMesh, (uint)batch.Count);
         }
 
-        // Render animated instances
         RenderAnimatedInstances(frameIndex);
 
         _rgCommandList.End();

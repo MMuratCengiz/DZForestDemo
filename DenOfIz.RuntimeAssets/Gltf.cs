@@ -10,10 +10,9 @@ public static class Gltf
     private const uint ChunkTypeJson = 0x4E4F534A; // "JSON"
     private const uint ChunkTypeBin = 0x004E4942; // "BIN\0"
 
-    public static GltfDocument Load(string path, GltfLoadOptions? options = null)
+    public static GltfDocument Load(string path, GltfDocumentDesc? options = null)
     {
-        options ??= GltfLoadOptions.Default;
-        var document = new GltfDocument(path, options);
+        var document = new GltfDocument(path, options ?? new GltfDocumentDesc());
 
         if (!File.Exists(path))
         {
@@ -23,22 +22,19 @@ public static class Gltf
 
         var bytes = File.ReadAllBytes(path);
         ParseDocument(document, bytes.AsSpan(), path);
-
         return document;
     }
 
-    public static GltfDocument Load(ReadOnlySpan<byte> data, string basePath = "", GltfLoadOptions? options = null)
+    public static GltfDocument Load(ReadOnlySpan<byte> data, string basePath = "", GltfDocumentDesc? options = null)
     {
-        options ??= GltfLoadOptions.Default;
-        var document = new GltfDocument(basePath, options);
+        var document = new GltfDocument(basePath, options ?? new GltfDocumentDesc());
         ParseDocument(document, data, basePath);
         return document;
     }
 
-    public static async Task<GltfDocument> LoadAsync(string path, GltfLoadOptions? options = null, CancellationToken ct = default)
+    public static async Task<GltfDocument> LoadAsync(string path, GltfDocumentDesc? options = null, CancellationToken ct = default)
     {
-        options ??= GltfLoadOptions.Default;
-        var document = new GltfDocument(path, options);
+        var document = new GltfDocument(path, options ?? new GltfDocumentDesc());
 
         if (!File.Exists(path))
         {
@@ -48,7 +44,6 @@ public static class Gltf
 
         var bytes = await File.ReadAllBytesAsync(path, ct);
         ParseDocument(document, bytes.AsSpan(), path);
-
         return document;
     }
 
@@ -90,7 +85,6 @@ public static class Gltf
         if (length > data.Length)
         {
             document.AddWarning($"GLB header claims {length} bytes but file only has {data.Length}");
-            length = (uint)data.Length;
         }
 
         var offset = 12;

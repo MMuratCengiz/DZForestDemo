@@ -6,6 +6,7 @@ namespace Graphics.RenderGraph;
 public class RgCommandList
 {
     private readonly FrequencyShaderBindingPools _freqBindingPools;
+    private readonly BindGroupData _reusableBindGroupData = new();
 
     private CommandList _commandList = null!;
     private DrawState _drawState;
@@ -165,23 +166,23 @@ public class RgCommandList
             }
 
             ShaderBinding shaderBinding;
+            _drawState.BuildBindGroupData(rootSignature, registerSpace, _reusableBindGroupData);
+
             if (registerSpace == (uint)BindingFrequency.PerDraw)
             {
                 shaderBinding = shaderBindingPool.GetByIndex(_drawId);
-                var bindGroupData = _drawState.BuildBindGroupData(rootSignature, registerSpace);
-                if (!bindGroupData.IsEmpty)
+                if (!_reusableBindGroupData.IsEmpty)
                 {
-                    shaderBinding.ApplyBindGroupData(bindGroupData);
+                    shaderBinding.ApplyBindGroupData(_reusableBindGroupData);
                 }
             }
             else
             {
-                var bindGroupData = _drawState.BuildBindGroupData(rootSignature, registerSpace);
-                if (bindGroupData.IsEmpty)
+                if (_reusableBindGroupData.IsEmpty)
                 {
                     continue;
                 }
-                shaderBinding = shaderBindingPool.GetOrCreate(bindGroupData);
+                shaderBinding = shaderBindingPool.GetOrCreate(_reusableBindGroupData);
             }
 
             _commandList.BindResourceGroup(shaderBinding.BindGroup);

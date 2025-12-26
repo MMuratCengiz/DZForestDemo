@@ -6,9 +6,6 @@ using System.Text;
 
 namespace RuntimeAssets.GltfModels;
 
-/// <summary>
-/// Represents a loaded GLTF document with all its data.
-/// </summary>
 public sealed class GltfDocument
 {
     private readonly string _basePath;
@@ -16,13 +13,15 @@ public sealed class GltfDocument
     private readonly List<string> _errors = [];
     private readonly Dictionary<int, byte[]> _loadedBuffers = [];
     private readonly Dictionary<int, byte[]> _loadedImages = [];
+    private readonly GltfDocumentDesc _desc;
+    private GltfRoot? _root;
 
     private byte[]? _embeddedBinaryBuffer;
 
-    internal GltfDocument(string basePath, GltfLoadOptions options)
+    internal GltfDocument(string basePath, GltfDocumentDesc desc)
     {
         _basePath = Path.GetDirectoryName(basePath) ?? "";
-        Options = options;
+        _desc = desc;
     }
 
     public bool HasErrors => _errors.Count > 0;
@@ -30,59 +29,39 @@ public sealed class GltfDocument
     public IReadOnlyList<string> Warnings => _warnings;
     public IReadOnlyList<string> Errors => _errors;
 
-    /// <summary>
-    /// The load options used for this document.
-    /// </summary>
-    public GltfLoadOptions Options { get; }
+    public GltfAsset? Asset => _root?.Asset;
+    public IReadOnlyList<GltfScene> Scenes => _root?.Scenes ?? [];
+    public IReadOnlyList<GltfNode> Nodes => _root?.Nodes ?? [];
+    public IReadOnlyList<GltfMesh> Meshes => _root?.Meshes ?? [];
+    public IReadOnlyList<GltfMaterial> Materials => _root?.Materials ?? [];
+    public IReadOnlyList<GltfTexture> Textures => _root?.Textures ?? [];
+    public IReadOnlyList<GltfImage> Images => _root?.Images ?? [];
+    public IReadOnlyList<GltfSampler> Samplers => _root?.Samplers ?? [];
+    public IReadOnlyList<GltfAnimation> Animations => _root?.Animations ?? [];
+    public IReadOnlyList<GltfSkin> Skins => _root?.Skins ?? [];
+    public IReadOnlyList<GltfBuffer> Buffers => _root?.Buffers ?? [];
+    public IReadOnlyList<GltfBufferView> BufferViews => _root?.BufferViews ?? [];
+    public IReadOnlyList<GltfAccessor> Accessors => _root?.Accessors ?? [];
+    public int? DefaultScene => _root?.Scene;
 
-    /// <summary>
-    /// Whether coordinate conversion to left-handed is enabled.
-    /// </summary>
-    public bool ConvertToLeftHanded => Options.ConvertToLeftHanded;
-
-    /// <summary>
-    /// Whether matrix conversion to row-major is enabled.
-    /// </summary>
-    public bool ConvertToRowMajor => Options.ConvertToRowMajor;
-
-    public GltfRoot? Root { get; private set; }
-
-    public GltfAsset? Asset => Root?.Asset;
-    public IReadOnlyList<GltfScene> Scenes => Root?.Scenes ?? [];
-    public IReadOnlyList<GltfNode> Nodes => Root?.Nodes ?? [];
-    public IReadOnlyList<GltfMesh> Meshes => Root?.Meshes ?? [];
-    public IReadOnlyList<GltfMaterial> Materials => Root?.Materials ?? [];
-    public IReadOnlyList<GltfTexture> Textures => Root?.Textures ?? [];
-    public IReadOnlyList<GltfImage> Images => Root?.Images ?? [];
-    public IReadOnlyList<GltfSampler> Samplers => Root?.Samplers ?? [];
-    public IReadOnlyList<GltfAnimation> Animations => Root?.Animations ?? [];
-    public IReadOnlyList<GltfSkin> Skins => Root?.Skins ?? [];
-    public IReadOnlyList<GltfBuffer> Buffers => Root?.Buffers ?? [];
-    public IReadOnlyList<GltfBufferView> BufferViews => Root?.BufferViews ?? [];
-    public IReadOnlyList<GltfAccessor> Accessors => Root?.Accessors ?? [];
-    public int? DefaultScene => Root?.Scene;
-
-    internal void SetRoot(GltfRoot root) => Root = root;
+    internal void SetRoot(GltfRoot root) => _root = root;
     internal void SetEmbeddedBinaryBuffer(byte[] data) => _embeddedBinaryBuffer = data;
 
     internal void AddWarning(string message)
     {
         _warnings.Add(message);
-        Options.Logger?.Invoke(GltfLogLevel.Warning, message);
+        _desc.Logger?.Invoke(GltfLogLevel.Warning, message);
     }
 
     internal void AddError(string message)
     {
         _errors.Add(message);
-        Options.Logger?.Invoke(GltfLogLevel.Error, message);
+        _desc.Logger?.Invoke(GltfLogLevel.Error, message);
     }
 
-    /// <summary>
-    /// Gets the raw bytes for a buffer, loading external data if necessary.
-    /// </summary>
-    public ReadOnlySpan<byte> GetBufferData(int bufferIndex)
+    private ReadOnlySpan<byte> GetBufferData(int bufferIndex)
     {
-        if (Root == null || bufferIndex < 0 || bufferIndex >= Root.Buffers.Count)
+        if (_root == null || bufferIndex < 0 || bufferIndex >= _root.Buffers.Count)
         {
             AddWarning($"Invalid buffer index: {bufferIndex}");
             return default;
@@ -93,16 +72,13 @@ public sealed class GltfDocument
             return cached;
         }
 
-        var buffer = Root.Buffers[bufferIndex];
-
-        // GLB embedded buffer (index 0, no URI)
+        var buffer = _root.Buffers[bufferIndex];
         if (bufferIndex == 0 && string.IsNullOrEmpty(buffer.Uri) && _embeddedBinaryBuffer != null)
         {
             _loadedBuffers[bufferIndex] = _embeddedBinaryBuffer;
             return _embeddedBinaryBuffer;
         }
 
-        // Data URI
         if (buffer.Uri != null && buffer.Uri.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
         {
             var data = ParseDataUri(buffer.Uri);
@@ -111,12 +87,12 @@ public sealed class GltfDocument
                 _loadedBuffers[bufferIndex] = data;
                 return data;
             }
+
             AddWarning($"Failed to parse data URI for buffer {bufferIndex}");
             return default;
         }
 
-        // External file
-        if (!string.IsNullOrEmpty(buffer.Uri) && Options.LoadExternalBuffers)
+        if (!string.IsNullOrEmpty(buffer.Uri) && _desc.LoadExternalBuffers)
         {
             var data = LoadExternalFile(buffer.Uri);
             if (data != null)
@@ -130,18 +106,15 @@ public sealed class GltfDocument
         return default;
     }
 
-    /// <summary>
-    /// Gets the raw bytes for a buffer view.
-    /// </summary>
-    public ReadOnlySpan<byte> GetBufferViewData(int bufferViewIndex)
+    private ReadOnlySpan<byte> GetBufferViewData(int bufferViewIndex)
     {
-        if (Root == null || bufferViewIndex < 0 || bufferViewIndex >= Root.BufferViews.Count)
+        if (_root == null || bufferViewIndex < 0 || bufferViewIndex >= _root.BufferViews.Count)
         {
             AddWarning($"Invalid buffer view index: {bufferViewIndex}");
             return default;
         }
 
-        var view = Root.BufferViews[bufferViewIndex];
+        var view = _root.BufferViews[bufferViewIndex];
         var bufferData = GetBufferData(view.Buffer);
 
         if (bufferData.IsEmpty)
@@ -161,12 +134,9 @@ public sealed class GltfDocument
         return bufferData.Slice(offset, length);
     }
 
-    /// <summary>
-    /// Gets image data, loading external files if necessary.
-    /// </summary>
     public ReadOnlySpan<byte> GetImageData(int imageIndex)
     {
-        if (Root == null || imageIndex < 0 || imageIndex >= Root.Images.Count)
+        if (_root == null || imageIndex < 0 || imageIndex >= _root.Images.Count)
         {
             AddWarning($"Invalid image index: {imageIndex}");
             return default;
@@ -177,22 +147,20 @@ public sealed class GltfDocument
             return cached;
         }
 
-        var image = Root.Images[imageIndex];
-
-        // Image stored in buffer view
+        var image = _root.Images[imageIndex];
         if (image.BufferView.HasValue)
         {
             var data = GetBufferViewData(image.BufferView.Value);
-            if (!data.IsEmpty)
+            if (data.IsEmpty)
             {
-                var copy = data.ToArray();
-                _loadedImages[imageIndex] = copy;
-                return copy;
+                return default;
             }
-            return default;
+
+            var copy = data.ToArray();
+            _loadedImages[imageIndex] = copy;
+            return copy;
         }
 
-        // Data URI
         if (image.Uri != null && image.Uri.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
         {
             var data = ParseDataUri(image.Uri);
@@ -201,12 +169,12 @@ public sealed class GltfDocument
                 _loadedImages[imageIndex] = data;
                 return data;
             }
+
             AddWarning($"Failed to parse data URI for image {imageIndex}");
             return default;
         }
 
-        // External file
-        if (!string.IsNullOrEmpty(image.Uri) && Options.LoadExternalImages)
+        if (!string.IsNullOrEmpty(image.Uri) && _desc.LoadExternalImages)
         {
             var data = LoadExternalFile(image.Uri);
             if (data != null)
@@ -220,22 +188,17 @@ public sealed class GltfDocument
         return default;
     }
 
-    /// <summary>
-    /// Gets the resolved file path for an image (for external loading).
-    /// Returns null if the image is embedded or has an invalid URI.
-    /// </summary>
     public string? GetImageFilePath(int imageIndex)
     {
-        if (Root == null || imageIndex < 0 || imageIndex >= Root.Images.Count)
+        if (_root == null || imageIndex < 0 || imageIndex >= _root.Images.Count)
         {
             return null;
         }
 
-        var image = Root.Images[imageIndex];
-
+        var image = _root.Images[imageIndex];
         if (image.BufferView.HasValue)
         {
-            return null; // Embedded in buffer
+            return null;
         }
 
         if (string.IsNullOrEmpty(image.Uri))
@@ -245,7 +208,7 @@ public sealed class GltfDocument
 
         if (image.Uri.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
         {
-            return null; // Data URI
+            return null;
         }
 
         if (IsAbsoluteUri(image.Uri))
@@ -258,18 +221,15 @@ public sealed class GltfDocument
         return Path.GetFullPath(resolvedPath);
     }
 
-    /// <summary>
-    /// Reads accessor data as a typed array.
-    /// </summary>
     public T[] ReadAccessor<T>(int accessorIndex) where T : unmanaged
     {
-        if (Root == null || accessorIndex < 0 || accessorIndex >= Root.Accessors.Count)
+        if (_root == null || accessorIndex < 0 || accessorIndex >= _root.Accessors.Count)
         {
             AddWarning($"Invalid accessor index: {accessorIndex}");
             return [];
         }
 
-        var accessor = Root.Accessors[accessorIndex];
+        var accessor = _root.Accessors[accessorIndex];
         var count = accessor.Count;
 
         if (count == 0)
@@ -277,19 +237,12 @@ public sealed class GltfDocument
             return [];
         }
 
-        // Handle sparse accessors and accessors without buffer views
         if (!accessor.BufferView.HasValue)
         {
-            // Accessor might have sparse data or just zeros
-            if (accessor.Sparse != null)
-            {
-                return ReadSparseAccessor<T>(accessor);
-            }
-            // Return zeros
-            return new T[count];
+            return accessor.Sparse != null ? ReadSparseAccessor<T>(accessor) : new T[count];
         }
 
-        var view = Root.BufferViews[accessor.BufferView.Value];
+        var view = _root.BufferViews[accessor.BufferView.Value];
         var bufferData = GetBufferData(view.Buffer);
 
         if (bufferData.IsEmpty)
@@ -321,7 +274,6 @@ public sealed class GltfDocument
             srcSlice[..copySize].CopyTo(resultSpan.Slice(dstOffset, copySize));
         }
 
-        // Apply sparse data if present
         if (accessor.Sparse != null)
         {
             ApplySparseData(result, accessor);
@@ -330,18 +282,15 @@ public sealed class GltfDocument
         return result;
     }
 
-    /// <summary>
-    /// Reads index accessor data as uint array, handling different component types.
-    /// </summary>
     public uint[] ReadIndices(int accessorIndex)
     {
-        if (Root == null || accessorIndex < 0 || accessorIndex >= Root.Accessors.Count)
+        if (_root == null || accessorIndex < 0 || accessorIndex >= _root.Accessors.Count)
         {
             AddWarning($"Invalid accessor index: {accessorIndex}");
             return [];
         }
 
-        var accessor = Root.Accessors[accessorIndex];
+        var accessor = _root.Accessors[accessorIndex];
 
         return accessor.ComponentType switch
         {
@@ -352,51 +301,38 @@ public sealed class GltfDocument
         };
     }
 
-    /// <summary>
-    /// Reads accessor data as Vector2 array (no coordinate conversion needed for UVs).
-    /// </summary>
     public Vector2[] ReadAccessorVec2(int accessorIndex) => ReadAccessor<Vector2>(accessorIndex);
-
-    /// <summary>
-    /// Reads accessor data as Vector3 array (raw, no conversion).
-    /// </summary>
     public Vector3[] ReadAccessorVec3(int accessorIndex) => ReadAccessor<Vector3>(accessorIndex);
-
-    /// <summary>
-    /// Reads accessor data as Vector4 array (raw, no conversion).
-    /// </summary>
     public Vector4[] ReadAccessorVec4(int accessorIndex) => ReadAccessor<Vector4>(accessorIndex);
-
-    /// <summary>
-    /// Reads accessor data as Matrix4x4 array (raw, no conversion).
-    /// </summary>
-    public Matrix4x4[] ReadAccessorMat4(int accessorIndex) => ReadAccessor<Matrix4x4>(accessorIndex);
-
-    /// <summary>
-    /// Reads accessor data as float array.
-    /// </summary>
     public float[] ReadAccessorFloat(int accessorIndex) => ReadAccessor<float>(accessorIndex);
 
-    /// <summary>
-    /// Computes the world transform matrix for a node in glTF's native format (column-major, right-handed).
-    /// Note: Matrix4x4 is row-major in memory, so glTF column-major data appears transposed.
-    /// </summary>
+    public Quaternion[] ReadAccessorQuat(int accessorIndex) => ReadAccessor<Quaternion>(accessorIndex);
+
+    public Matrix4x4[] ReadAccessorMat4(int accessorIndex)
+    {
+        var matrices = ReadAccessor<Matrix4x4>(accessorIndex);
+        for (var i = 0; i < matrices.Length; i++)
+        {
+            matrices[i] = Matrix4x4.Transpose(matrices[i]);
+        }
+
+        return matrices;
+    }
+
     public Matrix4x4 GetNodeWorldTransform(int nodeIndex)
     {
-        if (Root == null || nodeIndex < 0 || nodeIndex >= Root.Nodes.Count)
+        if (_root == null || nodeIndex < 0 || nodeIndex >= _root.Nodes.Count)
         {
             return Matrix4x4.Identity;
         }
 
         var transform = GetNodeLocalTransform(nodeIndex);
-
-        // Find parent and accumulate transforms
-        for (var i = 0; i < Root.Nodes.Count; i++)
+        for (var i = 0; i < _root.Nodes.Count; i++)
         {
-            var potentialParent = Root.Nodes[i];
+            var potentialParent = _root.Nodes[i];
             if (potentialParent.Children?.Contains(nodeIndex) == true)
             {
-                transform = transform * GetNodeWorldTransform(i);
+                transform *= GetNodeWorldTransform(i);
                 break;
             }
         }
@@ -404,26 +340,22 @@ public sealed class GltfDocument
         return transform;
     }
 
-    /// <summary>
-    /// Gets the local transform matrix for a node in glTF's native format (column-major, right-handed).
-    /// Note: Matrix4x4 is row-major in memory, so glTF column-major data appears transposed.
-    /// </summary>
     public Matrix4x4 GetNodeLocalTransform(int nodeIndex)
     {
-        if (Root == null || nodeIndex < 0 || nodeIndex >= Root.Nodes.Count)
+        if (_root == null || nodeIndex < 0 || nodeIndex >= _root.Nodes.Count)
         {
             return Matrix4x4.Identity;
         }
 
-        var node = Root.Nodes[nodeIndex];
+        var node = _root.Nodes[nodeIndex];
 
-        if (node.Matrix != null && node.Matrix.Length == 16)
+        if (node.Matrix is { Length: 16 })
         {
             return new Matrix4x4(
-                node.Matrix[0], node.Matrix[1], node.Matrix[2], node.Matrix[3],
-                node.Matrix[4], node.Matrix[5], node.Matrix[6], node.Matrix[7],
-                node.Matrix[8], node.Matrix[9], node.Matrix[10], node.Matrix[11],
-                node.Matrix[12], node.Matrix[13], node.Matrix[14], node.Matrix[15]
+                node.Matrix[0], node.Matrix[4], node.Matrix[8], node.Matrix[12],
+                node.Matrix[1], node.Matrix[5], node.Matrix[9], node.Matrix[13],
+                node.Matrix[2], node.Matrix[6], node.Matrix[10], node.Matrix[14],
+                node.Matrix[3], node.Matrix[7], node.Matrix[11], node.Matrix[15]
             );
         }
 
@@ -447,20 +379,18 @@ public sealed class GltfDocument
 
     private void ApplySparseData<T>(T[] data, GltfAccessor accessor) where T : unmanaged
     {
-        if (Root == null || accessor.Sparse == null)
+        if (_root == null || accessor.Sparse == null)
         {
             return;
         }
 
         var sparse = accessor.Sparse;
 
-        // Read indices
-        var indicesView = Root.BufferViews[sparse.Indices.BufferView];
+        var indicesView = _root.BufferViews[sparse.Indices.BufferView];
         var indicesBuffer = GetBufferData(indicesView.Buffer);
         var indicesOffset = indicesView.ByteOffset + sparse.Indices.ByteOffset;
 
-        // Read values
-        var valuesView = Root.BufferViews[sparse.Values.BufferView];
+        var valuesView = _root.BufferViews[sparse.Values.BufferView];
         var valuesBuffer = GetBufferData(valuesView.Buffer);
         var valuesOffset = valuesView.ByteOffset + sparse.Values.ByteOffset;
 
@@ -474,8 +404,10 @@ public sealed class GltfDocument
             var index = sparse.Indices.ComponentType switch
             {
                 GltfComponentType.UnsignedByte => indicesBuffer[indexOffset],
-                GltfComponentType.UnsignedShort => BinaryPrimitives.ReadUInt16LittleEndian(indicesBuffer[indexOffset..]),
-                GltfComponentType.UnsignedInt => (int)BinaryPrimitives.ReadUInt32LittleEndian(indicesBuffer[indexOffset..]),
+                GltfComponentType.UnsignedShort =>
+                    BinaryPrimitives.ReadUInt16LittleEndian(indicesBuffer[indexOffset..]),
+                GltfComponentType.UnsignedInt => (int)BinaryPrimitives.ReadUInt32LittleEndian(
+                    indicesBuffer[indexOffset..]),
                 _ => 0
             };
 
@@ -508,7 +440,7 @@ public sealed class GltfDocument
             }
 
             var fileInfo = new FileInfo(fullPath);
-            if (fileInfo.Length > Options.MaxExternalFileSize)
+            if (fileInfo.Length > _desc.MaxExternalFileSize)
             {
                 AddWarning($"External file too large ({fileInfo.Length} bytes): {fullPath}");
                 return null;
@@ -534,15 +466,10 @@ public sealed class GltfDocument
             }
 
             var data = uri.AsSpan(commaIndex + 1);
-            var header = uri.AsSpan(5, commaIndex - 5); // Skip "data:"
-
-            if (header.Contains("base64", StringComparison.OrdinalIgnoreCase))
-            {
-                return Convert.FromBase64String(data.ToString());
-            }
-
-            // URL-encoded data
-            return Encoding.UTF8.GetBytes(Uri.UnescapeDataString(data.ToString()));
+            var header = uri.AsSpan(5, commaIndex - 5);
+            return header.Contains("base64", StringComparison.OrdinalIgnoreCase)
+                ? Convert.FromBase64String(data.ToString())
+                : Encoding.UTF8.GetBytes(Uri.UnescapeDataString(data.ToString()));
         }
         catch
         {
@@ -554,7 +481,7 @@ public sealed class GltfDocument
     {
         return uri.Contains("://") ||
                uri.StartsWith("//", StringComparison.Ordinal) ||
-               (uri.Length > 2 && uri[1] == ':'); // Windows absolute path
+               (uri.Length > 2 && uri[1] == ':');
     }
 
     private static int GetComponentSize(GltfComponentType type)

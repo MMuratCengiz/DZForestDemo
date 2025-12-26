@@ -67,9 +67,9 @@ public struct DrawState
     {
     }
 
-    public BindGroupData BuildBindGroupData(ShaderRootSignature rootSignature, uint registerSpace)
+    public void BuildBindGroupData(ShaderRootSignature rootSignature, uint registerSpace, BindGroupData data)
     {
-        var data = new BindGroupData();
+        data.Reset();
         var slots = rootSignature.GetSlotsForSpace(registerSpace);
 
         foreach (var (name, resource) in Resources)
@@ -116,7 +116,5 @@ public struct DrawState
                     break;
             }
         }
-
-        return data;
     }
 }

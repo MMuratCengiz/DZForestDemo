@@ -84,51 +84,41 @@ public sealed class GltfLoader
             return GltfLoadResult.Failed($"File not found: {path}");
         }
 
-        try
+        var desc = new GltfDocumentDesc
         {
-            // Use default options (raw glTF data, no conversions).
-            // GltfLoader applies all coordinate conversions explicitly.
-            var options = new GltfLoadOptions
+            LoadExternalBuffers = true,
+            LoadExternalImages = true,
+            Logger = (level, msg) =>
             {
-                LoadExternalBuffers = true,
-                LoadExternalImages = true,
-                Logger = (level, msg) =>
-                {
-                    AddWarning(msg);
-                    Logger?.Invoke(level, msg);
-                }
-            };
-
-            var document = Gltf.Load(path, options);
-
-            if (document.HasErrors)
-            {
-                return GltfLoadResult.Failed(string.Join("; ", document.Errors));
+                AddWarning(msg);
+                Logger?.Invoke(level, msg);
             }
+        };
 
-            var materials = LoadMaterials(document);
-            var meshes = LoadMeshes(document);
-            var nodes = LoadNodes(document);
-            var animations = LoadAnimations(document);
-            var skins = LoadSkins(document);
-            var inverseBindMatrices = ExtractAllInverseBindMatrices(skins);
-
-            return new GltfLoadResult
-            {
-                Success = true,
-                Meshes = meshes,
-                Materials = materials,
-                InverseBindMatrices = inverseBindMatrices,
-                Warnings = _warnings.ToList(),
-                Nodes = nodes,
-                Animations = animations,
-                Skins = skins
-            };
-        }
-        catch (Exception ex)
+        var document = Gltf.Load(path, desc);
+        if (document.HasErrors)
         {
-            return GltfLoadResult.Failed(ex.Message);
+            return GltfLoadResult.Failed(string.Join("; ", document.Errors));
         }
+
+        var materials = LoadMaterials(document);
+        var meshes = LoadMeshes(document);
+        var nodes = LoadNodes(document);
+        var animations = LoadAnimations(document);
+        var skins = LoadSkins(document);
+        var inverseBindMatrices = ExtractAllInverseBindMatrices(skins);
+
+        return new GltfLoadResult
+        {
+            Success = true,
+            Meshes = meshes,
+            Materials = materials,
+            InverseBindMatrices = inverseBindMatrices,
+            Warnings = _warnings.ToList(),
+            Nodes = nodes,
+            Animations = animations,
+            Skins = skins
+        };
     }
 
     private void AddWarning(string message, string? context = null)

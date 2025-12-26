@@ -6,6 +6,7 @@ using Physics;
 using Physics.Components;
 using RuntimeAssets;
 using RuntimeAssets.Components;
+using RuntimeAssets.GltfModels;
 
 namespace DZForestDemo.Scenes;
 
@@ -24,6 +25,8 @@ public sealed class FoxScene : GameSceneBase
     private RuntimeTextureHandle _foxTexture;
     private RuntimeSkeletonHandle _foxSkeleton;
     private RuntimeAnimationHandle _foxAnimation;
+
+    private SceneHierarchyResult? _foxHierarchy;
 
     private readonly StandardMaterial[] _materialPalette =
     [
@@ -117,6 +120,7 @@ public sealed class FoxScene : GameSceneBase
             _foxTexture = default;
         }
 
+        _foxHierarchy = null;
         _assetsLoaded = false;
     }
 
@@ -237,7 +241,7 @@ public sealed class FoxScene : GameSceneBase
 
     private void SpawnFoxModels()
     {
-        if (_foxModel == null || !_foxModel.Success)
+        if (_foxModel is not { Success: true })
         {
             return;
         }
@@ -252,36 +256,39 @@ public sealed class FoxScene : GameSceneBase
         };
 
         var position = new Vector3(-4f, -1.5f, 0f);
-
         var skin = _foxModel.Skins.FirstOrDefault();
         var skeletonRootTransform = skin?.SkeletonRootTransform ?? Matrix4x4.Identity;
 
-        foreach (var meshHandle in _foxModel.MeshHandles)
-        {
-            var entity = Scene.Spawn();
-            World.AddComponent(entity, new MeshComponent(meshHandle));
-            World.AddComponent(entity, new Transform(position));
-            World.AddComponent(entity, foxMaterial);
-
-            if (!_foxSkeleton.IsValid || !_animation.TryGetSkeleton(_foxSkeleton, out var skeleton))
+        var builder = new SceneHierarchyBuilder(World, Scene);
+        _foxHierarchy = builder.Build(
+            _foxModel,
+            position,
+            meshNodesOnly: true,
+            configureNode: (entity, node, model) =>
             {
-                continue;
+                if (node.MeshIndex.HasValue)
+                {
+                    World.AddComponent(entity, foxMaterial);
+
+                    if (_foxSkeleton.IsValid && _animation.TryGetSkeleton(_foxSkeleton, out var skeleton))
+                    {
+                        var animator = new AnimatorComponent(_foxSkeleton)
+                        {
+                            CurrentAnimation = _foxAnimation,
+                            IsPlaying = true,
+                            Loop = true,
+                            PlaybackSpeed = 1.0f
+                        };
+                        World.AddComponent(entity, animator);
+
+                        var numJoints = skeleton.NumJoints;
+                        var inverseBindMatrices = skin?.InverseBindMatrices ?? model.InverseBindMatrices;
+                        var boneMatrices = new BoneMatricesComponent(numJoints, inverseBindMatrices, skeletonRootTransform);
+                        World.AddComponent(entity, boneMatrices);
+                    }
+                }
             }
-
-            var animator = new AnimatorComponent(_foxSkeleton)
-            {
-                CurrentAnimation = _foxAnimation,
-                IsPlaying = true,
-                Loop = true,
-                PlaybackSpeed = 1.0f
-            };
-            World.AddComponent(entity, animator);
-
-            var numJoints = skeleton.NumJoints;
-            var inverseBindMatrices = skin?.InverseBindMatrices ?? _foxModel.InverseBindMatrices;
-            var boneMatrices = new BoneMatricesComponent(numJoints, inverseBindMatrices, skeletonRootTransform);
-            World.AddComponent(entity, boneMatrices);
-        }
+        );
     }
 
     public void AddCube()
