@@ -1,13 +1,14 @@
 using System.Runtime.CompilerServices;
 using DenOfIz;
+using Graphics.Binding;
 
 namespace RuntimeAssets;
 
 
 [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
-public readonly struct VertexBufferView(GPUBufferView view, uint stride, uint count)
+public readonly struct VertexBufferView(GpuBufferView view, uint stride, uint count)
 {
-    public readonly GPUBufferView View = view;
+    public readonly GpuBufferView View = view;
     public readonly uint Stride = stride;
     public readonly uint Count = count;
 
@@ -19,9 +20,9 @@ public readonly struct VertexBufferView(GPUBufferView view, uint stride, uint co
 }
 
 [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
-public readonly struct IndexBufferView(GPUBufferView view, IndexType indexType, uint count)
+public readonly struct IndexBufferView(GpuBufferView view, IndexType indexType, uint count)
 {
-    public readonly GPUBufferView View = view;
+    public readonly GpuBufferView View = view;
     public readonly IndexType IndexType = indexType;
     public readonly uint Count = count;
 

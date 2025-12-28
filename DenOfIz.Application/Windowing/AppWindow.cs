@@ -28,7 +28,6 @@ public sealed class AppWindow(string title, uint width, uint height) : IDisposab
 
         _disposed = true;
         NativeWindow.Dispose();
-        GC.SuppressFinalize(this);
     }
 
     public void Show()

@@ -87,7 +87,8 @@ public sealed class BoneMatricesData
     {
         for (var i = 0; i < NumBones; i++)
         {
-            FinalBoneMatrices[i] = InverseBindMatrices[i] * ModelTransforms[i] * SkeletonRootTransform;
+            FinalBoneMatrices[i] = InverseBindMatrices[i] * ModelTransforms[i];
+            FinalBoneMatrices[i] = Matrix4x4.Identity;
         }
         IsDirty = false;
     }

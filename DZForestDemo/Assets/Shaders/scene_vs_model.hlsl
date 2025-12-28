@@ -1,7 +1,7 @@
 // Scene vertex shader for model meshes (Static/Skinned)
 // Uses 80-byte vertex layout with tangent and bone data
 
-#include "common/vertex_input_model.hlsl"
+#include "common/vertex_input.hlsl"
 
 struct PSInput
 {

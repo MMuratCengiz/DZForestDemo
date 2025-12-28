@@ -49,8 +49,6 @@ public sealed class UiRenderPass(GraphicsResource ctx, StepTimer stepTimer) : ID
         _disposed = true;
 
         _ui.Dispose();
-
-        GC.SuppressFinalize(this);
     }
 
     public event Action? OnAddCubeClicked;
@@ -262,8 +260,8 @@ public sealed class UiRenderPass(GraphicsResource ctx, StepTimer stepTimer) : ID
                 var result = frame.End(ctx.FrameIndex, deltaTime);
                 return new ExternalPassResult
                 {
-                    Texture = result.Texture!,
-                    Semaphore = result.Semaphore!
+                    Texture = result.Texture,
+                    Semaphore = result.Semaphore
                 };
             },
             new TransientTextureDesc

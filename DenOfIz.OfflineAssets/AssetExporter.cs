@@ -101,7 +101,7 @@ public sealed class AssetExporter : IDisposable
         }
         finally
         {
-            GltfExportResult.Free(ref result);
+            result.Destroy();
         }
     }
 
@@ -142,7 +142,7 @@ public sealed class AssetExporter : IDisposable
         }
         finally
         {
-            OzzExportResult.Free(ref result);
+            result.Destroy();
         }
     }
 }

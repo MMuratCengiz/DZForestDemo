@@ -1,20 +1,9 @@
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using DenOfIz;
 using Semaphore = DenOfIz.Semaphore;
 
 namespace UIFramework;
-
-public readonly struct UiFrameResult
-{
-    public readonly Texture? Texture;
-    public readonly Semaphore? Semaphore;
-
-    internal UiFrameResult(ClayRenderResult result)
-    {
-        Texture = result.GetTexture();
-        Semaphore = result.GetSemaphore();
-    }
-}
 
 public sealed class UiContext : IDisposable
 {
@@ -58,7 +47,6 @@ public sealed class UiContext : IDisposable
         _disposed = true;
 
         Clay.Dispose();
-        GC.SuppressFinalize(this);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -89,7 +77,7 @@ public sealed class UiContext : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void UpdateScroll(float deltaTime, bool enableDrag = false)
     {
-        Clay.UpdateScrollContainers(enableDrag, new Float2 { X = 0, Y = 0 }, deltaTime);
+        Clay.UpdateScrollContainers(enableDrag, new Vector2 { X = 0, Y = 0 }, deltaTime);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -107,13 +95,12 @@ public sealed class UiContext : IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal UiFrameResult EndFrame(uint frameIndex, float deltaTime)
+    internal (Texture Texture, Semaphore Semaphore) EndFrame(uint frameIndex, float deltaTime)
     {
         var result = Clay.EndLayout(frameIndex, deltaTime);
         MouseJustReleased = false;
         _mouseJustPressed = false;
-
-        return new UiFrameResult(result);
+        return result;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -233,10 +233,9 @@ public static class ModelEntitySpawner
 
     private static Transform ConvertNodeTransform(Matrix4x4 nodeMatrix)
     {
-        var converted = GltfCoordinateConversion.ConvertMatrixHandedness(nodeMatrix);
-
-        Matrix4x4.Decompose(converted, out var scale, out var rotation, out var translation);
-
+        // Node transforms are already converted to left-handed in GltfDocument
+        // Just decompose the matrix directly
+        Matrix4x4.Decompose(nodeMatrix, out var scale, out var rotation, out var translation);
         return new Transform(translation, rotation, scale);
     }
 

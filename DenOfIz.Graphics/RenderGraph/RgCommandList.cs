@@ -111,7 +111,7 @@ public class RgCommandList
         _drawState.Resources[name] = new DrawState.Resource(buffer, offset, size);
     }
 
-    public void SetBuffer(string name, GPUBufferView bufferView)
+    public void SetBuffer(string name, GpuBufferView bufferView)
     {
         _drawState.Resources[name] = new DrawState.Resource(bufferView);
     }
@@ -133,10 +133,10 @@ public class RgCommandList
 
         FlushBindings();
 
-        _commandList.BindVertexBuffer(mesh.VertexBuffer.GetBuffer(), mesh.VertexBuffer.Offset, mesh.VertexStride, 0);
+        _commandList.BindVertexBuffer(mesh.VertexBuffer.Buffer, mesh.VertexBuffer.Offset, mesh.VertexStride, 0);
         if (mesh.NumIndices > 0)
         {
-            _commandList.BindIndexBuffer(mesh.IndexBuffer.GetBuffer(), mesh.IndexType, mesh.IndexBuffer.Offset);
+            _commandList.BindIndexBuffer(mesh.IndexBuffer.Buffer, mesh.IndexType, mesh.IndexBuffer.Offset);
             _commandList.DrawIndexed(mesh.NumIndices, instances, 0, 0, 0);
         }
         else

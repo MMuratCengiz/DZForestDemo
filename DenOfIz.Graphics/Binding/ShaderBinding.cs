@@ -126,6 +126,5 @@ public sealed class ShaderBinding : IDisposable
 
         _disposed = true;
         BindGroup.Dispose();
-        GC.SuppressFinalize(this);
     }
 }

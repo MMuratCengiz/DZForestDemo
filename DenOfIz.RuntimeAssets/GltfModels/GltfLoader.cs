@@ -274,8 +274,8 @@ public sealed class GltfLoader
             return [];
         }
 
-        var positions = document.ReadAccessorVec3(positionAccessor);
-        GltfCoordinateConversion.ConvertPositionsInPlace(positions); // Negate Z for left-handed
+        // Use the new conversion methods that handle left-handed conversion inline
+        var positions = document.ReadPositions(positionAccessor);
 
         if (positions.Length == 0)
         {
@@ -290,8 +290,7 @@ public sealed class GltfLoader
 
         if (primitive.Attributes.TryGetValue("NORMAL", out var normalAccessor))
         {
-            normals = document.ReadAccessorVec3(normalAccessor);
-            GltfCoordinateConversion.ConvertNormalsInPlace(normals); // Negate Z for left-handed
+            normals = document.ReadNormals(normalAccessor);
         }
 
         if (primitive.Attributes.TryGetValue("TEXCOORD_0", out var texCoordAccessor))
@@ -301,8 +300,7 @@ public sealed class GltfLoader
 
         if (primitive.Attributes.TryGetValue("TANGENT", out var tangentAccessor))
         {
-            tangents = document.ReadAccessorVec4(tangentAccessor);
-            GltfCoordinateConversion.ConvertTangentsInPlace(tangents); // Negate Z and W for left-handed
+            tangents = document.ReadTangents(tangentAccessor);
         }
 
         if (primitive.Attributes.TryGetValue("JOINTS_0", out var jointsAccessor))
@@ -375,29 +373,31 @@ public sealed class GltfLoader
 
     private uint[] LoadIndices(GltfDocument document, GltfPrimitive primitive, int meshIndex, int primIndex)
     {
-        uint[] indices;
-
         if (primitive.Indices.HasValue)
         {
-            indices = document.ReadIndices(primitive.Indices.Value);
+            // Use the new method that handles winding order reversal inline
+            return document.ReadIndicesLeftHanded(primitive.Indices.Value);
         }
-        else
+
+        // Generate sequential indices if none provided
+        if (!primitive.Attributes.TryGetValue("POSITION", out var posAccessor) ||
+            posAccessor < 0 || posAccessor >= document.Accessors.Count)
         {
-            if (!primitive.Attributes.TryGetValue("POSITION", out var posAccessor) ||
-                posAccessor < 0 || posAccessor >= document.Accessors.Count)
-            {
-                return [];
-            }
-
-            var count = document.Accessors[posAccessor].Count;
-            indices = new uint[count];
-            for (var i = 0; i < count; i++)
-            {
-                indices[i] = (uint)i;
-            }
+            return [];
         }
 
-        GltfCoordinateConversion.ReverseWindingOrder(indices);
+        var count = document.Accessors[posAccessor].Count;
+        var indices = new uint[count];
+        for (var i = 0; i < count; i++)
+        {
+            indices[i] = (uint)i;
+        }
+
+        // Reverse winding order for generated indices too
+        for (var i = 0; i + 2 < indices.Length; i += 3)
+        {
+            (indices[i + 1], indices[i + 2]) = (indices[i + 2], indices[i + 1]);
+        }
         return indices;
     }
 
@@ -409,11 +409,9 @@ public sealed class GltfLoader
         for (var i = 0; i < document.Nodes.Count; i++)
         {
             var node = document.Nodes[i];
+            // GetNodeLocalTransform and GetNodeWorldTransform now handle handedness conversion inline
             var localTransform = document.GetNodeLocalTransform(i);
             var worldTransform = document.GetNodeWorldTransform(i);
-
-            var convertedLocal = GltfCoordinateConversion.ConvertMatrixHandedness(localTransform);
-            var convertedWorld = GltfCoordinateConversion.ConvertMatrixHandedness(worldTransform);
 
             nodes.Add(new GltfNodeInfo
             {
@@ -423,8 +421,8 @@ public sealed class GltfLoader
                 SkinIndex = node.Skin,
                 ParentIndex = parentMap.GetValueOrDefault(i, -1) >= 0 ? parentMap[i] : null,
                 ChildIndices = node.Children ?? [],
-                LocalTransform = convertedLocal,
-                WorldTransform = convertedWorld
+                LocalTransform = localTransform,
+                WorldTransform = worldTransform
             });
         }
 
@@ -483,8 +481,8 @@ public sealed class GltfLoader
                 {
                     case "translation":
                     {
-                        var translations = document.ReadAccessorVec3(sampler.Output);
-                        GltfCoordinateConversion.ConvertPositionsInPlace(translations);
+                        // Use the new method that handles handedness conversion inline
+                        var translations = document.ReadPositions(sampler.Output);
                         values = new float[translations.Length * 3];
                         for (var i = 0; i < translations.Length; i++)
                         {
@@ -492,13 +490,12 @@ public sealed class GltfLoader
                             values[i * 3 + 1] = translations[i].Y;
                             values[i * 3 + 2] = translations[i].Z;
                         }
-
                         break;
                     }
                     case "rotation":
                     {
-                        var rotations = document.ReadAccessorVec4(sampler.Output);
-                        GltfCoordinateConversion.ConvertQuaternionsInPlace(rotations);
+                        // Use the new method that handles handedness conversion inline
+                        var rotations = document.ReadRotations(sampler.Output);
                         values = new float[rotations.Length * 4];
                         for (var i = 0; i < rotations.Length; i++)
                         {
@@ -507,7 +504,6 @@ public sealed class GltfLoader
                             values[i * 4 + 2] = rotations[i].Z;
                             values[i * 4 + 3] = rotations[i].W;
                         }
-
                         break;
                     }
                     default:
@@ -550,9 +546,9 @@ public sealed class GltfLoader
         {
             var skin = document.Skins[skinIndex];
 
+            // ReadAccessorMat4 now handles handedness conversion inline
             var inverseBindMatrices = skin.InverseBindMatrices.HasValue
-                ? document.ReadAccessorMat4(skin.InverseBindMatrices.Value)
-                    .Select(GltfCoordinateConversion.ConvertMatrixHandedness).ToList()
+                ? document.ReadAccessorMat4(skin.InverseBindMatrices.Value).ToList()
                 : Enumerable.Repeat(Matrix4x4.Identity, skin.Joints.Count).ToList();
 
             while (inverseBindMatrices.Count < skin.Joints.Count)
@@ -563,8 +559,8 @@ public sealed class GltfLoader
             var skeletonRootTransform = Matrix4x4.Identity;
             if (skin.Skeleton.HasValue)
             {
-                var rootWorldTransform = document.GetNodeWorldTransform(skin.Skeleton.Value);
-                skeletonRootTransform = GltfCoordinateConversion.ConvertMatrixHandedness(rootWorldTransform);
+                // GetNodeWorldTransform now handles handedness conversion inline
+                skeletonRootTransform = document.GetNodeWorldTransform(skin.Skeleton.Value);
             }
 
             skins.Add(new GltfSkinInfo

@@ -63,6 +63,5 @@ public sealed class BindingContext : IDisposable
 
         _disposed = true;
         _cbvAllocator.Dispose();
-        GC.SuppressFinalize(this);
     }
 }

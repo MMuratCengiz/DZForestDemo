@@ -50,10 +50,10 @@ public struct DrawState
             BufferSize = size;
         }
 
-        public Resource(GPUBufferView bufferView)
+        public Resource(GpuBufferView bufferView)
         {
             Type = ResourceType.Buffer;
-            Buffer = bufferView.GetBuffer();
+            Buffer = bufferView.Buffer;
             BufferOffset = bufferView.Offset;
             BufferSize = bufferView.NumBytes;
         }

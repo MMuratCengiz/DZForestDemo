@@ -6,6 +6,9 @@ using System.Text;
 
 namespace RuntimeAssets.GltfModels;
 
+// Note: All coordinate conversions are done inline during parsing.
+// GLTF uses right-handed Y-up, we convert to left-handed Y-up by negating Z.
+
 public sealed class GltfDocument
 {
     private readonly string _basePath;
@@ -305,18 +308,98 @@ public sealed class GltfDocument
     public Vector3[] ReadAccessorVec3(int accessorIndex) => ReadAccessor<Vector3>(accessorIndex);
     public Vector4[] ReadAccessorVec4(int accessorIndex) => ReadAccessor<Vector4>(accessorIndex);
     public float[] ReadAccessorFloat(int accessorIndex) => ReadAccessor<float>(accessorIndex);
-
     public Quaternion[] ReadAccessorQuat(int accessorIndex) => ReadAccessor<Quaternion>(accessorIndex);
 
+    /// <summary>
+    /// Reads Vec3 positions and converts from right-handed to left-handed (negates Z).
+    /// </summary>
+    public Vector3[] ReadPositions(int accessorIndex)
+    {
+        var positions = ReadAccessor<Vector3>(accessorIndex);
+        for (var i = 0; i < positions.Length; i++)
+        {
+            positions[i] = new Vector3(positions[i].X, positions[i].Y, -positions[i].Z);
+        }
+        return positions;
+    }
+
+    /// <summary>
+    /// Reads Vec3 normals and converts from right-handed to left-handed (negates Z).
+    /// </summary>
+    public Vector3[] ReadNormals(int accessorIndex)
+    {
+        var normals = ReadAccessor<Vector3>(accessorIndex);
+        for (var i = 0; i < normals.Length; i++)
+        {
+            normals[i] = new Vector3(normals[i].X, normals[i].Y, -normals[i].Z);
+        }
+        return normals;
+    }
+
+    /// <summary>
+    /// Reads Vec4 tangents and converts from right-handed to left-handed (negates Z and W).
+    /// </summary>
+    public Vector4[] ReadTangents(int accessorIndex)
+    {
+        var tangents = ReadAccessor<Vector4>(accessorIndex);
+        for (var i = 0; i < tangents.Length; i++)
+        {
+            tangents[i] = new Vector4(tangents[i].X, tangents[i].Y, -tangents[i].Z, -tangents[i].W);
+        }
+        return tangents;
+    }
+
+    /// <summary>
+    /// Reads Vec4 quaternion rotations and converts from right-handed to left-handed (negates X and Y).
+    /// </summary>
+    public Vector4[] ReadRotations(int accessorIndex)
+    {
+        var rotations = ReadAccessor<Vector4>(accessorIndex);
+        for (var i = 0; i < rotations.Length; i++)
+        {
+            rotations[i] = new Vector4(-rotations[i].X, -rotations[i].Y, rotations[i].Z, rotations[i].W);
+        }
+        return rotations;
+    }
+
+    /// <summary>
+    /// Reads Mat4 and converts from GLTF format (column-major, right-handed) to
+    /// our format (row-major, left-handed). Applies transpose + handedness conversion.
+    /// </summary>
     public Matrix4x4[] ReadAccessorMat4(int accessorIndex)
     {
         var matrices = ReadAccessor<Matrix4x4>(accessorIndex);
         for (var i = 0; i < matrices.Length; i++)
         {
-            matrices[i] = Matrix4x4.Transpose(matrices[i]);
+            // GLTF stores column-major, Matrix4x4 is row-major, so transpose
+            var m = Matrix4x4.Transpose(matrices[i]);
+            // Convert handedness: negate Z-related elements
+            // This is equivalent to: S * M * S where S = diag(1,1,-1,1)
+            matrices[i] = m with
+            {
+                M13 = -m.M13,
+                M23 = -m.M23,
+                M31 = -m.M31,
+                M32 = -m.M32,
+                M34 = -m.M34,
+                M43 = -m.M43
+            };
         }
-
         return matrices;
+    }
+
+    /// <summary>
+    /// Reads indices and reverses winding order for left-handed coordinate system.
+    /// </summary>
+    public uint[] ReadIndicesLeftHanded(int accessorIndex)
+    {
+        var indices = ReadIndices(accessorIndex);
+        // Reverse winding order: swap indices 1 and 2 in each triangle
+        for (var i = 0; i + 2 < indices.Length; i += 3)
+        {
+            (indices[i + 1], indices[i + 2]) = (indices[i + 2], indices[i + 1]);
+        }
+        return indices;
     }
 
     public Matrix4x4 GetNodeWorldTransform(int nodeIndex)
@@ -340,6 +423,9 @@ public sealed class GltfDocument
         return transform;
     }
 
+    /// <summary>
+    /// Gets the node's local transform, converted to left-handed coordinate system.
+    /// </summary>
     public Matrix4x4 GetNodeLocalTransform(int nodeIndex)
     {
         if (_root == null || nodeIndex < 0 || nodeIndex >= _root.Nodes.Count)
@@ -348,26 +434,43 @@ public sealed class GltfDocument
         }
 
         var node = _root.Nodes[nodeIndex];
+        Matrix4x4 m;
 
         if (node.Matrix is { Length: 16 })
         {
-            return new Matrix4x4(
+            // GLTF stores column-major, this constructor order transposes to row-major
+            m = new Matrix4x4(
                 node.Matrix[0], node.Matrix[4], node.Matrix[8], node.Matrix[12],
                 node.Matrix[1], node.Matrix[5], node.Matrix[9], node.Matrix[13],
                 node.Matrix[2], node.Matrix[6], node.Matrix[10], node.Matrix[14],
                 node.Matrix[3], node.Matrix[7], node.Matrix[11], node.Matrix[15]
             );
         }
+        else
+        {
+            var t = node.Translation ?? [0, 0, 0];
+            var r = node.Rotation ?? [0, 0, 0, 1];
+            var s = node.Scale ?? [1, 1, 1];
 
-        var t = node.Translation ?? [0, 0, 0];
-        var r = node.Rotation ?? [0, 0, 0, 1];
-        var s = node.Scale ?? [1, 1, 1];
+            // Convert TRS to left-handed: negate Z for translation, negate X/Y for rotation
+            var translation = Matrix4x4.CreateTranslation(t[0], t[1], -t[2]);
+            var rotation = Matrix4x4.CreateFromQuaternion(new Quaternion(-r[0], -r[1], r[2], r[3]));
+            var scale = Matrix4x4.CreateScale(s[0], s[1], s[2]);
 
-        var translation = Matrix4x4.CreateTranslation(t[0], t[1], t[2]);
-        var rotation = Matrix4x4.CreateFromQuaternion(new Quaternion(r[0], r[1], r[2], r[3]));
-        var scale = Matrix4x4.CreateScale(s[0], s[1], s[2]);
+            // For row-vector convention: v * S * R * T
+            return scale * rotation * translation;
+        }
 
-        return scale * rotation * translation;
+        // Convert handedness for matrix: negate Z-related elements
+        return m with
+        {
+            M13 = -m.M13,
+            M23 = -m.M23,
+            M31 = -m.M31,
+            M32 = -m.M32,
+            M34 = -m.M34,
+            M43 = -m.M43
+        };
     }
 
     private T[] ReadSparseAccessor<T>(GltfAccessor accessor) where T : unmanaged

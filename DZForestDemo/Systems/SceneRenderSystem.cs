@@ -37,6 +37,7 @@ public sealed class SceneRenderSystem : ISystem
     private bool _useLightCamera;
     private World _world = null!;
     private Vector3 _debugLightPosition = new(0, 10, 0);
+    private bool _captureFrame = false;
 
     public void Initialize(World world)
     {
@@ -107,6 +108,7 @@ public sealed class SceneRenderSystem : ISystem
                 case KeyCode.Right: _debugLightPosition.X += delta; break;
                 case KeyCode.Pagedown: _debugLightPosition.Y -= delta; break;
                 case KeyCode.Pageup: _debugLightPosition.Y += delta; break;
+                case KeyCode.F12: _captureFrame = true; break;;
                 case KeyCode.L:
                     _useLightCamera = !_useLightCamera;
                     Console.WriteLine($"Light camera: {(_useLightCamera ? "ON" : "OFF")}");
@@ -140,6 +142,17 @@ public sealed class SceneRenderSystem : ISystem
 
     public void Run()
     {
+        if (Metal.IsCapturing(_ctx.LogicalDevice))
+        {
+            _captureFrame = false;
+            Metal.EndGpuCapture(_ctx.LogicalDevice);
+        }
+
+        if (_captureFrame)
+        {
+            Metal.BeginGpuCapture(_ctx.LogicalDevice);
+        }
+        
         _stepTimer.Tick();
         var deltaTime = (float)_stepTimer.GetElapsedSeconds();
         _totalTime += deltaTime;
@@ -172,7 +185,7 @@ public sealed class SceneRenderSystem : ISystem
             Format = _ctx.BackBufferFormat,
             Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding),
             DebugName = "SceneRT",
-            ClearColorHint = new Float4 { X = 0.02f, Y = 0.02f, Z = 0.04f, W = 1.0f }
+            ClearColorHint = new Vector4 { X = 0.02f, Y = 0.02f, Z = 0.04f, W = 1.0f }
         });
 
         _depthRt = renderGraph.CreateTransientTexture(TransientTextureDesc.DepthStencil(
@@ -209,8 +222,6 @@ public sealed class SceneRenderSystem : ISystem
         _shadowPass.Dispose();
         _uiPass.Dispose();
         _batcher.Dispose();
-
-        GC.SuppressFinalize(this);
     }
 
     private void UpdateDebugLight()

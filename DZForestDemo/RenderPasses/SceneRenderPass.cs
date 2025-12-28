@@ -225,15 +225,13 @@ public sealed class SceneRenderPass : IDisposable
 
         var shader = new Shader(rootSignature);
 
-        // Create variants for geometry and model (or skinned)
         if (isSkinned)
         {
             AddVariant(shader, logicalDevice, rootSignature, "scene_vs_skinned.hlsl", psSource, "skinned");
         }
         else
         {
-            AddVariant(shader, logicalDevice, rootSignature, "scene_vs.hlsl", psSource, "geometry");
-            AddVariant(shader, logicalDevice, rootSignature, "scene_vs_model.hlsl", psSource, "model");
+            AddVariant(shader, logicalDevice, rootSignature, "scene_vs_model.hlsl", psSource, "static");
         }
 
         return shader;
@@ -332,8 +330,6 @@ public sealed class SceneRenderPass : IDisposable
         _shader.Dispose();
         _skinnedShader.Dispose();
         _rtAttachments.Dispose();
-
-        GC.SuppressFinalize(this);
     }
 
     public void SetShadowAtlas(Texture shadowAtlas)
@@ -420,7 +416,7 @@ public sealed class SceneRenderPass : IDisposable
         {
             Resource = rt,
             LoadOp = LoadOp.Clear,
-            ClearColor = new Float4 { X = 0.02f, Y = 0.02f, Z = 0.04f, W = 1.0f }
+            ClearColor = new Vector4() { X = 0.02f, Y = 0.02f, Z = 0.04f, W = 1.0f }
         };
 
         var renderingDesc = new RenderingDesc
@@ -430,7 +426,7 @@ public sealed class SceneRenderPass : IDisposable
             {
                 Resource = depth,
                 LoadOp = LoadOp.Clear,
-                ClearDepthStencil = new Float2 { X = 1.0f, Y = 0.0f }
+                ClearDepthStencil = new Vector2() { X = 1.0f, Y = 0.0f }
             },
             NumLayers = 1
         };
@@ -449,8 +445,7 @@ public sealed class SceneRenderPass : IDisposable
                 continue;
             }
 
-            var variant = runtimeMesh.MeshType == MeshType.Geometry ? "geometry" : "model";
-            _rgCommandList.SetShader(_shader, variant);
+            _rgCommandList.SetShader(_shader, "static");
 
             _rgCommandList.SetBuffer("FrameConstants", _frameConstantsBuffers[frameIndex]);
             _rgCommandList.SetBuffer("LightConstants", _lightConstantsBuffers[frameIndex]);
@@ -505,13 +500,16 @@ public sealed class SceneRenderPass : IDisposable
                 continue;
             }
 
-            // Update bone matrices
             if (animInst.BoneMatrices != null)
             {
                 var numBones = Math.Min(animInst.BoneMatrices.NumBones, MaxBones);
                 for (var i = 0; i < numBones; i++)
                 {
                     boneMatricesPtr[i] = animInst.BoneMatrices.FinalBoneMatrices[i];
+                }
+                for (var i = numBones; i < MaxBones; i++)
+                {
+                    boneMatricesPtr[i] = Matrix4x4.Identity;
                 }
             }
             else

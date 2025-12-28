@@ -1,3 +1,4 @@
+using System.Numerics;
 using DenOfIz;
 using Graphics;
 using Graphics.RenderGraph;
@@ -13,7 +14,7 @@ public sealed class DebugRenderPass(GraphicsResource ctx) : IDisposable
         ScreenWidth = ctx.Width,
         ScreenHeight = ctx.Height,
         FontSize = 24,
-        TextColor = new Float4 { X = 1.0f, Y = 1.0f, Z = 1.0f, W = 1.0f }
+        TextColor = new Vector4 { X = 1.0f, Y = 1.0f, Z = 1.0f, W = 1.0f }
     });
     private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments = new(1);
 
@@ -30,8 +31,6 @@ public sealed class DebugRenderPass(GraphicsResource ctx) : IDisposable
 
         _debugRenderer.Dispose();
         _rtAttachments.Dispose();
-
-        GC.SuppressFinalize(this);
     }
 
     public void SetScreenSize(uint width, uint height)
@@ -48,7 +47,7 @@ public sealed class DebugRenderPass(GraphicsResource ctx) : IDisposable
             Format = ctx.BackBufferFormat,
             Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding),
             DebugName = "DebugRT",
-            ClearColorHint = new Float4 { X = 0, Y = 0, Z = 0, W = 0 }
+            ClearColorHint = new Vector4 { X = 0, Y = 0, Z = 0, W = 0 }
         });
 
         var viewport = ctx.SwapChain.GetViewport();
@@ -79,7 +78,7 @@ public sealed class DebugRenderPass(GraphicsResource ctx) : IDisposable
         {
             Resource = rt,
             LoadOp = LoadOp.Clear,
-            ClearColor = new Float4 { X = 0, Y = 0, Z = 0, W = 0 }
+            ClearColor = new Vector4 { X = 0, Y = 0, Z = 0, W = 0 }
         };
 
         var renderingDesc = new RenderingDesc

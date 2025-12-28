@@ -1,3 +1,4 @@
+using System.Numerics;
 using DenOfIz;
 using Buffer = DenOfIz.Buffer;
 
@@ -19,8 +20,8 @@ public struct TransientTextureDesc
     public uint ArraySize;
     public uint Usage;
     public string DebugName;
-    public Float4 ClearColorHint;
-    public Float2 ClearDepthStencilHint;
+    public Vector4 ClearColorHint;
+    public Vector2 ClearDepthStencilHint;
 
     public static TransientTextureDesc RenderTarget(uint width, uint height, Format format, string debugName = "")
     {
@@ -38,7 +39,7 @@ public struct TransientTextureDesc
     }
 
     public static TransientTextureDesc DepthStencil(uint width, uint height, Format format = Format.D32Float,
-        string debugName = "", Float2? clearDepthStencilHint = null)
+        string debugName = "", Vector2? clearDepthStencilHint = null)
     {
         return new TransientTextureDesc
         {
@@ -50,7 +51,7 @@ public struct TransientTextureDesc
             ArraySize = 1,
             Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding),
             DebugName = debugName,
-            ClearDepthStencilHint = clearDepthStencilHint ?? new Float2 { X = 1.0f, Y = 0.0f }
+            ClearDepthStencilHint = clearDepthStencilHint ?? new Vector2 { X = 1.0f, Y = 0.0f }
         };
     }
 }

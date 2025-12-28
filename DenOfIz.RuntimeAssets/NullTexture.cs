@@ -76,10 +76,7 @@ public sealed class NullTexture : IDisposable
         });
 
         commandList.End();
-        commandQueue.ExecuteCommandLists(new ExecuteCommandListsDesc
-        {
-            CommandLists = commandLists
-        });
+        commandQueue.ExecuteCommandLists(commandLists);
         commandQueue.WaitIdle();
         commandListPool.Dispose();
         commandQueue.Dispose();
@@ -95,6 +92,5 @@ public sealed class NullTexture : IDisposable
 
         _disposed = true;
         Texture.Dispose();
-        GC.SuppressFinalize(this);
     }
 }

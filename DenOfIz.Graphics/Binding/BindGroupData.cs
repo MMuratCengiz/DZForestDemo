@@ -83,9 +83,9 @@ public class BindGroupData
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SetBuffer(ResourceBindingSlot slot, GPUBufferView bufferView)
+    public void SetBuffer(ResourceBindingSlot slot, GpuBufferView bufferView)
     {
-        SetBuffer(slot, bufferView.GetBuffer()!, bufferView.Offset, bufferView.NumBytes);
+        SetBuffer(slot, bufferView.Buffer, bufferView.Offset, bufferView.NumBytes);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

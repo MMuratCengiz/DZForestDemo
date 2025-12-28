@@ -10,21 +10,17 @@ namespace RuntimeAssets;
 public enum MeshType : byte
 {
     /// <summary>
-    /// Built-in geometry primitives (box, sphere, quad) using GeometryVertexData layout.
-    /// </summary>
-    Geometry = 0,
-
-    /// <summary>
     /// Static mesh with full vertex data but no animation.
     /// Uses Vertex struct (Position, Normal, TexCoord, Tangent).
+    /// Also used for built-in geometry primitives (box, sphere, quad).
     /// </summary>
-    Static = 1,
+    Static = 0,
 
     /// <summary>
     /// Skinned mesh with bone weights and indices for skeletal animation.
     /// Uses full Vertex struct including BoneWeights and BoneIndices.
     /// </summary>
-    Skinned = 2
+    Skinned = 1
 }
 
 [StructLayout(LayoutKind.Sequential)]

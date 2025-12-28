@@ -36,7 +36,6 @@ public sealed class RenderBatcher<TKey, TInstance>(int maxInstances = 65536) : I
 
         _disposed = true;
         Clear();
-        GC.SuppressFinalize(this);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -239,7 +238,6 @@ public sealed class MultiKeyBatcher<TKey1, TKey2, TInstance>(int maxInstances = 
 
         _disposed = true;
         Clear();
-        GC.SuppressFinalize(this);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

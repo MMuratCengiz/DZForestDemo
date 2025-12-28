@@ -99,7 +99,7 @@ public sealed class AnimationSystem : ISystem
     private static void SampleAnimation(RuntimeSkeleton skeleton, RuntimeAnimationClip clip, float ratio, BoneMatricesData boneMatrices)
     {
         var numJoints = skeleton.NumJoints;
-        using var transformsArray = Float4x4Array.Create(new Float4x4[numJoints]);
+        using var transformsArray = Float4x4Array.Create(new Matrix4x4[numJoints]);
 
         var samplingDesc = new SamplingJobDesc
         {
@@ -115,33 +115,13 @@ public sealed class AnimationSystem : ISystem
 
         for (var i = 0; i < Math.Min(numJoints, boneMatrices.NumBones); i++)
         {
-            boneMatrices.ModelTransforms[i] = ConvertFloat4x4ToMatrix4x4(transformsArray.Value.AsSpan()[i]);
+            boneMatrices.ModelTransforms[i] = transformsArray.Value.AsSpan()[i];
         }
 
         boneMatrices.ComputeFinalMatrices();
     }
-
-    /// <summary>
-    /// Converts ozz Float4x4 to System.Numerics.Matrix4x4.
-    /// ozz/DenOfIz Float4x4 stores data in column-major format (matching ozz's internal SIMD layout).
-    /// For row-vector multiplication (mul(vec, mat) in HLSL), we need row-major matrices.
-    /// The 1:1 field copy effectively treats columns as rows (implicit transpose).
-    /// </summary>
-    private static Matrix4x4 ConvertFloat4x4ToMatrix4x4(Float4x4 f)
-    {
-        // Float4x4 fields _11,_12,_13,_14 are column 0 (ozz cols[0].x,y,z,w)
-        // For row-major row-vector convention, we want this column to become row 0.
-        // The field mapping below achieves this (column 0 -> row 0, etc.)
-        return new Matrix4x4(
-            f._11, f._12, f._13, f._14,  // ozz col0 -> Matrix4x4 row0
-            f._21, f._22, f._23, f._24,  // ozz col1 -> Matrix4x4 row1
-            f._31, f._32, f._33, f._34,  // ozz col2 -> Matrix4x4 row2
-            f._41, f._42, f._43, f._44   // ozz col3 -> Matrix4x4 row3
-        );
-    }
-
+    
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
     }
 }

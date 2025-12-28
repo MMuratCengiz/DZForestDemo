@@ -53,7 +53,7 @@ public class RenderGraph : IDisposable
     private int _resourceCount;
     private GCHandle _signalSemaphorePin;
     private GCHandle _waitSemaphorePin;
-
+    
     public RenderGraph(RenderGraphDesc desc)
     {
         _logicalDevice = desc.LogicalDevice;

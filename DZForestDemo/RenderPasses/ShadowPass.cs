@@ -109,9 +109,8 @@ public sealed class ShadowPass : IDisposable
 
         var shader = new Shader(rootSignature);
 
-        // Create geometry and model variants
-        AddVariant(shader, logicalDevice, rootSignature, "shadow_vs.hlsl", "geometry");
-        AddVariant(shader, logicalDevice, rootSignature, "shadow_vs_model.hlsl", "model");
+        // Create static mesh variant
+        AddVariant(shader, logicalDevice, rootSignature, "shadow_vs_model.hlsl", "static");
 
         return shader;
     }
@@ -190,8 +189,6 @@ public sealed class ShadowPass : IDisposable
         }
 
         _shader.Dispose();
-
-        GC.SuppressFinalize(this);
     }
 
     public ResourceHandle CreateShadowAtlas(RenderGraph renderGraph)
@@ -208,7 +205,7 @@ public sealed class ShadowPass : IDisposable
             ArraySize = 1,
             Usage = (uint)(TextureUsageFlagBits.TextureBinding | TextureUsageFlagBits.RenderAttachment),
             DebugName = "ShadowAtlas",
-            ClearDepthStencilHint = new Float2 { X = 1.0f, Y = 0.0f }
+            ClearDepthStencilHint = new Vector2 { X = 1.0f, Y = 0.0f }
         });
     }
 
@@ -365,7 +362,7 @@ public sealed class ShadowPass : IDisposable
             {
                 Resource = atlas,
                 LoadOp = LoadOp.Clear,
-                ClearDepthStencil = new Float2 { X = 1.0f, Y = 0.0f }
+                ClearDepthStencil = new Vector2 { X = 1.0f, Y = 0.0f }
             },
             NumLayers = 1,
             RenderAreaWidth = ShadowMapSize * 2,
@@ -433,8 +430,7 @@ public sealed class ShadowPass : IDisposable
                 continue;
             }
 
-            var variant = runtimeMesh.MeshType == MeshType.Geometry ? "geometry" : "model";
-            _rgCommandList.SetShader(_shader, variant);
+            _rgCommandList.SetShader(_shader, "static");
 
             _rgCommandList.SetBuffer("LightMatrix", _lightMatrixBuffers[frameIndex][lightInfo.ShadowIndex]);
 

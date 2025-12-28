@@ -147,7 +147,6 @@ public sealed class ShaderRootSignature : IDisposable
 
         _disposed = true;
         Instance.Dispose();
-        GC.SuppressFinalize(this);
     }
 
     public sealed class Builder(LogicalDevice logicalDevice)

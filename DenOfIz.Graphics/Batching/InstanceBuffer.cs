@@ -66,8 +66,6 @@ public sealed class InstanceBuffer<T> : IDisposable where T : unmanaged
             _bindGroups[i].Dispose();
             _buffers[i].Dispose();
         }
-
-        GC.SuppressFinalize(this);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -167,8 +165,6 @@ public sealed class DynamicInstanceBuffer<T> : IDisposable where T : unmanaged
             _bindGroups[i].Dispose();
             _buffers[i].Dispose();
         }
-
-        GC.SuppressFinalize(this);
     }
 
     public void EnsureCapacity(int requiredCapacity)

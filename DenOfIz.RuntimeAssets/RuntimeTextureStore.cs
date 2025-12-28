@@ -116,10 +116,7 @@ public sealed class RuntimeTextureStore(LogicalDevice device) : IDisposable
         });
 
         commandList.End();
-        commandQueue.ExecuteCommandLists(new ExecuteCommandListsDesc
-        {
-            CommandLists = commandLists
-        });
+        commandQueue.ExecuteCommandLists(commandLists);
         commandQueue.WaitIdle();
         commandListPool.Dispose();
         commandQueue.Dispose();

@@ -53,8 +53,8 @@ public struct ImGuiBackendDesc
 [StructLayout(LayoutKind.Sequential)]
 internal struct ImGuiUniforms
 {
-    public Float4x4 Projection;
-    public Float4 ScreenSize;
+    public Matrix4x4 Projection;
+    public Vector4 ScreenSize;
 }
 
 [StructLayout(LayoutKind.Sequential)]
@@ -156,7 +156,7 @@ float4 main(PSInput input) : SV_TARGET
     private Buffer? _pixelConstantsBuffer;
     private IntPtr _pixelConstantsData;
 
-    private Float4x4 _projectionMatrix;
+    private Matrix4x4 _projectionMatrix;
     private RootSignature? _rootSignature;
     private Sampler? _sampler;
 
@@ -255,24 +255,24 @@ float4 main(PSInput input) : SV_TARGET
         const float zn = 0.0f;
         const float zf = 1.0f;
 
-        _projectionMatrix = new Float4x4
+        _projectionMatrix = new Matrix4x4()
         {
-            _11 = 2.0f / (viewport.Width - viewport.X),
-            _12 = 0,
-            _13 = 0,
-            _14 = 0,
-            _21 = 0,
-            _22 = 2.0f / (viewport.Y - viewport.Height),
-            _23 = 0,
-            _24 = 0,
-            _31 = 0,
-            _32 = 0,
-            _33 = 1.0f / (zf - zn),
-            _34 = 0,
-            _41 = (viewport.X + viewport.Width) / (viewport.X - viewport.Width),
-            _42 = (viewport.Height + viewport.Y) / (viewport.Height - viewport.Y),
-            _43 = zn / (zn - zf),
-            _44 = 1.0f
+            M11 = 2.0f / (viewport.Width - viewport.X),
+            M12 = 0,
+            M13 = 0,
+            M14 = 0,
+            M21 = 0,
+            M22 = 2.0f / (viewport.Y - viewport.Height),
+            M23 = 0,
+            M24 = 0,
+            M31 = 0,
+            M32 = 0,
+            M33 = 1.0f / (zf - zn),
+            M34 = 0,
+            M41 = (viewport.X + viewport.Width) / (viewport.X - viewport.Width),
+            M42 = (viewport.Height + viewport.Y) / (viewport.Height - viewport.Y),
+            M43 = zn / (zn - zf),
+            M44 = 1.0f
         };
     }
 
@@ -758,7 +758,7 @@ float4 main(PSInput input) : SV_TARGET
         {
             var uniformPtr = (ImGuiUniforms*)((byte*)_uniformBufferData + frameIndex * _alignedUniformSize);
             uniformPtr->Projection = _projectionMatrix;
-            uniformPtr->ScreenSize = new Float4
+            uniformPtr->ScreenSize = new Vector4()
             {
                 X = _viewport.Width,
                 Y = _viewport.Height,

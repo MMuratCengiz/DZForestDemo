@@ -1,7 +1,7 @@
 // Shadow map vertex shader for skinned meshes
 // Applies skeletal animation transforms before shadow projection
 
-#include "common/vertex_input_model.hlsl"
+#include "common/vertex_input.hlsl"
 
 #define MAX_BONES 128
 

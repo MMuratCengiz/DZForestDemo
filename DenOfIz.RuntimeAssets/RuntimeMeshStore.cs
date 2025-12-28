@@ -35,6 +35,7 @@ public sealed class RuntimeMeshStore(
     private readonly Queue<uint> _freeIndices = new();
     private readonly BufferPool _indexPool = new(device, (uint)(BufferUsageFlagBits.Index | BufferUsageFlagBits.CopyDst), indexPoolSize);
     private readonly List<MeshSlot> _slots = [];
+    private readonly List<GCHandle> _pendingHandles = [];
 
     private readonly BufferPool _vertexPool =
         new(device, (uint)(BufferUsageFlagBits.Vertex | BufferUsageFlagBits.CopyDst), vertexPoolSize);
@@ -50,9 +51,22 @@ public sealed class RuntimeMeshStore(
 
         _disposed = true;
 
+        ReleasePendingHandles();
         _vertexPool.Dispose();
         _indexPool.Dispose();
         _slots.Clear();
+    }
+
+    public void ReleasePendingHandles()
+    {
+        foreach (var handle in _pendingHandles)
+        {
+            if (handle.IsAllocated)
+            {
+                handle.Free();
+            }
+        }
+        _pendingHandles.Clear();
     }
 
     public RuntimeMeshHandle Add(MeshData meshData, BatchResourceCopy batchCopy, MeshType meshType = MeshType.Static)
@@ -80,8 +94,12 @@ public sealed class RuntimeMeshStore(
         var vertexSize = (ulong)(vertices.Length * vertexStride);
         var indexSize = (ulong)(indices.Length * sizeof(uint));
 
-        var vertexView = _vertexPool.Allocate(vertexSize, vertexStride);
-        var indexView = _indexPool.Allocate(indexSize, sizeof(uint));
+        const ulong minAlignment = 256;
+        var vertexAlignment = Math.Max((ulong)vertexStride, minAlignment);
+        var indexAlignment = minAlignment;
+
+        var vertexView = _vertexPool.Allocate(vertexSize, vertexAlignment);
+        var indexView = _indexPool.Allocate(indexSize, indexAlignment);
 
         if (vertexView.Buffer == 0 || indexView.Buffer == 0)
         {
@@ -99,7 +117,7 @@ public sealed class RuntimeMeshStore(
             DstBuffer = vertexView.Buffer,
             DstBufferOffset = vertexView.Offset
         });
-        vertexHandle.Free();
+        _pendingHandles.Add(vertexHandle);
 
         var indexHandle = GCHandle.Alloc(indices, GCHandleType.Pinned);
         batchCopy.CopyToGPUBuffer(new CopyToGpuBufferDesc
@@ -112,7 +130,7 @@ public sealed class RuntimeMeshStore(
             DstBuffer = indexView.Buffer,
             DstBufferOffset = indexView.Offset
         });
-        indexHandle.Free();
+        _pendingHandles.Add(indexHandle);
 
         var mesh = new RuntimeMesh(
             new VertexBufferView(vertexView, vertexStride, (uint)vertices.Length),
@@ -123,61 +141,47 @@ public sealed class RuntimeMeshStore(
         return AllocateSlot(mesh);
     }
 
-    public RuntimeMeshHandle AddGeometry(GeometryData geometry, BatchResourceCopy batchCopy)
+    public unsafe RuntimeMeshHandle AddGeometry(GeometryData geometry, BatchResourceCopy batchCopy)
     {
-        var vertexCount = geometry.GetVertexCount();
-        var indexCount = geometry.GetIndexCount();
-        var vertexStride = (uint)Unsafe.SizeOf<GeometryVertexData>();
-        var vertexSize = (ulong)(vertexCount * vertexStride);
-        var indexSize = (ulong)(indexCount * sizeof(uint));
+        var vertexCount = (int)geometry.GetVertexCount();
+        var indexCount = (int)geometry.GetIndexCount();
 
-        var vertexView = _vertexPool.Allocate(vertexSize, vertexStride);
-        var indexView = _indexPool.Allocate(indexSize, sizeof(uint));
+        // Read geometry vertex data (32 bytes per vertex: Position, Normal, TextureCoordinate)
+        var geometryStride = Unsafe.SizeOf<GeometryVertexData>();
+        var geometryData = new byte[vertexCount * geometryStride];
+        geometry.GetVertexData(geometryData);
 
-        if (vertexView.Buffer == 0 || indexView.Buffer == 0)
+        // Convert to full Vertex format (80 bytes per vertex)
+        var vertices = new Vertex[vertexCount];
+        fixed (byte* srcPtr = geometryData)
         {
-            return RuntimeMeshHandle.Invalid;
+            var geoPtr = (GeometryVertexData*)srcPtr;
+            for (var i = 0; i < vertexCount; i++)
+            {
+                ref var geo = ref geoPtr[i];
+                vertices[i] = new Vertex
+                {
+                    Position = new System.Numerics.Vector3(geo.Position.X, geo.Position.Y, geo.Position.Z),
+                    Normal = new System.Numerics.Vector3(geo.Normal.X, geo.Normal.Y, geo.Normal.Z),
+                    TexCoord = new System.Numerics.Vector2(geo.TextureCoordinate.U, geo.TextureCoordinate.V),
+                    Tangent = new System.Numerics.Vector4(1, 0, 0, 1), // Default tangent
+                    BoneWeights = System.Numerics.Vector4.Zero,
+                    BoneIndices = default
+                };
+            }
         }
 
-        var vertexData = new byte[vertexSize];
-        var indexData = new byte[indexSize];
-
-        geometry.GetVertexData(vertexData);
+        // Read indices
+        var indexData = new byte[indexCount * sizeof(uint)];
         geometry.GetIndexData(indexData);
-
-        var vertexHandle = GCHandle.Alloc(vertexData, GCHandleType.Pinned);
-        batchCopy.CopyToGPUBuffer(new CopyToGpuBufferDesc
+        var indices = new uint[indexCount];
+        fixed (byte* srcPtr = indexData)
+        fixed (uint* dstPtr = indices)
         {
-            Data = new ByteArrayView
-            {
-                Elements = vertexHandle.AddrOfPinnedObject(),
-                NumElements = (ulong)vertexData.Length
-            },
-            DstBuffer = vertexView.Buffer,
-            DstBufferOffset = vertexView.Offset
-        });
-        vertexHandle.Free();
+            System.Buffer.MemoryCopy(srcPtr, dstPtr, indexCount * sizeof(uint), indexCount * sizeof(uint));
+        }
 
-        var indexHandle = GCHandle.Alloc(indexData, GCHandleType.Pinned);
-        batchCopy.CopyToGPUBuffer(new CopyToGpuBufferDesc
-        {
-            Data = new ByteArrayView
-            {
-                Elements = indexHandle.AddrOfPinnedObject(),
-                NumElements = (ulong)indexData.Length
-            },
-            DstBuffer = indexView.Buffer,
-            DstBufferOffset = indexView.Offset
-        });
-        indexHandle.Free();
-
-        var mesh = new RuntimeMesh(
-            new VertexBufferView(vertexView, vertexStride, vertexCount),
-            new IndexBufferView(indexView, IndexType.Uint32, indexCount),
-            MeshType.Geometry
-        );
-
-        return AllocateSlot(mesh);
+        return AddRaw(vertices, indices, batchCopy, MeshType.Static);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

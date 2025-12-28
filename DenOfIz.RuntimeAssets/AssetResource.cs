@@ -135,6 +135,7 @@ public sealed class AssetResource(LogicalDevice device) : IResource, IDisposable
         EnsureUploading();
 
         _batchCopy!.Submit(null);
+        _meshStore.ReleasePendingHandles();
         _batchCopy.Dispose();
         _batchCopy = null;
         _uploading = false;
@@ -145,6 +146,7 @@ public sealed class AssetResource(LogicalDevice device) : IResource, IDisposable
         EnsureUploading();
 
         _batchCopy!.Submit(null);
+        _meshStore.ReleasePendingHandles();
 
         var batchCopy = _batchCopy;
         _batchCopy = null;

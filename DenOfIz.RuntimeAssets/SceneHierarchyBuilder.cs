@@ -115,7 +115,7 @@ public sealed class SceneHierarchyBuilder
 
             if (node.ParentIndex.HasValue && _nodeToEntity.TryGetValue(node.ParentIndex.Value, out var parentEntity))
             {
-                _world.AddComponent(entity, new ParentRef(parentEntity));
+                _world.AddComponent(entity, new Parent(parentEntity));
             }
 
             configureNode?.Invoke(entity, node, model);
@@ -254,5 +254,3 @@ public sealed class SceneHierarchyBuilder
         return nodes.ToDictionary(n => n.Index);
     }
 }
-
-public readonly record struct ParentRef(Entity Parent);

@@ -1,6 +1,6 @@
 using OfflineAssets;
 
-const string projectDir = @"C:\Workspace\DZForestDemo\DZForestDemo";
+const string projectDir = @"/Users/muratcengiz/RiderProjects/DZForestDemo/DZForestDemo/";
 
 // Viking asset paths
 const string vikingSourceDir = @"C:\Users\cengi\Downloads\POLYGON_Viking_Realm_SourceFiles_v3\SourceFiles";
@@ -9,7 +9,7 @@ const string vikingTexturePath = @"C:\Users\cengi\Downloads\POLYGON_Viking_Realm
 
 // Fox asset paths
 const string foxSourceDir = @"C:\Workspace\DenOfIz\Examples\Assets\Models";
-const string foxGltfPath = @"C:\Workspace\DenOfIz\Examples\Assets\Models\Fox.gltf";
+const string foxGltfPath = @"/Users/muratcengiz/RiderProjects/DZForestDemo/DZForestDemo/Assets/Models/Fox.gltf";
 const string foxTexturePath = @"C:\Workspace\DenOfIz\Examples\Assets\Models\Texture.png";
 
 var assetProject = AssetProject.ForProjectAssets(projectDir, vikingSourceDir);

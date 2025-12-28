@@ -113,8 +113,6 @@ public sealed class CompositeRenderPass : IDisposable
         _pipeline.Dispose();
         _rootSignature.Dispose();
         _rtAttachments.Dispose();
-
-        GC.SuppressFinalize(this);
     }
 
     public void AddPass(

@@ -145,8 +145,6 @@ public sealed class CpuVisibleBufferAllocator : IDisposable
         _chunks.Clear();
         _allocations.Clear();
         _freeList.Clear();
-
-        GC.SuppressFinalize(this);
     }
 
     private readonly struct BufferChunk(Buffer buffer, IntPtr mappedPtr)

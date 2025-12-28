@@ -48,8 +48,6 @@ public sealed class App(ApplicationOptions options) : IDisposable
         World.Dispose();
         Window.Dispose();
         Engine.Shutdown();
-
-        GC.SuppressFinalize(this);
     }
 
     public SystemDescriptor AddSystem<T>(T system, Schedule schedule) where T : ISystem

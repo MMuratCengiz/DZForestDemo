@@ -23,7 +23,6 @@ public sealed class PhysicsStepSystem : ISystem
 
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
     }
 }
 
@@ -58,7 +57,6 @@ public sealed class PhysicsSyncSystem : ISystem
 
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
     }
 }
 
@@ -105,7 +103,6 @@ public sealed class PhysicsCleanupSystem : ISystem
 
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
     }
 }
 
@@ -140,6 +137,5 @@ public sealed class PhysicsVelocitySyncSystem : ISystem
 
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
     }
 }

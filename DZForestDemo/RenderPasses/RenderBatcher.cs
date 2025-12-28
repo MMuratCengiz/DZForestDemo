@@ -111,8 +111,6 @@ public sealed class RenderBatcher(World world, int maxInstances = 4096) : IDispo
         _batches.Clear();
         _allInstances.Clear();
         _animatedInstances.Clear();
-
-        GC.SuppressFinalize(this);
     }
 
     public void BuildBatches()
@@ -297,8 +295,6 @@ public sealed class InstanceBuffer<T> : IDisposable where T : unmanaged
             _bindGroups[i].Dispose();
             _buffers[i].Dispose();
         }
-
-        GC.SuppressFinalize(this);
     }
 
     public ResourceBindGroup GetBindGroup(int frameIndex) => _bindGroups[frameIndex];

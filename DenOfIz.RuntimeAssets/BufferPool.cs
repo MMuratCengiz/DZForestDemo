@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DenOfIz;
+using Graphics.Binding;
 using Buffer = DenOfIz.Buffer;
 
 namespace RuntimeAssets;
@@ -28,7 +29,7 @@ public sealed class BufferPool(LogicalDevice device, uint usages, ulong blockSiz
         _blocks.Clear();
     }
 
-    public GPUBufferView Allocate(ulong size, ulong alignment = 16)
+    public GpuBufferView Allocate(ulong size, ulong alignment = 16)
     {
         size = AlignUp(size, alignment);
 
@@ -45,7 +46,7 @@ public sealed class BufferPool(LogicalDevice device, uint usages, ulong blockSiz
         var newBlock = new BufferBlock(device, usages, newBlockSize);
         _blocks.Add(newBlock);
 
-        return newBlock.TryAllocate(size, alignment, out var newView) ? newView : new GPUBufferView();
+        return newBlock.TryAllocate(size, alignment, out var newView) ? newView : new GpuBufferView();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -71,17 +72,17 @@ public sealed class BufferPool(LogicalDevice device, uint usages, ulong blockSiz
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryAllocate(ulong numBytes, ulong alignment, out GPUBufferView view)
+        public bool TryAllocate(ulong numBytes, ulong alignment, out GpuBufferView view)
         {
             var alignedOffset = AlignUp(_offset, alignment);
 
             if (alignedOffset + numBytes > size)
             {
-                view = new GPUBufferView();
+                view = new GpuBufferView();
                 return false;
             }
 
-            view = new GPUBufferView{ Buffer = _buffer, Offset = alignedOffset, NumBytes = numBytes};
+            view = new GpuBufferView{ Buffer = _buffer, Offset = alignedOffset, NumBytes = numBytes};
             _offset = alignedOffset + numBytes;
             return true;
         }

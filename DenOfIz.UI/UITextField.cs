@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Text;
 using DenOfIz;
@@ -995,7 +996,7 @@ public ref struct UiTextField
             AttachTo = ClayFloatingAttachTo.Parent,
             ParentAttachPoint = ClayFloatingAttachPoint.LeftCenter,
             ElementAttachPoint = ClayFloatingAttachPoint.LeftCenter,
-            Offset = new Float2 { X = cursorOffsetX, Y = 0 },
+            Offset = new Vector2 { X = cursorOffsetX, Y = 0 },
             ZIndex = 100
         };
 
@@ -1076,7 +1077,7 @@ public ref struct UiTextField
             ParentId = lineId,
             ParentAttachPoint = ClayFloatingAttachPoint.LeftCenter,
             ElementAttachPoint = ClayFloatingAttachPoint.LeftCenter,
-            Offset = new Float2 { X = cursorOffsetX, Y = 0 },
+            Offset = new Vector2 { X = cursorOffsetX, Y = 0 },
             ZIndex = 100
         };
 
