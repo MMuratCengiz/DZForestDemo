@@ -9,7 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="DenOfIzGraphics" Version="0.4.7-alpha" />
+        <PackageReference Include="DenOfIzGraphics" Version="0.4.8-alpha" />
     </ItemGroup>
 
     <ItemGroup>
