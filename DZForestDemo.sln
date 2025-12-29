@@ -18,6 +18,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DenOfIz.ECS", "DenOfIz.ECS\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DenOfIz.Physics", "DenOfIz.Physics\DenOfIz.Physics.csproj", "{E6889A6D-7DB5-493E-85A2-B714E9C448EE}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DenOfIz.Tasks", "DenOfIz.Tasks\DenOfIz.Tasks.csproj", "{E6A3B2FF-D9CA-45EA-A8F7-341B42FC824E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -136,6 +138,18 @@ Global
 		{E6889A6D-7DB5-493E-85A2-B714E9C448EE}.Release|x64.Build.0 = Release|Any CPU
 		{E6889A6D-7DB5-493E-85A2-B714E9C448EE}.Release|x86.ActiveCfg = Release|Any CPU
 		{E6889A6D-7DB5-493E-85A2-B714E9C448EE}.Release|x86.Build.0 = Release|Any CPU
+		{E6A3B2FF-D9CA-45EA-A8F7-341B42FC824E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6A3B2FF-D9CA-45EA-A8F7-341B42FC824E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E6A3B2FF-D9CA-45EA-A8F7-341B42FC824E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E6A3B2FF-D9CA-45EA-A8F7-341B42FC824E}.Debug|x64.Build.0 = Debug|Any CPU
+		{E6A3B2FF-D9CA-45EA-A8F7-341B42FC824E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E6A3B2FF-D9CA-45EA-A8F7-341B42FC824E}.Debug|x86.Build.0 = Debug|Any CPU
+		{E6A3B2FF-D9CA-45EA-A8F7-341B42FC824E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E6A3B2FF-D9CA-45EA-A8F7-341B42FC824E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E6A3B2FF-D9CA-45EA-A8F7-341B42FC824E}.Release|x64.ActiveCfg = Release|Any CPU
+		{E6A3B2FF-D9CA-45EA-A8F7-341B42FC824E}.Release|x64.Build.0 = Release|Any CPU
+		{E6A3B2FF-D9CA-45EA-A8F7-341B42FC824E}.Release|x86.ActiveCfg = Release|Any CPU
+		{E6A3B2FF-D9CA-45EA-A8F7-341B42FC824E}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

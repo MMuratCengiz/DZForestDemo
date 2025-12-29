@@ -16,13 +16,13 @@ public struct DrawState
 
     public struct Resource
     {
-        public ResourceType Type;
-        public byte[]? Data;
-        public Texture? Texture;
-        public Sampler? Sampler;
-        public Buffer? Buffer;
-        public ulong BufferOffset;
-        public ulong BufferSize;
+        public readonly ResourceType Type;
+        public readonly byte[]? Data;
+        public readonly Texture? Texture;
+        public readonly Sampler? Sampler;
+        public readonly Buffer? Buffer;
+        public readonly ulong BufferOffset;
+        public readonly ulong BufferSize;
 
         public Resource(byte[] data)
         {
@@ -61,7 +61,7 @@ public struct DrawState
 
     public Shader? Shader = null;
     public string Variant = "default";
-    public Dictionary<string, Resource> Resources = new();
+    public readonly Dictionary<string, Resource> Resources = new();
 
     public DrawState()
     {

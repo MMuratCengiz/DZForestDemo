@@ -1,11 +1,10 @@
 using System.Numerics;
 using ECS;
 using ECS.Components;
-using RuntimeAssets;
 using RuntimeAssets.Components;
 using RuntimeAssets.GltfModels;
 
-namespace DZForestDemo.Scenes;
+namespace RuntimeAssets;
 
 public sealed class SceneHierarchyResult
 {
@@ -172,7 +171,10 @@ public sealed class SceneHierarchyBuilder
         bool includeSelf = true)
     {
         var node = nodes.FirstOrDefault(n => n.Index == nodeIndex);
-        if (node == null) yield break;
+        if (node == null)
+        {
+            yield break;
+        }
 
         if (includeSelf)
         {
@@ -224,13 +226,19 @@ public sealed class SceneHierarchyBuilder
         int nodeIndex)
     {
         var node = nodes.FirstOrDefault(n => n.Index == nodeIndex);
-        if (node == null) yield break;
+        if (node == null)
+        {
+            yield break;
+        }
 
         var currentIndex = node.ParentIndex;
         while (currentIndex.HasValue)
         {
             var parent = nodes.FirstOrDefault(n => n.Index == currentIndex.Value);
-            if (parent == null) yield break;
+            if (parent == null)
+            {
+                yield break;
+            }
 
             yield return parent;
             currentIndex = parent.ParentIndex;

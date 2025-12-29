@@ -30,15 +30,12 @@ public sealed class ShadowPass : IDisposable
     private readonly RgCommandList _rgCommandList;
     private readonly World _world;
 
-    // Shader with variants
     private readonly Shader _shader;
 
-    // Per-frame buffers
     private readonly Buffer[][] _lightMatrixBuffers;
     private readonly IntPtr[][] _lightMatrixMappedPtrs;
     private readonly Dictionary<RuntimeMeshHandle, BatchInstanceData>[] _perFrameBatchData;
 
-    // Cached light data for building passes
     private readonly List<LightRenderInfo> _lightRenderInfos = [];
 
     private bool _disposed;

@@ -100,11 +100,6 @@ public sealed class Scene
         return entity;
     }
 
-    public EntityBuilder SpawnBuilder()
-    {
-        return new EntityBuilder(_store).SpawnWithScene(Id);
-    }
-
     public void AddEntity(Entity entity)
     {
         if (!_store.IsAlive(entity) || _entityIndices.Contains(entity.Index))
