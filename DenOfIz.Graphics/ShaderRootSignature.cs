@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using DenOfIz;
-using Graphics.Binding;
 
 namespace Graphics;
 
@@ -108,12 +107,6 @@ public sealed class ShaderRootSignature : IDisposable
     public bool TryGetSlot(string name, out ResourceBindingSlot slot)
     {
         return _bindingSlotMap.TryGetValue(name, out slot);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public BindingFrequency GetFrequency(uint registerSpace)
-    {
-        return (BindingFrequency)registerSpace;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

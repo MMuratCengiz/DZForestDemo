@@ -1,10 +1,9 @@
 using DenOfIz;
-using ECS;
 using Graphics.RenderGraph;
 
 namespace Graphics;
 
-public class GraphicsResource : IResource, IDisposable
+public class GraphicsResource : IGraphicsContext, IDisposable
 {
     public GraphicsResource(
         GraphicsApi graphicsApi,

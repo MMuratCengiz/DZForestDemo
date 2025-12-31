@@ -1,11 +1,10 @@
 using System.Runtime.CompilerServices;
 using DenOfIz;
-using ECS;
 using RuntimeAssets.GltfModels;
 
 namespace RuntimeAssets;
 
-public sealed class AssetResource(LogicalDevice device) : IResource, IDisposable
+public sealed class AssetResource(LogicalDevice device) : IDisposable
 {
     private readonly GeometryBuilder _geometryBuilder = new();
     private readonly GltfLoader _gltfLoader = new();

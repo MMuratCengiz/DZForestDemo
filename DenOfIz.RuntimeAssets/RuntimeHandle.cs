@@ -1,37 +1,28 @@
 using System.Runtime.CompilerServices;
-using ECS;
 
 namespace RuntimeAssets;
 
 /// <summary>
 /// A mesh resource handle.
 /// </summary>
-public readonly struct RuntimeMeshHandle : IEquatable<RuntimeMeshHandle>
+public readonly struct RuntimeMeshHandle(uint index, uint generation) : IEquatable<RuntimeMeshHandle>
 {
-    private readonly Handle<MeshTag> _handle;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal RuntimeMeshHandle(uint index, uint generation)
-    {
-        _handle = new Handle<MeshTag>(index, generation);
-    }
-
     public uint Index
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handle.Index;
-    }
+        get;
+    } = index;
 
     public uint Generation
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handle.Generation;
-    }
+        get;
+    } = generation;
 
     public bool IsValid
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handle.IsValid;
+        get => Generation != 0;
     }
 
     public static RuntimeMeshHandle Invalid
@@ -41,12 +32,12 @@ public readonly struct RuntimeMeshHandle : IEquatable<RuntimeMeshHandle>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Equals(RuntimeMeshHandle other) => _handle.Equals(other._handle);
+    public bool Equals(RuntimeMeshHandle other) => Index == other.Index && Generation == other.Generation;
 
     public override bool Equals(object? obj) => obj is RuntimeMeshHandle other && Equals(other);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override int GetHashCode() => _handle.GetHashCode();
+    public override int GetHashCode() => HashCode.Combine(Index, Generation);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(RuntimeMeshHandle left, RuntimeMeshHandle right) => left.Equals(right);
@@ -58,32 +49,24 @@ public readonly struct RuntimeMeshHandle : IEquatable<RuntimeMeshHandle>
 /// <summary>
 /// A texture resource handle.
 /// </summary>
-public readonly struct RuntimeTextureHandle : IEquatable<RuntimeTextureHandle>
+public readonly struct RuntimeTextureHandle(uint index, uint generation) : IEquatable<RuntimeTextureHandle>
 {
-    private readonly Handle<TextureTag> _handle;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal RuntimeTextureHandle(uint index, uint generation)
-    {
-        _handle = new Handle<TextureTag>(index, generation);
-    }
-
     public uint Index
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handle.Index;
-    }
+        get;
+    } = index;
 
     public uint Generation
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handle.Generation;
-    }
+        get;
+    } = generation;
 
     public bool IsValid
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handle.IsValid;
+        get => Generation != 0;
     }
 
     public static RuntimeTextureHandle Invalid
@@ -93,12 +76,12 @@ public readonly struct RuntimeTextureHandle : IEquatable<RuntimeTextureHandle>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Equals(RuntimeTextureHandle other) => _handle.Equals(other._handle);
+    public bool Equals(RuntimeTextureHandle other) => Index == other.Index && Generation == other.Generation;
 
     public override bool Equals(object? obj) => obj is RuntimeTextureHandle other && Equals(other);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override int GetHashCode() => _handle.GetHashCode();
+    public override int GetHashCode() => HashCode.Combine(Index, Generation);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(RuntimeTextureHandle left, RuntimeTextureHandle right) => left.Equals(right);
@@ -110,32 +93,24 @@ public readonly struct RuntimeTextureHandle : IEquatable<RuntimeTextureHandle>
 /// <summary>
 /// A skeleton resource handle.
 /// </summary>
-public readonly struct RuntimeSkeletonHandle : IEquatable<RuntimeSkeletonHandle>
+public readonly struct RuntimeSkeletonHandle(uint index, uint generation) : IEquatable<RuntimeSkeletonHandle>
 {
-    private readonly Handle<SkeletonTag> _handle;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal RuntimeSkeletonHandle(uint index, uint generation)
-    {
-        _handle = new Handle<SkeletonTag>(index, generation);
-    }
-
     public uint Index
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handle.Index;
-    }
+        get;
+    } = index;
 
     public uint Generation
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handle.Generation;
-    }
+        get;
+    } = generation;
 
     public bool IsValid
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handle.IsValid;
+        get => Generation != 0;
     }
 
     public static RuntimeSkeletonHandle Invalid
@@ -145,12 +120,12 @@ public readonly struct RuntimeSkeletonHandle : IEquatable<RuntimeSkeletonHandle>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Equals(RuntimeSkeletonHandle other) => _handle.Equals(other._handle);
+    public bool Equals(RuntimeSkeletonHandle other) => Index == other.Index && Generation == other.Generation;
 
     public override bool Equals(object? obj) => obj is RuntimeSkeletonHandle other && Equals(other);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override int GetHashCode() => _handle.GetHashCode();
+    public override int GetHashCode() => HashCode.Combine(Index, Generation);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(RuntimeSkeletonHandle left, RuntimeSkeletonHandle right) => left.Equals(right);
@@ -162,32 +137,24 @@ public readonly struct RuntimeSkeletonHandle : IEquatable<RuntimeSkeletonHandle>
 /// <summary>
 /// An animation resource handle.
 /// </summary>
-public readonly struct RuntimeAnimationHandle : IEquatable<RuntimeAnimationHandle>
+public readonly struct RuntimeAnimationHandle(uint index, uint generation) : IEquatable<RuntimeAnimationHandle>
 {
-    private readonly Handle<AnimationTag> _handle;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal RuntimeAnimationHandle(uint index, uint generation)
-    {
-        _handle = new Handle<AnimationTag>(index, generation);
-    }
-
     public uint Index
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handle.Index;
-    }
+        get;
+    } = index;
 
     public uint Generation
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handle.Generation;
-    }
+        get;
+    } = generation;
 
     public bool IsValid
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handle.IsValid;
+        get => Generation != 0;
     }
 
     public static RuntimeAnimationHandle Invalid
@@ -197,12 +164,12 @@ public readonly struct RuntimeAnimationHandle : IEquatable<RuntimeAnimationHandl
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Equals(RuntimeAnimationHandle other) => _handle.Equals(other._handle);
+    public bool Equals(RuntimeAnimationHandle other) => Index == other.Index && Generation == other.Generation;
 
     public override bool Equals(object? obj) => obj is RuntimeAnimationHandle other && Equals(other);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override int GetHashCode() => _handle.GetHashCode();
+    public override int GetHashCode() => HashCode.Combine(Index, Generation);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(RuntimeAnimationHandle left, RuntimeAnimationHandle right) => left.Equals(right);
@@ -214,32 +181,24 @@ public readonly struct RuntimeAnimationHandle : IEquatable<RuntimeAnimationHandl
 /// <summary>
 /// A geometry resource handle.
 /// </summary>
-public readonly struct RuntimeGeometryHandle : IEquatable<RuntimeGeometryHandle>
+public readonly struct RuntimeGeometryHandle(uint index, uint generation) : IEquatable<RuntimeGeometryHandle>
 {
-    private readonly Handle<GeometryTag> _handle;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal RuntimeGeometryHandle(uint index, uint generation)
-    {
-        _handle = new Handle<GeometryTag>(index, generation);
-    }
-
     public uint Index
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handle.Index;
-    }
+        get;
+    } = index;
 
     public uint Generation
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handle.Generation;
-    }
+        get;
+    } = generation;
 
     public bool IsValid
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handle.IsValid;
+        get => Generation != 0;
     }
 
     public static RuntimeGeometryHandle Invalid
@@ -249,12 +208,12 @@ public readonly struct RuntimeGeometryHandle : IEquatable<RuntimeGeometryHandle>
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Equals(RuntimeGeometryHandle other) => _handle.Equals(other._handle);
+    public bool Equals(RuntimeGeometryHandle other) => Index == other.Index && Generation == other.Generation;
 
     public override bool Equals(object? obj) => obj is RuntimeGeometryHandle other && Equals(other);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override int GetHashCode() => _handle.GetHashCode();
+    public override int GetHashCode() => HashCode.Combine(Index, Generation);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(RuntimeGeometryHandle left, RuntimeGeometryHandle right) => left.Equals(right);

@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DenOfIz;
 using Buffer = DenOfIz.Buffer;
@@ -18,13 +17,10 @@ public struct RenderGraphDesc(LogicalDevice logicalDevice, CommandQueue commandQ
 
 public class RenderGraph : IDisposable
 {
-    private readonly Queue<int> _algorithmQueue;
     private readonly CommandList[][] _cachedCommandLists;
     private readonly ulong[] _commandListHandles;
-
     private readonly CommandListPool[] _commandListPools;
     private readonly CommandQueue _commandQueue;
-    private readonly List<int> _executionOrder;
     private readonly Fence[] _frameFences;
     private readonly List<Semaphore>[] _frameSemaphores;
     private readonly LogicalDevice _logicalDevice;
@@ -32,20 +28,15 @@ public class RenderGraph : IDisposable
     private readonly uint _maxResources;
     private readonly Dictionary<string, ResourceHandle> _namedResources;
     private readonly uint _numFrames;
-
     private readonly List<RenderPassData> _passes;
-
     private readonly List<RenderGraphResourceEntry> _resources;
     private readonly ulong[] _signalSemaphoreHandles;
     private readonly Semaphore[] _signalSemaphoresBuffer;
     private readonly List<Buffer>[] _transientBuffers;
-
     private readonly List<Texture>[] _transientTextures;
     private readonly ulong[] _waitSemaphoreHandles;
-
     private readonly Semaphore[] _waitSemaphoresBuffer;
     private GCHandle _commandListPin;
-
     private bool _disposed;
     private bool _isCompiled;
     private bool _isFrameActive;
@@ -53,7 +44,7 @@ public class RenderGraph : IDisposable
     private int _resourceCount;
     private GCHandle _signalSemaphorePin;
     private GCHandle _waitSemaphorePin;
-    
+
     public RenderGraph(RenderGraphDesc desc)
     {
         _logicalDevice = desc.LogicalDevice;
@@ -61,7 +52,6 @@ public class RenderGraph : IDisposable
         _numFrames = desc.NumFrames;
         _maxPasses = RenderGraphDesc.MaxPasses;
         _maxResources = RenderGraphDesc.MaxResources;
-
         ResourceTracking = desc.ResourceTracking;
 
         _resources = new List<RenderGraphResourceEntry>((int)_maxResources);
@@ -77,8 +67,6 @@ public class RenderGraph : IDisposable
         {
             _passes.Add(new RenderPassData { Index = i });
         }
-
-        _executionOrder = new List<int>((int)_maxPasses);
 
         _commandListPools = new CommandListPool[_numFrames];
         _frameSemaphores = new List<Semaphore>[_numFrames];
@@ -112,7 +100,6 @@ public class RenderGraph : IDisposable
         _commandListPin = GCHandle.Alloc(_commandListHandles, GCHandleType.Pinned);
         _waitSemaphorePin = GCHandle.Alloc(_waitSemaphoreHandles, GCHandleType.Pinned);
         _signalSemaphorePin = GCHandle.Alloc(_signalSemaphoreHandles, GCHandleType.Pinned);
-        _algorithmQueue = new Queue<int>((int)_maxPasses);
         _cachedCommandLists = new CommandList[_numFrames][];
         for (var i = 0; i < _numFrames; i++)
         {
@@ -121,11 +108,8 @@ public class RenderGraph : IDisposable
     }
 
     public uint Width { get; private set; }
-
     public uint Height { get; private set; }
-
     public uint CurrentFrameIndex { get; private set; }
-
     public ResourceTracking ResourceTracking { get; }
 
     public void Dispose()
@@ -136,7 +120,6 @@ public class RenderGraph : IDisposable
         }
 
         _disposed = true;
-
         WaitIdle();
 
         for (var i = 0; i < _numFrames; i++)
@@ -289,7 +272,6 @@ public class RenderGraph : IDisposable
         return _namedResources.TryGetValue(name, out var handle) ? handle : ResourceHandle.Invalid;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Texture GetTexture(ResourceHandle handle)
     {
         if (!handle.IsValid || handle.Index >= _resourceCount)
@@ -306,7 +288,6 @@ public class RenderGraph : IDisposable
         return entry.Texture ?? throw new InvalidOperationException("Resource is not a texture or not allocated");
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Buffer GetBuffer(ResourceHandle handle)
     {
         if (!handle.IsValid || handle.Index >= _resourceCount)
@@ -351,8 +332,7 @@ public class RenderGraph : IDisposable
 
     public void AddPass(string name, RenderPassExecuteDelegate execute)
     {
-        AddPass(name, static (ref RenderPassSetupContext _, ref PassBuilder builder) => { builder.HasSideEffects(); },
-            execute);
+        AddPass(name, static (ref RenderPassSetupContext _, ref PassBuilder _) => { }, execute);
     }
 
     public ResourceHandle AddExternalPass(string name, ExternalPassExecuteDelegate execute,
@@ -369,11 +349,9 @@ public class RenderGraph : IDisposable
         passData.Name = name;
         passData.ExternalExecute = execute;
         passData.IsExternal = true;
-        passData.HasSideEffects = true;
 
         var outputHandle = CreateTransientTexture(outputDesc);
         passData.ExternalOutputHandle = outputHandle;
-        UpdateResourceLifetime(outputHandle, _passCount);
 
         _passCount++;
         return outputHandle;
@@ -393,7 +371,6 @@ public class RenderGraph : IDisposable
         passData.Name = name;
         passData.ExternalExecute = execute;
         passData.IsExternal = true;
-        passData.HasSideEffects = true;
 
         var setupContext = new RenderPassSetupContext
         {
@@ -408,7 +385,6 @@ public class RenderGraph : IDisposable
 
         var outputHandle = CreateTransientTexture(outputDesc);
         passData.ExternalOutputHandle = outputHandle;
-        UpdateResourceLifetime(outputHandle, _passCount - 1);
 
         _passCount++;
         return outputHandle;
@@ -439,22 +415,6 @@ public class RenderGraph : IDisposable
         return null;
     }
 
-    internal void UpdateResourceLifetime(ResourceHandle handle, int passIndex)
-    {
-        if (!handle.IsValid || handle.Index >= _resourceCount)
-        {
-            return;
-        }
-
-        var entry = _resources[(int)handle.Index];
-        if (entry.FirstPassIndex < 0)
-        {
-            entry.FirstPassIndex = passIndex;
-        }
-
-        entry.LastPassIndex = passIndex;
-    }
-
     public void Compile()
     {
         if (!_isFrameActive)
@@ -467,9 +427,6 @@ public class RenderGraph : IDisposable
             return;
         }
 
-        BuildDependencyGraph();
-        CullPasses();
-        TopologicalSort();
         AllocateTransientResources();
         AssignCommandLists();
         _isCompiled = true;
@@ -487,13 +444,9 @@ public class RenderGraph : IDisposable
             Compile();
         }
 
-        for (var i = 0; i < _executionOrder.Count; i++)
+        for (var i = 0; i < _passCount; i++)
         {
-            var passData = _passes[_executionOrder[i]];
-            if (passData.IsCulled)
-            {
-                continue;
-            }
+            var passData = _passes[i];
 
             if (passData.IsExternal)
             {
@@ -546,143 +499,6 @@ public class RenderGraph : IDisposable
         _resourceCount = 0;
         _namedResources.Clear();
         _passCount = 0;
-        _executionOrder.Clear();
-    }
-
-    private void BuildDependencyGraph()
-    {
-        for (var i = 0; i < _passCount; i++)
-        {
-            _passes[i].DependsOnPasses.Clear();
-            _passes[i].DependentPasses.Clear();
-        }
-
-        Span<int> lastWriter = stackalloc int[_resourceCount];
-        lastWriter.Fill(-1);
-
-        for (var passIdx = 0; passIdx < _passCount; passIdx++)
-        {
-            var pass = _passes[passIdx];
-
-            foreach (var input in pass.Inputs)
-            {
-                var writerPass = lastWriter[(int)input.Handle.Index];
-                if (writerPass >= 0 && writerPass != passIdx && !pass.DependsOnPasses.Contains(writerPass))
-                {
-                    pass.DependsOnPasses.Add(writerPass);
-                    _passes[writerPass].DependentPasses.Add(passIdx);
-                }
-            }
-
-            foreach (var output in pass.Outputs)
-            {
-                lastWriter[(int)output.Handle.Index] = passIdx;
-            }
-        }
-    }
-
-    private void CullPasses()
-    {
-        for (var i = 0; i < _passCount; i++)
-        {
-            _passes[i].IsCulled = true;
-        }
-
-        _algorithmQueue.Clear();
-        for (var i = 0; i < _passCount; i++)
-        {
-            if (_passes[i].HasSideEffects)
-            {
-                _passes[i].IsCulled = false;
-                _algorithmQueue.Enqueue(i);
-            }
-        }
-
-        while (_algorithmQueue.Count > 0)
-        {
-            var passIdx = _algorithmQueue.Dequeue();
-            foreach (var depIdx in _passes[passIdx].DependsOnPasses)
-            {
-                if (_passes[depIdx].IsCulled)
-                {
-                    _passes[depIdx].IsCulled = false;
-                    _algorithmQueue.Enqueue(depIdx);
-                }
-            }
-        }
-    }
-
-    private void TopologicalSort()
-    {
-        _executionOrder.Clear();
-
-        Span<int> inDegree = stackalloc int[_passCount];
-        for (var i = 0; i < _passCount; i++)
-        {
-            if (_passes[i].IsCulled)
-            {
-                inDegree[i] = -1;
-                continue;
-            }
-
-            var count = 0;
-            foreach (var dep in _passes[i].DependsOnPasses)
-            {
-                if (!_passes[dep].IsCulled)
-                {
-                    count++;
-                }
-            }
-
-            inDegree[i] = count;
-        }
-
-        _algorithmQueue.Clear();
-        for (var i = 0; i < _passCount; i++)
-        {
-            if (inDegree[i] == 0)
-            {
-                _algorithmQueue.Enqueue(i);
-            }
-        }
-
-        var order = 0;
-        while (_algorithmQueue.Count > 0)
-        {
-            var passIdx = _algorithmQueue.Dequeue();
-            var pass = _passes[passIdx];
-
-            pass.ExecutionOrder = order++;
-            _executionOrder.Add(passIdx);
-
-            foreach (var depIdx in pass.DependentPasses)
-            {
-                if (_passes[depIdx].IsCulled)
-                {
-                    continue;
-                }
-
-                inDegree[depIdx]--;
-                if (inDegree[depIdx] == 0)
-                {
-                    _algorithmQueue.Enqueue(depIdx);
-                }
-            }
-        }
-
-        var culledCount = 0;
-        for (var i = 0; i < _passCount; i++)
-        {
-            if (_passes[i].IsCulled)
-            {
-                culledCount++;
-            }
-        }
-
-        if (_executionOrder.Count < _passCount - culledCount)
-        {
-            throw new InvalidOperationException("Circular dependency detected in render graph");
-        }
     }
 
     private void AllocateTransientResources()
@@ -695,7 +511,7 @@ public class RenderGraph : IDisposable
         for (var i = 0; i < _resourceCount; i++)
         {
             var entry = _resources[i];
-            if (!entry.IsTransient || entry.FirstPassIndex < 0 || _passes[entry.FirstPassIndex].IsCulled)
+            if (!entry.IsTransient)
             {
                 continue;
             }
@@ -761,10 +577,10 @@ public class RenderGraph : IDisposable
         var semaphores = _frameSemaphores[CurrentFrameIndex];
 
         var cmdIndex = 0;
-        for (var i = 0; i < _executionOrder.Count; i++)
+        for (var i = 0; i < _passCount; i++)
         {
-            var pass = _passes[_executionOrder[i]];
-            if (pass.IsCulled)
+            var pass = _passes[i];
+            if (pass.IsExternal)
             {
                 continue;
             }
@@ -778,41 +594,34 @@ public class RenderGraph : IDisposable
     private void SubmitCommandLists()
     {
         var lastSubmittedIndex = -1;
-        for (var i = _executionOrder.Count - 1; i >= 0; i--)
+        for (var i = _passCount - 1; i >= 0; i--)
         {
-            var pass = _passes[_executionOrder[i]];
-            if (pass is { IsCulled: false, IsExternal: false, CommandList: not null })
+            var pass = _passes[i];
+            if (pass is { IsExternal: false, CommandList: not null })
             {
                 lastSubmittedIndex = i;
                 break;
             }
         }
 
-        for (var i = 0; i < _executionOrder.Count; i++)
+        Semaphore? prevSemaphore = null;
+
+        for (var i = 0; i < _passCount; i++)
         {
-            var pass = _passes[_executionOrder[i]];
-            if (pass.IsCulled || pass.IsExternal || pass.CommandList == null)
+            var pass = _passes[i];
+            if (pass.IsExternal || pass.CommandList == null)
             {
+                if (pass is { IsExternal: true })
+                {
+                    prevSemaphore = pass.ExternalResult.Semaphore;
+                }
                 continue;
             }
 
             var waitCount = 0;
-            foreach (var depIdx in pass.DependsOnPasses)
+            if (prevSemaphore != null)
             {
-                var depPass = _passes[depIdx];
-                if (depPass.IsCulled)
-                {
-                    continue;
-                }
-
-                if (depPass is { IsExternal: true, ExternalResult.Semaphore: not null })
-                {
-                    _waitSemaphoresBuffer[waitCount++] = depPass.ExternalResult.Semaphore;
-                }
-                else if (depPass is { IsExternal: false, CompletionSemaphore: not null })
-                {
-                    _waitSemaphoresBuffer[waitCount++] = depPass.CompletionSemaphore;
-                }
+                _waitSemaphoresBuffer[waitCount++] = prevSemaphore;
             }
 
             _signalSemaphoresBuffer[0] = pass.CompletionSemaphore!;
@@ -840,6 +649,7 @@ public class RenderGraph : IDisposable
             }
 
             _commandQueue.ExecuteCommandLists(submitDesc);
+            prevSemaphore = pass.CompletionSemaphore;
         }
     }
 

@@ -1,34 +1,30 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using ECS;
 
 namespace Graphics.RenderGraph;
 
 /// <summary>
-/// A render graph resource handle.
+/// A render graph resource handle with generational index pattern.
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-[method: MethodImpl(MethodImplOptions.AggressiveInlining)]
 public readonly struct ResourceHandle(uint index, uint version) : IEquatable<ResourceHandle>
 {
-    private readonly Handle<ResourceTag> _handle = new(index, version);
-
     public uint Index
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handle.Index;
-    }
+        get;
+    } = index;
 
     public uint Version
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handle.Generation;
-    }
+        get;
+    } = version;
 
     public bool IsValid
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _handle.IsValid;
+        get => Version != 0;
     }
 
     public static ResourceHandle Invalid
@@ -38,12 +34,12 @@ public readonly struct ResourceHandle(uint index, uint version) : IEquatable<Res
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Equals(ResourceHandle other) => _handle.Equals(other._handle);
+    public bool Equals(ResourceHandle other) => Index == other.Index && Version == other.Version;
 
     public override bool Equals(object? obj) => obj is ResourceHandle other && Equals(other);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public override int GetHashCode() => _handle.GetHashCode();
+    public override int GetHashCode() => HashCode.Combine(Index, Version);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool operator ==(ResourceHandle left, ResourceHandle right) => left.Equals(right);

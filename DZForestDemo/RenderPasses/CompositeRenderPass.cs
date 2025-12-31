@@ -13,7 +13,7 @@ public sealed class CompositeRenderPass : IDisposable
 
     private readonly Texture?[] _boundSceneTextures;
     private readonly Texture?[] _boundUiTextures;
-    private readonly GraphicsResource _ctx;
+    private readonly IGraphicsContext _ctx;
     private readonly Sampler _linearSampler;
     private readonly Pipeline _pipeline;
 
@@ -22,7 +22,7 @@ public sealed class CompositeRenderPass : IDisposable
 
     private bool _disposed;
 
-    public CompositeRenderPass(GraphicsResource ctx)
+    public CompositeRenderPass(IGraphicsContext ctx)
     {
         _ctx = ctx;
         var logicalDevice = ctx.LogicalDevice;
@@ -124,14 +124,6 @@ public sealed class CompositeRenderPass : IDisposable
         Viewport viewport)
     {
         renderGraph.AddPass("Composite",
-            (ref RenderPassSetupContext ctx, ref PassBuilder builder) =>
-            {
-                builder.ReadTexture(sceneRt);
-                builder.ReadTexture(uiRt);
-                builder.ReadTexture(debugRt);
-                builder.WriteTexture(swapchainRt);
-                builder.HasSideEffects();
-            },
             (ref RenderPassExecuteContext ctx) => { Execute(ref ctx, sceneRt, uiRt, debugRt, swapchainRt, viewport); });
     }
 

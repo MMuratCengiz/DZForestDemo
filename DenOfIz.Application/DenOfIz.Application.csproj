@@ -13,10 +13,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\DenOfIz.ECS\DenOfIz.ECS.csproj"/>
         <ProjectReference Include="..\DenOfIz.Graphics\DenOfIz.Graphics.csproj"/>
         <ProjectReference Include="..\DenOfIz.Physics\DenOfIz.Physics.csproj"/>
         <ProjectReference Include="..\DenOfIz.RuntimeAssets\DenOfIz.RuntimeAssets.csproj"/>
+        <ProjectReference Include="..\DenOfIz.World\DenOfIz.World.csproj" />
     </ItemGroup>
 
 </Project>

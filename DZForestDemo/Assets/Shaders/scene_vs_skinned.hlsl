@@ -40,24 +40,12 @@ cbuffer BoneMatrices : register(b0, space3)
 
 float4x4 ComputeSkinMatrix(float4 weights, uint4 indices)
 {
-    // DEBUG: Return identity to test if skinning math works
-    float4x4 identity = float4x4(
-        1, 0, 0, 0,
-        0, 1, 0, 0,
-        0, 0, 1, 0,
-        0, 0, 0, 1
-    );
-    return identity;
-
-    /*
     float4x4 skinMatrix =
         Bones[indices.x] * weights.x +
         Bones[indices.y] * weights.y +
         Bones[indices.z] * weights.z +
         Bones[indices.w] * weights.w;
-
     return skinMatrix;
-    */
 }
 
 PSInput VSMain(VSInput input, uint instanceID : SV_InstanceID)
@@ -66,9 +54,24 @@ PSInput VSMain(VSInput input, uint instanceID : SV_InstanceID)
 
     InstanceData inst = Instances[instanceID];
 
-    // DEBUG: Bypass ALL skinning - use input directly
-    float3 skinnedPos = input.Position;
-    float3 skinnedNormal = input.Normal;
+    float totalWeight = input.BoneWeights.x + input.BoneWeights.y +
+                        input.BoneWeights.z + input.BoneWeights.w;
+
+    float3 skinnedPos;
+    float3 skinnedNormal;
+
+    if (totalWeight > 0.001f)
+    {
+        float4x4 skinMatrix = ComputeSkinMatrix(input.BoneWeights, input.BoneIndices);
+        skinnedPos = mul(float4(input.Position, 1.0f), skinMatrix).xyz;
+        skinnedNormal = mul(input.Normal, (float3x3)skinMatrix);
+    }
+    else
+    {
+        skinnedPos = input.Position;
+        skinnedNormal = input.Normal;
+    }
+
 
     float4 worldPos = mul(float4(skinnedPos, 1.0f), inst.Model);
     output.Position = mul(worldPos, ViewProjection);

@@ -1,9 +1,8 @@
 using System.Runtime.CompilerServices;
-using ECS;
 
 namespace RuntimeAssets;
 
-public sealed class AnimationResource : IResource, IDisposable
+public sealed class AnimationResource : IDisposable
 {
     private readonly RuntimeSkeletonStore _skeletonStore = new();
     private bool _disposed;

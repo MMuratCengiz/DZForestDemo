@@ -4,30 +4,6 @@ using Semaphore = DenOfIz.Semaphore;
 
 namespace Graphics.RenderGraph;
 
-public struct ResourceDependency
-{
-    public ResourceHandle Handle;
-    public ResourceAccess Access;
-    public uint UsageFlags;
-
-    public static ResourceDependency Read(ResourceHandle handle,
-        uint usageFlags = (uint)ResourceUsageFlagBits.ShaderResource)
-    {
-        return new ResourceDependency { Handle = handle, Access = ResourceAccess.Read, UsageFlags = usageFlags };
-    }
-
-    public static ResourceDependency Write(ResourceHandle handle,
-        uint usageFlags = (uint)ResourceUsageFlagBits.RenderTarget)
-    {
-        return new ResourceDependency { Handle = handle, Access = ResourceAccess.Write, UsageFlags = usageFlags };
-    }
-
-    public static ResourceDependency ReadWrite(ResourceHandle handle, uint usageFlags)
-    {
-        return new ResourceDependency { Handle = handle, Access = ResourceAccess.ReadWrite, UsageFlags = usageFlags };
-    }
-}
-
 public ref struct RenderPassSetupContext
 {
     public RenderGraph Graph;
@@ -97,122 +73,28 @@ public readonly ref struct PassBuilder
         _graph = graph;
     }
 
-    public void ReadTexture(ResourceHandle handle, uint usageFlags = (uint)ResourceUsageFlagBits.ShaderResource)
-    {
-        if (!handle.IsValid)
-        {
-            return;
-        }
-
-        _passData.AddInput(ResourceDependency.Read(handle, usageFlags));
-        _graph.UpdateResourceLifetime(handle, _passData.Index);
-    }
-
-    public void WriteTexture(ResourceHandle handle, uint usageFlags = (uint)ResourceUsageFlagBits.RenderTarget)
-    {
-        if (!handle.IsValid)
-        {
-            return;
-        }
-
-        _passData.AddOutput(ResourceDependency.Write(handle, usageFlags));
-        _graph.UpdateResourceLifetime(handle, _passData.Index);
-    }
-
-    public void ReadWriteTexture(ResourceHandle handle, uint usageFlags)
-    {
-        if (!handle.IsValid)
-        {
-            return;
-        }
-
-        _passData.AddInput(ResourceDependency.ReadWrite(handle, usageFlags));
-        _passData.AddOutput(ResourceDependency.ReadWrite(handle, usageFlags));
-        _graph.UpdateResourceLifetime(handle, _passData.Index);
-    }
-
-    public void ReadBuffer(ResourceHandle handle, uint usageFlags = (uint)ResourceUsageFlagBits.ShaderResource)
-    {
-        if (!handle.IsValid)
-        {
-            return;
-        }
-
-        _passData.AddInput(ResourceDependency.Read(handle, usageFlags));
-        _graph.UpdateResourceLifetime(handle, _passData.Index);
-    }
-
-    public void WriteBuffer(ResourceHandle handle, uint usageFlags = (uint)ResourceUsageFlagBits.UnorderedAccess)
-    {
-        if (!handle.IsValid)
-        {
-            return;
-        }
-
-        _passData.AddOutput(ResourceDependency.Write(handle, usageFlags));
-        _graph.UpdateResourceLifetime(handle, _passData.Index);
-    }
-
     public ResourceHandle CreateTransientTexture(TransientTextureDesc desc)
     {
-        var handle = _graph.CreateTransientTexture(desc);
-        _graph.UpdateResourceLifetime(handle, _passData.Index);
-        return handle;
+        return _graph.CreateTransientTexture(desc);
     }
 
     public ResourceHandle CreateTransientBuffer(TransientBufferDesc desc)
     {
-        var handle = _graph.CreateTransientBuffer(desc);
-        _graph.UpdateResourceLifetime(handle, _passData.Index);
-        return handle;
-    }
-
-    public void HasSideEffects()
-    {
-        _passData.HasSideEffects = true;
-    }
-
-    public void UseAsyncCompute()
-    {
-        _passData.QueueType = QueueType.Compute;
+        return _graph.CreateTransientBuffer(desc);
     }
 }
 
 internal class RenderPassData
 {
-    private readonly List<ResourceDependency> _inputs = new(8);
-    private readonly List<ResourceDependency> _outputs = new(8);
-    public readonly List<int> DependentPasses = new(8);
-    public readonly List<int> DependsOnPasses = new(8);
     public CommandList? CommandList;
-
     public Semaphore? CompletionSemaphore;
     public RenderPassExecuteDelegate? Execute;
-
-    public int ExecutionOrder = -1;
     public ExternalPassExecuteDelegate? ExternalExecute;
-
     public ResourceHandle ExternalOutputHandle;
     public ExternalPassResult ExternalResult;
-    public bool HasSideEffects;
     public int Index;
-    public bool IsCulled;
     public bool IsExternal;
     public string Name = "";
-    public QueueType QueueType = QueueType.Graphics;
-
-    public IReadOnlyList<ResourceDependency> Inputs => _inputs;
-    public IReadOnlyList<ResourceDependency> Outputs => _outputs;
-
-    public void AddInput(ResourceDependency dep)
-    {
-        _inputs.Add(dep);
-    }
-
-    public void AddOutput(ResourceDependency dep)
-    {
-        _outputs.Add(dep);
-    }
 
     public void Reset()
     {
@@ -220,14 +102,6 @@ internal class RenderPassData
         Execute = null;
         ExternalExecute = null;
         IsExternal = false;
-        QueueType = QueueType.Graphics;
-        HasSideEffects = false;
-        IsCulled = false;
-        _inputs.Clear();
-        _outputs.Clear();
-        ExecutionOrder = -1;
-        DependsOnPasses.Clear();
-        DependentPasses.Clear();
         CompletionSemaphore = null;
         CommandList = null;
         ExternalOutputHandle = ResourceHandle.Invalid;

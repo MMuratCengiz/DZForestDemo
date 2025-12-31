@@ -5,7 +5,7 @@ using UIFramework;
 
 namespace DZForestDemo.RenderPasses;
 
-public sealed class UiRenderPass(GraphicsResource ctx, StepTimer stepTimer) : IDisposable
+public sealed class UiRenderPass(IGraphicsContext ctx, StepTimer stepTimer) : IDisposable
 {
     private readonly UiContext _ui = new(new UiContextDesc
     {

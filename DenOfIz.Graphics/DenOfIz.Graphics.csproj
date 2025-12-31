@@ -14,7 +14,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\DenOfIz.ECS\DenOfIz.ECS.csproj"/>
+        <ProjectReference Include="..\DenOfIz.Tasks\DenOfIz.Tasks.csproj" />
     </ItemGroup>
 
 </Project>

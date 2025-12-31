@@ -5,7 +5,7 @@ using Graphics.RenderGraph;
 
 namespace DZForestDemo.RenderPasses;
 
-public sealed class DebugRenderPass(GraphicsResource ctx) : IDisposable
+public sealed class DebugRenderPass(IGraphicsContext ctx) : IDisposable
 {
     private readonly FrameDebugRenderer _debugRenderer = new(new FrameDebugRendererDesc
     {
@@ -53,11 +53,6 @@ public sealed class DebugRenderPass(GraphicsResource ctx) : IDisposable
         var viewport = ctx.SwapChain.GetViewport();
 
         renderGraph.AddPass("Debug",
-            (ref RenderPassSetupContext ctx, ref PassBuilder builder) =>
-            {
-                builder.WriteTexture(debugRt);
-                builder.HasSideEffects();
-            },
             (ref RenderPassExecuteContext ctx) => { Execute(ref ctx, debugRt, viewport); });
 
         return debugRt;
