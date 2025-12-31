@@ -6,8 +6,8 @@ public class TaskGraph
     public const int MaxEdges = 1024;
 
     internal readonly ITask?[] Tasks = new ITask?[MaxTasks];
-    internal readonly int[] EdgeFrom = new int[MaxEdges];
-    internal readonly int[] EdgeTo = new int[MaxEdges];
+    private readonly int[] _edgeFrom = new int[MaxEdges];
+    private readonly int[] _edgeTo = new int[MaxEdges];
     private readonly int[] _inDegree = new int[MaxTasks];
     private readonly int[] _executionOrder = new int[MaxTasks];
     private readonly int[] _adjacencyOffset = new int[MaxTasks + 1];
@@ -15,19 +15,25 @@ public class TaskGraph
     private readonly int[] _queue = new int[MaxTasks];
 
     internal int TaskCount;
-    internal int EdgeCount;
     private int _executionCount;
     private bool _isCompiled;
 
-    public void Clear()
+    private int _edgeCount;
+
+    internal int EdgeCount => _edgeCount;
+    internal ReadOnlySpan<int> EdgeFrom => new(_edgeFrom, 0, _edgeCount);
+    internal ReadOnlySpan<int> EdgeTo => new(_edgeTo, 0, _edgeCount);
+
+    public void Reset()
     {
         for (var i = 0; i < TaskCount; i++)
         {
             Tasks[i] = null;
             _inDegree[i] = 0;
         }
+
         TaskCount = 0;
-        EdgeCount = 0;
+        _edgeCount = 0;
         _executionCount = 0;
         _isCompiled = false;
     }
@@ -35,24 +41,23 @@ public class TaskGraph
     public TaskHandle Emplace(ITask task)
     {
         var id = TaskCount;
+        var handle = new TaskHandle(id);
+        task.Handle = handle;
         Tasks[id] = task;
         TaskCount++;
-        return new TaskHandle(id);
+        return handle;
     }
 
-    public TaskHandle Emplace(Action action)
+    public void Precede(ITask first, ITask second)
     {
-        var id = TaskCount;
-        Tasks[id] = new ActionTask(action);
-        TaskCount++;
-        return new TaskHandle(id);
+        Precede(first.Handle, second.Handle);
     }
 
     public void Precede(TaskHandle first, TaskHandle second)
     {
-        EdgeFrom[EdgeCount] = first.Index;
-        EdgeTo[EdgeCount] = second.Index;
-        EdgeCount++;
+        _edgeFrom[_edgeCount] = first.Index;
+        _edgeTo[_edgeCount] = second.Index;
+        _edgeCount++;
     }
 
     public void Precede(TaskHandle first, TaskHandle second, TaskHandle third)
@@ -70,9 +75,9 @@ public class TaskGraph
 
     public void Succeed(TaskHandle first, TaskHandle second)
     {
-        EdgeFrom[EdgeCount] = second.Index;
-        EdgeTo[EdgeCount] = first.Index;
-        EdgeCount++;
+        _edgeFrom[_edgeCount] = second.Index;
+        _edgeTo[_edgeCount] = first.Index;
+        _edgeCount++;
     }
 
     public void Succeed(TaskHandle first, TaskHandle second, TaskHandle third)
@@ -125,9 +130,9 @@ public class TaskGraph
             _adjacencyOffset[i] = 0;
         }
 
-        for (var e = 0; e < EdgeCount; e++)
+        for (var e = 0; e < _edgeCount; e++)
         {
-            _adjacencyOffset[EdgeFrom[e] + 1]++;
+            _adjacencyOffset[_edgeFrom[e] + 1]++;
         }
 
         for (var i = 1; i <= TaskCount; i++)
@@ -141,10 +146,10 @@ public class TaskGraph
             currentOffset[i] = _adjacencyOffset[i];
         }
 
-        for (var e = 0; e < EdgeCount; e++)
+        for (var e = 0; e < _edgeCount; e++)
         {
-            var from = EdgeFrom[e];
-            var to = EdgeTo[e];
+            var from = _edgeFrom[e];
+            var to = _edgeTo[e];
             _adjacency[currentOffset[from]++] = to;
         }
     }
@@ -156,9 +161,9 @@ public class TaskGraph
             _inDegree[i] = 0;
         }
 
-        for (var e = 0; e < EdgeCount; e++)
+        for (var e = 0; e < _edgeCount; e++)
         {
-            _inDegree[EdgeTo[e]]++;
+            _inDegree[_edgeTo[e]]++;
         }
 
         var queueHead = 0;

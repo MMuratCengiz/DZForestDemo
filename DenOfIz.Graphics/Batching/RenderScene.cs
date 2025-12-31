@@ -288,7 +288,7 @@ public sealed class RenderScene : IDisposable
         _freeList = new int[maxObjects];
 
         // Initialize free list
-        for (int i = 0; i < maxObjects; i++)
+        for (var i = 0; i < maxObjects; i++)
         {
             _freeList[i] = i + 1;
             _objects[i].Generation = 0;
@@ -300,7 +300,7 @@ public sealed class RenderScene : IDisposable
         // Bone matrices pool
         _boneMatricesPool = new Matrix4x4[maxSkinnedObjects][];
         _boneMatricesFreeList = new int[maxSkinnedObjects];
-        for (int i = 0; i < maxSkinnedObjects; i++)
+        for (var i = 0; i < maxSkinnedObjects; i++)
         {
             _boneMatricesPool[i] = new Matrix4x4[MaxBonesPerObject];
             _boneMatricesFreeList[i] = i + 1;
@@ -329,7 +329,7 @@ public sealed class RenderScene : IDisposable
             return RenderObjectHandle.Invalid;  // Pool exhausted
         }
 
-        int index = _freeListHead;
+        var index = _freeListHead;
         _freeListHead = _freeList[index];
 
         ref var obj = ref _objects[index];
@@ -551,7 +551,7 @@ public sealed class RenderScene : IDisposable
         }
 
         // Clear dirty flags
-        for (int i = 0; i < _maxObjects; i++)
+        for (var i = 0; i < _maxObjects; i++)
         {
             _objects[i].Dirty = 0;
         }
@@ -563,11 +563,11 @@ public sealed class RenderScene : IDisposable
     private void BuildBatches(ref FrameState frame)
     {
         // First pass: collect valid static and skinned object indices
-        int staticCount = 0;
+        var staticCount = 0;
         frame.SkinnedInstanceCount = 0;
         frame.SkinnedBoneMatricesCount = 0;
 
-        for (int i = 0; i < _maxObjects; i++)
+        for (var i = 0; i < _maxObjects; i++)
         {
             ref var obj = ref _objects[i];
             if (!obj.Mesh.IsValid)
@@ -590,7 +590,7 @@ public sealed class RenderScene : IDisposable
                     if (obj.SkinningDataIndex >= 0)
                     {
                         var bones = _boneMatricesPool[obj.SkinningDataIndex];
-                        int boneCount = Math.Min(bones.Length, MaxBonesPerObject);
+                        var boneCount = Math.Min(bones.Length, MaxBonesPerObject);
                         skinned.BoneCount = boneCount;
 
                         var dest = frame.SkinnedBoneMatrices.AsSpan(frame.SkinnedBoneMatricesCount, boneCount);
@@ -626,12 +626,12 @@ public sealed class RenderScene : IDisposable
             return;
         }
 
-        int batchStart = 0;
+        var batchStart = 0;
         var currentMesh = _objects[frame.SortedIndices[0]].Mesh;
 
-        for (int i = 0; i <= staticCount; i++)
+        for (var i = 0; i <= staticCount; i++)
         {
-            bool endBatch = i == staticCount;
+            var endBatch = i == staticCount;
             MeshId nextMesh = default;
 
             if (!endBatch)
@@ -643,14 +643,14 @@ public sealed class RenderScene : IDisposable
             if (endBatch)
             {
                 // Emit batch
-                int batchCount = i - batchStart;
+                var batchCount = i - batchStart;
                 frame.StaticBatches[frame.StaticBatchCount++] = new RenderBatch(
                     currentMesh,
                     frame.StaticInstanceCount,
                     batchCount);
 
                 // Emit instances for this batch
-                for (int j = batchStart; j < i; j++)
+                for (var j = batchStart; j < i; j++)
                 {
                     ref var obj = ref _objects[frame.SortedIndices[j]];
                     ref var inst = ref frame.StaticInstances[frame.StaticInstanceCount++];
@@ -674,11 +674,11 @@ public sealed class RenderScene : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void SortByMesh(Span<int> indices)
     {
-        for (int i = 1; i < indices.Length; i++)
+        for (var i = 1; i < indices.Length; i++)
         {
-            int key = indices[i];
-            uint keyMesh = _objects[key].Mesh.Index;
-            int j = i - 1;
+            var key = indices[i];
+            var keyMesh = _objects[key].Mesh.Index;
+            var j = i - 1;
 
             while (j >= 0 && _objects[indices[j]].Mesh.Index > keyMesh)
             {

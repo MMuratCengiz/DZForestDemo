@@ -5,7 +5,7 @@ using Graphics.RenderGraph;
 
 namespace DZForestDemo.RenderPasses;
 
-public sealed class DebugRenderPass(IGraphicsContext ctx) : IDisposable
+public sealed class DebugRenderPass(GraphicsContext ctx) : IDisposable
 {
     private readonly FrameDebugRenderer _debugRenderer = new(new FrameDebugRendererDesc
     {

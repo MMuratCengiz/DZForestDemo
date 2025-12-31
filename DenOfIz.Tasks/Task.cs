@@ -2,22 +2,13 @@ namespace DenOfIz.Tasks;
 
 public interface ITask
 {
+    TaskHandle Handle { get; set; }
     void Execute();
 }
 
-public readonly struct ActionTask(Action action) : ITask
+public struct TaskHandle(int index)
 {
-    public readonly Action Action = action;
-
-    public void Execute()
-    {
-        Action?.Invoke();
-    }
-}
-
-public readonly struct TaskHandle(int index)
-{
-    public readonly int Index = index;
+    public int Index = index;
 
     public static TaskHandle Invalid => new(-1);
 

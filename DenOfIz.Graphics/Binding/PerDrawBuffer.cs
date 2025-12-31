@@ -4,11 +4,6 @@ using Buffer = DenOfIz.Buffer;
 
 namespace Graphics.Binding;
 
-/// <summary>
-/// A ring buffer for per-draw data. Creates separate small buffers per draw slot,
-/// each with its own bind group. Shader reads from Instances[0] and each draw
-/// binds a different bind group pointing to its own buffer.
-/// </summary>
 public sealed class PerDrawBuffer<T> : IDisposable where T : unmanaged
 {
     private readonly Buffer[][] _buffers;
@@ -38,7 +33,6 @@ public sealed class PerDrawBuffer<T> : IDisposable where T : unmanaged
 
             for (var draw = 0; draw < maxDrawsPerFrame; draw++)
             {
-                // Create a small buffer for each draw slot
                 _buffers[frame][draw] = device.CreateBuffer(new BufferDesc
                 {
                     HeapType = HeapType.CpuGpu,
@@ -52,8 +46,6 @@ public sealed class PerDrawBuffer<T> : IDisposable where T : unmanaged
                     DebugName = StringView.Create($"PerDraw_{typeof(T).Name}_{frame}_{draw}")
                 });
                 _mappedPtrs[frame][draw] = _buffers[frame][draw].MapMemory();
-
-                // Create bind group pointing to this buffer
                 var bindGroup = device.CreateResourceBindGroup(new ResourceBindGroupDesc
                 {
                     RootSignature = rootSignature,
@@ -72,10 +64,6 @@ public sealed class PerDrawBuffer<T> : IDisposable where T : unmanaged
         _currentIndex[frameIndex] = 0;
     }
 
-    /// <summary>
-    /// Allocates a slot, writes the data to its buffer, and returns the bind group.
-    /// Bind this group and draw - shader reads from Instances[0].
-    /// </summary>
     public unsafe ResourceBindGroup Allocate(uint frameIndex, in T data)
     {
         var index = _currentIndex[frameIndex]++;

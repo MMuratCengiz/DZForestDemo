@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using DenOfIz;
 using Buffer = DenOfIz.Buffer;
 using Semaphore = DenOfIz.Semaphore;
@@ -18,7 +17,6 @@ public struct RenderGraphDesc(LogicalDevice logicalDevice, CommandQueue commandQ
 public class RenderGraph : IDisposable
 {
     private readonly CommandList[][] _cachedCommandLists;
-    private readonly ulong[] _commandListHandles;
     private readonly CommandListPool[] _commandListPools;
     private readonly CommandQueue _commandQueue;
     private readonly Fence[] _frameFences;
@@ -30,20 +28,18 @@ public class RenderGraph : IDisposable
     private readonly uint _numFrames;
     private readonly List<RenderPassData> _passes;
     private readonly List<RenderGraphResourceEntry> _resources;
-    private readonly ulong[] _signalSemaphoreHandles;
-    private readonly Semaphore[] _signalSemaphoresBuffer;
     private readonly List<Buffer>[] _transientBuffers;
     private readonly List<Texture>[] _transientTextures;
-    private readonly ulong[] _waitSemaphoreHandles;
-    private readonly Semaphore[] _waitSemaphoresBuffer;
-    private GCHandle _commandListPin;
+
+    // Reusable arrays for submit - avoids allocations per frame
+    private readonly CommandList[] _submitCommandLists;
+    private readonly Semaphore[] _submitWaitSemaphores;
+    private readonly Semaphore[] _submitSignalSemaphores;
+
     private bool _disposed;
     private bool _isCompiled;
-    private bool _isFrameActive;
     private int _passCount;
     private int _resourceCount;
-    private GCHandle _signalSemaphorePin;
-    private GCHandle _waitSemaphorePin;
 
     public RenderGraph(RenderGraphDesc desc)
     {
@@ -92,14 +88,11 @@ public class RenderGraph : IDisposable
             _transientBuffers[i] = new List<Buffer>(32);
         }
 
-        _waitSemaphoresBuffer = new Semaphore[_maxPasses];
-        _signalSemaphoresBuffer = new Semaphore[1];
-        _commandListHandles = new ulong[1];
-        _waitSemaphoreHandles = new ulong[_maxPasses];
-        _signalSemaphoreHandles = new ulong[1];
-        _commandListPin = GCHandle.Alloc(_commandListHandles, GCHandleType.Pinned);
-        _waitSemaphorePin = GCHandle.Alloc(_waitSemaphoreHandles, GCHandleType.Pinned);
-        _signalSemaphorePin = GCHandle.Alloc(_signalSemaphoreHandles, GCHandleType.Pinned);
+        // Reusable arrays for submit calls
+        _submitCommandLists = new CommandList[1];
+        _submitWaitSemaphores = new Semaphore[_maxPasses];
+        _submitSignalSemaphores = new Semaphore[1];
+
         _cachedCommandLists = new CommandList[_numFrames][];
         for (var i = 0; i < _numFrames; i++)
         {
@@ -143,21 +136,6 @@ public class RenderGraph : IDisposable
             _commandListPools[i].Dispose();
         }
 
-        if (_commandListPin.IsAllocated)
-        {
-            _commandListPin.Free();
-        }
-
-        if (_waitSemaphorePin.IsAllocated)
-        {
-            _waitSemaphorePin.Free();
-        }
-
-        if (_signalSemaphorePin.IsAllocated)
-        {
-            _signalSemaphorePin.Free();
-        }
-
         GC.SuppressFinalize(this);
     }
 
@@ -169,17 +147,11 @@ public class RenderGraph : IDisposable
 
     public void BeginFrame(uint frameIndex)
     {
-        if (_isFrameActive)
-        {
-            throw new InvalidOperationException("Frame already active. Call Execute() first.");
-        }
-
         CurrentFrameIndex = frameIndex;
         _frameFences[CurrentFrameIndex].Wait();
         _frameFences[CurrentFrameIndex].Reset();
 
         ResetFrame();
-        _isFrameActive = true;
         _isCompiled = false;
     }
 
@@ -357,39 +329,6 @@ public class RenderGraph : IDisposable
         return outputHandle;
     }
 
-    public ResourceHandle AddExternalPass(string name, RenderPassSetupDelegate setup,
-        ExternalPassExecuteDelegate execute, TransientTextureDesc outputDesc)
-    {
-        if (_passCount >= _maxPasses)
-        {
-            throw new InvalidOperationException("Maximum pass count exceeded");
-        }
-
-        var passData = _passes[_passCount];
-        passData.Reset();
-        passData.Index = _passCount;
-        passData.Name = name;
-        passData.ExternalExecute = execute;
-        passData.IsExternal = true;
-
-        var setupContext = new RenderPassSetupContext
-        {
-            Graph = this,
-            Width = Width,
-            Height = Height,
-            FrameIndex = CurrentFrameIndex
-        };
-
-        var builder = new PassBuilder(passData, this);
-        setup(ref setupContext, ref builder);
-
-        var outputHandle = CreateTransientTexture(outputDesc);
-        passData.ExternalOutputHandle = outputHandle;
-
-        _passCount++;
-        return outputHandle;
-    }
-
     internal void SetExternalTexture(ResourceHandle handle, Texture texture)
     {
         if (!handle.IsValid || handle.Index >= _resourceCount)
@@ -401,27 +340,8 @@ public class RenderGraph : IDisposable
         entry.Texture = texture;
     }
 
-    internal Semaphore? GetExternalSemaphore(ResourceHandle handle)
-    {
-        for (var i = 0; i < _passCount; i++)
-        {
-            var pass = _passes[i];
-            if (pass.IsExternal && pass.ExternalOutputHandle == handle)
-            {
-                return pass.ExternalResult.Semaphore;
-            }
-        }
-
-        return null;
-    }
-
     public void Compile()
     {
-        if (!_isFrameActive)
-        {
-            throw new InvalidOperationException("No active frame. Call BeginFrame() first.");
-        }
-
         if (_isCompiled)
         {
             return;
@@ -434,11 +354,6 @@ public class RenderGraph : IDisposable
 
     public void Execute()
     {
-        if (!_isFrameActive)
-        {
-            throw new InvalidOperationException("No active frame. Call BeginFrame() first.");
-        }
-
         if (!_isCompiled)
         {
             Compile();
@@ -491,7 +406,6 @@ public class RenderGraph : IDisposable
         }
 
         SubmitCommandLists();
-        _isFrameActive = false;
     }
 
     private void ResetFrame()
@@ -611,7 +525,7 @@ public class RenderGraph : IDisposable
             var pass = _passes[i];
             if (pass.IsExternal || pass.CommandList == null)
             {
-                if (pass is { IsExternal: true })
+                if (pass.IsExternal)
                 {
                     prevSemaphore = pass.ExternalResult.Semaphore;
                 }
@@ -621,34 +535,20 @@ public class RenderGraph : IDisposable
             var waitCount = 0;
             if (prevSemaphore != null)
             {
-                _waitSemaphoresBuffer[waitCount++] = prevSemaphore;
+                _submitWaitSemaphores[waitCount++] = prevSemaphore;
             }
 
-            _signalSemaphoresBuffer[0] = pass.CompletionSemaphore!;
-            _commandListHandles[0] = pass.CommandList;
-            for (var w = 0; w < waitCount; w++)
-            {
-                _waitSemaphoreHandles[w] = _waitSemaphoresBuffer[w];
-            }
+            _submitCommandLists[0] = pass.CommandList;
+            _submitSignalSemaphores[0] = pass.CompletionSemaphore!;
 
-            _signalSemaphoreHandles[0] = pass.CompletionSemaphore!;
-            var commandListArray = CommandListArray.FromPinned(_commandListPin, 1);
-            var waitSemaphores = SemaphoreArray.FromPinned(_waitSemaphorePin, waitCount);
-            var signalSemaphores = SemaphoreArray.FromPinned(_signalSemaphorePin, 1);
+            var signalFence = i == lastSubmittedIndex ? _frameFences[CurrentFrameIndex] : null;
 
-            var submitDesc = new ExecuteCommandListsDesc
-            {
-                CommandLists = commandListArray,
-                WaitSemaphores = waitSemaphores,
-                SignalSemaphores = signalSemaphores
-            };
+            _commandQueue.ExecuteCommandLists(
+                _submitCommandLists.AsSpan(0, 1),
+                signalFence,
+                _submitWaitSemaphores.AsSpan(0, waitCount),
+                _submitSignalSemaphores.AsSpan(0, 1));
 
-            if (i == lastSubmittedIndex)
-            {
-                submitDesc.Signal = _frameFences[CurrentFrameIndex];
-            }
-
-            _commandQueue.ExecuteCommandLists(submitDesc);
             prevSemaphore = pass.CompletionSemaphore;
         }
     }

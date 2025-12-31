@@ -13,7 +13,7 @@ public sealed class CompositeRenderPass : IDisposable
 
     private readonly Texture?[] _boundSceneTextures;
     private readonly Texture?[] _boundUiTextures;
-    private readonly IGraphicsContext _ctx;
+    private readonly GraphicsContext _ctx;
     private readonly Sampler _linearSampler;
     private readonly Pipeline _pipeline;
 
@@ -22,7 +22,7 @@ public sealed class CompositeRenderPass : IDisposable
 
     private bool _disposed;
 
-    public CompositeRenderPass(IGraphicsContext ctx)
+    public CompositeRenderPass(GraphicsContext ctx)
     {
         _ctx = ctx;
         var logicalDevice = ctx.LogicalDevice;

@@ -255,7 +255,7 @@ float4 main(PSInput input) : SV_TARGET
         const float zn = 0.0f;
         const float zf = 1.0f;
 
-        _projectionMatrix = new Matrix4x4()
+        _projectionMatrix = new Matrix4x4
         {
             M11 = 2.0f / (viewport.Width - viewport.X),
             M12 = 0,
@@ -758,7 +758,7 @@ float4 main(PSInput input) : SV_TARGET
         {
             var uniformPtr = (ImGuiUniforms*)((byte*)_uniformBufferData + frameIndex * _alignedUniformSize);
             uniformPtr->Projection = _projectionMatrix;
-            uniformPtr->ScreenSize = new Vector4()
+            uniformPtr->ScreenSize = new Vector4
             {
                 X = _viewport.Width,
                 Y = _viewport.Height,
