@@ -36,6 +36,7 @@ public class RenderGraphV2 : IDisposable
             {
                 PresentPass!.Execute(ref Context, SwapChainImage!);
             }
+
             CommandList.End();
 
             Context.GraphicsContext.GraphicsCommandQueue.ExecuteCommandLists(
@@ -72,8 +73,8 @@ public class RenderGraphV2 : IDisposable
     private uint _frameIndex = 0;
     private uint _nextFrameIndex = 0;
 
-    public uint Width { get; set; }
-    public uint Height { get; set; }
+    public uint Width { get; private set; }
+    public uint Height { get; private set; }
 
     public RenderGraphV2(GraphicsContext context, int numThreads = 0, int numFrames = 3)
     {
@@ -103,8 +104,8 @@ public class RenderGraphV2 : IDisposable
     public void Execute(ReadOnlySpan<RenderPassV2> renderPasses, PresentPass presentPass)
     {
         _frameIndex = _nextFrameIndex;
-        _nextFrameIndex = (uint) ((_nextFrameIndex + 1) % _frames.Length);
-        
+        _nextFrameIndex = (uint)((_nextFrameIndex + 1) % _frames.Length);
+
         ref var frame = ref _frames[_frameIndex];
         frame.Fence.Wait();
 
@@ -128,9 +129,10 @@ public class RenderGraphV2 : IDisposable
 
         for (var i = 0; i < renderPasses.Length; i++)
         {
-            var (commandList, semaphore) = _commandListAllocator.GetCommandList(QueueType.Graphics, _frameIndex);
-
             var pass = renderPasses[i];
+            pass.Resize(Width, Height, _frameIndex, resources);
+
+            var (commandList, semaphore) = _commandListAllocator.GetCommandList(QueueType.Graphics, _frameIndex);
             var task = _taskPool[i];
             task.Reset();
             task.Pass = pass;
@@ -143,7 +145,7 @@ public class RenderGraphV2 : IDisposable
 
             foreach (var write in pass.Writes)
             {
-                writerLookup[write] = task;
+                writerLookup[write.Name] = task;
             }
         }
 
@@ -159,6 +161,8 @@ public class RenderGraphV2 : IDisposable
                 }
             }
         }
+
+        presentPass.Resize(Width, Height, _frameIndex, resources);
 
         var presentTaskIndex = renderPasses.Length;
         var (presentCommandList, presentSemaphore) =
@@ -178,6 +182,11 @@ public class RenderGraphV2 : IDisposable
 
         graph.Emplace(presentTask);
 
+        foreach (var write in presentPass.Writes)
+        {
+            writerLookup[write.Name] = presentTask;
+        }
+
         foreach (var read in presentPass.Reads)
         {
             if (writerLookup.TryGetValue(read, out var writer))
@@ -188,6 +197,18 @@ public class RenderGraphV2 : IDisposable
         }
 
         graph.Execute(_executor);
+    }
+
+    public void Resize(uint width, uint height)
+    {
+        if (Width == width && Height == height)
+        {
+            return;
+        }
+
+        _context.GraphicsCommandQueue.WaitIdle();
+        Width = width;
+        Height = height;
     }
 
     public void Dispose()

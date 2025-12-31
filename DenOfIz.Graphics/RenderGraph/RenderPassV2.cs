@@ -1,11 +1,13 @@
+using Graphics;
+
 namespace Graphics.RenderGraph;
 
-public abstract class RenderPassV2
+public abstract class RenderPassV2(GraphicsContext context) : RenderPassBase(context)
 {
-    public abstract string Name { get; }
+    internal void Execute(ref RenderPassContext ctx)
+    {
+        OnExecute(ref ctx);
+    }
 
-    public virtual ReadOnlySpan<string> Reads => [];
-    public virtual ReadOnlySpan<string> Writes => [];
-
-    public abstract void Execute(ref RenderPassContext ctx);
+    protected abstract void OnExecute(ref RenderPassContext ctx);
 }

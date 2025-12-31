@@ -17,4 +17,8 @@
         <ProjectReference Include="..\DenOfIz.Tasks\DenOfIz.Tasks.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="RootSignatures\" />
+    </ItemGroup>
+
 </Project>
