@@ -1,13 +1,12 @@
 using System.Runtime.CompilerServices;
 using DenOfIz;
-using RuntimeAssets.GltfModels;
+using RuntimeAssets.Store;
 
 namespace RuntimeAssets;
 
 public sealed class AssetResource(LogicalDevice device) : IDisposable
 {
     private readonly GeometryBuilder _geometryBuilder = new();
-    private readonly GltfLoader _gltfLoader = new();
     private readonly RuntimeMeshStore _meshStore = new(device);
     private readonly RuntimeTextureStore _textureStore = new(device);
 
@@ -74,6 +73,19 @@ public sealed class AssetResource(LogicalDevice device) : IDisposable
         return _meshStore.AddGeometry(geometry, _batchCopy!);
     }
 
+    public RuntimeMeshHandle AddMesh(string path)
+    {
+        EnsureUploading();
+        var resolvedPath = AssetPaths.ResolveMesh(path);
+        return _meshStore.AddFromFile(resolvedPath, _batchCopy!);
+    }
+
+    public RuntimeMeshHandle AddMeshAbsolute(string absolutePath)
+    {
+        EnsureUploading();
+        return _meshStore.AddFromFile(absolutePath, _batchCopy!);
+    }
+
     public RuntimeTextureHandle AddTexture(string path)
     {
         EnsureUploading();
@@ -85,48 +97,6 @@ public sealed class AssetResource(LogicalDevice device) : IDisposable
     {
         EnsureUploading();
         return _textureStore.Add(absolutePath, _batchCopy!);
-    }
-
-    public ModelLoadResult AddModel(string modelPath)
-    {
-        EnsureUploading();
-        var resolvedPath = AssetPaths.ResolveModel(modelPath);
-        return LoadModelInternal(resolvedPath);
-    }
-
-    public ModelLoadResult AddModelAbsolute(string absolutePath)
-    {
-        EnsureUploading();
-        return LoadModelInternal(absolutePath);
-    }
-
-    private ModelLoadResult LoadModelInternal(string path)
-    {
-        var gltfResult = _gltfLoader.Load(path);
-        if (!gltfResult.Success)
-        {
-            return ModelLoadResult.Failed(gltfResult.ErrorMessage ?? "Unknown error loading model");
-        }
-
-        var hasSkinning = gltfResult.Skins.Count > 0;
-        var meshType = hasSkinning ? MeshType.Skinned : MeshType.Static;
-
-        var meshHandles = new List<RuntimeMeshHandle>();
-        foreach (var meshData in gltfResult.Meshes)
-        {
-            var handle = _meshStore.Add(meshData, _batchCopy!, meshType);
-            meshHandles.Add(handle);
-        }
-
-        return new ModelLoadResult
-        {
-            Success = true,
-            MeshHandles = meshHandles,
-            Materials = gltfResult.Materials,
-            InverseBindMatrices = gltfResult.InverseBindMatrices,
-            Nodes = gltfResult.Nodes,
-            Skins = gltfResult.Skins
-        };
     }
 
     public void EndUpload()

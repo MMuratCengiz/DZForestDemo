@@ -1,5 +1,5 @@
 using DenOfIz;
-using RuntimeAssets.GltfModels;
+using RuntimeAssets.Store;
 
 namespace RuntimeAssets;
 
@@ -18,11 +18,11 @@ public sealed class AssetManager(LogicalDevice device) : IDisposable
     public RuntimeMeshHandle AddQuad(float width, float height) => _resource.AddQuad(width, height);
     public RuntimeMeshHandle AddGeometry(GeometryData geometry) => _resource.AddGeometry(geometry);
 
+    public RuntimeMeshHandle AddMesh(string path) => _resource.AddMesh(path);
+    public RuntimeMeshHandle AddMeshAbsolute(string absolutePath) => _resource.AddMeshAbsolute(absolutePath);
+
     public RuntimeTextureHandle AddTexture(string path) => _resource.AddTexture(path);
     public RuntimeTextureHandle AddTextureAbsolute(string absolutePath) => _resource.AddTextureAbsolute(absolutePath);
-
-    public ModelLoadResult AddModel(string modelPath) => _resource.AddModel(modelPath);
-    public ModelLoadResult AddModelAbsolute(string absolutePath) => _resource.AddModelAbsolute(absolutePath);
 
     public bool TryGetMesh(RuntimeMeshHandle handle, out RuntimeMesh mesh) => _resource.TryGetMesh(handle, out mesh);
     public ref readonly RuntimeMesh GetMeshRef(RuntimeMeshHandle handle) => ref _resource.GetMeshRef(handle);

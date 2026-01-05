@@ -95,7 +95,6 @@ public class Camera
         _targetPosition = position;
         OrbitTarget = lookAt;
 
-        // Calculate initial yaw and pitch from look direction
         var direction = Vector3.Normalize(lookAt - position);
         _currentYaw = MathF.Atan2(direction.X, direction.Z);
         _currentPitch = MathF.Asin(Math.Clamp(direction.Y, -1f, 1f));
@@ -141,7 +140,6 @@ public class Camera
 
     public void Update(float deltaTime)
     {
-        // Smooth rotation with proper angle wrapping for yaw
         _currentYaw = SmoothDampAngle(_currentYaw, _targetYaw, LookDamping, deltaTime);
         _currentPitch = SmoothDamp(_currentPitch, _targetPitch, LookDamping, deltaTime);
 
@@ -157,7 +155,6 @@ public class Camera
 
     private void UpdateFreeFly(float deltaTime)
     {
-        // Calculate movement direction in world space
         var moveDir = Vector3.Zero;
 
         if (_moveForward)

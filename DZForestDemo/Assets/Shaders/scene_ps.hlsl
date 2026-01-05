@@ -1,4 +1,4 @@
-#include "common/lighting.hlsl"
+#include "common/constants.hlsl"
 
 struct PSInput
 {
@@ -17,38 +17,12 @@ struct InstanceData
     float Roughness;
     float AmbientOcclusion;
     uint UseAlbedoTexture;
-};
-
-cbuffer FrameConstants : register(b0, space0)
-{
-    float4x4 ViewProjection;
-    float3 CameraPosition;
-    float Time;
-};
-
-cbuffer LightConstants : register(b1, space0)
-{
-    Light Lights[MAX_LIGHTS];
-    ShadowData Shadows[MAX_SHADOW_LIGHTS];
-    float3 AmbientSkyColor;
-    uint NumLights;
-    float3 AmbientGroundColor;
-    float AmbientIntensity;
-    uint NumShadows;
+    uint BoneOffset;
     uint _Pad0;
     uint _Pad1;
     uint _Pad2;
 };
 
-// space1 (PerCamera): All textures (SRVs only)
-Texture2D<float> ShadowAtlas : register(t0, space1);
-Texture2D<float4> AlbedoTexture : register(t1, space1);
-
-// space5 (Samplers): All samplers
-SamplerComparisonState ShadowSampler : register(s0, space5);
-SamplerState AlbedoSampler : register(s1, space5);
-
-// space3 (PerDraw): Instance data
 StructuredBuffer<InstanceData> Instances : register(t0, space3);
 
 float SampleShadow(int shadowIndex, float3 worldPos, float3 normal)
@@ -171,7 +145,7 @@ float4 PSMain(PSInput input) : SV_TARGET
     float alpha;
     if (inst.UseAlbedoTexture != 0)
     {
-        float4 texColor = AlbedoTexture.Sample(AlbedoSampler, input.TexCoord);
+        float4 texColor = AlbedoTexture.Sample(TextureSampler, input.TexCoord);
         albedo = texColor.rgb * inst.BaseColor.rgb; // Multiply texture with tint color
         alpha = texColor.a * inst.BaseColor.a;
     }

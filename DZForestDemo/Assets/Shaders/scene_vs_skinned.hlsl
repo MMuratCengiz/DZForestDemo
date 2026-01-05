@@ -1,9 +1,5 @@
-// Skinned mesh vertex shader
-// Applies skeletal animation transforms to vertices
-
 #include "common/vertex_input.hlsl"
-
-#define MAX_BONES 128
+#include "common/constants.hlsl"
 
 struct PSInput
 {
@@ -21,30 +17,23 @@ struct InstanceData
     float Metallic;
     float Roughness;
     float AmbientOcclusion;
-    float Padding;
-};
-
-cbuffer FrameConstants : register(b0, space0)
-{
-    float4x4 ViewProjection;
-    float3 CameraPosition;
-    float Time;
+    uint UseAlbedoTexture;
+    uint BoneOffset;
+    uint _Pad0;
+    uint _Pad1;
+    uint _Pad2;
 };
 
 StructuredBuffer<InstanceData> Instances : register(t0, space3);
+StructuredBuffer<float4x4> BoneMatrices : register(t1, space3);
 
-cbuffer BoneMatrices : register(b0, space3)
-{
-    float4x4 Bones[MAX_BONES];
-};
-
-float4x4 ComputeSkinMatrix(float4 weights, uint4 indices)
+float4x4 ComputeSkinMatrix(float4 weights, uint4 indices, uint boneOffset)
 {
     float4x4 skinMatrix =
-        Bones[indices.x] * weights.x +
-        Bones[indices.y] * weights.y +
-        Bones[indices.z] * weights.z +
-        Bones[indices.w] * weights.w;
+        BoneMatrices[boneOffset + indices.x] * weights.x +
+        BoneMatrices[boneOffset + indices.y] * weights.y +
+        BoneMatrices[boneOffset + indices.z] * weights.z +
+        BoneMatrices[boneOffset + indices.w] * weights.w;
     return skinMatrix;
 }
 
@@ -62,7 +51,7 @@ PSInput VSMain(VSInput input, uint instanceID : SV_InstanceID)
 
     if (totalWeight > 0.001f)
     {
-        float4x4 skinMatrix = ComputeSkinMatrix(input.BoneWeights, input.BoneIndices);
+        float4x4 skinMatrix = ComputeSkinMatrix(input.BoneWeights, input.BoneIndices, inst.BoneOffset);
         skinnedPos = mul(float4(input.Position, 1.0f), skinMatrix).xyz;
         skinnedNormal = mul(input.Normal, (float3x3)skinMatrix);
     }
@@ -71,7 +60,6 @@ PSInput VSMain(VSInput input, uint instanceID : SV_InstanceID)
         skinnedPos = input.Position;
         skinnedNormal = input.Normal;
     }
-
 
     float4 worldPos = mul(float4(skinnedPos, 1.0f), inst.Model);
     output.Position = mul(worldPos, ViewProjection);

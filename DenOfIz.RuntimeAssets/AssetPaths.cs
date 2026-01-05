@@ -33,6 +33,7 @@ public static class AssetPaths
 
     public static string Shaders => Path.Combine(ContentRoot, "Shaders");
     public static string Models => Path.Combine(ContentRoot, "Models");
+    public static string Meshes => Path.Combine(ContentRoot, "Meshes");
     public static string Textures => Path.Combine(ContentRoot, "Textures");
     public static string Animations => Path.Combine(ContentRoot, "Animations");
     public static string Skeletons => Path.Combine(ContentRoot, "Skeletons");
@@ -60,6 +61,16 @@ public static class AssetPaths
         }
 
         return Path.GetFullPath(Path.Combine(Models, modelPath));
+    }
+
+    public static string ResolveMesh(string meshPath)
+    {
+        if (Path.IsPathRooted(meshPath))
+        {
+            return meshPath;
+        }
+
+        return Path.GetFullPath(Path.Combine(Meshes, meshPath));
     }
 
     public static string ResolveTexture(string texturePath)

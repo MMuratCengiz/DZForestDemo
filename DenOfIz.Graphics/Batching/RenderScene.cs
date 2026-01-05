@@ -4,9 +4,6 @@ using System.Runtime.InteropServices;
 
 namespace Graphics.Batching;
 
-/// <summary>
-/// Render-side mesh identifier. Matches RuntimeMeshHandle layout for zero-cost conversion.
-/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public readonly record struct MeshId(uint Index, uint Generation)
 {
@@ -22,9 +19,6 @@ public readonly record struct MeshId(uint Index, uint Generation)
     public MeshId(uint index) : this(index, 0) { }
 }
 
-/// <summary>
-/// Render-side texture identifier. Matches RuntimeTextureHandle layout for zero-cost conversion.
-/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public readonly record struct TextureId(uint Index, uint Generation)
 {
@@ -40,10 +34,6 @@ public readonly record struct TextureId(uint Index, uint Generation)
     public TextureId(uint index) : this(index, 0) { }
 }
 
-/// <summary>
-/// Stable handle to a render object. Survives across frames until explicitly removed.
-/// Uses generational index pattern for safe reuse of slots.
-/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public readonly record struct RenderObjectHandle(int Index, int Generation)
 {
@@ -53,9 +43,6 @@ public readonly record struct RenderObjectHandle(int Index, int Generation)
     public bool IsValid() => Index >= 0;
 }
 
-/// <summary>
-/// Flags controlling render object behavior.
-/// </summary>
 [Flags]
 public enum RenderFlags : byte
 {
@@ -66,9 +53,6 @@ public enum RenderFlags : byte
     Static = 1 << 3,  // Hint: transform rarely changes
 }
 
-/// <summary>
-/// Material data for rendering. Renderer-owned, no external dependency.
-/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct RenderMaterial
 {
@@ -88,9 +72,6 @@ public struct RenderMaterial
     };
 }
 
-/// <summary>
-/// Description for creating a render object.
-/// </summary>
 public struct RenderObjectDesc
 {
     public MeshId Mesh;
@@ -99,9 +80,6 @@ public struct RenderObjectDesc
     public RenderFlags Flags;
 }
 
-/// <summary>
-/// View/camera data for rendering.
-/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct RenderView
 {
@@ -115,9 +93,6 @@ public struct RenderView
     private float _padding;
 }
 
-/// <summary>
-/// Light types supported by the renderer.
-/// </summary>
 public enum LightType : byte
 {
     Directional = 0,
@@ -125,9 +100,6 @@ public enum LightType : byte
     Spot = 2,
 }
 
-/// <summary>
-/// Light data for rendering.
-/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct RenderLight
 {
@@ -145,9 +117,6 @@ public struct RenderLight
     private byte _padding3;
 }
 
-/// <summary>
-/// Internal storage for a render object.
-/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 internal struct RenderObjectData
 {
@@ -163,9 +132,6 @@ internal struct RenderObjectData
     public int SkinningDataIndex;
 }
 
-/// <summary>
-/// Batch of instances sharing the same mesh, ready for instanced rendering.
-/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public readonly struct RenderBatch
 {
@@ -182,9 +148,6 @@ public readonly struct RenderBatch
     }
 }
 
-/// <summary>
-/// Instance data ready for GPU upload.
-/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct RenderInstance
 {
@@ -196,9 +159,6 @@ public struct RenderInstance
     public int AlbedoTextureIndex;
 }
 
-/// <summary>
-/// Skinned instance data - rendered individually (not batched).
-/// </summary>
 [StructLayout(LayoutKind.Sequential)]
 public struct SkinnedRenderInstance
 {
@@ -209,11 +169,6 @@ public struct SkinnedRenderInstance
     public int BoneCount;
 }
 
-/// <summary>
-/// Double-buffered render scene for frame-parallel rendering.
-/// Game thread writes to one buffer while render thread reads from the other.
-/// Zero-allocation design - all buffers are pre-allocated.
-/// </summary>
 public sealed class RenderScene : IDisposable
 {
     private const int DefaultMaxObjects = 16384;
@@ -221,56 +176,43 @@ public sealed class RenderScene : IDisposable
     private const int DefaultMaxSkinnedObjects = 256;
     private const int MaxBonesPerObject = 128;
 
-    // Double-buffered state
     private readonly FrameState[] _frames;
     private int _writeFrameIndex;
     private int _readFrameIndex;
 
-    // Object storage (shared between frames, generation-protected)
     private readonly RenderObjectData[] _objects;
     private readonly int[] _freeList;
     private int _freeListHead;
     private int _objectCount;
     private readonly int _maxObjects;
-
-    // Skinning data pool
     private readonly Matrix4x4[][] _boneMatricesPool;
     private readonly int[] _boneMatricesFreeList;
     private int _boneMatricesFreeHead;
 
     private bool _disposed;
 
-    /// <summary>
-    /// Per-frame state that gets double-buffered.
-    /// </summary>
     private sealed class FrameState(int maxObjects, int maxLights, int maxSkinnedObjects)
     {
-        // View data
         public RenderView MainView;
         public readonly RenderView[] ShadowViews = new RenderView[maxLights];
         public int ShadowViewCount;
 
-        // Lights
         public readonly RenderLight[] Lights = new RenderLight[maxLights];
         public int LightCount;
 
-        // Batching output (pre-allocated)
         public readonly RenderBatch[] StaticBatches = new RenderBatch[maxObjects];
         public int StaticBatchCount;
         public readonly RenderInstance[] StaticInstances = new RenderInstance[maxObjects];
         public int StaticInstanceCount;
 
-        // Skinned objects (not batched)
         public readonly SkinnedRenderInstance[] SkinnedInstances = new SkinnedRenderInstance[maxSkinnedObjects];
         public int SkinnedInstanceCount;
         public readonly Matrix4x4[] SkinnedBoneMatrices = new Matrix4x4[maxSkinnedObjects * MaxBonesPerObject];
         public int SkinnedBoneMatricesCount;
 
-        // Sorted indices for batching (avoid sorting objects array directly)
         public readonly int[] SortedIndices = new int[maxObjects];
         public int SortedCount;
 
-        // Dirty tracking
         public bool NeedsRebatch = true;
 
         public void Reset()
@@ -287,7 +229,6 @@ public sealed class RenderScene : IDisposable
         _objects = new RenderObjectData[maxObjects];
         _freeList = new int[maxObjects];
 
-        // Initialize free list
         for (var i = 0; i < maxObjects; i++)
         {
             _freeList[i] = i + 1;
@@ -297,7 +238,6 @@ public sealed class RenderScene : IDisposable
         _freeList[maxObjects - 1] = -1;  // End of list
         _freeListHead = 0;
 
-        // Bone matrices pool
         _boneMatricesPool = new Matrix4x4[maxSkinnedObjects][];
         _boneMatricesFreeList = new int[maxSkinnedObjects];
         for (var i = 0; i < maxSkinnedObjects; i++)
@@ -308,7 +248,6 @@ public sealed class RenderScene : IDisposable
         _boneMatricesFreeList[maxSkinnedObjects - 1] = -1;
         _boneMatricesFreeHead = 0;
 
-        // Double-buffered frame state
         _frames = new FrameState[2];
         _frames[0] = new FrameState(maxObjects, maxLights, maxSkinnedObjects);
         _frames[1] = new FrameState(maxObjects, maxLights, maxSkinnedObjects);
@@ -317,10 +256,6 @@ public sealed class RenderScene : IDisposable
         _readFrameIndex = 1;
     }
 
-    /// <summary>
-    /// Add a new render object to the scene.
-    /// Thread-safe for game thread during write phase.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public RenderObjectHandle Add(in RenderObjectDesc desc)
     {
@@ -355,9 +290,6 @@ public sealed class RenderScene : IDisposable
         return new RenderObjectHandle(index, obj.Generation);
     }
 
-    /// <summary>
-    /// Remove a render object from the scene.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Remove(RenderObjectHandle handle)
     {
@@ -385,10 +317,7 @@ public sealed class RenderScene : IDisposable
         _objectCount--;
         _frames[_writeFrameIndex].NeedsRebatch = true;
     }
-
-    /// <summary>
-    /// Check if a handle is still valid.
-    /// </summary>
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsValid(RenderObjectHandle handle)
     {
@@ -397,10 +326,7 @@ public sealed class RenderScene : IDisposable
                _objects[handle.Index].Generation == handle.Generation &&
                _objects[handle.Index].Mesh.IsValid;
     }
-
-    /// <summary>
-    /// Update the transform of a render object.
-    /// </summary>
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SetTransform(RenderObjectHandle handle, in Matrix4x4 transform)
     {
@@ -415,10 +341,7 @@ public sealed class RenderScene : IDisposable
         obj.Dirty = 1;
         _frames[_writeFrameIndex].NeedsRebatch = true;
     }
-
-    /// <summary>
-    /// Update the material of a render object.
-    /// </summary>
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SetMaterial(RenderObjectHandle handle, in RenderMaterial material)
     {
@@ -432,10 +355,7 @@ public sealed class RenderScene : IDisposable
         obj.Dirty = 1;
         _frames[_writeFrameIndex].NeedsRebatch = true;
     }
-
-    /// <summary>
-    /// Update bone matrices for a skinned object.
-    /// </summary>
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SetBoneMatrices(RenderObjectHandle handle, ReadOnlySpan<Matrix4x4> matrices)
     {
@@ -452,13 +372,10 @@ public sealed class RenderScene : IDisposable
 
         var dest = _boneMatricesPool[obj.SkinningDataIndex].AsSpan();
         var copyCount = Math.Min(matrices.Length, MaxBonesPerObject);
-        matrices.Slice(0, copyCount).CopyTo(dest);
+        matrices[..copyCount].CopyTo(dest);
         obj.Dirty = 1;
     }
-
-    /// <summary>
-    /// Get bone matrices for a skinned object (read access).
-    /// </summary>
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<Matrix4x4> GetBoneMatrices(RenderObjectHandle handle)
     {
@@ -475,29 +392,20 @@ public sealed class RenderScene : IDisposable
 
         return _boneMatricesPool[obj.SkinningDataIndex];
     }
-
-    /// <summary>
-    /// Set the main camera view.
-    /// </summary>
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void SetMainView(in RenderView view)
     {
         _frames[_writeFrameIndex].MainView = view;
     }
-
-    /// <summary>
-    /// Clear all lights for this frame.
-    /// </summary>
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void ClearLights()
     {
         _frames[_writeFrameIndex].LightCount = 0;
         _frames[_writeFrameIndex].ShadowViewCount = 0;
     }
-
-    /// <summary>
-    /// Add a light to the scene.
-    /// </summary>
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void AddLight(in RenderLight light)
     {
@@ -509,10 +417,7 @@ public sealed class RenderScene : IDisposable
 
         frame.Lights[frame.LightCount++] = light;
     }
-
-    /// <summary>
-    /// Add a shadow view (light's view for shadow mapping).
-    /// </summary>
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void AddShadowView(in RenderView view)
     {
@@ -524,22 +429,12 @@ public sealed class RenderScene : IDisposable
 
         frame.ShadowViews[frame.ShadowViewCount++] = view;
     }
-
-    /// <summary>
-    /// Begin a new frame. Call at start of game update.
-    /// For single-threaded rendering, we reuse the same frame buffer.
-    /// </summary>
+    
     public void BeginFrame()
     {
-        // For single-threaded: just reset the current frame state
-        // For multi-threaded: would need to swap _readFrameIndex/_writeFrameIndex
         _frames[_writeFrameIndex].Reset();
     }
-
-    /// <summary>
-    /// Commit the frame for rendering. Call after game update, before render.
-    /// Builds batches if needed.
-    /// </summary>
+    
     public void CommitFrame()
     {
         ref var frame = ref _frames[_writeFrameIndex];
@@ -549,20 +444,14 @@ public sealed class RenderScene : IDisposable
             BuildBatches(ref frame);
             frame.NeedsRebatch = false;
         }
-
-        // Clear dirty flags
         for (var i = 0; i < _maxObjects; i++)
         {
             _objects[i].Dirty = 0;
         }
     }
-
-    /// <summary>
-    /// Build batches for the current frame. Zero-allocation.
-    /// </summary>
+    
     private void BuildBatches(ref FrameState frame)
     {
-        // First pass: collect valid static and skinned object indices
         var staticCount = 0;
         frame.SkinnedInstanceCount = 0;
         frame.SkinnedBoneMatricesCount = 0;
@@ -577,7 +466,6 @@ public sealed class RenderScene : IDisposable
 
             if ((obj.Flags & RenderFlags.Skinned) != 0)
             {
-                // Skinned object - add directly to skinned instances
                 if (frame.SkinnedInstanceCount < frame.SkinnedInstances.Length)
                 {
                     ref var skinned = ref frame.SkinnedInstances[frame.SkinnedInstanceCount];
@@ -585,8 +473,6 @@ public sealed class RenderScene : IDisposable
                     skinned.Transform = obj.Transform;
                     skinned.Material = obj.Material;
                     skinned.BoneMatricesOffset = frame.SkinnedBoneMatricesCount;
-
-                    // Copy bone matrices if available
                     if (obj.SkinningDataIndex >= 0)
                     {
                         var bones = _boneMatricesPool[obj.SkinningDataIndex];
@@ -607,17 +493,13 @@ public sealed class RenderScene : IDisposable
             }
             else
             {
-                // Static object - add to sort list
                 frame.SortedIndices[staticCount++] = i;
             }
         }
 
         frame.SortedCount = staticCount;
-
-        // Sort by mesh handle for batching (insertion sort - good for nearly-sorted data)
         SortByMesh(frame.SortedIndices.AsSpan(0, staticCount));
 
-        // Build batches from sorted indices
         frame.StaticBatchCount = 0;
         frame.StaticInstanceCount = 0;
 
@@ -667,10 +549,7 @@ public sealed class RenderScene : IDisposable
             }
         }
     }
-
-    /// <summary>
-    /// In-place insertion sort by mesh handle. Good for nearly-sorted data.
-    /// </summary>
+    
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void SortByMesh(Span<int> indices)
     {
@@ -692,83 +571,52 @@ public sealed class RenderScene : IDisposable
     // ==================== Read Access (Render Thread) ====================
     // NOTE: For single-threaded rendering, we read from _writeFrameIndex after CommitFrame().
     // For multi-threaded, this would need to be _readFrameIndex with proper synchronization.
-
-    /// <summary>
-    /// Get the main view for rendering.
-    /// </summary>
     public ref readonly RenderView MainView
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => ref _frames[_writeFrameIndex].MainView;
     }
-
-    /// <summary>
-    /// Get shadow views for shadow mapping.
-    /// </summary>
+    
     public ReadOnlySpan<RenderView> ShadowViews
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _frames[_writeFrameIndex].ShadowViews.AsSpan(0, _frames[_writeFrameIndex].ShadowViewCount);
     }
-
-    /// <summary>
-    /// Get lights for rendering.
-    /// </summary>
+    
     public ReadOnlySpan<RenderLight> Lights
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _frames[_writeFrameIndex].Lights.AsSpan(0, _frames[_writeFrameIndex].LightCount);
     }
-
-    /// <summary>
-    /// Get static batches for instanced rendering.
-    /// </summary>
+    
     public ReadOnlySpan<RenderBatch> StaticBatches
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _frames[_writeFrameIndex].StaticBatches.AsSpan(0, _frames[_writeFrameIndex].StaticBatchCount);
     }
-
-    /// <summary>
-    /// Get static instances (GPU-ready data).
-    /// </summary>
+    
     public ReadOnlySpan<RenderInstance> StaticInstances
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _frames[_writeFrameIndex].StaticInstances.AsSpan(0, _frames[_writeFrameIndex].StaticInstanceCount);
     }
-
-    /// <summary>
-    /// Get skinned instances (rendered individually).
-    /// </summary>
+    
     public ReadOnlySpan<SkinnedRenderInstance> SkinnedInstances
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _frames[_writeFrameIndex].SkinnedInstances.AsSpan(0, _frames[_writeFrameIndex].SkinnedInstanceCount);
     }
-
-    /// <summary>
-    /// Get bone matrices for all skinned objects (packed).
-    /// </summary>
+    
     public ReadOnlySpan<Matrix4x4> SkinnedBoneMatrices
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _frames[_writeFrameIndex].SkinnedBoneMatrices.AsSpan(0, _frames[_writeFrameIndex].SkinnedBoneMatricesCount);
     }
-
-    /// <summary>
-    /// Number of active render objects.
-    /// </summary>
+    
     public int ObjectCount => _objectCount;
-
-    /// <summary>
-    /// Number of static batches.
-    /// </summary>
+    
     public int StaticBatchCount => _frames[_writeFrameIndex].StaticBatchCount;
-
-    /// <summary>
-    /// Number of skinned instances.
-    /// </summary>
+    
     public int SkinnedInstanceCount => _frames[_writeFrameIndex].SkinnedInstanceCount;
 
     public void Dispose()

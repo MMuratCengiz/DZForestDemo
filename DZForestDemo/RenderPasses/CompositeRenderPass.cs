@@ -8,7 +8,7 @@ namespace DZForestDemo.RenderPasses;
 
 public sealed class CompositeRenderPass : IDisposable
 {
-    private readonly ResourceBindGroup[] _bindGroups;
+    private readonly BindGroup[] _bindGroups;
     private readonly Texture?[] _boundDebugTextures;
 
     private readonly Texture?[] _boundSceneTextures;
@@ -17,6 +17,7 @@ public sealed class CompositeRenderPass : IDisposable
     private readonly Sampler _linearSampler;
     private readonly Pipeline _pipeline;
 
+    private readonly BindGroupLayout _bindGroupLayout;
     private readonly RootSignature _rootSignature;
     private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments;
 
@@ -57,7 +58,11 @@ public sealed class CompositeRenderPass : IDisposable
 
         var program = new ShaderProgram(programDesc);
         var reflection = program.Reflect();
-        _rootSignature = logicalDevice.CreateRootSignature(reflection.RootSignature);
+        var bindGroupLayoutDescs = reflection.BindGroupLayouts.ToArray();
+        _bindGroupLayout = logicalDevice.CreateBindGroupLayout(bindGroupLayoutDescs[0]);
+        var rootSignatureDesc = new RootSignatureDesc();
+        rootSignatureDesc.BindGroupLayouts = BindGroupLayoutArray.Create([_bindGroupLayout]);
+        _rootSignature = logicalDevice.CreateRootSignature(rootSignatureDesc);
 
         _pipeline = logicalDevice.CreatePipeline(new PipelineDesc
         {
@@ -85,12 +90,12 @@ public sealed class CompositeRenderPass : IDisposable
             AddressModeW = SamplerAddressMode.ClampToEdge
         });
 
-        _bindGroups = new ResourceBindGroup[numFrames];
+        _bindGroups = new BindGroup[numFrames];
         for (var i = 0; i < numFrames; i++)
         {
-            _bindGroups[i] = logicalDevice.CreateResourceBindGroup(new ResourceBindGroupDesc
+            _bindGroups[i] = logicalDevice.CreateBindGroup(new BindGroupDesc
             {
-                RootSignature = _rootSignature
+                Layout = _bindGroupLayout,
             });
         }
     }
@@ -164,7 +169,7 @@ public sealed class CompositeRenderPass : IDisposable
         cmd.BindPipeline(_pipeline);
         cmd.BindViewport(viewport.X, viewport.Y, viewport.Width, viewport.Height);
         cmd.BindScissorRect(viewport.X, viewport.Y, viewport.Width, viewport.Height);
-        cmd.BindResourceGroup(_bindGroups[ctx.FrameIndex]);
+        cmd.BindGroup(_bindGroups[ctx.FrameIndex]);
         cmd.Draw(3, 1, 0, 0);
         cmd.EndRendering();
 

@@ -1,7 +1,8 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using DenOfIz;
-using RuntimeAssets.Components;
+using Graphics.Binding.Data;
+using RuntimeAssets.Store;
 
 namespace RuntimeAssets;
 
@@ -85,7 +86,7 @@ public sealed class AnimationManager : IDisposable
         }
     }
 
-    private static void SampleAnimation(RuntimeSkeleton skeleton, RuntimeAnimationClip clip, float ratio, BoneMatricesData boneMatrices)
+    private static void SampleAnimation(RuntimeSkeleton skeleton, RuntimeAnimationClip clip, float ratio, GpuBoneMatricesData boneMatrices)
     {
         var numJoints = skeleton.NumJoints;
         using var transformsArray = Float4x4Array.Create(new Matrix4x4[numJoints]);
@@ -137,12 +138,12 @@ public sealed class AnimatorInstance : IDisposable
     public float PlaybackSpeed { get; set; } = 1.0f;
     public bool IsPlaying { get; set; } = true;
     public bool Loop { get; set; } = true;
-    public BoneMatricesData BoneMatrices { get; }
+    public GpuBoneMatricesData BoneMatrices { get; }
 
     internal AnimatorInstance(RuntimeSkeletonHandle skeleton, int numJoints, Matrix4x4[]? inverseBindMatrices, Matrix4x4 skeletonRootTransform)
     {
         Skeleton = skeleton;
-        BoneMatrices = new BoneMatricesData(numJoints, inverseBindMatrices ?? [], skeletonRootTransform);
+        BoneMatrices = new GpuBoneMatricesData(numJoints, inverseBindMatrices ?? [], skeletonRootTransform);
     }
 
     public ReadOnlySpan<Matrix4x4> GetFinalBoneMatrices()

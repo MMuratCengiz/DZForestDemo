@@ -53,7 +53,8 @@
       "Bash(/Users/muratcengiz/RiderProjects/DZForestDemo/DenOfIz.Graphics/Binding/BindingFrequency.cs )",
       "Bash(/Users/muratcengiz/RiderProjects/DZForestDemo/DenOfIz.Graphics/Binding/SrvUavData.cs)",
       "WebFetch(domain:docs.spacestation14.com)",
-      "WebFetch(domain:godotengine.org)"
+      "WebFetch(domain:godotengine.org)",
+      "Bash(ls:*)"
     ]
   }
 }

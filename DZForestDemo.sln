@@ -18,7 +18,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DenOfIz.Physics", "DenOfIz.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DenOfIz.Tasks", "DenOfIz.Tasks\DenOfIz.Tasks.csproj", "{E6A3B2FF-D9CA-45EA-A8F7-341B42FC824E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DenOfIz.World", "DenOfIz.World\DenOfIz.World.csproj", "{6FE069F9-3438-4777-95A6-481E4FA4A5EB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DenOfIz.Core", "DenOfIz.Core\DenOfIz.Core.csproj", "{6FE069F9-3438-4777-95A6-481E4FA4A5EB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -29,7 +29,7 @@ public sealed class BufferPool(LogicalDevice device, uint usages, ulong blockSiz
         _blocks.Clear();
     }
 
-    public GpuBufferView Allocate(ulong size, ulong alignment = 16)
+    public GpuBufferView Allocate(uint size, uint alignment = 16)
     {
         size = AlignUp(size, alignment);
 
@@ -50,7 +50,7 @@ public sealed class BufferPool(LogicalDevice device, uint usages, ulong blockSiz
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static ulong AlignUp(ulong value, ulong alignment)
+    private static uint AlignUp(uint value, uint alignment)
     {
         return (value + alignment - 1) & ~(alignment - 1);
     }
@@ -64,7 +64,7 @@ public sealed class BufferPool(LogicalDevice device, uint usages, ulong blockSiz
             HeapType = HeapType.Gpu
         });
 
-        private ulong _offset;
+        private uint _offset;
 
         public void Dispose()
         {
@@ -72,7 +72,7 @@ public sealed class BufferPool(LogicalDevice device, uint usages, ulong blockSiz
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool TryAllocate(ulong numBytes, ulong alignment, out GpuBufferView view)
+        public bool TryAllocate(uint numBytes, uint alignment, out GpuBufferView view)
         {
             var alignedOffset = AlignUp(_offset, alignment);
 

@@ -1,17 +1,45 @@
 using DenOfIz;
+using Graphics.Binding;
+using Graphics.Renderer;
 using Graphics.RenderGraph;
+using Graphics.RootSignatures;
 
 namespace Graphics;
 
 public sealed class GraphicsContext : IGraphicsContext, IDisposable
 {
-    private readonly IRenderer? _renderer;
     private bool _disposed;
+
+    public GraphicsApi GraphicsApi { get; }
+    public LogicalDevice LogicalDevice { get; }
+    public SwapChain SwapChain { get; }
+    public CommandQueue GraphicsQueue { get; }
+    public CommandQueue ComputeQueue { get; }
+    public CommandQueue CopyQueue { get; }
+    public ResourceTracking ResourceTracking { get; } = new();
+    public RenderGraph.RenderGraph RenderGraph { get; }
+
+    public CommandQueue GraphicsCommandQueue => GraphicsQueue;
+    public CommandQueue ComputeCommandQueue => ComputeQueue;
+    public CommandQueue CopyCommandQueue => CopyQueue;
+
+    public uint NumFrames { get; }
+    public Format BackBufferFormat { get; }
+    public Format DepthBufferFormat { get; }
+    public uint FrameIndex { get; private set; }
+    public uint Width { get; private set; }
+    public uint Height { get; private set; }
+    public ResourceHandle SwapchainRenderTarget { get; private set; }
+    public UniformBufferArena UniformBufferArena { get; }
+    public BindGroupLayoutStore BindGroupLayoutStore { get; }
+    public RootSignatureStore RootSignatureStore { get; }
+    
+    public NullTexture NullTexture { get; }
+    
 
     public GraphicsContext(Window window, GraphicsDesc? desc = null, IRenderer? renderer = null)
     {
         desc ??= new GraphicsDesc();
-        _renderer = renderer;
 
         NumFrames = desc.NumFrames;
         BackBufferFormat = desc.BackBufferFormat;
@@ -58,29 +86,11 @@ public sealed class GraphicsContext : IGraphicsContext, IDisposable
             ResourceTracking.TrackTexture(SwapChain.GetRenderTarget(i), QueueType.Graphics);
         }
 
-        _renderer?.Initialize(this);
+        UniformBufferArena = new UniformBufferArena(LogicalDevice);
+        BindGroupLayoutStore = new BindGroupLayoutStore(LogicalDevice);
+        RootSignatureStore = new RootSignatureStore(LogicalDevice, BindGroupLayoutStore);
+        NullTexture = new NullTexture(LogicalDevice);
     }
-
-    public GraphicsApi GraphicsApi { get; }
-    public LogicalDevice LogicalDevice { get; }
-    public SwapChain SwapChain { get; }
-    public CommandQueue GraphicsQueue { get; }
-    public CommandQueue ComputeQueue { get; }
-    public CommandQueue CopyQueue { get; }
-    public ResourceTracking ResourceTracking { get; } = new();
-    public RenderGraph.RenderGraph RenderGraph { get; }
-
-    public CommandQueue GraphicsCommandQueue => GraphicsQueue;
-    public CommandQueue ComputeCommandQueue => ComputeQueue;
-    public CommandQueue CopyCommandQueue => CopyQueue;
-
-    public uint NumFrames { get; }
-    public Format BackBufferFormat { get; }
-    public Format DepthBufferFormat { get; }
-    public uint FrameIndex { get; private set; }
-    public uint Width { get; private set; }
-    public uint Height { get; private set; }
-    public ResourceHandle SwapchainRenderTarget { get; private set; }
 
     public void BeginFrame()
     {
@@ -94,7 +104,6 @@ public sealed class GraphicsContext : IGraphicsContext, IDisposable
 
     public void Render()
     {
-        _renderer?.Render(this);
     }
 
     public void EndFrame()
@@ -131,8 +140,6 @@ public sealed class GraphicsContext : IGraphicsContext, IDisposable
         {
             ResourceTracking.TrackTexture(SwapChain.GetRenderTarget(i), QueueType.Graphics);
         }
-
-        _renderer?.OnResize(this, width, height);
     }
 
     public void WaitIdle()
@@ -151,7 +158,6 @@ public sealed class GraphicsContext : IGraphicsContext, IDisposable
         _disposed = true;
 
         WaitIdle();
-        _renderer?.Shutdown(this);
         RenderGraph.Dispose();
         ResourceTracking.Dispose();
         SwapChain.Dispose();

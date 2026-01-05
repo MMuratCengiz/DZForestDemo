@@ -2,55 +2,91 @@ using OfflineAssets;
 
 const string projectDir = @"/Users/muratcengiz/RiderProjects/DZForestDemo/DZForestDemo/";
 
-// Viking asset paths
-const string vikingSourceDir = @"C:\Users\cengi\Downloads\POLYGON_Viking_Realm_SourceFiles_v3\SourceFiles";
-const string vikingFbxPath = @"C:\Users\cengi\Downloads\POLYGON_Viking_Realm_SourceFiles_v3\SourceFiles\FBX\VikingRealm_Characters.fbx";
-const string vikingTexturePath = @"C:\Users\cengi\Downloads\POLYGON_Viking_Realm_SourceFiles_v3\SourceFiles\Textures\Alts\PolygonVikingRealm_Texture_01_A.png";
-
-// Fox asset paths
-const string foxSourceDir = @"C:\Workspace\DenOfIz\Examples\Assets\Models";
 const string foxGltfPath = @"/Users/muratcengiz/RiderProjects/DZForestDemo/DZForestDemo/Assets/Models/Fox.gltf";
-const string foxTexturePath = @"C:\Workspace\DenOfIz\Examples\Assets\Models\Texture.png";
+const string foxTexturePath = @"/Users/muratcengiz/RiderProjects/DZForestDemo/DZForestDemo/Assets/Models/Texture.png";
 
-var assetProject = AssetProject.ForProjectAssets(projectDir, vikingSourceDir);
+var assetProject = AssetProject.ForProjectAssets(projectDir, projectDir);
 assetProject.EnsureDirectories();
+
+var meshesDir = Path.Combine(assetProject.OutputDirectory, "Meshes");
+Directory.CreateDirectory(meshesDir);
 
 Console.WriteLine("Asset Import Tool");
 Console.WriteLine("=================");
 Console.WriteLine($"Output Models: {assetProject.ModelsDirectory}");
+Console.WriteLine($"Output Meshes: {meshesDir}");
 Console.WriteLine($"Output Textures: {assetProject.TexturesDirectory}");
 Console.WriteLine($"Output Animations: {assetProject.AnimationsDirectory}");
 Console.WriteLine($"Output Skeletons: {assetProject.SkeletonsDirectory}");
 Console.WriteLine();
 
-// Import Fox assets
-Console.WriteLine("=== FOX ASSETS ===");
-var foxModelResult = ImportModel(assetProject, foxGltfPath, "Fox", scale: 0.1f);
-if (foxModelResult)
+Console.WriteLine("=== INSPECT GLTF ===");
+var inspector = new GltfInspector();
+var inspectionResult = inspector.Inspect(foxGltfPath);
+
+if (!inspectionResult.Success)
 {
-    ImportTexture(assetProject, foxTexturePath, "Fox");
+    Console.WriteLine($"Failed to inspect glTF: {inspectionResult.ErrorMessage}");
+    return 1;
+}
+
+Console.WriteLine($"Found {inspectionResult.Meshes.Count} meshes:");
+foreach (var mesh in inspectionResult.Meshes)
+{
+    Console.WriteLine($"  [{mesh.Index}] {mesh.Name}");
+    Console.WriteLine($"      Vertices: {mesh.VertexCount}, Indices: {mesh.IndexCount}");
+    Console.WriteLine($"      Primitives: {mesh.PrimitiveCount}, Skinned: {mesh.HasSkinning}");
+    Console.WriteLine($"      Material Index: {mesh.MaterialIndex}");
 }
 
 Console.WriteLine();
-
-// Import Viking assets
-Console.WriteLine("=== VIKING ASSETS ===");
-var vikingModelResult = ImportModel(assetProject, vikingFbxPath, "VikingRealm_Characters", scale: 1.0f);
-if (vikingModelResult)
+Console.WriteLine($"Found {inspectionResult.Materials.Count} materials:");
+foreach (var mat in inspectionResult.Materials)
 {
-    ImportTexture(assetProject, vikingTexturePath, "VikingRealm_Texture_01_A");
+    Console.WriteLine($"  [{mat.Index}] {mat.Name}");
+    Console.WriteLine($"      BaseColor: ({mat.BaseColor.X:F2}, {mat.BaseColor.Y:F2}, {mat.BaseColor.Z:F2}, {mat.BaseColor.W:F2})");
+    Console.WriteLine($"      Metallic: {mat.Metallic:F2}, Roughness: {mat.Roughness:F2}");
+    if (mat.BaseColorTexturePath != null)
+        Console.WriteLine($"      BaseColorTexture: {Path.GetFileName(mat.BaseColorTexturePath)}");
 }
+
+Console.WriteLine();
+Console.WriteLine($"Has Animations: {inspectionResult.HasAnimations}");
+Console.WriteLine($"Has Skins: {inspectionResult.HasSkins}");
+
+Console.WriteLine();
+Console.WriteLine("=== EXPORT MESHES TO .DZMESH ===");
+var meshExporter = new MeshExporter();
+var meshResults = meshExporter.ExportAllMeshes(foxGltfPath, meshesDir, includeMaterials: true);
+
+foreach (var result in meshResults)
+{
+    if (result.Success)
+    {
+        Console.WriteLine($"Exported: {Path.GetFileName(result.OutputPath)}");
+        Console.WriteLine($"  Vertices: {result.VertexCount}, Indices: {result.IndexCount}");
+    }
+    else
+    {
+        Console.WriteLine($"Failed: {result.ErrorMessage}");
+    }
+}
+
+Console.WriteLine();
+Console.WriteLine("=== EXPORT ANIMATIONS (OZZ) ===");
+ImportAnimations(assetProject, foxGltfPath, "Fox", scale: 0.1f);
+
+Console.WriteLine();
+Console.WriteLine("=== EXPORT TEXTURES ===");
+ImportTexture(assetProject, foxTexturePath, "Fox");
 
 Console.WriteLine();
 Console.WriteLine("Import complete!");
 return 0;
 
-bool ImportModel(AssetProject project, string sourcePath, string assetName, float scale = 1.0f)
+bool ImportAnimations(AssetProject project, string sourcePath, string assetName, float scale = 1.0f)
 {
     using var exporter = new AssetExporter();
-
-    Console.WriteLine($"Supported model extensions: {string.Join(", ", exporter.SupportedExtensions)}");
-    Console.WriteLine();
 
     if (!File.Exists(sourcePath))
     {
@@ -58,13 +94,7 @@ bool ImportModel(AssetProject project, string sourcePath, string assetName, floa
         return false;
     }
 
-    if (!exporter.CanProcess(sourcePath))
-    {
-        Console.WriteLine($"ERROR: Cannot process file: {sourcePath}");
-        return false;
-    }
-
-    Console.WriteLine($"Importing model: {Path.GetFileName(sourcePath)} as '{assetName}'");
+    Console.WriteLine($"Exporting animations from: {Path.GetFileName(sourcePath)}");
 
     var settings = project.CreateExportSettings(sourcePath, assetName);
     settings.Format = ExportFormat.Glb;
@@ -85,9 +115,7 @@ bool ImportModel(AssetProject project, string sourcePath, string assetName, floa
 
     if (result.Success)
     {
-        Console.WriteLine("Model import SUCCESS!");
-        Console.WriteLine($"  Output: {result.OutputPath}");
-
+        Console.WriteLine("Animation export SUCCESS!");
         if (!string.IsNullOrEmpty(result.SkeletonPath))
         {
             Console.WriteLine($"  Skeleton: {result.SkeletonPath}");
@@ -106,16 +134,13 @@ bool ImportModel(AssetProject project, string sourcePath, string assetName, floa
         return true;
     }
 
-    Console.WriteLine($"Model import FAILED: {result.ErrorMessage}");
+    Console.WriteLine($"Animation export FAILED: {result.ErrorMessage}");
     return false;
 }
 
 bool ImportTexture(AssetProject project, string sourcePath, string assetName)
 {
     using var textureExporter = new TextureExporter();
-
-    Console.WriteLine();
-    Console.WriteLine($"Supported texture extensions: {string.Join(", ", textureExporter.SupportedExtensions)}");
 
     if (!File.Exists(sourcePath))
     {

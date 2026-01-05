@@ -1,69 +1,39 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Text;
 using DenOfIz;
 using Graphics;
 using Graphics.Batching;
 using Graphics.Binding;
+using Graphics.Binding.Data;
+using Graphics.Binding.Layout;
 using Graphics.RenderGraph;
 using RuntimeAssets;
-using Buffer = DenOfIz.Buffer;
 
 namespace DZForestDemo.RenderPasses;
 
 public sealed class SceneRenderPass : IDisposable
 {
-    private const int MaxLights = 8;
-    private const int MaxShadowLights = 4;
-    private const int MaxBones = 128;
-    private const int MaxDrawsPerFrame = 4096;
-
-    private const uint LightTypeDirectional = 0;
-    private const uint LightTypePoint = 1;
-    private const uint LightTypeSpot = 2;
-
     private readonly AssetResource _assets;
-    private readonly IGraphicsContext _ctx;
+    private readonly GraphicsContext _ctx;
 
-    private readonly Shader _shader;
-    private readonly Shader _skinnedShader;
+    private readonly Pipeline _staticPipeline;
+    private readonly Pipeline _skinnedPipeline;
+    private readonly ShaderProgram _staticProgram;
+    private readonly ShaderProgram _skinnedProgram;
+    private readonly InputLayout _inputLayout;
 
-    private readonly Buffer[] _frameConstantsBuffers;
-    private readonly IntPtr[] _frameBufferMappedPtrs;
-
-    private readonly Buffer[] _lightConstantsBuffers;
-    private readonly IntPtr[] _lightBufferMappedPtrs;
-
-    private readonly Buffer[] _boneMatricesBuffers;
-    private readonly IntPtr[] _boneMatricesMappedPtrs;
-
-    private readonly Sampler _shadowSampler;
     private readonly Sampler _textureSampler;
-
     private readonly NullTexture _nullTexture;
-    private Texture? _activeTexture;
-    private Texture? _shadowAtlas;
+
+    private readonly BindGroup[] _materialBindGroups;
+    private Texture? _boundAlbedoTexture;
 
     private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments;
 
-    private readonly FrameBindings _frameBindings;
-    private readonly FrameBindings _textureBindings;
-    private readonly FrameBindings _samplerBindings;
-    private readonly InstanceBuffer<GpuInstanceData> _instanceBuffer;
-
-    private readonly FrameBindings _skinnedFrameBindings;
-    private readonly FrameBindings _skinnedTextureBindings;
-    private readonly FrameBindings _skinnedSamplerBindings;
-    private readonly InstanceBuffer<GpuInstanceData> _skinnedInstanceBuffer;
-    private readonly FrameBindings _skinnedBoneBindings;
-
-    private readonly Texture?[] _boundShadowAtlas;
-    private readonly Texture?[] _boundActiveTexture;
-
     private bool _disposed;
 
-    public SceneRenderPass(IGraphicsContext ctx, AssetResource assets)
+    public SceneRenderPass(GraphicsContext ctx, AssetResource assets)
     {
         _ctx = ctx;
         _assets = assets;
@@ -72,19 +42,6 @@ public sealed class SceneRenderPass : IDisposable
         var numFrames = (int)ctx.NumFrames;
 
         _rtAttachments = new PinnedArray<RenderingAttachmentDesc>(1);
-        _boundShadowAtlas = new Texture?[numFrames];
-        _boundActiveTexture = new Texture?[numFrames];
-
-        _shadowSampler = logicalDevice.CreateSampler(new SamplerDesc
-        {
-            AddressModeU = SamplerAddressMode.ClampToBorder,
-            AddressModeV = SamplerAddressMode.ClampToBorder,
-            AddressModeW = SamplerAddressMode.ClampToBorder,
-            MinFilter = Filter.Linear,
-            MagFilter = Filter.Linear,
-            MipmapMode = MipmapMode.Nearest,
-            CompareOp = CompareOp.LessOrEqual
-        });
 
         _textureSampler = logicalDevice.CreateSampler(new SamplerDesc
         {
@@ -99,182 +56,38 @@ public sealed class SceneRenderPass : IDisposable
 
         _nullTexture = new NullTexture(logicalDevice);
 
-        _shader = CreateShader(logicalDevice, false);
-        _skinnedShader = CreateShader(logicalDevice, true);
+        var rootSig = ctx.RootSignatureStore.Forward;
 
-        _frameConstantsBuffers = new Buffer[numFrames];
-        _frameBufferMappedPtrs = new IntPtr[numFrames];
-        _lightConstantsBuffers = new Buffer[numFrames];
-        _lightBufferMappedPtrs = new IntPtr[numFrames];
-        _boneMatricesBuffers = new Buffer[numFrames];
-        _boneMatricesMappedPtrs = new IntPtr[numFrames];
+        (_staticPipeline, _staticProgram, _inputLayout) = CreatePipeline(
+            logicalDevice, rootSig.StaticRootSignature, "scene_vs_model.hlsl", "scene_ps.hlsl");
 
+        (_skinnedPipeline, _skinnedProgram, _) = CreatePipeline(
+            logicalDevice, rootSig.SkinnedRootSignature, "scene_vs_skinned.hlsl", "scene_ps.hlsl");
+
+        _materialBindGroups = new BindGroup[numFrames];
         for (var i = 0; i < numFrames; i++)
         {
-            _frameConstantsBuffers[i] = logicalDevice.CreateBuffer(new BufferDesc
+            _materialBindGroups[i] = logicalDevice.CreateBindGroup(new BindGroupDesc
             {
-                Usage = (uint)BufferUsageFlagBits.Uniform,
-                HeapType = HeapType.CpuGpu,
-                NumBytes = (ulong)Unsafe.SizeOf<FrameConstants>(),
-                DebugName = StringView.Create($"FrameConstants_{i}")
+                Layout = ctx.BindGroupLayoutStore.Material
             });
-            _frameBufferMappedPtrs[i] = _frameConstantsBuffers[i].MapMemory();
 
-            _lightConstantsBuffers[i] = logicalDevice.CreateBuffer(new BufferDesc
-            {
-                Usage = (uint)BufferUsageFlagBits.Uniform,
-                HeapType = HeapType.CpuGpu,
-                NumBytes = (ulong)Unsafe.SizeOf<LightConstants>(),
-                DebugName = StringView.Create($"LightConstants_{i}")
-            });
-            _lightBufferMappedPtrs[i] = _lightConstantsBuffers[i].MapMemory();
-
-            _boneMatricesBuffers[i] = logicalDevice.CreateBuffer(new BufferDesc
-            {
-                Usage = (uint)BufferUsageFlagBits.Uniform,
-                HeapType = HeapType.CpuGpu,
-                NumBytes = (ulong)(MaxBones * Unsafe.SizeOf<Matrix4x4>()),
-                DebugName = StringView.Create($"BoneMatrices_{i}")
-            });
-            _boneMatricesMappedPtrs[i] = _boneMatricesBuffers[i].MapMemory();
+            _materialBindGroups[i].BeginUpdate();
+            _materialBindGroups[i].SrvTexture(GpuMaterialLayout.Albedo.Binding, _nullTexture.Texture);
+            _materialBindGroups[i].SrvTexture(GpuMaterialLayout.Normal.Binding, _nullTexture.Texture);
+            _materialBindGroups[i].SrvTexture(GpuMaterialLayout.Roughness.Binding, _nullTexture.Texture);
+            _materialBindGroups[i].SrvTexture(GpuMaterialLayout.Metallic.Binding, _nullTexture.Texture);
+            _materialBindGroups[i].Sampler(GpuMaterialLayout.TextureSampler.Binding, _textureSampler);
+            _materialBindGroups[i].EndUpdate();
         }
-
-        _frameBindings = new FrameBindings(logicalDevice, _shader.RootSignature.Instance, ctx.NumFrames, 0);
-        _textureBindings = new FrameBindings(logicalDevice, _shader.RootSignature.Instance, ctx.NumFrames, 1);
-        _samplerBindings = new FrameBindings(logicalDevice, _shader.RootSignature.Instance, ctx.NumFrames, 5);
-        _instanceBuffer = new InstanceBuffer<GpuInstanceData>(logicalDevice, _shader.RootSignature.Instance, 3, 0, MaxDrawsPerFrame, numFrames);
-
-        _skinnedFrameBindings = new FrameBindings(logicalDevice, _skinnedShader.RootSignature.Instance, ctx.NumFrames, 0);
-        _skinnedTextureBindings = new FrameBindings(logicalDevice, _skinnedShader.RootSignature.Instance, ctx.NumFrames, 1);
-        _skinnedSamplerBindings = new FrameBindings(logicalDevice, _skinnedShader.RootSignature.Instance, ctx.NumFrames, 5);
-        _skinnedBoneBindings = new FrameBindings(logicalDevice, _skinnedShader.RootSignature.Instance, ctx.NumFrames, 3);
-        _skinnedInstanceBuffer = new InstanceBuffer<GpuInstanceData>(logicalDevice, _skinnedShader.RootSignature.Instance, 3, 0, MaxDrawsPerFrame, numFrames);
-
-        _frameBindings.Setup((bg, i) =>
-        {
-            bg.Cbv(0, _frameConstantsBuffers[i]);
-            bg.Cbv(1, _lightConstantsBuffers[i]);
-        });
-
-        _skinnedFrameBindings.Setup((bg, i) =>
-        {
-            bg.Cbv(0, _frameConstantsBuffers[i]);
-            bg.Cbv(1, _lightConstantsBuffers[i]);
-        });
-
-        _samplerBindings.Setup((bg, _) =>
-        {
-            bg.Sampler(0, _shadowSampler);
-            bg.Sampler(1, _textureSampler);
-        });
-
-        _skinnedSamplerBindings.Setup((bg, _) =>
-        {
-            bg.Sampler(0, _shadowSampler);
-            bg.Sampler(1, _textureSampler);
-        });
-
-        _skinnedBoneBindings.Setup((bg, i) =>
-        {
-            bg.Cbv(1, _boneMatricesBuffers[i]);
-        });
     }
 
-    private Shader CreateShader(LogicalDevice logicalDevice, bool isSkinned)
-    {
-        var shaderLoader = new ShaderLoader();
-        var psSource = shaderLoader.Load("scene_ps.hlsl");
-
-        var rootSigBuilder = new ShaderRootSignature.Builder(logicalDevice)
-            .AddBinding("FrameConstants", new ResourceBindingDesc
-            {
-                Binding = 0,
-                RegisterSpace = 0,
-                Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
-                Stages = (uint)ShaderStageFlagBits.AllGraphics,
-                ArraySize = 1
-            })
-            .AddBinding("LightConstants", new ResourceBindingDesc
-            {
-                Binding = 1,
-                RegisterSpace = 0,
-                Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
-                Stages = (uint)ShaderStageFlagBits.AllGraphics,
-                ArraySize = 1
-            })
-            .AddBinding("ShadowAtlas", new ResourceBindingDesc
-            {
-                Binding = 0,
-                RegisterSpace = 1,
-                Descriptor = (uint)ResourceDescriptorFlagBits.Texture,
-                Stages = (uint)ShaderStageFlagBits.Pixel,
-                ArraySize = 1
-            })
-            .AddBinding("AlbedoTexture", new ResourceBindingDesc
-            {
-                Binding = 1,
-                RegisterSpace = 1,
-                Descriptor = (uint)ResourceDescriptorFlagBits.Texture,
-                Stages = (uint)ShaderStageFlagBits.Pixel,
-                ArraySize = 1
-            })
-            .AddBinding("Instances", new ResourceBindingDesc
-            {
-                Binding = 0,
-                RegisterSpace = 3,
-                Descriptor = (uint)ResourceDescriptorFlagBits.StructuredBuffer,
-                Stages = (uint)ShaderStageFlagBits.AllGraphics,
-                ArraySize = 1
-            })
-            .AddBinding("ShadowSampler", new ResourceBindingDesc
-            {
-                Binding = 0,
-                RegisterSpace = 5,
-                Descriptor = (uint)ResourceDescriptorFlagBits.Sampler,
-                Stages = (uint)ShaderStageFlagBits.Pixel,
-                ArraySize = 1
-            })
-            .AddBinding("AlbedoSampler", new ResourceBindingDesc
-            {
-                Binding = 1,
-                RegisterSpace = 5,
-                Descriptor = (uint)ResourceDescriptorFlagBits.Sampler,
-                Stages = (uint)ShaderStageFlagBits.Pixel,
-                ArraySize = 1
-            });
-
-        if (isSkinned)
-        {
-            rootSigBuilder.AddBinding("BoneMatrices", new ResourceBindingDesc
-            {
-                Binding = 1,
-                RegisterSpace = 3,
-                Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
-                Stages = (uint)ShaderStageFlagBits.Vertex,
-                ArraySize = 1
-            });
-        }
-
-        var rootSignature = rootSigBuilder.Build();
-        var shader = new Shader(rootSignature);
-
-        if (isSkinned)
-        {
-            AddVariant(shader, logicalDevice, rootSignature, "scene_vs_skinned.hlsl", psSource, "skinned");
-        }
-        else
-        {
-            AddVariant(shader, logicalDevice, rootSignature, "scene_vs_model.hlsl", psSource, "static");
-        }
-
-        return shader;
-    }
-
-    private void AddVariant(Shader shader, LogicalDevice logicalDevice, ShaderRootSignature rootSignature,
-        string vsFilename, string psSource, string variantName)
+    private (Pipeline, ShaderProgram, InputLayout) CreatePipeline(
+        LogicalDevice device, RootSignature rootSignature, string vsFilename, string psFilename)
     {
         var shaderLoader = new ShaderLoader();
         var vsSource = shaderLoader.Load(vsFilename);
+        var psSource = shaderLoader.Load(psFilename);
 
         var programDesc = new ShaderProgramDesc
         {
@@ -296,12 +109,12 @@ public sealed class SceneRenderPass : IDisposable
 
         var program = new ShaderProgram(programDesc);
         var reflection = program.Reflect();
-        var inputLayout = logicalDevice.CreateInputLayout(reflection.InputLayout);
+        var inputLayout = device.CreateInputLayout(reflection.InputLayout);
 
-        var pipeline = logicalDevice.CreatePipeline(new PipelineDesc
+        var pipeline = device.CreatePipeline(new PipelineDesc
         {
             InputLayout = inputLayout,
-            RootSignature = rootSignature.Instance,
+            RootSignature = rootSignature,
             ShaderProgram = program,
             Graphics = new GraphicsPipelineDesc
             {
@@ -324,108 +137,35 @@ public sealed class SceneRenderPass : IDisposable
             }
         });
 
-        shader.AddVariant(variantName, new ShaderVariant(pipeline, program));
-    }
-
-    public void Dispose()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
-        for (var i = 0; i < _frameConstantsBuffers.Length; i++)
-        {
-            _frameConstantsBuffers[i].UnmapMemory();
-            _lightConstantsBuffers[i].UnmapMemory();
-            _boneMatricesBuffers[i].UnmapMemory();
-
-            _frameConstantsBuffers[i].Dispose();
-            _lightConstantsBuffers[i].Dispose();
-            _boneMatricesBuffers[i].Dispose();
-        }
-
-        _frameBindings.Dispose();
-        _textureBindings.Dispose();
-        _samplerBindings.Dispose();
-        _instanceBuffer.Dispose();
-
-        _skinnedFrameBindings.Dispose();
-        _skinnedTextureBindings.Dispose();
-        _skinnedSamplerBindings.Dispose();
-        _skinnedBoneBindings.Dispose();
-        _skinnedInstanceBuffer.Dispose();
-
-        _nullTexture.Dispose();
-        _textureSampler.Dispose();
-        _shadowSampler.Dispose();
-        _shader.Dispose();
-        _skinnedShader.Dispose();
-        _rtAttachments.Dispose();
-    }
-
-    public void SetShadowAtlas(Texture shadowAtlas)
-    {
-        _shadowAtlas = shadowAtlas;
+        return (pipeline, program, inputLayout);
     }
 
     public void SetActiveTexture(Texture? texture)
     {
-        _activeTexture = texture ?? _nullTexture.Texture;
+        _boundAlbedoTexture = texture;
     }
 
-    public unsafe void Execute(
+    public void Execute(
         ref RenderPassExecuteContext ctx,
-        RenderScene renderScene,
+        GpuView gpuView,
+        GpuDrawBatcher drawBatcher,
+        AssetResource assets,
         ResourceHandle sceneRt,
         ResourceHandle depthRt,
-        Viewport viewport,
-        float time)
+        Viewport viewport)
     {
         var cmd = ctx.CommandList;
         var rt = ctx.GetTexture(sceneRt);
         var depth = ctx.GetTexture(depthRt);
-        var frameIndex = (int)ctx.FrameIndex;
+        var frameIndex = ctx.FrameIndex;
 
         ctx.ResourceTracking.TransitionTexture(cmd, rt,
             (uint)ResourceUsageFlagBits.RenderTarget, QueueType.Graphics);
         ctx.ResourceTracking.TransitionTexture(cmd, depth,
             (uint)ResourceUsageFlagBits.DepthWrite, QueueType.Graphics);
 
-
-        ref readonly var mainView = ref renderScene.MainView;
-        var frameConstants = new FrameConstants
-        {
-            ViewProjection = mainView.ViewProjection,
-            CameraPosition = mainView.Position,
-            Time = time
-        };
-        Unsafe.Write(_frameBufferMappedPtrs[frameIndex].ToPointer(), frameConstants);
-
-        UpdateLightConstants(renderScene, frameIndex);
-
-        var activeTexture = _activeTexture ?? _nullTexture.Texture;
-        var shadowTex = _shadowAtlas ?? _nullTexture.Texture;
-
-        if (_boundShadowAtlas[frameIndex] != shadowTex || _boundActiveTexture[frameIndex] != activeTexture)
-        {
-            _boundShadowAtlas[frameIndex] = shadowTex;
-            _boundActiveTexture[frameIndex] = activeTexture;
-
-            var texBg = _textureBindings[frameIndex];
-            texBg.BeginUpdate();
-            texBg.SrvTexture(0, shadowTex);
-            texBg.SrvTexture(1, activeTexture);
-            texBg.EndUpdate();
-
-            var skinnedTexBg = _skinnedTextureBindings[frameIndex];
-            skinnedTexBg.BeginUpdate();
-            skinnedTexBg.SrvTexture(0, shadowTex);
-            skinnedTexBg.SrvTexture(1, activeTexture);
-            skinnedTexBg.EndUpdate();
-        }
+        var activeTexture = _boundAlbedoTexture ?? _nullTexture.Texture;
+        UpdateMaterialBindings(frameIndex, activeTexture);
 
         _rtAttachments[0] = new RenderingAttachmentDesc
         {
@@ -450,238 +190,103 @@ public sealed class SceneRenderPass : IDisposable
         cmd.BindViewport(viewport.X, viewport.Y, viewport.Width, viewport.Height);
         cmd.BindScissorRect(viewport.X, viewport.Y, viewport.Width, viewport.Height);
 
-        RenderStaticBatches(cmd, frameIndex, renderScene);
-        RenderSkinnedInstances(cmd, frameIndex, renderScene);
+        RenderStaticDraws(cmd, frameIndex, gpuView, drawBatcher, assets);
+        RenderSkinnedDraws(cmd, frameIndex, gpuView, drawBatcher, assets);
 
         cmd.EndRendering();
     }
 
-    private void RenderStaticBatches(CommandList cmd, int frameIndex, RenderScene renderScene)
+    private void UpdateMaterialBindings(uint frameIndex, Texture albedo)
     {
-        _shader.TryGetPipeline("static", out var staticPipeline);
-        cmd.BindPipeline(staticPipeline);
-        cmd.BindResourceGroup(_frameBindings[frameIndex]);
-        cmd.BindResourceGroup(_textureBindings[frameIndex]);
-        cmd.BindResourceGroup(_samplerBindings[frameIndex]);
-        cmd.BindResourceGroup(_instanceBuffer.GetBindGroup(frameIndex));
-
-        var batches = renderScene.StaticBatches;
-        var instances = renderScene.StaticInstances;
-
-        // Write ALL instances once upfront (more efficient than per-batch writes)
-        for (var i = 0; i < instances.Length; i++)
-        {
-            var inst = instances[i];
-            _instanceBuffer.WriteInstance(frameIndex, i, new GpuInstanceData
-            {
-                Model = inst.Transform,
-                BaseColor = inst.BaseColor,
-                Metallic = inst.Metallic,
-                Roughness = inst.Roughness,
-                AmbientOcclusion = inst.AmbientOcclusion,
-                UseAlbedoTexture = inst.AlbedoTextureIndex >= 0 ? 1u : 0u
-            });
-        }
-
-        // Render each batch using firstInstance offset
-        foreach (var batch in batches)
-        {
-            // Look up the RuntimeMesh by MeshId (reinterpret cast - same layout)
-            var meshId = batch.Mesh;
-            var meshHandle = Unsafe.As<MeshId, RuntimeMeshHandle>(ref meshId);
-            ref readonly var runtimeMesh = ref _assets.GetMeshRef(meshHandle);
-            if (Unsafe.IsNullRef(ref Unsafe.AsRef(in runtimeMesh)))
-            {
-                continue;
-            }
-
-            cmd.BindVertexBuffer(runtimeMesh.VertexBuffer.View.Buffer, runtimeMesh.VertexBuffer.View.Offset,
-                runtimeMesh.VertexBuffer.Stride, 0);
-            cmd.BindIndexBuffer(runtimeMesh.IndexBuffer.View.Buffer, runtimeMesh.IndexBuffer.IndexType,
-                runtimeMesh.IndexBuffer.View.Offset);
-            // Use firstInstance = batch.StartIndex to reference the correct instances
-            cmd.DrawIndexed(runtimeMesh.IndexBuffer.Count, (uint)batch.Count, 0, 0, (uint)batch.StartIndex);
-        }
+        var bg = _materialBindGroups[frameIndex];
+        bg.BeginUpdate();
+        bg.SrvTexture(GpuMaterialLayout.Albedo.Binding, albedo);
+        bg.EndUpdate();
     }
 
-    private unsafe void RenderSkinnedInstances(CommandList cmd, int frameIndex, RenderScene renderScene)
+    private void RenderStaticDraws(CommandList cmd, uint frameIndex, GpuView gpuView, GpuDrawBatcher drawBatcher,
+        AssetResource assets)
     {
-        var skinnedInstances = renderScene.SkinnedInstances;
-        if (skinnedInstances.Length == 0)
+        var draws = drawBatcher.StaticDraws;
+        if (draws.Length == 0)
         {
             return;
         }
 
-        var boneMatricesPtr = (Matrix4x4*)_boneMatricesMappedPtrs[frameIndex].ToPointer();
-        var allBoneMatrices = renderScene.SkinnedBoneMatrices;
+        cmd.BindPipeline(_staticPipeline);
+        cmd.BindGroup(gpuView.GetBindGroup(frameIndex));
+        cmd.BindGroup(_materialBindGroups[frameIndex]);
+        cmd.BindGroup(drawBatcher.GetInstanceBindGroup(frameIndex));
 
-        _skinnedShader.TryGetPipeline("skinned", out var skinnedPipeline);
-        cmd.BindPipeline(skinnedPipeline);
-        cmd.BindResourceGroup(_skinnedFrameBindings[frameIndex]);
-        cmd.BindResourceGroup(_skinnedTextureBindings[frameIndex]);
-        cmd.BindResourceGroup(_skinnedSamplerBindings[frameIndex]);
-        cmd.BindResourceGroup(_skinnedBoneBindings[frameIndex]);
-        cmd.BindResourceGroup(_skinnedInstanceBuffer.GetBindGroup(frameIndex));
-
-        foreach (var skinned in skinnedInstances)
+        foreach (var draw in draws)
         {
-            var meshId = skinned.Mesh;
-            var meshHandle = Unsafe.As<MeshId, RuntimeMeshHandle>(ref meshId);
-            ref readonly var runtimeMesh = ref _assets.GetMeshRef(meshHandle);
+            var meshHandle = Unsafe.As<MeshId, RuntimeMeshHandle>(ref Unsafe.AsRef(in draw.Mesh));
+            ref readonly var runtimeMesh = ref assets.GetMeshRef(meshHandle);
             if (Unsafe.IsNullRef(ref Unsafe.AsRef(in runtimeMesh)))
             {
                 continue;
             }
 
-            // Copy bone matrices
-            var boneCount = Math.Min(skinned.BoneCount, MaxBones);
-            if (boneCount > 0 && skinned.BoneMatricesOffset + boneCount <= allBoneMatrices.Length)
-            {
-                for (var i = 0; i < boneCount; i++)
-                {
-                    boneMatricesPtr[i] = allBoneMatrices[skinned.BoneMatricesOffset + i];
-                }
-            }
-            for (var i = boneCount; i < MaxBones; i++)
-            {
-                boneMatricesPtr[i] = Matrix4x4.Identity;
-            }
+            cmd.BindVertexBuffer(runtimeMesh.VertexBuffer.View.Buffer, runtimeMesh.VertexBuffer.View.Offset,
+                runtimeMesh.VertexBuffer.Stride, 0);
+            cmd.BindIndexBuffer(runtimeMesh.IndexBuffer.View.Buffer, runtimeMesh.IndexBuffer.IndexType,
+                runtimeMesh.IndexBuffer.View.Offset);
+            cmd.DrawIndexed(runtimeMesh.IndexBuffer.Count, (uint)draw.InstanceCount, 0, 0, (uint)draw.InstanceOffset);
+        }
+    }
 
-            // Write instance
-            _skinnedInstanceBuffer.WriteInstance(frameIndex, 0, new GpuInstanceData
+    private void RenderSkinnedDraws(CommandList cmd, uint frameIndex, GpuView gpuView, GpuDrawBatcher drawBatcher,
+        AssetResource assets)
+    {
+        var draws = drawBatcher.SkinnedDraws;
+        if (draws.Length == 0)
+        {
+            return;
+        }
+
+        cmd.BindPipeline(_skinnedPipeline);
+        cmd.BindGroup(gpuView.GetBindGroup(frameIndex)); // Space 1: Camera/Lights
+        cmd.BindGroup(_materialBindGroups[frameIndex]); // Space 2: Material
+        cmd.BindGroup(drawBatcher.GetSkinnedBindGroup(frameIndex)); // Space 3: Instance + Bones
+
+        foreach (var draw in draws)
+        {
+            var meshHandle = Unsafe.As<MeshId, RuntimeMeshHandle>(ref Unsafe.AsRef(in draw.Mesh));
+            ref readonly var runtimeMesh = ref assets.GetMeshRef(meshHandle);
+            if (Unsafe.IsNullRef(ref Unsafe.AsRef(in runtimeMesh)))
             {
-                Model = skinned.Transform,
-                BaseColor = skinned.Material.BaseColor,
-                Metallic = skinned.Material.Metallic,
-                Roughness = skinned.Material.Roughness,
-                AmbientOcclusion = skinned.Material.AmbientOcclusion,
-                UseAlbedoTexture = skinned.Material.AlbedoTexture.IsValid ? 1u : 0u
-            });
+                continue;
+            }
 
             cmd.BindVertexBuffer(runtimeMesh.VertexBuffer.View.Buffer, runtimeMesh.VertexBuffer.View.Offset,
                 runtimeMesh.VertexBuffer.Stride, 0);
             cmd.BindIndexBuffer(runtimeMesh.IndexBuffer.View.Buffer, runtimeMesh.IndexBuffer.IndexType,
                 runtimeMesh.IndexBuffer.View.Offset);
-            cmd.DrawIndexed(runtimeMesh.IndexBuffer.Count, 1, 0, 0, 0);
+            cmd.DrawIndexed(runtimeMesh.IndexBuffer.Count, 1, 0, 0, (uint)draw.InstanceOffset);
         }
     }
 
-    private unsafe void UpdateLightConstants(RenderScene renderScene, int frameIndex)
+    public void Dispose()
     {
-        var ambientSkyColor = new Vector3(0.4f, 0.5f, 0.6f);
-        var ambientGroundColor = new Vector3(0.2f, 0.18f, 0.15f);
-        var ambientIntensity = 0.3f;
-
-        var lights = stackalloc GpuLight[MaxLights];
-        var shadows = stackalloc GpuShadowData[MaxShadowLights];
-        var lightIndex = 0;
-
-        var sceneLights = renderScene.Lights;
-        foreach (var light in sceneLights)
+        if (_disposed)
         {
-            if (lightIndex >= MaxLights)
-            {
-                break;
-            }
-
-            uint lightType = light.Type switch
-            {
-                LightType.Directional => LightTypeDirectional,
-                LightType.Point => LightTypePoint,
-                LightType.Spot => LightTypeSpot,
-                _ => LightTypeDirectional
-            };
-
-            lights[lightIndex] = new GpuLight
-            {
-                PositionOrDirection = light.Type == LightType.Directional ? light.Direction : light.Position,
-                Type = lightType,
-                Color = light.Color,
-                Intensity = light.Intensity,
-                SpotDirection = light.Direction,
-                Radius = light.Range,
-                InnerConeAngle = MathF.Cos(light.SpotInnerAngle),
-                OuterConeAngle = MathF.Cos(light.SpotOuterAngle),
-                ShadowIndex = -1
-            };
-            lightIndex++;
+            return;
         }
 
-        var lightConstants = new LightConstants
-        {
-            AmbientSkyColor = ambientSkyColor,
-            AmbientGroundColor = ambientGroundColor,
-            AmbientIntensity = ambientIntensity,
-            NumLights = (uint)lightIndex,
-            NumShadows = 0
-        };
+        _disposed = true;
 
-        var lightPtr = (GpuLight*)lightConstants.Lights;
-        var shadowPtr = (GpuShadowData*)lightConstants.Shadows;
-
-        for (var i = 0; i < lightIndex; i++)
+        foreach (var bg in _materialBindGroups)
         {
-            lightPtr[i] = lights[i];
+            bg.Dispose();
         }
-        Unsafe.Write(_lightBufferMappedPtrs[frameIndex].ToPointer(), lightConstants);
-    }
 
-    [StructLayout(LayoutKind.Sequential)]
-    private struct FrameConstants
-    {
-        public Matrix4x4 ViewProjection;
-        public Vector3 CameraPosition;
-        public float Time;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct GpuLight
-    {
-        public Vector3 PositionOrDirection;
-        public uint Type;
-        public Vector3 Color;
-        public float Intensity;
-        public Vector3 SpotDirection;
-        public float Radius;
-        public float InnerConeAngle;
-        public float OuterConeAngle;
-        public int ShadowIndex;
-        public float Pad0;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct GpuShadowData
-    {
-        public Matrix4x4 LightViewProjection;
-        public Vector4 AtlasScaleOffset;
-        public float Bias;
-        public float NormalBias;
-        public Vector2 Padding;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private unsafe struct LightConstants
-    {
-        public fixed byte Lights[MaxLights * 64];
-        public fixed byte Shadows[MaxShadowLights * 96];
-        public Vector3 AmbientSkyColor;
-        public uint NumLights;
-        public Vector3 AmbientGroundColor;
-        public float AmbientIntensity;
-        public uint NumShadows;
-        public uint Pad0;
-        public uint Pad1;
-        public uint Pad2;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    public struct GpuInstanceData
-    {
-        public Matrix4x4 Model;
-        public Vector4 BaseColor;
-        public float Metallic;
-        public float Roughness;
-        public float AmbientOcclusion;
-        public uint UseAlbedoTexture;
+        _nullTexture.Dispose();
+        _textureSampler.Dispose();
+        _staticPipeline.Dispose();
+        _skinnedPipeline.Dispose();
+        _staticProgram.Dispose();
+        _skinnedProgram.Dispose();
+        _inputLayout.Dispose();
+        _rtAttachments.Dispose();
     }
 }

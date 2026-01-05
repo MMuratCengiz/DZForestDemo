@@ -4,6 +4,7 @@ using Application.Windowing;
 using DenOfIz;
 using DenOfIz.World;
 using Graphics;
+using Graphics.Renderer;
 
 namespace Application;
 
@@ -11,10 +12,21 @@ public sealed class Game : IDisposable
 {
     private readonly FixedTimestep _fixedTimestep;
     private readonly IGame _game;
+    private readonly IRenderer? _renderer = null;
+    private readonly World _world = new();
     private bool _disposed;
     private Scene? _activeScene;
     private Scene? _pendingScene;
 
+    
+    public AppWindow Window { get; }
+    public FrameClock Clock { get; }
+    public GraphicsContext Graphics { get; }
+    public Scene? ActiveScene => _activeScene;
+    public World World => _world;
+    
+    public bool IsRunning { get; set; }
+    
     static Game()
     {
         DenOfIzRuntime.Initialize();
@@ -26,16 +38,12 @@ public sealed class Game : IDisposable
         desc ??= new GameDesc();
         _game = game;
         _fixedTimestep = new FixedTimestep(desc.FixedUpdateRate);
+        _renderer = renderer;
         Window = new AppWindow(desc.Title, desc.Width, desc.Height);
         Clock = new FrameClock();
         Graphics = new GraphicsContext(Window.NativeWindow, desc.Graphics, renderer);
     }
 
-    public AppWindow Window { get; }
-    public FrameClock Clock { get; }
-    public GraphicsContext Graphics { get; }
-    public Scene? ActiveScene => _activeScene;
-    private bool IsRunning { get; set; }
 
     public void LoadScene(Scene scene)
     {
@@ -72,6 +80,7 @@ public sealed class Game : IDisposable
 
         _disposed = true;
         _activeScene?.OnUnload?.Invoke();
+        _renderer?.Dispose();
         Graphics.Dispose();
         Window.Dispose();
         Engine.Shutdown();
@@ -86,6 +95,7 @@ public sealed class Game : IDisposable
         {
             _activeScene?.OnUnload?.Invoke();
             _activeScene = _pendingScene;
+            _world.CurrentScene = _activeScene;
             _pendingScene = null;
             _activeScene?.OnLoad?.Invoke();
         }
@@ -111,7 +121,8 @@ public sealed class Game : IDisposable
         _game.OnUpdate((float)Clock.DeltaTime);
 
         Graphics.BeginFrame();
-        Graphics.Render();
+
+        _renderer.Render(_world);
         _game.OnRender();
         Graphics.EndFrame();
     }
@@ -133,6 +144,7 @@ public sealed class Game : IDisposable
                 if (ev.Window.Event == WindowEventType.Resized)
                 {
                     Graphics.Resize((uint)ev.Window.Data1, (uint)ev.Window.Data2);
+                    _renderer.OnResize((uint)ev.Window.Data1, (uint)ev.Window.Data2);
                 }
             }
 

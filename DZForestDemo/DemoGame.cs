@@ -2,18 +2,18 @@ using System.Numerics;
 using Application;
 using DenOfIz;
 using DenOfIz.World;
-using Graphics;
+using DenOfIz.World.Light;
 using Graphics.Batching;
 using Physics;
 using RuntimeAssets;
-using RuntimeAssets.GltfModels;
 
 namespace DZForestDemo;
 
 public sealed class DemoGame : IGame
 {
     private Game _game = null!;
-    private Camera _camera = null!;
+    private Camera _cameraController = null!;
+    private CameraObject _cameraObject = null!;
     private DemoRenderer? _renderer;
 
     private Scene? _foxScene;
@@ -22,39 +22,36 @@ public sealed class DemoGame : IGame
     private RuntimeMeshHandle _platformMesh;
     private RuntimeMeshHandle _sphereMesh;
     private RuntimeMeshHandle _smallSphereMesh;
-    private ModelLoadResult? _foxModel;
+    private RuntimeMeshHandle _foxMesh;
     private RuntimeTextureHandle _foxTexture;
     private RuntimeSkeletonHandle _foxSkeleton;
     private RuntimeAnimationHandle _foxAnimation;
 
     private readonly List<RenderObjectData> _renderObjects = [];
-    private readonly List<RenderLight> _lights = [];
     private readonly Dictionary<int, int> _sceneObjectToRenderIndex = new();
     private readonly Dictionary<int, AnimatorInstance> _animators = new();
 
     private readonly RenderMaterial[] _materialPalette =
     [
-        new RenderMaterial { BaseColor = new Vector4(0.8f, 0.2f, 0.2f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
-        new RenderMaterial { BaseColor = new Vector4(0.2f, 0.8f, 0.2f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
-        new RenderMaterial { BaseColor = new Vector4(0.2f, 0.2f, 0.8f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
-        new RenderMaterial { BaseColor = new Vector4(0.9f, 0.9f, 0.2f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
-        new RenderMaterial { BaseColor = new Vector4(1.0f, 0.5f, 0.0f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
-        new RenderMaterial { BaseColor = new Vector4(0.6f, 0.2f, 0.8f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
-        new RenderMaterial { BaseColor = new Vector4(0.2f, 0.8f, 0.8f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
-        new RenderMaterial { BaseColor = new Vector4(0.6f, 0.4f, 0.2f, 1f), Metallic = 0f, Roughness = 0.7f, AmbientOcclusion = 1f },
-        new RenderMaterial { BaseColor = new Vector4(0.8f, 0.8f, 0.8f, 1f), Metallic = 0.9f, Roughness = 0.1f, AmbientOcclusion = 1f },
-        new RenderMaterial { BaseColor = new Vector4(0.7f, 0.4f, 0.3f, 1f), Metallic = 0.8f, Roughness = 0.2f, AmbientOcclusion = 1f },
+        new() { BaseColor = new Vector4(0.8f, 0.2f, 0.2f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
+        new() { BaseColor = new Vector4(0.2f, 0.8f, 0.2f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
+        new() { BaseColor = new Vector4(0.2f, 0.2f, 0.8f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
+        new() { BaseColor = new Vector4(0.9f, 0.9f, 0.2f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
+        new() { BaseColor = new Vector4(1.0f, 0.5f, 0.0f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
+        new() { BaseColor = new Vector4(0.6f, 0.2f, 0.8f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
+        new() { BaseColor = new Vector4(0.2f, 0.8f, 0.8f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
+        new() { BaseColor = new Vector4(0.6f, 0.4f, 0.2f, 1f), Metallic = 0f, Roughness = 0.7f, AmbientOcclusion = 1f },
+        new() { BaseColor = new Vector4(0.8f, 0.8f, 0.8f, 1f), Metallic = 0.9f, Roughness = 0.1f, AmbientOcclusion = 1f },
+        new() { BaseColor = new Vector4(0.7f, 0.4f, 0.3f, 1f), Metallic = 0.8f, Roughness = 0.2f, AmbientOcclusion = 1f },
     ];
 
     private readonly Random _random = new();
 
-    public Camera Camera => _camera;
     public PhysicsWorld? Physics { get; private set; }
     public AssetManager? Assets { get; private set; }
     public AnimationManager? Animation { get; private set; }
 
     public IReadOnlyList<RenderObjectData> RenderObjects => _renderObjects;
-    public IReadOnlyList<RenderLight> Lights => _lights;
 
     public void SetRenderer(DemoRenderer renderer)
     {
@@ -65,11 +62,11 @@ public sealed class DemoGame : IGame
     {
         _game = game;
 
-        _camera = new Camera(
+        _cameraController = new Camera(
             new Vector3(0, 12, 25),
             new Vector3(0, 2, 0)
         );
-        _camera.SetAspectRatio(game.Graphics.Width, game.Graphics.Height);
+        _cameraController.SetAspectRatio(game.Graphics.Width, game.Graphics.Height);
 
         Physics = new PhysicsWorld();
         Assets = new AssetManager(game.Graphics.LogicalDevice);
@@ -89,10 +86,10 @@ public sealed class DemoGame : IGame
         _sphereMesh = Assets.AddSphere(1.0f);
         _smallSphereMesh = Assets.AddSphere(0.3f, 8);
 
-        _foxModel = Assets.AddModel("Fox.glb");
-        if (!_foxModel.Success)
+        _foxMesh = Assets.AddMesh("fox.dzmesh");
+        if (!_foxMesh.IsValid)
         {
-            Console.WriteLine($"Failed to load Fox model: {_foxModel.ErrorMessage}");
+            Console.WriteLine("Failed to load Fox mesh");
         }
 
         _foxTexture = Assets.AddTexture("Fox_Texture.dztex");
@@ -113,11 +110,11 @@ public sealed class DemoGame : IGame
         scene.OnLoad = () =>
         {
             _renderObjects.Clear();
-            _lights.Clear();
             _sceneObjectToRenderIndex.Clear();
 
-            CreateLights();
-            CreateSceneObjects(scene);
+            CreateCamera(scene);
+            CreateLights(scene);
+            CreateGameObjects(scene);
         };
 
         scene.OnUnload = () =>
@@ -128,7 +125,6 @@ public sealed class DemoGame : IGame
             }
             _animators.Clear();
             _renderObjects.Clear();
-            _lights.Clear();
             _sceneObjectToRenderIndex.Clear();
             scene.Clear();
         };
@@ -136,55 +132,55 @@ public sealed class DemoGame : IGame
         return scene;
     }
 
-    private void CreateLights()
+    private void CreateCamera(Scene scene)
     {
-        _lights.Add(new RenderLight
-        {
-            Type = LightType.Directional,
-            Direction = Vector3.Normalize(new Vector3(0.4f, -0.8f, 0.3f)),
-            Color = new Vector3(1.0f, 0.95f, 0.9f),
-            Intensity = 0.6f,
-            CastsShadows = true
-        });
+        _cameraObject = scene.CreateObject<CameraObject>("MainCamera");
+        _cameraObject.LocalPosition = _cameraController.Position;
+        _cameraObject.FieldOfView = _cameraController.FieldOfView;
+        _cameraObject.NearPlane = _cameraController.NearPlane;
+        _cameraObject.FarPlane = _cameraController.FarPlane;
+        _cameraObject.AspectRatio = _cameraController.AspectRatio;
 
-        _lights.Add(new RenderLight
-        {
-            Type = LightType.Point,
-            Position = new Vector3(6, 6, 6),
-            Color = new Vector3(1.0f, 0.7f, 0.4f),
-            Intensity = 2.5f,
-            Range = 18.0f
-        });
-
-        _lights.Add(new RenderLight
-        {
-            Type = LightType.Point,
-            Position = new Vector3(-6, 5, -4),
-            Color = new Vector3(0.4f, 0.6f, 1.0f),
-            Intensity = 2.0f,
-            Range = 15.0f
-        });
-
-        _lights.Add(new RenderLight
-        {
-            Type = LightType.Point,
-            Position = new Vector3(-5, 4, 6),
-            Color = new Vector3(0.9f, 0.3f, 0.5f),
-            Intensity = 1.8f,
-            Range = 14.0f
-        });
-
-        _lights.Add(new RenderLight
-        {
-            Type = LightType.Point,
-            Position = new Vector3(5, 3, -5),
-            Color = new Vector3(0.4f, 0.9f, 0.5f),
-            Intensity = 1.6f,
-            Range = 12.0f
-        });
+        scene.MainCamera = _cameraObject;
     }
 
-    private void CreateSceneObjects(Scene scene)
+    private void CreateLights(Scene scene)
+    {
+        var sun = scene.CreateObject<DirectionalLight>("Sun");
+        sun.LookAt(Vector3.Normalize(new Vector3(0.4f, -0.8f, 0.3f)));
+        sun.Color = new Vector3(1.0f, 0.95f, 0.9f);
+        sun.Intensity = 0.6f;
+        sun.CastsShadows = true;
+
+        var pointLight1 = scene.CreateObject<PointLight>("PointLight_Warm");
+        pointLight1.LocalPosition = new Vector3(6, 6, 6);
+        pointLight1.Color = new Vector3(1.0f, 0.7f, 0.4f);
+        pointLight1.Intensity = 2.5f;
+        pointLight1.Range = 18.0f;
+
+        // Point light 2 - cool blue
+        var pointLight2 = scene.CreateObject<PointLight>("PointLight_Blue");
+        pointLight2.LocalPosition = new Vector3(-6, 5, -4);
+        pointLight2.Color = new Vector3(0.4f, 0.6f, 1.0f);
+        pointLight2.Intensity = 2.0f;
+        pointLight2.Range = 15.0f;
+
+        // Point light 3 - pink
+        var pointLight3 = scene.CreateObject<PointLight>("PointLight_Pink");
+        pointLight3.LocalPosition = new Vector3(-5, 4, 6);
+        pointLight3.Color = new Vector3(0.9f, 0.3f, 0.5f);
+        pointLight3.Intensity = 1.8f;
+        pointLight3.Range = 14.0f;
+
+        // Point light 4 - green
+        var pointLight4 = scene.CreateObject<PointLight>("PointLight_Green");
+        pointLight4.LocalPosition = new Vector3(5, 3, -5);
+        pointLight4.Color = new Vector3(0.4f, 0.9f, 0.5f);
+        pointLight4.Intensity = 1.6f;
+        pointLight4.Range = 12.0f;
+    }
+
+    private void CreateGameObjects(Scene scene)
     {
         var platform = scene.CreateObject("Platform");
         platform.LocalPosition = new Vector3(0, -2, 0);
@@ -198,7 +194,7 @@ public sealed class DemoGame : IGame
         Physics!.CreateStaticBody(platform.Id, platform.LocalPosition, Quaternion.Identity,
             PhysicsShape.Box(new Vector3(20f, 1f, 20f)));
 
-        if (_foxModel is { Success: true })
+        if (_foxMesh.IsValid)
         {
             SpawnFox(scene);
         }
@@ -217,7 +213,7 @@ public sealed class DemoGame : IGame
 
     private void SpawnFox(Scene scene)
     {
-        if (_foxModel is not { Success: true })
+        if (!_foxMesh.IsValid)
         {
             return;
         }
@@ -231,27 +227,20 @@ public sealed class DemoGame : IGame
             AlbedoTexture = new TextureId(_foxTexture.Index, _foxTexture.Generation)
         };
 
-        var skin = _foxModel.Skins.FirstOrDefault();
-        var skeletonRootTransform = skin?.SkeletonRootTransform ?? Matrix4x4.Identity;
-        var inverseBindMatrices = skin?.InverseBindMatrices ?? _foxModel.InverseBindMatrices;
+        var fox = scene.CreateObject("Fox");
+        fox.LocalPosition = new Vector3(-4f, -1.5f, 0f);
 
-        foreach (var meshHandle in _foxModel.MeshHandles)
+        AnimatorInstance? animator = null;
+        if (_foxSkeleton.IsValid)
         {
-            var fox = scene.CreateObject("Fox");
-            fox.LocalPosition = new Vector3(-4f, -1.5f, 0f);
-
-            AnimatorInstance? animator = null;
-            if (_foxSkeleton.IsValid)
-            {
-                animator = Animation!.CreateAnimator(_foxSkeleton, inverseBindMatrices?.ToArray(), skeletonRootTransform);
-                animator.CurrentAnimation = _foxAnimation;
-                animator.IsPlaying = true;
-                animator.Loop = true;
-                _animators[fox.Id] = animator;
-            }
-
-            AddRenderObject(fox, meshHandle, foxMaterial, RenderFlags.CastsShadow | RenderFlags.Skinned, animator);
+            animator = Animation!.CreateAnimator(_foxSkeleton, null, Matrix4x4.Identity);
+            animator.CurrentAnimation = _foxAnimation;
+            animator.IsPlaying = true;
+            animator.Loop = true;
+            _animators[fox.Id] = animator;
         }
+
+        AddRenderObject(fox, _foxMesh, foxMaterial, RenderFlags.CastsShadow | RenderFlags.Skinned, animator);
     }
 
     private void SpawnDynamicCube(Scene scene, Vector3 position, RenderMaterial material)
@@ -312,7 +301,7 @@ public sealed class DemoGame : IGame
         }
     }
 
-    private void AddRenderObject(SceneObject obj, RuntimeMeshHandle mesh, RenderMaterial material,
+    private void AddRenderObject(GameObject obj, RuntimeMeshHandle mesh, RenderMaterial material,
         RenderFlags flags = RenderFlags.CastsShadow, AnimatorInstance? animator = null)
     {
         var index = _renderObjects.Count;
@@ -331,11 +320,31 @@ public sealed class DemoGame : IGame
 
     public void OnUpdate(float dt)
     {
-        _camera.Update(dt);
+        _cameraController.Update(dt);
         Animation?.Update(dt);
 
+        SyncCameraToSceneObject();
         SyncPhysicsToSceneObjects();
         SyncSceneObjectsToRenderData();
+    }
+
+    private void SyncCameraToSceneObject()
+    {
+        if (_cameraObject == null)
+        {
+            return;
+        }
+
+        // Sync controller state to the scene camera object
+        _cameraObject.LocalPosition = _cameraController.Position;
+        _cameraObject.SetYawPitch(
+            MathF.Atan2(_cameraController.Forward.X, _cameraController.Forward.Z),
+            MathF.Asin(Math.Clamp(_cameraController.Forward.Y, -1f, 1f))
+        );
+        _cameraObject.FieldOfView = _cameraController.FieldOfView;
+        _cameraObject.AspectRatio = _cameraController.AspectRatio;
+        _cameraObject.NearPlane = _cameraController.NearPlane;
+        _cameraObject.FarPlane = _cameraController.FarPlane;
     }
 
     private void SyncPhysicsToSceneObjects()
@@ -351,7 +360,7 @@ public sealed class DemoGame : IGame
         }
     }
 
-    private void SyncPhysicsRecursive(SceneObject obj)
+    private void SyncPhysicsRecursive(GameObject obj)
     {
         var pose = Physics!.GetPose(obj.Id);
         if (pose.HasValue)
@@ -379,7 +388,7 @@ public sealed class DemoGame : IGame
         }
     }
 
-    private void SyncRenderDataRecursive(SceneObject obj)
+    private void SyncRenderDataRecursive(GameObject obj)
     {
         if (_sceneObjectToRenderIndex.TryGetValue(obj.Id, out var index))
         {
@@ -406,11 +415,14 @@ public sealed class DemoGame : IGame
     public void OnEvent(ref Event ev)
     {
         _renderer?.HandleEvent(ev);
-        _camera.HandleEvent(ev);
+        _cameraController.HandleEvent(ev);
 
         if (ev is { Type: EventType.WindowEvent, Window.Event: WindowEventType.Resized })
         {
-            _camera.SetAspectRatio((uint)ev.Window.Data1, (uint)ev.Window.Data2);
+            var width = (uint)ev.Window.Data1;
+            var height = (uint)ev.Window.Data2;
+            _cameraController.SetAspectRatio(width, height);
+            _cameraObject?.SetAspectRatio(width, height);
         }
 
         if (ev.Type == EventType.KeyDown)

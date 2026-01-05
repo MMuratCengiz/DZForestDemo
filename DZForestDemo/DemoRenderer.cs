@@ -1,10 +1,16 @@
 using System.Numerics;
+using System.Runtime.InteropServices;
 using DenOfIz;
+using DenOfIz.World;
 using DZForestDemo.RenderPasses;
 using Graphics;
 using Graphics.Batching;
+using Graphics.Binding;
+using Graphics.Binding.Data;
+using Graphics.Renderer;
 using Graphics.RenderGraph;
 using RuntimeAssets;
+using RuntimeAssets.Store;
 
 namespace DZForestDemo;
 
@@ -12,14 +18,15 @@ public sealed class DemoRenderer(DemoGame game) : IRenderer
 {
     private GraphicsContext _ctx = null!;
 
-    private RenderScene _renderScene = null!;
+    private GpuView? _gpuView;
+    private GpuDrawBatcher? _drawBatcher;
+
     private SceneRenderPass? _scenePass;
     private CompositeRenderPass? _compositePass;
     private DebugRenderPass? _debugPass;
     private UiRenderPass? _uiPass;
     private StepTimer _stepTimer = null!;
 
-    private readonly Dictionary<int, RenderObjectHandle> _renderHandles = new();
     private float _totalTime;
     private bool _passesInitialized;
 
@@ -27,7 +34,6 @@ public sealed class DemoRenderer(DemoGame game) : IRenderer
     {
         _ctx = ctx;
         _stepTimer = new StepTimer();
-        _renderScene = new RenderScene();
     }
 
     private void EnsurePassesInitialized()
@@ -39,6 +45,9 @@ public sealed class DemoRenderer(DemoGame game) : IRenderer
 
         _passesInitialized = true;
 
+        _gpuView = new GpuView(_ctx);
+        _drawBatcher = new GpuDrawBatcher(_ctx);
+
         var assets = game.Assets!.Resource;
         _scenePass = new SceneRenderPass(_ctx, assets);
         _compositePass = new CompositeRenderPass(_ctx);
@@ -49,7 +58,7 @@ public sealed class DemoRenderer(DemoGame game) : IRenderer
         _uiPass.OnAdd100CubeClicked += game.Add100Cubes;
     }
 
-    public void Render(GraphicsContext ctx)
+    public void Render(World world)
     {
         EnsurePassesInitialized();
 
@@ -57,45 +66,39 @@ public sealed class DemoRenderer(DemoGame game) : IRenderer
         var deltaTime = (float)_stepTimer.GetElapsedSeconds();
         _totalTime += deltaTime;
 
-        _renderScene.BeginFrame();
+        var frameIndex = _ctx.FrameIndex;
+        var scene = world.CurrentScene;
 
-        SyncToRenderScene();
-        SyncLightsToRenderScene();
-
-        _renderScene.SetMainView(new RenderView
+        if (scene != null)
         {
-            View = game.Camera.ViewMatrix,
-            Projection = game.Camera.ProjectionMatrix,
-            ViewProjection = game.Camera.ViewProjectionMatrix,
-            Position = game.Camera.Position,
-            NearPlane = 0.1f,
-            FarPlane = 1000f
-        });
+            // Scene-based update: GpuView queries lights and camera from the scene
+            _gpuView!.Update(scene, frameIndex, deltaTime, _totalTime);
+        }
 
-        _renderScene.CommitFrame();
+        _drawBatcher!.BeginFrame(frameIndex);
+        BuildDrawsFromScene();
 
-        var renderGraph = ctx.RenderGraph;
-        var swapchainRt = ctx.SwapchainRenderTarget;
-        var viewport = ctx.SwapChain.GetViewport();
+        var renderGraph = _ctx.RenderGraph;
+        var swapchainRt = _ctx.SwapchainRenderTarget;
+        var viewport = _ctx.SwapChain.GetViewport();
 
         var sceneRt = renderGraph.CreateTransientTexture(new TransientTextureDesc
         {
-            Width = ctx.Width,
-            Height = ctx.Height,
-            Format = ctx.BackBufferFormat,
+            Width = _ctx.Width,
+            Height = _ctx.Height,
+            Format = _ctx.BackBufferFormat,
             Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding),
             DebugName = "SceneRT",
             ClearColorHint = new Vector4 { X = 0.02f, Y = 0.02f, Z = 0.04f, W = 1.0f }
         });
 
         var depthRt = renderGraph.CreateTransientTexture(TransientTextureDesc.DepthStencil(
-            ctx.Width, ctx.Height, Format.D32Float, "DepthRT"));
-
+            _ctx.Width, _ctx.Height, Format.D32Float, "DepthRT"));
 
         renderGraph.AddPass("Scene",
             (ref RenderPassExecuteContext passCtx) =>
             {
-                _scenePass!.Execute(ref passCtx, _renderScene, sceneRt, depthRt, viewport, _totalTime);
+                _scenePass!.Execute(ref passCtx, _gpuView!, _drawBatcher!, game.Assets!.Resource, sceneRt, depthRt, viewport);
             });
 
         var uiRt = _uiPass!.AddPass(renderGraph);
@@ -103,85 +106,71 @@ public sealed class DemoRenderer(DemoGame game) : IRenderer
         _compositePass!.AddPass(renderGraph, sceneRt, uiRt, debugRt, swapchainRt, viewport);
     }
 
-    private void SyncToRenderScene()
+    private readonly Dictionary<MeshId, List<GpuInstanceData>> _staticBatches = new();
+
+    private void BuildDrawsFromScene()
     {
-        var seenIds = new HashSet<int>();
+        foreach (var list in _staticBatches.Values)
+        {
+            list.Clear();
+        }
+
+        Texture? activeTexture = null;
 
         foreach (var data in game.RenderObjects)
         {
-            seenIds.Add(data.SceneObjectId);
-
-            if (_renderHandles.TryGetValue(data.SceneObjectId, out var handle))
+            if (activeTexture == null && data.Material.AlbedoTexture.IsValid)
             {
-                if (_renderScene.IsValid(handle))
+                var texHandle = new RuntimeTextureHandle(
+                    data.Material.AlbedoTexture.Index,
+                    data.Material.AlbedoTexture.Generation);
+                if (game.Assets!.Resource.TryGetTexture(texHandle, out var runtimeTex))
                 {
-                    _renderScene.SetTransform(handle, data.Transform);
-                    _renderScene.SetMaterial(handle, data.Material);
-
-                    if (data.Animator != null)
-                    {
-                        _renderScene.SetBoneMatrices(handle, data.Animator.GetFinalBoneMatrices());
-                    }
-                }
-                else
-                {
-                    _renderHandles.Remove(data.SceneObjectId);
+                    activeTexture = runtimeTex.Resource;
                 }
             }
 
-            if (!_renderHandles.ContainsKey(data.SceneObjectId))
+            var instance = new GpuInstanceData
             {
-                var newHandle = _renderScene.Add(new RenderObjectDesc
-                {
-                    Mesh = data.Mesh,
-                    Transform = data.Transform,
-                    Material = data.Material,
-                    Flags = data.Flags
-                });
+                Model = data.Transform,
+                BaseColor = data.Material.BaseColor,
+                Metallic = data.Material.Metallic,
+                Roughness = data.Material.Roughness,
+                AmbientOcclusion = data.Material.AmbientOcclusion,
+                UseAlbedoTexture = data.Material.AlbedoTexture.IsValid ? 1u : 0u
+            };
 
-                if (newHandle.IsValid())
+            if (data.Animator != null && (data.Flags & RenderFlags.Skinned) != 0)
+            {
+                var bones = data.Animator.GetFinalBoneMatrices();
+                _drawBatcher!.AddSkinnedDraw(data.Mesh, instance, bones);
+            }
+            else
+            {
+                if (!_staticBatches.TryGetValue(data.Mesh, out var list))
                 {
-                    _renderHandles[data.SceneObjectId] = newHandle;
-
-                    if (data.Animator != null)
-                    {
-                        _renderScene.SetBoneMatrices(newHandle, data.Animator.GetFinalBoneMatrices());
-                    }
+                    list = new List<GpuInstanceData>();
+                    _staticBatches[data.Mesh] = list;
                 }
+                list.Add(instance);
             }
         }
 
-        var toRemove = new List<int>();
-        foreach (var (id, handle) in _renderHandles)
-        {
-            if (!seenIds.Contains(id))
-            {
-                _renderScene.Remove(handle);
-                toRemove.Add(id);
-            }
-        }
+        _scenePass!.SetActiveTexture(activeTexture);
 
-        foreach (var id in toRemove)
+        foreach (var (meshId, instances) in _staticBatches)
         {
-            _renderHandles.Remove(id);
+            if (instances.Count > 0)
+            {
+                _drawBatcher!.AddStaticDraw(meshId, CollectionsMarshal.AsSpan(instances));
+            }
         }
     }
 
-    private void SyncLightsToRenderScene()
-    {
-        _renderScene.ClearLights();
-
-        foreach (var light in game.Lights)
-        {
-            _renderScene.AddLight(light);
-        }
-    }
-
-    public void OnResize(GraphicsContext ctx, uint width, uint height)
+    public void OnResize(uint width, uint height)
     {
         _debugPass?.SetScreenSize(width, height);
         _uiPass?.HandleResize(width, height);
-        game.Camera.SetAspectRatio(width, height);
     }
 
     public void HandleEvent(Event ev)
@@ -196,10 +185,11 @@ public sealed class DemoRenderer(DemoGame game) : IRenderer
 
     public void Dispose()
     {
+        _gpuView?.Dispose();
+        _drawBatcher?.Dispose();
         _debugPass?.Dispose();
         _compositePass?.Dispose();
         _scenePass?.Dispose();
         _uiPass?.Dispose();
-        _renderScene?.Dispose();
     }
 }

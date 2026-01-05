@@ -1,7 +1,5 @@
-// Scene vertex shader for model meshes (Static/Skinned)
-// Uses 80-byte vertex layout with tangent and bone data
-
 #include "common/vertex_input.hlsl"
+#include "common/constants.hlsl"
 
 struct PSInput
 {
@@ -12,7 +10,6 @@ struct PSInput
     nointerpolation uint InstanceID : TEXCOORD2;
 };
 
-// Per-instance data stored in a structured buffer
 struct InstanceData
 {
     float4x4 Model;
@@ -20,14 +17,11 @@ struct InstanceData
     float Metallic;
     float Roughness;
     float AmbientOcclusion;
-    float Padding;
-};
-
-cbuffer FrameConstants : register(b0, space0)
-{
-    float4x4 ViewProjection;
-    float3 CameraPosition;
-    float Time;
+    uint UseAlbedoTexture;
+    uint BoneOffset;
+    uint _Pad0;
+    uint _Pad1;
+    uint _Pad2;
 };
 
 StructuredBuffer<InstanceData> Instances : register(t0, space3);

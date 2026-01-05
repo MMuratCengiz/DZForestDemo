@@ -69,9 +69,9 @@ internal struct PixelConstants
 internal class ImGuiFrameData
 {
     public CommandList? CommandList;
-    public ResourceBindGroup? ConstantsBindGroup;
+    public BindGroup? ConstantsBindGroup;
     public Fence? FrameFence;
-    public ResourceBindGroup? TextureBindGroup;
+    public BindGroup? TextureBindGroup;
 }
 
 public class ImGuiBackend : IDisposable
@@ -137,11 +137,12 @@ float4 main(PSInput input) : SV_TARGET
 
     private readonly ImGuiFrameData[] _frameData;
     private readonly LogicalDevice _logicalDevice;
-    private readonly ResourceBindGroup?[] _pixelConstantsBindGroups;
+    private readonly BindGroup?[] _pixelConstantsBindGroups;
 
     private readonly Texture?[] _textures;
     private uint _alignedPixelConstantsSize;
     private uint _alignedUniformSize;
+    private BindGroupLayout[]? _bindGroupLayouts;
     private CommandListPool? _commandListPool;
 
     private CommandQueue? _commandQueue;
@@ -178,7 +179,7 @@ float4 main(PSInput input) : SV_TARGET
 
         _textures = new Texture?[desc.MaxTextures];
         _frameData = new ImGuiFrameData[desc.NumFrames];
-        _pixelConstantsBindGroups = new ResourceBindGroup?[desc.MaxTextures];
+        _pixelConstantsBindGroups = new BindGroup?[desc.MaxTextures];
 
         for (var i = 0; i < desc.NumFrames; i++)
         {
@@ -240,6 +241,13 @@ float4 main(PSInput input) : SV_TARGET
         _sampler?.Dispose();
         _pipeline?.Dispose();
         _rootSignature?.Dispose();
+        if (_bindGroupLayouts != null)
+        {
+            foreach (var layout in _bindGroupLayouts)
+            {
+                layout?.Dispose();
+            }
+        }
         _inputLayout?.Dispose();
         _shaderProgram?.Dispose();
         _commandListPool?.Dispose();
@@ -350,7 +358,21 @@ float4 main(PSInput input) : SV_TARGET
     {
         var reflection = _shaderProgram!.Reflect();
 
-        _rootSignature = _logicalDevice.CreateRootSignature(reflection.RootSignature);
+        // Create BindGroupLayouts from reflection
+        var bindGroupLayoutDescs = reflection.BindGroupLayouts.ToArray();
+        _bindGroupLayouts = new BindGroupLayout[bindGroupLayoutDescs.Length];
+        for (var i = 0; i < bindGroupLayoutDescs.Length; i++)
+        {
+            _bindGroupLayouts[i] = _logicalDevice.CreateBindGroupLayout(bindGroupLayoutDescs[i]);
+        }
+
+        // Create RootSignature from BindGroupLayouts
+        var rootSigDesc = new RootSignatureDesc
+        {
+            BindGroupLayouts = BindGroupLayoutArray.Create(_bindGroupLayouts),
+            RootConstants = reflection.RootConstants
+        };
+        _rootSignature = _logicalDevice.CreateRootSignature(rootSigDesc);
         _inputLayout = _logicalDevice.CreateInputLayout(reflection.InputLayout);
 
         var blendDesc = new BlendDesc
@@ -445,13 +467,13 @@ float4 main(PSInput input) : SV_TARGET
 
         for (uint frameIdx = 0; frameIdx < _desc.NumFrames; frameIdx++)
         {
-            var constantsBindGroupDesc = new ResourceBindGroupDesc
+            // space1 for constants (uniforms)
+            var constantsBindGroupDesc = new BindGroupDesc
             {
-                RootSignature = _rootSignature,
-                RegisterSpace = 1
+                Layout = _bindGroupLayouts![1]
             };
 
-            _frameData[frameIdx].ConstantsBindGroup = _logicalDevice.CreateResourceBindGroup(constantsBindGroupDesc);
+            _frameData[frameIdx].ConstantsBindGroup = _logicalDevice.CreateBindGroup(constantsBindGroupDesc);
             _frameData[frameIdx].ConstantsBindGroup!.BeginUpdate();
             _frameData[frameIdx].ConstantsBindGroup!.CbvWithDesc(new BindBufferDesc
             {
@@ -460,22 +482,22 @@ float4 main(PSInput input) : SV_TARGET
             });
             _frameData[frameIdx].ConstantsBindGroup!.EndUpdate();
 
-            var textureBindGroupDesc = new ResourceBindGroupDesc
+            // space0 for textures/sampler
+            var textureBindGroupDesc = new BindGroupDesc
             {
-                RootSignature = _rootSignature,
-                RegisterSpace = 0
+                Layout = _bindGroupLayouts[0]
             };
-            _frameData[frameIdx].TextureBindGroup = _logicalDevice.CreateResourceBindGroup(textureBindGroupDesc);
+            _frameData[frameIdx].TextureBindGroup = _logicalDevice.CreateBindGroup(textureBindGroupDesc);
         }
 
         for (uint texIdx = 0; texIdx < _desc.MaxTextures; texIdx++)
         {
-            var pixelConstantsBindGroupDesc = new ResourceBindGroupDesc
+            // space2 for pixel constants
+            var pixelConstantsBindGroupDesc = new BindGroupDesc
             {
-                RootSignature = _rootSignature,
-                RegisterSpace = 2
+                Layout = _bindGroupLayouts![2]
             };
-            _pixelConstantsBindGroups[texIdx] = _logicalDevice.CreateResourceBindGroup(pixelConstantsBindGroupDesc);
+            _pixelConstantsBindGroups[texIdx] = _logicalDevice.CreateBindGroup(pixelConstantsBindGroupDesc);
 
             _pixelConstantsBindGroups[texIdx]!.BeginUpdate();
             _pixelConstantsBindGroups[texIdx]!.CbvWithDesc(new BindBufferDesc
@@ -767,8 +789,8 @@ float4 main(PSInput input) : SV_TARGET
             };
         }
 
-        commandList.BindResourceGroup(_frameData[frameIndex].ConstantsBindGroup);
-        commandList.BindResourceGroup(_frameData[frameIndex].TextureBindGroup);
+        commandList.BindGroup(_frameData[frameIndex].ConstantsBindGroup);
+        commandList.BindGroup(_frameData[frameIndex].TextureBindGroup);
     }
 
     private void RenderImDrawList(CommandList commandList, ImDrawListPtr cmdList, uint vertexOffset, uint indexOffset)
@@ -796,7 +818,7 @@ float4 main(PSInput input) : SV_TARGET
             if (textureIndex < _desc.MaxTextures && _textures[textureIndex] != null &&
                 _pixelConstantsBindGroups[textureIndex] != null)
             {
-                commandList.BindResourceGroup(_pixelConstantsBindGroups[textureIndex]);
+                commandList.BindGroup(_pixelConstantsBindGroups[textureIndex]);
                 commandList.DrawIndexed(
                     pcmd.ElemCount,
                     1,
