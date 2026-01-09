@@ -2,7 +2,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using BepuPhysics;
 
-namespace Physics.Components;
+namespace DenOfIz.World.Components;
 
 [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
 public struct RigidBody(BodyHandle handle, bool isStatic = false)

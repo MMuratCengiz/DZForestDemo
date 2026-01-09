@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace OfflineAssets;
+namespace DenOfIz.World.Offline;
 
 public static class MeshFormat
 {

@@ -1,6 +1,4 @@
-using DenOfIz;
-
-namespace OfflineAssets;
+namespace DenOfIz.World.Offline;
 
 public sealed class AssetExporter : IDisposable
 {

@@ -13,7 +13,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\DenOfIz.OfflineAssets\DenOfIz.OfflineAssets.csproj" />
+        <ProjectReference Include="..\DenOfIz.Core\DenOfIz.Core.csproj" />
     </ItemGroup>
 
 </Project>

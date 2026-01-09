@@ -1,7 +1,7 @@
 using System.Numerics;
 using SharpGLTF.Schema2;
 
-namespace OfflineAssets;
+namespace DenOfIz.World.Offline;
 
 public sealed class GltfMeshInfo
 {

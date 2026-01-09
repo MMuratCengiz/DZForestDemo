@@ -2,7 +2,7 @@ using System.Numerics;
 using BepuPhysics;
 using BepuPhysics.Collidables;
 
-namespace Physics;
+namespace DenOfIz.World.Physics;
 
 public enum PhysicsShapeType
 {

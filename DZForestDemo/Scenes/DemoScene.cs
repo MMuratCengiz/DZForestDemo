@@ -4,9 +4,9 @@ using DenOfIz.World.Assets;
 using DenOfIz.World.Components;
 using DenOfIz.World.Graphics.Batching;
 using DenOfIz.World.Light;
+using DenOfIz.World.Physics;
 using DenOfIz.World.SceneManagement;
 using DZForestDemo.Prefabs;
-using Physics;
 
 namespace DZForestDemo.Scenes;
 

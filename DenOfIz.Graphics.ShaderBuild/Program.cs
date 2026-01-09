@@ -1,6 +1,6 @@
 using System.Text;
 using DenOfIz;
-using OfflineAssets;
+using DenOfIz.World.Offline;
 
 namespace ShaderBuild;
 

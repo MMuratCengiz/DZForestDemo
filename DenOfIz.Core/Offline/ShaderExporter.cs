@@ -1,8 +1,4 @@
-using DenOfIz;
-using BinaryReader = DenOfIz.BinaryReader;
-using BinaryWriter = DenOfIz.BinaryWriter;
-
-namespace OfflineAssets;
+namespace DenOfIz.World.Offline;
 
 public class ShaderExporter(string sourceRoot, string output)
 {

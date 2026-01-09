@@ -6,7 +6,6 @@ using BepuPhysics.Constraints;
 using BepuUtilities;
 using BepuUtilities.Memory;
 using DenOfIz.World.SceneManagement;
-using Physics;
 
 namespace DenOfIz.World.Physics;
 

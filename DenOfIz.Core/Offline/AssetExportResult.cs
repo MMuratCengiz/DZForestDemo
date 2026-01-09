@@ -1,4 +1,4 @@
-namespace OfflineAssets;
+namespace DenOfIz.World.Offline;
 
 public sealed class AssetExportResult
 {

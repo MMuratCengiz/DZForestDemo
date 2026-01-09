@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace Physics.Components;
+namespace DenOfIz.World.Components;
 
 [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
 public struct ContactMaterial(float friction = 0.5f, float restitution = 0.3f)
