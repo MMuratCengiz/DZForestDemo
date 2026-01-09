@@ -1,5 +1,6 @@
 using System.Numerics;
-using RuntimeAssets;
+using DenOfIz.World.Assets;
+using DenOfIz.World.SceneManagement;
 
 namespace DenOfIz.World.Components;
 
@@ -9,11 +10,12 @@ public class AnimatorComponent : IComponent
 
     public GameObject? Owner { get; set; }
 
-    public RuntimeSkeletonHandle Skeleton { get; set; } = RuntimeSkeletonHandle.Invalid;
-    public RuntimeAnimationHandle CurrentAnimation { get; set; } = RuntimeAnimationHandle.Invalid;
+    public Skeleton? Skeleton { get; set; }
+    public Animation? CurrentAnimation { get; set; }
     public float AnimationTime { get; set; }
     public float PlaybackSpeed { get; set; } = 1.0f;
     public bool IsPlaying { get; set; }
+    public bool Loop { get; set; }
 
     private readonly Matrix4x4[] _boneMatrices = new Matrix4x4[MaxBones];
     public int BoneCount { get; set; }

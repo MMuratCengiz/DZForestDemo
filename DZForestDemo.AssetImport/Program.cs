@@ -5,19 +5,19 @@ const string projectDir = @"/Users/muratcengiz/RiderProjects/DZForestDemo/DZFore
 const string foxGltfPath = @"/Users/muratcengiz/RiderProjects/DZForestDemo/DZForestDemo/Assets/Models/Fox.gltf";
 const string foxTexturePath = @"/Users/muratcengiz/RiderProjects/DZForestDemo/DZForestDemo/Assets/Models/Texture.png";
 
-var assetProject = AssetProject.ForProjectAssets(projectDir, projectDir);
+var assetProject = AssetDirectories.ForProjectAssets(projectDir, projectDir);
 assetProject.EnsureDirectories();
 
-var meshesDir = Path.Combine(assetProject.OutputDirectory, "Meshes");
+var meshesDir = Path.Combine(assetProject.Output, "Meshes");
 Directory.CreateDirectory(meshesDir);
 
 Console.WriteLine("Asset Import Tool");
 Console.WriteLine("=================");
-Console.WriteLine($"Output Models: {assetProject.ModelsDirectory}");
+Console.WriteLine($"Output Models: {assetProject.Models}");
 Console.WriteLine($"Output Meshes: {meshesDir}");
-Console.WriteLine($"Output Textures: {assetProject.TexturesDirectory}");
-Console.WriteLine($"Output Animations: {assetProject.AnimationsDirectory}");
-Console.WriteLine($"Output Skeletons: {assetProject.SkeletonsDirectory}");
+Console.WriteLine($"Output Textures: {assetProject.Textures}");
+Console.WriteLine($"Output Animations: {assetProject.Animations}");
+Console.WriteLine($"Output Skeletons: {assetProject.Skeletons}");
 Console.WriteLine();
 
 Console.WriteLine("=== INSPECT GLTF ===");
@@ -47,7 +47,9 @@ foreach (var mat in inspectionResult.Materials)
     Console.WriteLine($"      BaseColor: ({mat.BaseColor.X:F2}, {mat.BaseColor.Y:F2}, {mat.BaseColor.Z:F2}, {mat.BaseColor.W:F2})");
     Console.WriteLine($"      Metallic: {mat.Metallic:F2}, Roughness: {mat.Roughness:F2}");
     if (mat.BaseColorTexturePath != null)
+    {
         Console.WriteLine($"      BaseColorTexture: {Path.GetFileName(mat.BaseColorTexturePath)}");
+    }
 }
 
 Console.WriteLine();
@@ -84,7 +86,7 @@ Console.WriteLine();
 Console.WriteLine("Import complete!");
 return 0;
 
-bool ImportAnimations(AssetProject project, string sourcePath, string assetName, float scale = 1.0f)
+bool ImportAnimations(AssetDirectories project, string sourcePath, string assetName, float scale = 1.0f)
 {
     using var exporter = new AssetExporter();
 
@@ -138,7 +140,7 @@ bool ImportAnimations(AssetProject project, string sourcePath, string assetName,
     return false;
 }
 
-bool ImportTexture(AssetProject project, string sourcePath, string assetName)
+bool ImportTexture(AssetDirectories project, string sourcePath, string assetName)
 {
     using var textureExporter = new TextureExporter();
 

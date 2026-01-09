@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 using System.Numerics;
 using DenOfIz;
-using Graphics.ImGui;
+using DenOfIz.World.Graphics.ImGui;
 using ImGuiNET;
 
 namespace DZForestDemo;

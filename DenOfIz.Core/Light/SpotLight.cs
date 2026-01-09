@@ -1,4 +1,5 @@
 using System.Numerics;
+using DenOfIz.World.SceneManagement;
 
 namespace DenOfIz.World.Light;
 
@@ -18,7 +19,7 @@ public class SpotLight : GameObject
     {
         get
         {
-            var forward = Vector3.Transform(Vector3.UnitZ, LocalRotation);
+            var forward = Vector3.Transform(Vector3.UnitZ, (Quaternion)LocalRotation);
             return Vector3.Normalize(forward);
         }
     }

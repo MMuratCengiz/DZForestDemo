@@ -5,6 +5,13 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>DenOfIz.World</RootNamespace>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="BepuPhysics" Version="2.4.0" />
+      <PackageReference Include="DenOfIzGraphics" Version="0.5.5-alpha" />
+      <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
+    </ItemGroup>
 
 </Project>

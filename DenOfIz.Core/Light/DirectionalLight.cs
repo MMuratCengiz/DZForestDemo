@@ -1,4 +1,5 @@
 using System.Numerics;
+using DenOfIz.World.SceneManagement;
 
 namespace DenOfIz.World.Light;
 

@@ -1,3 +1,5 @@
+using DenOfIz.World.SceneManagement;
+
 namespace DenOfIz.World.Components;
 
 public interface IComponent

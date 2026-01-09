@@ -19,7 +19,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Assets\" />
+        <EmbeddedResource Include="BuiltInShaders\**\*.dzshader" />
     </ItemGroup>
 
 </Project>

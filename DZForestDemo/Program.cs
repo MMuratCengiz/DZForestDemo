@@ -1,6 +1,6 @@
-using Application;
 using DenOfIz;
-using Graphics;
+using DenOfIz.World.Application;
+using DenOfIz.World.Graphics;
 
 namespace DZForestDemo;
 
@@ -8,10 +8,6 @@ internal static class Program
 {
     private static void Main(string[] args)
     {
-        var demoGame = new DemoGame();
-        var renderer = new DemoRenderer(demoGame);
-        demoGame.SetRenderer(renderer);
-
         var desc = new GameDesc
         {
             Title = "DenOfIz Scene Demo - Press F1/F2 to switch scenes",
@@ -29,7 +25,7 @@ internal static class Program
             }
         };
 
-        using var game = new Game(demoGame, renderer, desc);
+        using var game = new DemoGame(desc);
         game.Run();
     }
 }

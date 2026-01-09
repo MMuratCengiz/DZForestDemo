@@ -9,15 +9,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="DenOfIzGraphics" Version="0.5.2-alpha" />
+        <PackageReference Include="DenOfIzGraphics" Version="0.5.5-alpha" />
         <PackageReference Include="ImGui.NET" Version="1.91.6.1"/>
-    </ItemGroup>
-
-    <ItemGroup>
-        <ProjectReference Include="..\DenOfIz.Application\DenOfIz.Application.csproj"/>
-        <ProjectReference Include="..\DenOfIz.Graphics\DenOfIz.Graphics.csproj"/>
-        <ProjectReference Include="..\DenOfIz.Physics\DenOfIz.Physics.csproj"/>
-        <ProjectReference Include="..\DenOfIz.UI\DenOfIz.UI.csproj"/>
     </ItemGroup>
 
     <!-- Copy Assets directory to output -->
@@ -26,6 +19,9 @@
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
             <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
         </Content>
+    </ItemGroup>
+    <ItemGroup>
+      <ProjectReference Include="..\DenOfIz.Core\DenOfIz.Core.csproj" />
     </ItemGroup>
 
 </Project>
