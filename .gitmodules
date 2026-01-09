@@ -1,0 +1,3 @@
+[submodule "NiziKit.Build/Shaders/lygia"]
+	path = NiziKit.Build/Shaders/lygia
+	url = https://github.com/patriciogonzalezvivo/lygia.git

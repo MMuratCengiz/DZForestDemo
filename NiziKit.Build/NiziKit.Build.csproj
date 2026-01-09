@@ -9,11 +9,19 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="DenOfIzGraphics" Version="0.5.2-alpha" />
+        <PackageReference Include="DenOfIzGraphics" Version="0.5.5-alpha" />
     </ItemGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\NiziKit\NiziKit.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ClCompile Include="Shaders\Bindings\Material.hlsl" />
+      <ClCompile Include="Shaders\Bindings\View.hlsl" />
+      <ClCompile Include="Shaders\Bindings\Draw.hlsl" />
+      <ClCompile Include="Shaders\Scene\Scene.PS.hlsl" />
+      <ClCompile Include="Shaders\Scene\Scene.VS.hlsl" />
     </ItemGroup>
 
 </Project>

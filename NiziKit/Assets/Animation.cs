@@ -35,7 +35,11 @@ public class Animation : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
         if ((ulong)OzzContext != 0)
         {

@@ -19,7 +19,9 @@ public struct BoundingBox
     public static BoundingBox FromVertices(ReadOnlySpan<Vertex> vertices)
     {
         if (vertices.Length == 0)
+        {
             return default;
+        }
 
         var min = new Vector3(float.MaxValue);
         var max = new Vector3(float.MinValue);

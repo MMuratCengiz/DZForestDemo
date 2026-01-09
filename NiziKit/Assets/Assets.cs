@@ -210,7 +210,11 @@ public sealed class Assets : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
 
         foreach (var model in _modelCache.Values)

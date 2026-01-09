@@ -14,7 +14,11 @@ public class Skeleton : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
         OzzSkeleton.Dispose();
     }
