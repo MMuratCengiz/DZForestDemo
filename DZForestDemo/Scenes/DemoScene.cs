@@ -1,12 +1,11 @@
 using System.Numerics;
-using DenOfIz.World;
-using DenOfIz.World.Assets;
-using DenOfIz.World.Components;
-using DenOfIz.World.Graphics.Batching;
-using DenOfIz.World.Light;
-using DenOfIz.World.Physics;
-using DenOfIz.World.SceneManagement;
 using DZForestDemo.Prefabs;
+using NiziKit.Assets;
+using NiziKit.Components;
+using NiziKit.Graphics.Batching;
+using NiziKit.Light;
+using NiziKit.Physics;
+using NiziKit.SceneManagement;
 
 namespace DZForestDemo.Scenes;
 

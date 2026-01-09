@@ -1,4 +1,4 @@
-using DenOfIz.World.Offline;
+using NiziKit.Offline;
 
 const string projectDir = @"/Users/muratcengiz/RiderProjects/DZForestDemo/DZForestDemo/";
 

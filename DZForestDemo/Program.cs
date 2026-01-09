@@ -1,6 +1,6 @@
 using DenOfIz;
-using DenOfIz.World.Application;
-using DenOfIz.World.Graphics;
+using NiziKit.Application;
+using NiziKit.Graphics;
 
 namespace DZForestDemo;
 

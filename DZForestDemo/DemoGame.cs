@@ -1,11 +1,11 @@
 using System.Numerics;
 using DenOfIz;
-using DenOfIz.World.Application;
-using DenOfIz.World.Assets;
-using DenOfIz.World.Graphics.Renderer.Forward;
-using DenOfIz.World.Physics;
-using DenOfIz.World.SceneManagement;
 using DZForestDemo.Scenes;
+using NiziKit.Application;
+using NiziKit.Assets;
+using NiziKit.Graphics.Renderer.Forward;
+using NiziKit.Physics;
+using NiziKit.SceneManagement;
 
 namespace DZForestDemo;
 

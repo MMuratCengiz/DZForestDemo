@@ -4,9 +4,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DZForestDemo", "DZForestDem
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DZForestDemo.AssetImport", "DZForestDemo.AssetImport\DZForestDemo.AssetImport.csproj", "{ECB52015-40C0-4E47-A05E-B5A76E8A3BF0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DenOfIz.Core", "DenOfIz.Core\DenOfIz.Core.csproj", "{6FE069F9-3438-4777-95A6-481E4FA4A5EB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiziKit", "NiziKit\NiziKit.csproj", "{6FE069F9-3438-4777-95A6-481E4FA4A5EB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DenOfIz.Graphics.ShaderBuild", "DenOfIz.Graphics.ShaderBuild\DenOfIz.Graphics.ShaderBuild.csproj", "{1A70F95D-427D-4E7D-A88D-66531C2E25A4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NiziKit.Build", "NiziKit.Build\NiziKit.Build.csproj", "{1A70F95D-427D-4E7D-A88D-66531C2E25A4}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

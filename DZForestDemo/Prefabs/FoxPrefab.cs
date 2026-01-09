@@ -1,8 +1,8 @@
 using System.Numerics;
-using DenOfIz.World.Assets;
-using DenOfIz.World.Components;
-using DenOfIz.World.Graphics.Batching;
-using DenOfIz.World.SceneManagement;
+using NiziKit.Assets;
+using NiziKit.Components;
+using NiziKit.Graphics.Batching;
+using NiziKit.SceneManagement;
 
 namespace DZForestDemo.Prefabs;
 
