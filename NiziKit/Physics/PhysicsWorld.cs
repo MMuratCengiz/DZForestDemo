@@ -136,17 +136,14 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
 
     public void SceneReset()
     {
-        throw new NotImplementedException();
     }
 
     public void GameObjectCreated(GameObject go)
     {
-        throw new NotImplementedException();
     }
 
     public void GameObjectDestroyed(GameObject go)
     {
-        throw new NotImplementedException();
     }
 }
 

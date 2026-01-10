@@ -15,7 +15,6 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
     private ForwardRenderer _renderer = null!;
     private DemoScene? _demoScene;
 
-    private Assets? _assets;
     private AnimationManager? _animation;
 
     protected override void Load(Game game)
@@ -27,10 +26,9 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
         );
         _cameraController.SetAspectRatio(game.Graphics.Width, game.Graphics.Height);
 
-        _assets = new Assets(game.Graphics.LogicalDevice);
         _animation = new AnimationManager();
 
-        _demoScene = new DemoScene(World, _assets, _animation);
+        _demoScene = new DemoScene(World, _animation);
         LoadScene(_demoScene);
     }
 
@@ -128,7 +126,7 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 
     protected override void OnShutdown()
     {
-        _assets?.Dispose();
+        _renderer?.Dispose();
         _animation?.Dispose();
     }
 }

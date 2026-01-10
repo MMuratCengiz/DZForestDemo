@@ -354,7 +354,7 @@ public sealed class MeshExporter
         };
     }
 
-    private static string? GetTexturePath(SharpGLTF.Schema2.Texture? texture, string gltfDirectory)
+    private static string? GetTexturePath(Texture? texture, string gltfDirectory)
     {
         if (texture?.PrimaryImage?.Content == null)
         {
@@ -384,7 +384,7 @@ public sealed class MeshExporter
         }
 
         using var stream = File.Create(outputPath);
-        using var writer = new System.IO.BinaryWriter(stream);
+        using var writer = new BinaryWriter(stream);
 
         var flags = MeshFlags.None;
         if (isSkinned)
@@ -450,7 +450,7 @@ public sealed class MeshExporter
         }
     }
 
-    private static void WriteMaterial(System.IO.BinaryWriter writer, MeshMaterial material)
+    private static void WriteMaterial(BinaryWriter writer, MeshMaterial material)
     {
         var nameBytes = System.Text.Encoding.UTF8.GetBytes(material.Name);
         writer.Write((ushort)nameBytes.Length);
@@ -468,7 +468,7 @@ public sealed class MeshExporter
         WriteLengthPrefixedString(writer, material.MetallicRoughnessTexture);
     }
 
-    private static void WriteLengthPrefixedString(System.IO.BinaryWriter writer, string? value)
+    private static void WriteLengthPrefixedString(BinaryWriter writer, string? value)
     {
         if (string.IsNullOrEmpty(value))
         {

@@ -4,7 +4,7 @@ namespace NiziKit.Assets.Loaders;
 
 internal static class TextureLoader
 {
-    public static Texture Load(string path, LogicalDevice device)
+    public static Texture2d Load(string path, LogicalDevice device)
     {
         var resolvedPath = AssetPaths.ResolveTexture(path);
 
@@ -16,7 +16,7 @@ internal static class TextureLoader
         return LoadStandardFormat(resolvedPath, device);
     }
 
-    private static Texture LoadDzTex(string path, LogicalDevice device)
+    private static Texture2d LoadDzTex(string path, LogicalDevice device)
     {
         var readerDesc = new BinaryReaderDesc();
         using var reader = DenOfIz.BinaryReader.CreateFromFile(StringView.Create(path), in readerDesc);
@@ -80,7 +80,7 @@ internal static class TextureLoader
         commandQueue.Dispose();
         stagingBuffer.Dispose();
 
-        return new Texture
+        return new Texture2d
         {
             Name = asset.Name().ToString(),
             SourcePath = path,
@@ -91,7 +91,7 @@ internal static class TextureLoader
         };
     }
 
-    private static Texture LoadStandardFormat(string path, LogicalDevice device)
+    private static Texture2d LoadStandardFormat(string path, LogicalDevice device)
     {
         var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
         {
@@ -105,7 +105,7 @@ internal static class TextureLoader
         batchCopy.Submit(null);
         batchCopy.Dispose();
 
-        return new Texture
+        return new Texture2d
         {
             Name = Path.GetFileNameWithoutExtension(path),
             SourcePath = path,

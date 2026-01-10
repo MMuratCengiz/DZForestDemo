@@ -5,7 +5,7 @@ namespace NiziKit.Graphics.Graph;
 
 public class CommandListAllocator : IDisposable
 {
-    private const int PoolSize = 128;
+    private const int PoolSize = 64;
 
     public class CommandListBucket(CommandListPool pool, CommandList[] lists, Semaphore[] semaphores)
     {

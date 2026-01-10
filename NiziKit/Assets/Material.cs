@@ -1,14 +1,29 @@
-using System.Numerics;
+using DenOfIz;
+using NiziKit.Graphics;
 
 namespace NiziKit.Assets;
 
-public class Material
+public abstract class Material : IDisposable
 {
-    public string Name { get; set; } = string.Empty;
-    public Vector4 BaseColor { get; set; } = Vector4.One;
-    public float Metallic { get; set; }
-    public float Roughness { get; set; } = 1.0f;
-    public Texture? AlbedoTexture { get; set; }
-    public Texture? NormalTexture { get; set; }
-    public Texture? MetallicRoughnessTexture { get; set; }
+    public string Name { get; protected init; } = string.Empty;
+    public GpuShader? GpuShader { get; private set; }
+
+    protected GraphicsContext? Context { get; private set; }
+
+    protected abstract ShaderProgram LoadShaderProgram();
+
+    protected abstract GraphicsPipelineDesc ConfigurePipeline(GraphicsContext context);
+
+    public void Initialize(GraphicsContext context)
+    {
+        Context = context;
+        var program = LoadShaderProgram();
+        var pipelineDesc = ConfigurePipeline(context);
+        GpuShader = new GpuShader(context, program, pipelineDesc);
+    }
+
+    public virtual void Dispose()
+    {
+        GpuShader?.Dispose();
+    }
 }

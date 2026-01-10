@@ -12,13 +12,13 @@ public class Game : IDisposable
 {
     private readonly FixedTimestep _fixedTimestep;
     private readonly IRenderer? _renderer = null;
-    private readonly SceneManagement.World _world;
+    private readonly World _world;
     private bool _disposed;
     
     public AppWindow Window { get; }
     public FrameClock Clock { get; }
     public GraphicsContext Graphics { get; }
-    public SceneManagement.World World => _world;
+    public World World => _world;
     
     public bool IsRunning { get; set; }
     
@@ -35,7 +35,7 @@ public class Game : IDisposable
         Window = new AppWindow(desc.Title, desc.Width, desc.Height);
         Clock = new FrameClock();
         Graphics = new GraphicsContext(Window.NativeWindow, desc.Graphics);
-        _world = new SceneManagement.World(Graphics.LogicalDevice);
+        _world = new World(Graphics.LogicalDevice);
     }
 
 

@@ -5,20 +5,14 @@ using BinaryReader = DenOfIz.BinaryReader;
 
 namespace NiziKit.Assets;
 
-public static class BuiltInShaders
+public static class BuiltinShader
 {
-    private static readonly Assembly Assembly = typeof(BuiltInShaders).Assembly;
-    private const string ResourcePrefix = "NiziKit.BuiltInShaders.";
+    private static readonly Assembly Assembly = typeof(BuiltinShader).Assembly;
+    private const string ResourcePrefix = "NiziKit.Graphics.BuiltInShaders.";
 
-    /// <summary>
-    /// Loads a built-in shader by name.
-    /// </summary>
-    /// <param name="name">The shader name without extension (e.g., "FullscreenQuad")</param>
-    /// <returns>ShaderProgram, or null if the shader is not found</returns>
     public static ShaderProgram? Load(string name)
     {
-        var resourceName = $"{ResourcePrefix}{name}.dzshader";
-        var bytes = LoadResourceBytes(resourceName);
+        var bytes = LoadResourceBytes($"{ResourcePrefix}{name}");
         if (bytes == null)
         {
             return null;

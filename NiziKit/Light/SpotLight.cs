@@ -3,7 +3,7 @@ using NiziKit.SceneManagement;
 
 namespace NiziKit.Light;
 
-public class SpotLight : GameObject
+public class SpotLight(string name) : GameObject(name)
 {
     public Vector3 Color { get; set; } = new(1.0f, 1.0f, 1.0f);
     public float Intensity { get; set; } = 1.0f;
@@ -24,11 +24,7 @@ public class SpotLight : GameObject
         }
     }
 
-    public SpotLight() : base("SpotLight")
-    {
-    }
-
-    public SpotLight(string name) : base(name)
+    public SpotLight() : this("SpotLight")
     {
     }
 

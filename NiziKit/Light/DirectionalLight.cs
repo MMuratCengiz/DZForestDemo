@@ -3,7 +3,7 @@ using NiziKit.SceneManagement;
 
 namespace NiziKit.Light;
 
-public class DirectionalLight : GameObject
+public class DirectionalLight(string name) : GameObject(name)
 {
     public Vector3 Color { get; set; } = new(1.0f, 1.0f, 1.0f);
     public float Intensity { get; set; } = 1.0f;
@@ -23,11 +23,7 @@ public class DirectionalLight : GameObject
         }
     }
 
-    public DirectionalLight() : base("DirectionalLight")
-    {
-    }
-
-    public DirectionalLight(string name) : base(name)
+    public DirectionalLight() : this("DirectionalLight")
     {
     }
 

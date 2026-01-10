@@ -2,19 +2,13 @@ using System.Numerics;
 
 namespace NiziKit.Assets;
 
-public struct BoundingBox
+public struct BoundingBox(Vector3 min, Vector3 max)
 {
-    public Vector3 Min;
-    public Vector3 Max;
+    public Vector3 Min = min;
+    public Vector3 Max = max;
 
     public readonly Vector3 Center => (Min + Max) * 0.5f;
     public readonly Vector3 Size => Max - Min;
-
-    public BoundingBox(Vector3 min, Vector3 max)
-    {
-        Min = min;
-        Max = max;
-    }
 
     public static BoundingBox FromVertices(ReadOnlySpan<Vertex> vertices)
     {

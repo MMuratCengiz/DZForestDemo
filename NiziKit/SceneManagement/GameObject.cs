@@ -13,10 +13,10 @@ public class GameObject(string name = "GameObject")
 
     public GameObject? Parent { get; private set; }
 
-    private readonly List<GameObject> _children = new();
+    private readonly List<GameObject> _children = [];
     public IReadOnlyList<GameObject> Children => _children;
 
-    private readonly List<IComponent> _components = new();
+    private readonly List<IComponent> _components = [];
     public IReadOnlyList<IComponent> Components => _components;
 
     private Vector3 _localPosition;

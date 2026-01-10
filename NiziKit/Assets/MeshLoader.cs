@@ -73,7 +73,7 @@ public sealed class MeshLoader
         try
         {
             using var stream = File.OpenRead(path);
-            using var reader = new System.IO.BinaryReader(stream);
+            using var reader = new BinaryReader(stream);
 
             var header = ReadHeader(reader);
             if (header == null)
@@ -105,7 +105,7 @@ public sealed class MeshLoader
         }
     }
 
-    private static unsafe MeshFileHeader? ReadHeader(System.IO.BinaryReader reader)
+    private static unsafe MeshFileHeader? ReadHeader(BinaryReader reader)
     {
         var headerBytes = reader.ReadBytes(HeaderNumBytes);
         if (headerBytes.Length < HeaderNumBytes)
@@ -139,7 +139,7 @@ public sealed class MeshLoader
         return true;
     }
 
-    private static Vertex[] ReadVertices(System.IO.BinaryReader reader, Stream stream, MeshFileHeader header)
+    private static Vertex[] ReadVertices(BinaryReader reader, Stream stream, MeshFileHeader header)
     {
         stream.Seek((long)header.VertexDataOffset, SeekOrigin.Begin);
 
@@ -159,19 +159,19 @@ public sealed class MeshLoader
         return vertices;
     }
 
-    private static uint[] ReadIndices(System.IO.BinaryReader reader, Stream stream, MeshFileHeader header)
+    private static uint[] ReadIndices(BinaryReader reader, Stream stream, MeshFileHeader header)
     {
         stream.Seek((long)header.IndexDataOffset, SeekOrigin.Begin);
 
         var indices = new uint[header.IndexCount];
         var indexBytes = reader.ReadBytes((int)header.IndexDataNumBytes);
 
-        System.Buffer.BlockCopy(indexBytes, 0, indices, 0, indexBytes.Length);
+        Buffer.BlockCopy(indexBytes, 0, indices, 0, indexBytes.Length);
 
         return indices;
     }
 
-    private static MaterialData? ReadMaterial(System.IO.BinaryReader reader, Stream stream, ulong offset)
+    private static MaterialData? ReadMaterial(BinaryReader reader, Stream stream, ulong offset)
     {
         stream.Seek((long)offset, SeekOrigin.Begin);
 
@@ -201,7 +201,7 @@ public sealed class MeshLoader
         };
     }
 
-    private static string? ReadLengthPrefixedString(System.IO.BinaryReader reader)
+    private static string? ReadLengthPrefixedString(BinaryReader reader)
     {
         var length = reader.ReadUInt16();
         if (length == 0)

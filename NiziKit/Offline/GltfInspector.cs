@@ -202,7 +202,7 @@ public sealed class GltfInspector
         return materials;
     }
 
-    private static string? GetTexturePath(SharpGLTF.Schema2.Texture? texture, string gltfDirectory)
+    private static string? GetTexturePath(Texture? texture, string gltfDirectory)
     {
         if (texture?.PrimaryImage?.Content == null)
         {

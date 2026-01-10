@@ -2,15 +2,12 @@ using System.Numerics;
 
 namespace NiziKit.SceneManagement;
 
-public class CameraObject : GameObject
+public class CameraObject(string name) : GameObject(name)
 {
-    public CameraObject() : base("Camera")
+    public CameraObject() : this("Camera")
     {
     }
 
-    public CameraObject(string name) : base(name)
-    {
-    }
     public float FieldOfView { get; set; } = MathF.PI / 4f;
     public float NearPlane { get; set; } = 0.1f;
     public float FarPlane { get; set; } = 1000f;

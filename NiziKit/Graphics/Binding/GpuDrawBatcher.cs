@@ -26,8 +26,8 @@ public sealed class GpuDrawBatcher : IDisposable
     private readonly IntPtr[] _boneMappedPtrs;
     private readonly BindGroup[] _skinnedBindGroups;
 
-    private readonly List<GpuDraw> _staticDraws = new();
-    private readonly List<GpuDraw> _skinnedDraws = new();
+    private readonly List<GpuDraw> _staticDraws = [];
+    private readonly List<GpuDraw> _skinnedDraws = [];
 
     private int _currentInstanceOffset;
     private int _currentBoneOffset;

@@ -19,7 +19,7 @@ public class DemoScene : Scene
     private Mesh _platformMesh = null!;
     private Mesh _sphereMesh = null!;
     private Mesh _foxMesh = null!;
-    private Texture? _foxTexture;
+    private Texture2d? _foxTexture;
     private Skeleton? _foxSkeleton;
     private Animation? _foxAnimation;
 
@@ -37,10 +37,9 @@ public class DemoScene : Scene
         new() { BaseColor = new Vector4(0.7f, 0.4f, 0.3f, 1f), Metallic = 0.8f, Roughness = 0.2f, AmbientOcclusion = 1f },
     ];
 
-    public DemoScene(World world, Assets assets, AnimationManager animation)
-        : base(world, "Demo Scene")
+    public DemoScene(World world, AnimationManager animation) : base(world, "Demo Scene")
     {
-        _assets = assets;
+        _assets = World.Assets;
         _animation = animation;
     }
 
@@ -57,7 +56,7 @@ public class DemoScene : Scene
         _cubeMesh = _assets.CreateBox(1.0f, 1.0f, 1.0f);
         _platformMesh = _assets.CreateBox(20.0f, 1.0f, 20.0f);
         _sphereMesh = _assets.CreateSphere(1.0f);
-        _foxMesh = _assets.LoadMesh("fox.dzmesh");
+        _foxMesh = _assets.LoadMesh("fox1.dzmesh");
         _foxTexture = _assets.LoadTexture("Fox_Texture.dztex");
 
         _foxSkeleton = _assets.LoadSkeleton("Fox_skeleton.ozz");
@@ -142,11 +141,6 @@ public class DemoScene : Scene
 
     private void SpawnFox()
     {
-        if (_foxMesh == null)
-        {
-            return;
-        }
-
         var foxPrefab = new FoxPrefab
         {
             Mesh = _foxMesh,

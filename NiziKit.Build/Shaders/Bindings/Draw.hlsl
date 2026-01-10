@@ -1,3 +1,6 @@
+#ifndef DRAW_HLSL
+#define DRAW_HLSL
+
 struct InstanceData
 {
     float4x4 Model;
@@ -13,3 +16,5 @@ struct InstanceData
 };
 
 StructuredBuffer<InstanceData> Instances : register(t0, space3);
+
+#endif

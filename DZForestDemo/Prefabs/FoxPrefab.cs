@@ -9,7 +9,7 @@ namespace DZForestDemo.Prefabs;
 public class FoxPrefab : IPrefab<GameObject>
 {
     public Mesh Mesh { get; set; } = null!;
-    public Texture? Texture { get; set; }
+    public Texture2d? Texture { get; set; }
     public Skeleton? Skeleton { get; set; }
     public Animation? Animation { get; set; }
     public AnimationManager? AnimationManager { get; set; }

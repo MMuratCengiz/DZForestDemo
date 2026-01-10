@@ -75,6 +75,7 @@ public class RenderGraph : IDisposable
 
     public uint Width { get; private set; }
     public uint Height { get; private set; }
+    public uint FrameIndex => _frameIndex;
 
     public RenderGraph(GraphicsContext context, int numThreads = 0, int numFrames = 3)
     {
