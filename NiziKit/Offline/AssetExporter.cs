@@ -6,7 +6,6 @@ public sealed class AssetExporter : IDisposable
 {
     private readonly GltfExporter _gltfExporter = new();
     private readonly OzzExporter _ozzExporter = new();
-    private bool _disposed;
 
     public IReadOnlyList<string> SupportedExtensions
     {
@@ -26,12 +25,6 @@ public sealed class AssetExporter : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
         _gltfExporter.Dispose();
         _ozzExporter.Dispose();
     }

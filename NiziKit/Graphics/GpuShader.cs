@@ -10,7 +10,6 @@ public class GpuShader : IDisposable
     public InputLayout InputLayout { get; private set; }
 
     private readonly BindGroupLayout[] _bindGroupLayouts;
-    private bool _disposed;
 
     public GpuShader(GraphicsContext context, ShaderProgram program, GraphicsPipelineDesc graphicsDesc)
     {
@@ -46,9 +45,6 @@ public class GpuShader : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
-        _disposed = true;
-
         Pipeline.Dispose();
         RootSignature.Dispose();
         InputLayout.Dispose();

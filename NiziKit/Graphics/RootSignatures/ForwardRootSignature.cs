@@ -22,17 +22,8 @@ public class ForwardRootSignature(BindGroupLayoutStore layoutStore, LogicalDevic
         ])
     });
 
-    private bool _disposed;
-
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
         StaticRootSignature.Dispose();
         SkinnedRootSignature.Dispose();
     }

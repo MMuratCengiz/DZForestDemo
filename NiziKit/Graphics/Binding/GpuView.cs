@@ -29,7 +29,6 @@ public class GpuView : IDisposable
     private Texture? _shadowAtlas;
     private Sampler? _shadowSampler;
     private bool _isDirty = true;
-    private bool _disposed;
 
     public GpuView(GraphicsContext ctx)
     {
@@ -275,13 +274,6 @@ public class GpuView : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
         for (var i = 0; i < _numFrames; i++)
         {
             _cameraBuffers[i].UnmapMemory();

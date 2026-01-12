@@ -16,15 +16,7 @@ public class Mesh : IDisposable
     internal uint Index { get; set; }
     public MeshId Id => new(Index, 0);
 
-    private bool _disposed;
-
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
     }
 }

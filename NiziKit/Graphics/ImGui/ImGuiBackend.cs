@@ -145,7 +145,6 @@ float4 main(PSInput input) : SV_TARGET
     private CommandListPool? _commandListPool;
 
     private CommandQueue? _commandQueue;
-    private bool _disposed;
     private Texture? _fontTexture;
     private Buffer? _indexBuffer;
     private IntPtr _indexBufferData;
@@ -200,13 +199,6 @@ float4 main(PSInput input) : SV_TARGET
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
         if (_textInputActive)
         {
             InputSystem.StopTextInput();
@@ -917,7 +909,6 @@ public class ImGuiRenderer : IDisposable
     private readonly ImGuiBackend _backend;
 
     private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments = new(1);
-    private bool _disposed;
 
     public ImGuiRenderer(ImGuiBackendDesc desc)
     {
@@ -933,13 +924,6 @@ public class ImGuiRenderer : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
         _backend.Dispose();
         _rtAttachments.Dispose();
         ImGuiNET.ImGui.DestroyContext();

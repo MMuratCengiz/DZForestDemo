@@ -31,16 +31,8 @@ public class Animation : IDisposable
     public List<AnimationChannel> Channels { get; set; } = [];
     public OzzContext OzzContext { get; set; }
 
-    private bool _disposed;
-
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
         if ((ulong)OzzContext != 0)
         {
             OzzContext = default;

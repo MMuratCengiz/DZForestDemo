@@ -10,17 +10,9 @@ public sealed class BufferPool(LogicalDevice device, uint usages, ulong blockSiz
     : IDisposable
 {
     private readonly List<BufferBlock> _blocks = [];
-    private bool _disposed;
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
         foreach (var block in _blocks)
         {
             block.Dispose();

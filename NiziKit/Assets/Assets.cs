@@ -20,8 +20,6 @@ public sealed class Assets(LogicalDevice device) : IDisposable
     private readonly List<Texture2d> _textureList = [];
     private readonly List<Material> _materialList = [];
 
-    private bool _disposed;
-
     public Model LoadModel(string path)
     {
         var resolvedPath = AssetPaths.ResolveModel(path);
@@ -143,7 +141,14 @@ public sealed class Assets(LogicalDevice device) : IDisposable
             return cached;
         }
 
-        var geometry = _geometryBuilder.BuildQuadXY(width, height);
+        
+        var desc = new QuadDesc
+        {
+            Width = width,
+            Height = height,
+            BuildDesc = 0
+        };
+        var geometry = Geometry.BuildQuadXY(in desc);
         var mesh = MeshCreator.CreateFromGeometry($"Quad_{width}x{height}", geometry, device, _vertexPool, _indexPool);
         mesh.Index = (uint)_meshList.Count;
         _meshList.Add(mesh);
@@ -229,13 +234,6 @@ public sealed class Assets(LogicalDevice device) : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
         foreach (var model in _modelCache.Values)
         {
             model.Dispose();

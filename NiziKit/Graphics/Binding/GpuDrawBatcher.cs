@@ -33,8 +33,6 @@ public sealed class GpuDrawBatcher : IDisposable
     private int _currentBoneOffset;
     private uint _currentFrameIndex;
 
-    private bool _disposed;
-
     public GpuDrawBatcher(GraphicsContext ctx, int maxInstances = 4096, int maxBones = 256 * MaxBonesPerDraw)
     {
         _ctx = ctx;
@@ -205,13 +203,6 @@ public sealed class GpuDrawBatcher : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
         for (var i = 0; i < _numFrames; i++)
         {
             _instanceBuffers[i].UnmapMemory();

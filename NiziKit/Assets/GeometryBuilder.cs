@@ -4,28 +4,6 @@ namespace NiziKit.Assets;
 
 public sealed class GeometryBuilder
 {
-    public GeometryData BuildQuadXY(float width, float height, BuildDesc flags = 0)
-    {
-        var desc = new QuadDesc
-        {
-            Width = width,
-            Height = height,
-            BuildDesc = (uint)flags
-        };
-        return Geometry.BuildQuadXY(ref desc);
-    }
-
-    public GeometryData BuildQuadXZ(float width, float height, BuildDesc flags = 0)
-    {
-        var desc = new QuadDesc
-        {
-            Width = width,
-            Height = height,
-            BuildDesc = (uint)flags
-        };
-        return Geometry.BuildQuadXZ(ref desc);
-    }
-
     public GeometryData BuildBox(float width, float height, float depth, BuildDesc flags = 0)
     {
         var desc = new BoxDesc

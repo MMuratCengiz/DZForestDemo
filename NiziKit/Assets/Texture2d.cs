@@ -14,18 +14,10 @@ public class Texture2d : IDisposable
 
     internal uint Index { get; set; }
     public Graphics.Batching.TextureId Id => new(Index, 0);
-
-    private bool _disposed;
     
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
         GpuTexture.Dispose();
     }
 }

@@ -189,8 +189,6 @@ public sealed class RenderScene : IDisposable
     private readonly int[] _boneMatricesFreeList;
     private int _boneMatricesFreeHead;
 
-    private bool _disposed;
-
     private sealed class FrameState(int maxObjects, int maxLights, int maxSkinnedObjects)
     {
         public RenderView MainView;
@@ -237,7 +235,7 @@ public sealed class RenderScene : IDisposable
         }
         _freeList[maxObjects - 1] = -1;  // End of list
         _freeListHead = 0;
-
+        
         _boneMatricesPool = new Matrix4x4[maxSkinnedObjects][];
         _boneMatricesFreeList = new int[maxSkinnedObjects];
         for (var i = 0; i < maxSkinnedObjects; i++)
@@ -621,12 +619,5 @@ public sealed class RenderScene : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-        GC.SuppressFinalize(this);
     }
 }

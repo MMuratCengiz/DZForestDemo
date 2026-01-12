@@ -26,7 +26,6 @@ public class CommandListAllocator : IDisposable
     private readonly CommandQueueData[] _graphicsQueueData;
     private readonly CommandQueueData[] _computeQueueData;
     private readonly GraphicsContext _context;
-    private bool _disposed;
 
     public CommandListAllocator(GraphicsContext context, int numFrames)
     {
@@ -114,13 +113,6 @@ public class CommandListAllocator : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
         DisposeQueueData(_graphicsQueueData);
         DisposeQueueData(_computeQueueData);
 

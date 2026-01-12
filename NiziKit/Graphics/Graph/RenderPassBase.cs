@@ -17,7 +17,6 @@ public abstract class RenderPassBase(GraphicsContext context) : IDisposable
     private uint _currentFrameIndex;
     private uint _width;
     private uint _height;
-    private bool _disposed;
 
     protected Texture GetAttachment(string name) => _textures[name][_currentFrameIndex];
     protected Buffer GetBufferAttachment(string name) => _buffers[name][_currentFrameIndex];
@@ -155,12 +154,6 @@ public abstract class RenderPassBase(GraphicsContext context) : IDisposable
 
     public virtual void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
 
         foreach (var textures in _textures.Values)
         {

@@ -13,7 +13,6 @@ public class Game : IDisposable
     private readonly FixedTimestep _fixedTimestep;
     private readonly IRenderer? _renderer = null;
     private readonly World _world;
-    private bool _disposed;
     
     public AppWindow Window { get; }
     public FrameClock Clock { get; }
@@ -74,12 +73,6 @@ public class Game : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
         _renderer?.Dispose();
         Graphics.Dispose();
         Window.Dispose();

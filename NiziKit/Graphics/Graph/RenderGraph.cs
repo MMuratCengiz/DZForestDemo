@@ -69,7 +69,6 @@ public class RenderGraph : IDisposable
     private readonly FrameContext[] _frames;
     private readonly CommandListAllocator _commandListAllocator;
     private readonly RenderPassTask[] _taskPool;
-    private bool _disposed;
     private uint _frameIndex = 0;
     private uint _nextFrameIndex = 0;
 
@@ -224,13 +223,6 @@ public class RenderGraph : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
         _context.GraphicsCommandQueue.WaitIdle();
         foreach (var frame in _frames)
         {

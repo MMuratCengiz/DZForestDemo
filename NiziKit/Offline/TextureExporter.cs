@@ -53,7 +53,6 @@ public sealed class TextureExportResult
 public sealed class TextureExporter : IDisposable
 {
     private readonly TextureImporter _textureImporter = new();
-    private bool _disposed;
 
     public IReadOnlyList<string> SupportedExtensions
     {
@@ -73,12 +72,6 @@ public sealed class TextureExporter : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
         _textureImporter.Dispose();
     }
 

@@ -11,8 +11,6 @@ public sealed class NullTexture : IDisposable
 {
     private static readonly byte[] PurplePixel = [255, 0, 255, 255]; // RGBA
 
-    private bool _disposed;
-
     public Texture Texture { get; }
 
     public NullTexture(LogicalDevice device)
@@ -85,12 +83,6 @@ public sealed class NullTexture : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
         Texture.Dispose();
     }
 }

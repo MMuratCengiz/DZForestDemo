@@ -4,8 +4,6 @@ namespace NiziKit.Application.Windowing;
 
 public sealed class AppWindow(string title, uint width, uint height) : IDisposable
 {
-    private bool _disposed;
-
     public uint Width { get; private set; } = width;
     public uint Height { get; private set; } = height;
     public bool IsMinimized { get; private set; }
@@ -21,12 +19,6 @@ public sealed class AppWindow(string title, uint width, uint height) : IDisposab
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
         NativeWindow.Dispose();
     }
 

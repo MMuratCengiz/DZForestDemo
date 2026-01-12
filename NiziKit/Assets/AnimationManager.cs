@@ -7,7 +7,6 @@ namespace NiziKit.Assets;
 public sealed class AnimationManager : IDisposable
 {
     private readonly List<AnimatorInstance> _instances = [];
-    private bool _disposed;
 
     public AnimatorInstance CreateAnimator(Skeleton skeleton, Matrix4x4[]? inverseBindMatrices = null, Matrix4x4 skeletonRootTransform = default)
     {
@@ -91,13 +90,6 @@ public sealed class AnimationManager : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
         foreach (var instance in _instances)
         {
             instance.Dispose();

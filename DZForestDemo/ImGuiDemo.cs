@@ -37,7 +37,6 @@ public class ImGuiDemoWindow : IDisposable
     private Vector3 _clearColor = new(0.45f, 0.55f, 0.60f);
     private int _counter;
 
-    private bool _disposed;
     private float _floatValue;
     private bool _showAnotherWindow;
     private bool _showDemoWindow = true;
@@ -105,13 +104,6 @@ public class ImGuiDemoWindow : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
         _frameSync.WaitIdle();
         _commandQueue.WaitIdle();
 

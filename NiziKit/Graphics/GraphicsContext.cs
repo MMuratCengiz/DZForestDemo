@@ -7,8 +7,6 @@ namespace NiziKit.Graphics;
 
 public sealed class GraphicsContext : IDisposable
 {
-    private bool _disposed;
-
     public GraphicsApi GraphicsApi { get; }
     public LogicalDevice LogicalDevice { get; }
     public SwapChain SwapChain { get; }
@@ -108,13 +106,6 @@ public sealed class GraphicsContext : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
         WaitIdle();
         RenderGraph.Dispose();
         ResourceTracking.Dispose();

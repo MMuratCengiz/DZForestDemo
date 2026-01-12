@@ -16,7 +16,6 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
     private readonly ThreadDispatcher _threadDispatcher;
     private readonly Dictionary<int, BodyHandle> _bodyHandles = new();
     private readonly Dictionary<int, StaticHandle> _staticHandles = new();
-    private bool _disposed;
 
     public Vector3 Gravity { get; set; }
 
@@ -123,12 +122,6 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
         _simulation.Dispose();
         _threadDispatcher.Dispose();
         _bufferPool.Clear();

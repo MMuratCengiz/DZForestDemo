@@ -8,7 +8,6 @@ namespace NiziKit.UI;
 public sealed class UiContext : IDisposable
 {
     private readonly Dictionary<uint, object> _widgetStates = new();
-    private bool _disposed;
     private uint _frameElementIndex;
     private bool _mouseJustPressed;
 
@@ -39,13 +38,6 @@ public sealed class UiContext : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
-
         Clay.Dispose();
     }
 

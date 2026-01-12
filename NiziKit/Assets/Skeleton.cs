@@ -10,16 +10,8 @@ public class Skeleton : IDisposable
     public int[] RootJointIndices { get; set; } = [];
     public OzzAnimation OzzSkeleton { get; set; }
 
-    private bool _disposed;
-
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
         OzzSkeleton.Dispose();
     }
 }

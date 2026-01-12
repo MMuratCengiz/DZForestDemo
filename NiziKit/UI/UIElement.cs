@@ -397,12 +397,10 @@ public ref struct UiElement
 public ref struct UiElementScope
 {
     private readonly UiContext _context;
-    private bool _disposed;
 
     internal UiElementScope(UiContext context)
     {
         _context = context;
-        _disposed = false;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -456,12 +454,6 @@ public ref struct UiElementScope
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose()
     {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _disposed = true;
         _context.Clay.CloseElement();
     }
 }
