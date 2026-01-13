@@ -6,22 +6,16 @@ namespace NiziKit.Assets;
 public abstract class Material : IDisposable
 {
     public string Name { get; protected init; } = string.Empty;
-    public GpuShader? GpuShader { get; private set; }
+    public Texture2d? Albedo { get; set; }
+    public Texture2d? Normal { get; set; }
+    public Texture2d? Metallic { get; set; }
+    public Texture2d? Roughness { get; set; }
+    public  GpuShader? GpuShader { get; set; }
 
-    protected GraphicsContext? Context { get; private set; }
-
-    protected abstract ShaderProgram LoadShaderProgram();
-
-    protected abstract GraphicsPipelineDesc ConfigurePipeline(GraphicsContext context);
-
-    public void Initialize(GraphicsContext context)
+    protected Material(GraphicsContext context)
     {
-        Context = context;
-        var program = LoadShaderProgram();
-        var pipelineDesc = ConfigurePipeline(context);
-        GpuShader = new GpuShader(context, program, pipelineDesc);
     }
-
+    
     public virtual void Dispose()
     {
         GpuShader?.Dispose();

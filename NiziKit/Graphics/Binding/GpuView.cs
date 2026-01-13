@@ -1,10 +1,10 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 using DenOfIz;
+using NiziKit.Core;
 using NiziKit.Graphics.Binding.Data;
 using NiziKit.Graphics.Binding.Layout;
 using NiziKit.Light;
-using NiziKit.SceneManagement;
 using Buffer = DenOfIz.Buffer;
 
 namespace NiziKit.Graphics.Binding;
@@ -27,7 +27,7 @@ public class GpuView : IDisposable
     private GpuCamera _camera;
     private LightConstants _lights;
     private Texture? _shadowAtlas;
-    private Sampler? _shadowSampler;
+    private readonly Sampler? _shadowSampler;
     private bool _isDirty = true;
 
     public GpuView(GraphicsContext ctx)
@@ -233,6 +233,7 @@ public class GpuView : IDisposable
         {
             UpdateBindings(frameIndex);
         }
+
         return _bindGroups[frameIndex];
     }
 

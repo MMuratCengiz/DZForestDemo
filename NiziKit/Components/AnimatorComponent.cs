@@ -1,6 +1,6 @@
 using System.Numerics;
 using NiziKit.Assets;
-using NiziKit.SceneManagement;
+using NiziKit.Core;
 
 namespace NiziKit.Components;
 
@@ -25,11 +25,7 @@ public class AnimatorComponent : IComponent
     public void UpdateBoneMatrices(ReadOnlySpan<Matrix4x4> bones)
     {
         var count = Math.Min(bones.Length, MaxBones);
-        bones.Slice(0, count).CopyTo(_boneMatrices);
+        bones[..count].CopyTo(_boneMatrices);
         BoneCount = count;
     }
-
-    public void OnAttach() { }
-    public void OnDetach() { }
-    public void OnUpdate(float deltaTime) { }
 }

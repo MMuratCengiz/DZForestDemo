@@ -1,4 +1,4 @@
-namespace NiziKit.SceneManagement;
+namespace NiziKit.Core;
 
 public interface IObjectQuery
 {

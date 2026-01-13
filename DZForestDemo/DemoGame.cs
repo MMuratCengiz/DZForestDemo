@@ -3,9 +3,9 @@ using DenOfIz;
 using DZForestDemo.Scenes;
 using NiziKit.Application;
 using NiziKit.Assets;
+using NiziKit.Core;
 using NiziKit.Graphics.Renderer.Forward;
 using NiziKit.Physics;
-using NiziKit.SceneManagement;
 
 namespace DZForestDemo;
 
@@ -19,7 +19,7 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 
     protected override void Load(Game game)
     {
-        _renderer = new ForwardRenderer(Graphics);
+        _renderer = new ForwardRenderer(World, Graphics);
         _cameraController = new Camera(
             new Vector3(0, 12, 25),
             new Vector3(0, 2, 0)
@@ -27,9 +27,8 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
         _cameraController.SetAspectRatio(game.Graphics.Width, game.Graphics.Height);
 
         _animation = new AnimationManager();
-
-        _demoScene = new DemoScene(World, _animation);
-        LoadScene(_demoScene);
+        _demoScene = new DemoScene(World);
+        World.LoadScene(_demoScene);
     }
 
     protected override void Update(float dt)

@@ -5,6 +5,7 @@ namespace NiziKit.Graphics.Graph;
 
 public struct RenderPassContext
 {
+    public RenderWorld RenderWorld;
     public GraphicsContext GraphicsContext;
     public FrameResources Resources;
     public CommandList CommandList;

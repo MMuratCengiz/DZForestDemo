@@ -15,11 +15,12 @@ public abstract class RenderPassBase(GraphicsContext context) : IDisposable
     private readonly Dictionary<string, Buffer[]> _buffers = new();
     private readonly uint _numFrames = context.NumFrames;
     private uint _currentFrameIndex;
-    private uint _width;
-    private uint _height;
+    private uint _width = context.Width;
+    private uint _height = context.Height;
 
-    protected Texture GetAttachment(string name) => _textures[name][_currentFrameIndex];
-    protected Buffer GetBufferAttachment(string name) => _buffers[name][_currentFrameIndex];
+
+    public Texture GetAttachment(string name) => _textures[name][_currentFrameIndex];
+    public Buffer GetBufferAttachment(string name) => _buffers[name][_currentFrameIndex];
 
     internal void Resize(uint width, uint height, uint frameIndex, FrameResources resources)
     {

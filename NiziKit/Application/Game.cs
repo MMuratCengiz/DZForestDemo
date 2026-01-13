@@ -2,16 +2,14 @@ using System.Runtime.CompilerServices;
 using DenOfIz;
 using NiziKit.Application.Timing;
 using NiziKit.Application.Windowing;
+using NiziKit.Core;
 using NiziKit.Graphics;
-using NiziKit.Graphics.Renderer;
-using NiziKit.SceneManagement;
 
 namespace NiziKit.Application;
 
 public class Game : IDisposable
 {
     private readonly FixedTimestep _fixedTimestep;
-    private readonly IRenderer? _renderer = null;
     private readonly World _world;
     
     public AppWindow Window { get; }
@@ -34,13 +32,7 @@ public class Game : IDisposable
         Window = new AppWindow(desc.Title, desc.Width, desc.Height);
         Clock = new FrameClock();
         Graphics = new GraphicsContext(Window.NativeWindow, desc.Graphics);
-        _world = new World(Graphics.LogicalDevice);
-    }
-
-
-    public void LoadScene(Scene scene)
-    {
-        World.LoadScene(scene);
+        _world = new World(Graphics);
     }
 
     
@@ -73,7 +65,6 @@ public class Game : IDisposable
 
     public void Dispose()
     {
-        _renderer?.Dispose();
         Graphics.Dispose();
         Window.Dispose();
         Engine.Shutdown();
@@ -121,7 +112,6 @@ public class Game : IDisposable
                 if (ev.Window.Event == WindowEventType.Resized)
                 {
                     Graphics.Resize((uint)ev.Window.Data1, (uint)ev.Window.Data2);
-                    _renderer.OnResize((uint)ev.Window.Data1, (uint)ev.Window.Data2);
                 }
             }
 

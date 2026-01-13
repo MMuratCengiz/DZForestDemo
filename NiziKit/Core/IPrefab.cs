@@ -1,4 +1,4 @@
-namespace NiziKit.SceneManagement;
+namespace NiziKit.Core;
 
 public interface IPrefab
 {
@@ -7,7 +7,7 @@ public interface IPrefab
 
 public interface IPrefab<out T> : IPrefab where T : GameObject
 {
-    new T Instantiate();
+    new T Instantiate(Scene scene);
 
     GameObject IPrefab.Instantiate() => Instantiate();
 }

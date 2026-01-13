@@ -19,7 +19,7 @@ public sealed class GpuBoneMatricesData
         _skeletonRootTransform = skeletonRootTransform;
 
         _inverseBindMatrices = new Matrix4x4[numBones];
-        for (int i = 0; i < numBones; i++)
+        for (var i = 0; i < numBones; i++)
         {
             _inverseBindMatrices[i] = i < inverseBindMatrices.Length
                 ? inverseBindMatrices[i]
@@ -31,7 +31,7 @@ public sealed class GpuBoneMatricesData
 
     public void ComputeFinalMatrices()
     {
-        for (int i = 0; i < NumBones; i++)
+        for (var i = 0; i < NumBones; i++)
         {
             FinalBoneMatrices[i] = _inverseBindMatrices[i] * ModelTransforms[i] * _skeletonRootTransform;
         }

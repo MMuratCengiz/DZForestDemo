@@ -4,7 +4,7 @@ using SharpGLTF.Schema2;
 
 namespace NiziKit.Offline;
 
-public sealed class MeshExportSettings
+public sealed class MeshExportDesc
 {
     public required string OutputPath { get; set; }
     public bool IncludeMaterial { get; set; } = false;
@@ -50,7 +50,7 @@ public struct ExportVertex
 
 public sealed class MeshExporter
 {
-    public MeshExportResult ExportMesh(string gltfPath, int meshIndex, MeshExportSettings settings)
+    public MeshExportResult ExportMesh(string gltfPath, int meshIndex, MeshExportDesc desc)
     {
         if (!File.Exists(gltfPath))
         {
@@ -69,17 +69,17 @@ public sealed class MeshExporter
             var mesh = model.LogicalMeshes[meshIndex];
             var isSkinned = IsMeshSkinned(model, meshIndex);
 
-            var (vertices, indices) = ExtractMeshData(mesh, isSkinned, settings.ConvertToLeftHanded);
+            var (vertices, indices) = ExtractMeshData(mesh, isSkinned, desc.ConvertToLeftHanded);
 
             MeshMaterial? material = null;
-            if (settings.IncludeMaterial)
+            if (desc.IncludeMaterial)
             {
                 material = ExtractMaterial(mesh, model, gltfPath);
             }
 
-            WriteMesh(settings.OutputPath, vertices, indices, isSkinned, material);
+            WriteMesh(desc.OutputPath, vertices, indices, isSkinned, material);
 
-            return MeshExportResult.Succeeded(settings.OutputPath, vertices.Length, indices.Length);
+            return MeshExportResult.Succeeded(desc.OutputPath, vertices.Length, indices.Length);
         }
         catch (Exception ex)
         {
@@ -118,7 +118,7 @@ public sealed class MeshExporter
                 var meshName = mesh.Name ?? $"Mesh_{meshIndex}";
                 var outputPath = Path.Combine(outputDirectory, $"{meshName}.dzmesh");
 
-                var result = ExportMesh(gltfPath, meshIndex, new MeshExportSettings
+                var result = ExportMesh(gltfPath, meshIndex, new MeshExportDesc
                 {
                     OutputPath = outputPath,
                     IncludeMaterial = includeMaterials
@@ -134,9 +134,7 @@ public sealed class MeshExporter
         return results;
     }
 
-    public IReadOnlyList<MeshExportResult> ExportAllMeshes(
-        string gltfPath,
-        string outputDirectory,
+    public IReadOnlyList<MeshExportResult> ExportAllMeshes(string gltfPath, string outputDirectory,
         bool includeMaterials = false)
     {
         if (!File.Exists(gltfPath))
@@ -168,6 +166,7 @@ public sealed class MeshExporter
                 }
             }
         }
+
         return false;
     }
 

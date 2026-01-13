@@ -1,5 +1,5 @@
 using System.Numerics;
-using NiziKit.SceneManagement;
+using NiziKit.Core;
 
 namespace NiziKit.Light;
 

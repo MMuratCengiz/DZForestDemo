@@ -1,7 +1,7 @@
 using System.Numerics;
 using NiziKit.Components;
 
-namespace NiziKit.SceneManagement;
+namespace NiziKit.Core;
 
 public class GameObject(string name = "GameObject")
 {
@@ -28,19 +28,31 @@ public class GameObject(string name = "GameObject")
     public Vector3 LocalPosition
     {
         get => _localPosition;
-        set { _localPosition = value; MarkTransformDirty(); }
+        set
+        {
+            _localPosition = value;
+            MarkTransformDirty();
+        }
     }
 
     public Quaternion LocalRotation
     {
         get => _localRotation;
-        set { _localRotation = value; MarkTransformDirty(); }
+        set
+        {
+            _localRotation = value;
+            MarkTransformDirty();
+        }
     }
 
     public Vector3 LocalScale
     {
         get => _localScale;
-        set { _localScale = value; MarkTransformDirty(); }
+        set
+        {
+            _localScale = value;
+            MarkTransformDirty();
+        }
     }
 
     public Matrix4x4 WorldMatrix
@@ -58,11 +70,17 @@ public class GameObject(string name = "GameObject")
 
     public Vector3 WorldPosition => WorldMatrix.Translation;
 
-    public virtual void Load() { }
+    public virtual void Load()
+    {
+    }
 
-    public virtual void FixedUpdate() { }
-    
-    public virtual void Update() { }
+    public virtual void FixedUpdate()
+    {
+    }
+
+    public virtual void Update()
+    {
+    }
 
     public GameObject CreateChild(string name = "SceneObject")
     {
@@ -115,22 +133,20 @@ public class GameObject(string name = "GameObject")
                 return typed;
             }
         }
+
         return null;
     }
 
-    public T AddComponent<T>() where T : class, IComponent, new()
+    public T AddComponent<T>() where T : IComponent, new()
     {
-        var component = new T { Owner = this };
+        var component = new T { };
         _components.Add(component);
-        component.OnAttach();
         return component;
     }
 
     public void AddComponent(IComponent component)
     {
-        component.Owner = this;
         _components.Add(component);
-        component.OnAttach();
     }
 
     public bool RemoveComponent<T>() where T : class, IComponent
@@ -139,12 +155,11 @@ public class GameObject(string name = "GameObject")
         {
             if (_components[i] is T component)
             {
-                component.OnDetach();
-                component.Owner = null;
                 _components.RemoveAt(i);
                 return true;
             }
         }
+
         return false;
     }
 

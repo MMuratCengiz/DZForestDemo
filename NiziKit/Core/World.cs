@@ -1,23 +1,27 @@
-using DenOfIz;
+using NiziKit.Assets;
+using NiziKit.Graphics;
 using NiziKit.Physics;
 
-namespace NiziKit.SceneManagement;
+namespace NiziKit.Core;
 
 public class World : IDisposable
 {
     private readonly IWorldEventListener[] _worldEventListeners;
 
     public Scene? CurrentScene { get; private set; }
-    public PhysicsWorld? PhysicsWorld { get; set; }
+    public PhysicsWorld PhysicsWorld { get; }
+    public RenderWorld RenderWorld { get; }
+    public AssetWorld AssetWorld { get; }
     public Assets.Assets Assets { get; }
 
-    public World(LogicalDevice device)
+    public World(GraphicsContext context)
     {
-        Assets = new Assets.Assets(device);
+        Assets = new Assets.Assets(context);
         PhysicsWorld = new PhysicsWorld();
+        RenderWorld = new RenderWorld();
+        AssetWorld = new AssetWorld(Assets);
 
-        _worldEventListeners = new IWorldEventListener[3];
-        _worldEventListeners[0] = PhysicsWorld;
+        _worldEventListeners = [AssetWorld, PhysicsWorld, RenderWorld];
     }
 
     public void LoadScene(Scene scene)
@@ -28,30 +32,40 @@ public class World : IDisposable
         CurrentScene = scene;
         foreach (var listener in _worldEventListeners)
         {
-            listener?.SceneReset();
+            listener.SceneReset();
         }
     }
 
     public void GameObjectCreated(GameObject go)
     {
+        foreach (var child in go.Children)
+        {
+            GameObjectCreated(child);
+        }
+        
         foreach (var listener in _worldEventListeners)
         {
-            listener?.GameObjectCreated(go);
+            listener.GameObjectCreated(go);
         }
     }
 
     public void GameObjectDestroyed(GameObject go)
     {
+        foreach (var child in go.Children)
+        {
+            GameObjectDestroyed(child);            
+        }
+
         foreach (var listener in _worldEventListeners)
         {
-            listener?.GameObjectDestroyed(go);
+            listener.GameObjectDestroyed(go);
         }
     }
 
     public void Dispose()
     {
         CurrentScene?.Dispose();
-        PhysicsWorld?.Dispose();
+        PhysicsWorld.Dispose();
         Assets.Dispose();
     }
 }

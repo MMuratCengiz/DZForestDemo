@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace NiziKit.SceneManagement;
+namespace NiziKit.Core;
 
 public struct Transform
 {

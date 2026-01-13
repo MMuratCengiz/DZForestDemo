@@ -1,6 +1,5 @@
 using DenOfIz;
 using NiziKit.Graphics.Binding;
-using NiziKit.Graphics.Graph;
 using NiziKit.Graphics.RootSignatures;
 
 namespace NiziKit.Graphics;
@@ -14,7 +13,6 @@ public sealed class GraphicsContext : IDisposable
     public CommandQueue ComputeQueue { get; }
     public CommandQueue CopyQueue { get; }
     public ResourceTracking ResourceTracking { get; } = new();
-    public RenderGraph RenderGraph { get; }
 
     public CommandQueue GraphicsCommandQueue => GraphicsQueue;
     public CommandQueue ComputeCommandQueue => ComputeQueue;
@@ -26,7 +24,6 @@ public sealed class GraphicsContext : IDisposable
     public uint FrameIndex { get; private set; }
     public uint Width { get; private set; }
     public uint Height { get; private set; }
-    public ResourceHandle SwapchainRenderTarget { get; private set; }
     public UniformBufferArena UniformBufferArena { get; }
     public BindGroupLayoutStore BindGroupLayoutStore { get; }
     public RootSignatureStore RootSignatureStore { get; }
@@ -107,7 +104,6 @@ public sealed class GraphicsContext : IDisposable
     public void Dispose()
     {
         WaitIdle();
-        RenderGraph.Dispose();
         ResourceTracking.Dispose();
         SwapChain.Dispose();
         CopyQueue.Dispose();

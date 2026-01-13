@@ -2,7 +2,7 @@ using DenOfIz;
 
 namespace NiziKit.Graphics.Binding;
 
-public struct BindingSlot(ResourceBindingType type, uint binding)
+public readonly struct BindingSlot(ResourceBindingType type, uint binding)
 {
     public readonly ResourceBindingType Type = type;
     public readonly uint Binding = binding;

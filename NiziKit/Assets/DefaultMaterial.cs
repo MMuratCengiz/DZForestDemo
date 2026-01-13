@@ -5,19 +5,13 @@ namespace NiziKit.Assets;
 
 public class DefaultMaterial : Material
 {
-    public DefaultMaterial()
+    private readonly ShaderProgram _program;
+
+    public DefaultMaterial(GraphicsContext context) : base(context)
     {
         Name = "Default";
-    }
-
-    protected override ShaderProgram LoadShaderProgram()
-    {
-        return BuiltinShader.Load("DefaultShader")
-               ?? throw new InvalidOperationException("DefaultShader not found");
-    }
-
-    protected override GraphicsPipelineDesc ConfigurePipeline(GraphicsContext context)
-    {
+        _program = BuiltinShader.Load("DefaultShader")
+                   ?? throw new InvalidOperationException("DefaultShader not found");
         var blendDesc = new BlendDesc
         {
             Enable = false,
@@ -32,7 +26,7 @@ public class DefaultMaterial : Material
 
         using var renderTargets = RenderTargetDescArray.Create([renderTarget]);
 
-        return new GraphicsPipelineDesc
+        var graphicsDesc = new GraphicsPipelineDesc
         {
             PrimitiveTopology = PrimitiveTopology.Triangle,
             CullMode = CullMode.BackFace,
@@ -46,5 +40,13 @@ public class DefaultMaterial : Material
             DepthStencilAttachmentFormat = context.DepthBufferFormat,
             RenderTargets = renderTargets
         };
+
+        GpuShader = GpuShader.Graphics(context, _program, graphicsDesc);
+    }
+
+    public override void Dispose()
+    {
+        _program.Dispose();
+        base.Dispose();
     }
 }

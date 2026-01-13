@@ -31,6 +31,17 @@ public class RenderGraph : IDisposable
             if (Pass != null)
             {
                 Pass.Execute(ref Context);
+                foreach (var attachment in Pass.Writes)
+                {
+                    if (!attachment.IsBuffer)
+                    {
+                        Context.Resources.Set(attachment.Name, Pass.GetAttachment(attachment.Name));
+                    }
+                    else
+                    {
+                        Context.Resources.Set(attachment.Name, Pass.GetBufferAttachment(attachment.Name));
+                    }
+                }
             }
             else
             {
@@ -69,6 +80,7 @@ public class RenderGraph : IDisposable
     private readonly FrameContext[] _frames;
     private readonly CommandListAllocator _commandListAllocator;
     private readonly RenderPassTask[] _taskPool;
+    private readonly RenderWorld _world;
     private uint _frameIndex = 0;
     private uint _nextFrameIndex = 0;
 
@@ -76,13 +88,16 @@ public class RenderGraph : IDisposable
     public uint Height { get; private set; }
     public uint FrameIndex => _frameIndex;
 
-    public RenderGraph(GraphicsContext context, int numThreads = 0, int numFrames = 3)
+    public RenderGraph(GraphicsContext context, RenderWorld renderWorld, int numThreads = 0, int numFrames = 3)
     {
         _executor = new TaskExecutor(numThreads);
         _context = context;
         _frames = new FrameContext[numFrames];
         _commandListAllocator = new CommandListAllocator(context, numFrames);
         _taskPool = new RenderPassTask[TaskGraph.MaxTasks];
+        _world = renderWorld;
+        Width = context.Width;
+        Height = context.Height;
 
         for (var i = 0; i < TaskGraph.MaxTasks; i++)
         {
@@ -120,6 +135,7 @@ public class RenderGraph : IDisposable
 
         var ctx = new RenderPassContext
         {
+            RenderWorld = _world,
             GraphicsContext = _context,
             Resources = resources,
             FrameIndex = _frameIndex,

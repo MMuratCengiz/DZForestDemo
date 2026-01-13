@@ -49,7 +49,7 @@ public class BlittingPresentPass : PresentPass
             RenderTargets = renderTargets
         };
 
-        _blitShader = new GpuShader(context, shaderProgram, graphicsDesc);
+        _blitShader = GpuShader.Graphics(context, shaderProgram, graphicsDesc);
 
         _linearSampler = context.LogicalDevice.CreateSampler(new SamplerDesc
         {
@@ -85,7 +85,7 @@ public class BlittingPresentPass : PresentPass
         blitBindGroupLayout?.Dispose();
     }
 
-    public override void Execute(ref RenderPassContext ctx, DenOfIz.Texture swapChainImage)
+    public override void Execute(ref RenderPassContext ctx, Texture swapChainImage)
     {
         var cmd = ctx.CommandList;
         var sceneColor = ctx.GetTexture("SceneColor");

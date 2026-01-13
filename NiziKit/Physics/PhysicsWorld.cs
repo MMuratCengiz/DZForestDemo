@@ -5,7 +5,7 @@ using BepuPhysics.CollisionDetection;
 using BepuPhysics.Constraints;
 using BepuUtilities;
 using BepuUtilities.Memory;
-using NiziKit.SceneManagement;
+using NiziKit.Core;
 
 namespace NiziKit.Physics;
 

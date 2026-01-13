@@ -1,10 +1,10 @@
-namespace NiziKit.SceneManagement;
+namespace NiziKit.Core;
 
-public abstract class Scene(World world, string name = "Scene") : IDisposable
+public abstract class Scene(World world, Assets.Assets assets, string name = "Scene") : IDisposable
 {
     public string Name { get; set; } = name;
     protected World World { get; } = world;
-    public Assets.Assets? Assets { get; internal set; }
+    public Assets.Assets Assets { get; internal set; } = assets;
 
     private readonly List<GameObject> _rootObjects = [];
     public IReadOnlyList<GameObject> RootObjects => _rootObjects;
@@ -46,6 +46,7 @@ public abstract class Scene(World world, string name = "Scene") : IDisposable
 
     public void Add(GameObject obj)
     {
+        World.GameObjectCreated(obj);
         _rootObjects.Add(obj);
         RegisterObjectByType(obj);
     }
@@ -54,11 +55,12 @@ public abstract class Scene(World world, string name = "Scene") : IDisposable
     {
         var obj = prefab.Instantiate();
         Add(obj);
-        return obj;
+        return (T)obj;
     }
 
-    public void Remove(GameObject obj)
+    public void Destroy(GameObject obj)
     {
+        World.GameObjectDestroyed(obj);
         _rootObjects.Remove(obj);
         UnregisterObjectByType(obj);
     }

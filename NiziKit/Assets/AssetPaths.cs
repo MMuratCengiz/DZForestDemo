@@ -5,7 +5,7 @@ namespace NiziKit.Assets;
 public static class AssetPaths
 {
     private static string? _contentRoot;
-    private static readonly object Lock = new();
+    private static readonly Lock Lock = new();
 
     public static string ContentRoot
     {
@@ -90,13 +90,7 @@ public static class AssetPaths
             return animationPath;
         }
 
-        var animPath = Path.GetFullPath(Path.Combine(Animations, animationPath));
-        if (File.Exists(animPath))
-        {
-            return animPath;
-        }
-
-        return Path.GetFullPath(Path.Combine(Models, animationPath));
+        return Path.GetFullPath(Path.Combine(Animations, animationPath));
     }
 
     public static string ResolveSkeleton(string skeletonPath)
@@ -106,22 +100,7 @@ public static class AssetPaths
             return skeletonPath;
         }
 
-        // Check Skeletons folder first
-        var skelPath = Path.GetFullPath(Path.Combine(Skeletons, skeletonPath));
-        if (File.Exists(skelPath))
-        {
-            return skelPath;
-        }
-
-        // Fallback to Models folder
-        var modelPath = Path.GetFullPath(Path.Combine(Models, skeletonPath));
-        if (File.Exists(modelPath))
-        {
-            return modelPath;
-        }
-
-        // Fallback to Animations folder
-        return Path.GetFullPath(Path.Combine(Animations, skeletonPath));
+        return Path.GetFullPath(Path.Combine(Skeletons, skeletonPath));
     }
 
     public static bool Exists(string relativePath)

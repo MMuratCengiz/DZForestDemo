@@ -10,7 +10,7 @@ public struct BoundingBox(Vector3 min, Vector3 max)
     public readonly Vector3 Center => (Min + Max) * 0.5f;
     public readonly Vector3 Size => Max - Min;
 
-    public static BoundingBox FromVertices(ReadOnlySpan<Vertex> vertices)
+    public static BoundingBox FromVertices(ReadOnlySpan<SkinnedVertex> vertices)
     {
         if (vertices.Length == 0)
         {

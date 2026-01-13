@@ -1,13 +1,15 @@
+using System.Runtime.InteropServices;
 using DenOfIz;
 using NiziKit.Assets.Loaders;
+using NiziKit.Graphics;
 
 namespace NiziKit.Assets;
 
-public sealed class Assets(LogicalDevice device) : IDisposable
+public sealed class Assets : IDisposable
 {
-    private readonly BufferPool _vertexPool = new(device, (uint)(BufferUsageFlagBits.Vertex | BufferUsageFlagBits.CopyDst));
-    private readonly BufferPool _indexPool = new(device, (uint)(BufferUsageFlagBits.Index | BufferUsageFlagBits.CopyDst));
-    private readonly GeometryBuilder _geometryBuilder = new();
+    private readonly BufferPool _vertexPool;
+    private readonly BufferPool _indexPool;
+    private readonly GraphicsContext _context;
 
     private readonly Dictionary<string, Model> _modelCache = new();
     private readonly Dictionary<string, Texture2d> _textureCache = new();
@@ -19,6 +21,125 @@ public sealed class Assets(LogicalDevice device) : IDisposable
     private readonly List<Mesh> _meshList = [];
     private readonly List<Texture2d> _textureList = [];
     private readonly List<Material> _materialList = [];
+
+    public Assets(GraphicsContext context)
+    {
+        _context = context;
+        _vertexPool = new BufferPool(context.LogicalDevice,
+            (uint)(BufferUsageFlagBits.Vertex | BufferUsageFlagBits.CopyDst));
+        _indexPool = new BufferPool(context.LogicalDevice,
+            (uint)(BufferUsageFlagBits.Index | BufferUsageFlagBits.CopyDst));
+
+        _materialCache["Builtin/Default"] = new DefaultMaterial(context);
+    }
+
+    public void Upload(Mesh mesh)
+    {
+        if (mesh.IsUploaded || mesh.CpuVertices == null || mesh.CpuIndices == null)
+        {
+            return;
+        }
+
+        mesh.VertexBuffer = UploadVertices(mesh.CpuVertices, mesh.Format);
+        mesh.IndexBuffer = UploadIndices(mesh.CpuIndices);
+
+        mesh.CpuVertices = null;
+        mesh.CpuIndices = null;
+    }
+
+    public Mesh Register(Mesh mesh, string? cacheKey = null)
+    {
+        if (cacheKey != null && _meshCache.TryGetValue(cacheKey, out var cached))
+        {
+            return cached;
+        }
+
+        Upload(mesh);
+        mesh.Index = (uint)_meshList.Count;
+        _meshList.Add(mesh);
+
+        if (cacheKey != null)
+        {
+            _meshCache[cacheKey] = mesh;
+        }
+
+        return mesh;
+    }
+
+    private VertexBufferView UploadVertices(byte[] data, VertexFormat format)
+    {
+        var numBytes = (uint)data.Length;
+        var gpuView = _vertexPool.Allocate(numBytes);
+
+        var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
+        {
+            Device = _context.LogicalDevice,
+            IssueBarriers = false
+        });
+        batchCopy.Begin();
+
+        var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
+        try
+        {
+            batchCopy.CopyToGPUBuffer(new CopyToGpuBufferDesc
+            {
+                Data = new ByteArrayView
+                {
+                    Elements = handle.AddrOfPinnedObject(),
+                    NumElements = numBytes
+                },
+                DstBuffer = gpuView.Buffer,
+                DstBufferOffset = gpuView.Offset
+            });
+        }
+        finally
+        {
+            handle.Free();
+        }
+
+        batchCopy.Submit(null);
+        batchCopy.Dispose();
+
+        var vertexCount = (uint)(data.Length / format.Stride);
+        return new VertexBufferView(gpuView, (uint)format.Stride, vertexCount);
+    }
+
+    private IndexBufferView UploadIndices(uint[] indices)
+    {
+        var numBytes = (uint)(sizeof(uint) * indices.Length);
+        var gpuView = _indexPool.Allocate(numBytes);
+
+        var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
+        {
+            Device = _context.LogicalDevice,
+            IssueBarriers = false
+        });
+        batchCopy.Begin();
+
+        var handle = GCHandle.Alloc(indices, GCHandleType.Pinned);
+        try
+        {
+            batchCopy.CopyToGPUBuffer(new CopyToGpuBufferDesc
+            {
+                Data = new ByteArrayView
+                {
+                    Elements = handle.AddrOfPinnedObject(),
+                    NumElements = numBytes
+                },
+                DstBuffer = gpuView.Buffer,
+                DstBufferOffset = gpuView.Offset
+            });
+        }
+        finally
+        {
+            handle.Free();
+        }
+
+        batchCopy.Submit(null);
+        batchCopy.Dispose();
+
+        return new IndexBufferView(gpuView, IndexType.Uint32, (uint)indices.Length);
+    }
 
     public Model LoadModel(string path)
     {
@@ -33,30 +154,15 @@ public sealed class Assets(LogicalDevice device) : IDisposable
             Name = Path.GetFileNameWithoutExtension(path),
             SourcePath = resolvedPath
         };
+        model.Load(_context, resolvedPath);
 
-        if (resolvedPath.EndsWith(".dzmesh", StringComparison.OrdinalIgnoreCase))
+        foreach (var mesh in model.Meshes)
         {
-            var mesh = MeshCreator.LoadDzMesh(resolvedPath, device, _vertexPool, _indexPool);
-            model.Meshes.Add(mesh);
+            Register(mesh, $"{resolvedPath}:{mesh.Name}");
         }
 
         _modelCache[resolvedPath] = model;
         return model;
-    }
-
-    public Mesh LoadMesh(string path)
-    {
-        var resolvedPath = AssetPaths.ResolveMesh(path);
-        if (_meshCache.TryGetValue(resolvedPath, out var cached))
-        {
-            return cached;
-        }
-
-        var mesh = MeshCreator.LoadDzMesh(resolvedPath, device, _vertexPool, _indexPool);
-        mesh.Index = (uint)_meshList.Count;
-        _meshList.Add(mesh);
-        _meshCache[resolvedPath] = mesh;
-        return mesh;
     }
 
     public Texture2d LoadTexture(string path)
@@ -67,8 +173,8 @@ public sealed class Assets(LogicalDevice device) : IDisposable
             return cached;
         }
 
-        var texture = TextureLoader.Load(resolvedPath, device);
-        texture.Index = (uint)_textureList.Count;
+        var texture = new Texture2d();
+        texture.Load(_context, resolvedPath);
         _textureList.Add(texture);
         _textureCache[resolvedPath] = texture;
         return texture;
@@ -101,6 +207,16 @@ public sealed class Assets(LogicalDevice device) : IDisposable
         return animation;
     }
 
+    public Material LoadMaterial(string path)
+    {
+        if (_materialCache.TryGetValue(path, out var cached))
+        {
+            return cached;
+        }
+
+        throw new NotImplementedException();
+    }
+
     public Mesh CreateBox(float width, float height, float depth)
     {
         var cacheKey = $"box:{width}:{height}:{depth}";
@@ -109,12 +225,7 @@ public sealed class Assets(LogicalDevice device) : IDisposable
             return cached;
         }
 
-        var geometry = _geometryBuilder.BuildBox(width, height, depth);
-        var mesh = MeshCreator.CreateFromGeometry($"Box_{width}x{height}x{depth}", geometry, device, _vertexPool, _indexPool);
-        mesh.Index = (uint)_meshList.Count;
-        _meshList.Add(mesh);
-        _meshCache[cacheKey] = mesh;
-        return mesh;
+        return Register(GeometryMesh.Box(width, height, depth), cacheKey);
     }
 
     public Mesh CreateSphere(float diameter, uint tessellation = 16)
@@ -125,12 +236,7 @@ public sealed class Assets(LogicalDevice device) : IDisposable
             return cached;
         }
 
-        var geometry = _geometryBuilder.BuildSphere(diameter, tessellation);
-        var mesh = MeshCreator.CreateFromGeometry($"Sphere_{diameter}", geometry, device, _vertexPool, _indexPool);
-        mesh.Index = (uint)_meshList.Count;
-        _meshList.Add(mesh);
-        _meshCache[cacheKey] = mesh;
-        return mesh;
+        return Register(GeometryMesh.Sphere(diameter, tessellation), cacheKey);
     }
 
     public Mesh CreateQuad(float width, float height)
@@ -141,19 +247,7 @@ public sealed class Assets(LogicalDevice device) : IDisposable
             return cached;
         }
 
-        
-        var desc = new QuadDesc
-        {
-            Width = width,
-            Height = height,
-            BuildDesc = 0
-        };
-        var geometry = Geometry.BuildQuadXY(in desc);
-        var mesh = MeshCreator.CreateFromGeometry($"Quad_{width}x{height}", geometry, device, _vertexPool, _indexPool);
-        mesh.Index = (uint)_meshList.Count;
-        _meshList.Add(mesh);
-        _meshCache[cacheKey] = mesh;
-        return mesh;
+        return Register(GeometryMesh.Quad(width, height), cacheKey);
     }
 
     public Mesh CreateCylinder(float diameter, float height, uint tessellation = 16)
@@ -164,12 +258,7 @@ public sealed class Assets(LogicalDevice device) : IDisposable
             return cached;
         }
 
-        var geometry = _geometryBuilder.BuildCylinder(diameter, height, tessellation);
-        var mesh = MeshCreator.CreateFromGeometry($"Cylinder_{diameter}x{height}", geometry, device, _vertexPool, _indexPool);
-        mesh.Index = (uint)_meshList.Count;
-        _meshList.Add(mesh);
-        _meshCache[cacheKey] = mesh;
-        return mesh;
+        return Register(GeometryMesh.Cylinder(diameter, height, tessellation), cacheKey);
     }
 
     public Mesh CreateCone(float diameter, float height, uint tessellation = 16)
@@ -180,12 +269,7 @@ public sealed class Assets(LogicalDevice device) : IDisposable
             return cached;
         }
 
-        var geometry = _geometryBuilder.BuildCone(diameter, height, tessellation);
-        var mesh = MeshCreator.CreateFromGeometry($"Cone_{diameter}x{height}", geometry, device, _vertexPool, _indexPool);
-        mesh.Index = (uint)_meshList.Count;
-        _meshList.Add(mesh);
-        _meshCache[cacheKey] = mesh;
-        return mesh;
+        return Register(GeometryMesh.Cone(diameter, height, tessellation), cacheKey);
     }
 
     public Mesh CreateTorus(float diameter, float thickness, uint tessellation = 16)
@@ -196,25 +280,21 @@ public sealed class Assets(LogicalDevice device) : IDisposable
             return cached;
         }
 
-        var geometry = _geometryBuilder.BuildTorus(diameter, thickness, tessellation);
-        var mesh = MeshCreator.CreateFromGeometry($"Torus_{diameter}x{thickness}", geometry, device, _vertexPool, _indexPool);
-        mesh.Index = (uint)_meshList.Count;
-        _meshList.Add(mesh);
-        _meshCache[cacheKey] = mesh;
-        return mesh;
+        return Register(GeometryMesh.Torus(diameter, thickness, tessellation), cacheKey);
     }
 
     public IReadOnlyList<Mesh> AllMeshes => _meshList;
     public IReadOnlyList<Texture2d> AllTextures => _textureList;
     public IReadOnlyList<Material> AllMaterials => _materialList;
 
-    public Mesh? GetMeshById(Graphics.Batching.MeshId meshId)
+    public Mesh? GetMeshByIndex(uint index)
     {
-        if (!meshId.IsValid || meshId.Index >= _meshList.Count)
+        if (index >= _meshList.Count)
         {
             return null;
         }
-        return _meshList[(int)meshId.Index];
+
+        return _meshList[(int)index];
     }
 
     public void RegisterMaterial(Material material)

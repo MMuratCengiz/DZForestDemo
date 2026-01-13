@@ -37,7 +37,7 @@ public sealed class UniformBufferArena : IDisposable
             AddChunk();
             chunk = _chunks[_currentChunk];
         }
-        uint offset = (uint)chunk.Offset;
+        var offset = (uint)chunk.Offset;
         chunk.Offset += size;
         return new GpuBufferView{ Buffer = chunk.Buffer, NumBytes = (uint)size, Offset = offset};
     }

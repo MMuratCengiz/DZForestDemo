@@ -7,6 +7,7 @@ namespace NiziKit.Graphics.Binding.Data;
 public struct GpuInstanceData
 {
     public Matrix4x4 Model;
+    
     public Vector4 BaseColor;
     public float Metallic;
     public float Roughness;

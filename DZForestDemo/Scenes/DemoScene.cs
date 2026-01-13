@@ -1,46 +1,25 @@
 using System.Numerics;
-using DZForestDemo.Prefabs;
+using DZForestDemo.GameObjects;
 using NiziKit.Assets;
 using NiziKit.Components;
-using NiziKit.Graphics.Batching;
+using NiziKit.Core;
 using NiziKit.Light;
 using NiziKit.Physics;
-using NiziKit.SceneManagement;
 
 namespace DZForestDemo.Scenes;
 
 public class DemoScene : Scene
 {
     private readonly Assets _assets;
-    private readonly AnimationManager _animation;
     private readonly Random _random = new();
 
     private Mesh _cubeMesh = null!;
     private Mesh _platformMesh = null!;
     private Mesh _sphereMesh = null!;
-    private Mesh _foxMesh = null!;
-    private Texture2d? _foxTexture;
-    private Skeleton? _foxSkeleton;
-    private Animation? _foxAnimation;
 
-    private readonly RenderMaterial[] _materialPalette =
-    [
-        new() { BaseColor = new Vector4(0.8f, 0.2f, 0.2f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
-        new() { BaseColor = new Vector4(0.2f, 0.8f, 0.2f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
-        new() { BaseColor = new Vector4(0.2f, 0.2f, 0.8f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
-        new() { BaseColor = new Vector4(0.9f, 0.9f, 0.2f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
-        new() { BaseColor = new Vector4(1.0f, 0.5f, 0.0f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
-        new() { BaseColor = new Vector4(0.6f, 0.2f, 0.8f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
-        new() { BaseColor = new Vector4(0.2f, 0.8f, 0.8f, 1f), Metallic = 0f, Roughness = 0.5f, AmbientOcclusion = 1f },
-        new() { BaseColor = new Vector4(0.6f, 0.4f, 0.2f, 1f), Metallic = 0f, Roughness = 0.7f, AmbientOcclusion = 1f },
-        new() { BaseColor = new Vector4(0.8f, 0.8f, 0.8f, 1f), Metallic = 0.9f, Roughness = 0.1f, AmbientOcclusion = 1f },
-        new() { BaseColor = new Vector4(0.7f, 0.4f, 0.3f, 1f), Metallic = 0.8f, Roughness = 0.2f, AmbientOcclusion = 1f },
-    ];
-
-    public DemoScene(World world, AnimationManager animation) : base(world, "Demo Scene")
+    public DemoScene(World world) : base(world, world.Assets, "Demo Scene")
     {
         _assets = World.Assets;
-        _animation = animation;
     }
 
     public override void Load()
@@ -56,14 +35,6 @@ public class DemoScene : Scene
         _cubeMesh = _assets.CreateBox(1.0f, 1.0f, 1.0f);
         _platformMesh = _assets.CreateBox(20.0f, 1.0f, 20.0f);
         _sphereMesh = _assets.CreateSphere(1.0f);
-        _foxMesh = _assets.LoadMesh("fox1.dzmesh");
-        _foxTexture = _assets.LoadTexture("Fox_Texture.dztex");
-
-        _foxSkeleton = _assets.LoadSkeleton("Fox_skeleton.ozz");
-        if (_foxSkeleton != null)
-        {
-            _foxAnimation = _assets.LoadAnimation("Fox_Run.ozz", _foxSkeleton);
-        }
     }
 
     private void CreateCamera()
@@ -123,14 +94,7 @@ public class DemoScene : Scene
         platform.LocalPosition = new Vector3(0, -2, 0);
 
         var mesh = platform.AddComponent<MeshComponent>();
-        mesh.Mesh = _platformMesh.Id;
-        mesh.Material = new RenderMaterial
-        {
-            BaseColor = new Vector4(0.5f, 0.5f, 0.5f, 1f),
-            Metallic = 0f,
-            Roughness = 0.8f,
-            AmbientOcclusion = 1f
-        };
+        mesh.Mesh = _platformMesh;
 
         World.PhysicsWorld?.CreateStaticBody(
             platform.Id,
@@ -141,16 +105,7 @@ public class DemoScene : Scene
 
     private void SpawnFox()
     {
-        var foxPrefab = new FoxPrefab
-        {
-            Mesh = _foxMesh,
-            Texture = _foxTexture,
-            Skeleton = _foxSkeleton,
-            Animation = _foxAnimation,
-            AnimationManager = _animation
-        };
-
-        Add(foxPrefab);
+        Add(new Fox(_assets));
     }
 
     private void SpawnInitialCubes()
@@ -162,8 +117,7 @@ public class DemoScene : Scene
                 5f + i * 2f,
                 (_random.NextSingle() - 0.5f) * 4f
             );
-            var material = _materialPalette[_random.Next(_materialPalette.Length)];
-            SpawnDynamicCube(position, material);
+            SpawnDynamicCube(position);
         }
     }
 
@@ -175,19 +129,17 @@ public class DemoScene : Scene
             (_random.NextSingle() - 0.5f) * 6f
         );
 
-        var material = _materialPalette[_random.Next(_materialPalette.Length)];
-
         if (_random.NextSingle() > 0.5f)
         {
-            SpawnDynamicCube(position, material);
+            SpawnDynamicCube(position);
         }
         else
         {
-            SpawnDynamicSphere(position, material with { Roughness = 0.2f, Metallic = 0.3f });
+            SpawnDynamicSphere(position);
         }
     }
 
-    private void SpawnDynamicCube(Vector3 position, RenderMaterial material)
+    private void SpawnDynamicCube(Vector3 position)
     {
         var cube = CreateObject("Cube");
         cube.LocalPosition = position;
@@ -198,9 +150,7 @@ public class DemoScene : Scene
         );
 
         var mesh = cube.AddComponent<MeshComponent>();
-        mesh.Mesh = _cubeMesh.Id;
-        mesh.Material = material;
-        mesh.Flags = RenderFlags.CastsShadow;
+        mesh.Mesh = _cubeMesh;
 
         World.PhysicsWorld?.CreateBody(
             cube.Id,
@@ -209,15 +159,13 @@ public class DemoScene : Scene
             PhysicsBodyDesc.Dynamic(PhysicsShape.Box(Vector3.One), 1f));
     }
 
-    private void SpawnDynamicSphere(Vector3 position, RenderMaterial material)
+    private void SpawnDynamicSphere(Vector3 position)
     {
         var sphere = CreateObject("Sphere");
         sphere.LocalPosition = position;
 
         var mesh = sphere.AddComponent<MeshComponent>();
-        mesh.Mesh = _sphereMesh.Id;
-        mesh.Material = material;
-        mesh.Flags = RenderFlags.CastsShadow;
+        mesh.Mesh = _sphereMesh;
 
         World.PhysicsWorld?.CreateBody(
             sphere.Id,

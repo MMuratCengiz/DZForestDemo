@@ -1,4 +1,9 @@
-using NiziKit.Graphics.Batching;
+using System.Runtime.InteropServices;
+using DenOfIz;
+using NiziKit.Application;
+using NiziKit.Core;
+using NiziKit.Graphics.Binding.Data;
+using NiziKit.Graphics.Binding.Layout;
 
 namespace NiziKit.Graphics.Binding;
 
@@ -8,41 +13,69 @@ public enum GpuDrawType : byte
     Skinned
 }
 
-public struct GpuDraw
+public readonly struct GpuDraw
 {
-    public GpuDrawType Type;
-    public MeshId Mesh;
-    public int InstanceOffset;
-    public int InstanceCount;
-    public int BoneOffset;
-    public int BoneCount;
-    public int MaterialIndex;
+    // Per frame + per draw index
+    private static readonly List<Dictionary<GameObject, GpuDraw>> Instances = new();
 
-    public static GpuDraw CreateStatic(MeshId mesh, int instanceOffset, int instanceCount, int materialIndex = 0)
+    private readonly BindGroup[] _bindGroups;
+    private readonly GpuBufferView[] _dataBuffers;
+    
+    public static GpuDraw Get(GraphicsContext context, int frameIndex, GameObject gameObject)
     {
-        return new GpuDraw
+        if (Instances.Count < context.NumFrames)
         {
-            Type = GpuDrawType.Static,
-            Mesh = mesh,
-            InstanceOffset = instanceOffset,
-            InstanceCount = instanceCount,
-            BoneOffset = 0,
-            BoneCount = 0,
-            MaterialIndex = materialIndex
-        };
+            for (var i = Instances.Count; i < context.NumFrames; i++)
+            {
+                Instances.Add([]);
+            }
+        }
+
+        var gpuDraws = Instances[frameIndex];
+        if (!gpuDraws.TryGetValue(gameObject, out var value))
+        {
+            value = new GpuDraw(context, gameObject);
+            gpuDraws.Add(gameObject, value);
+        }
+
+        return value;
     }
 
-    public static GpuDraw CreateSkinned(MeshId mesh, int instanceOffset, int boneOffset, int boneCount, int materialIndex = 0)
+    public BindGroup GetBindGroup(int frameIndex)
     {
-        return new GpuDraw
+        return _bindGroups[frameIndex];
+    }
+    
+    public GpuDraw(GraphicsContext context, GameObject go)
+    {
+        var bindGroupDesc = new BindGroupDesc
         {
-            Type = GpuDrawType.Skinned,
-            Mesh = mesh,
-            InstanceOffset = instanceOffset,
-            InstanceCount = 1,
-            BoneOffset = boneOffset,
-            BoneCount = boneCount,
-            MaterialIndex = materialIndex
+            Layout = context.BindGroupLayoutStore.Draw
         };
+        _bindGroups = new BindGroup[context.NumFrames];
+        _dataBuffers = new GpuBufferView[context.NumFrames];
+        for (var i = 0; i < context.NumFrames; i++)
+        {
+            _bindGroups[i] = context.LogicalDevice.CreateBindGroup(bindGroupDesc);
+            _dataBuffers[i] = context.UniformBufferArena.Request(Marshal.SizeOf<GpuDrawData>());
+
+            var bg = _bindGroups[i];
+            bg.BeginUpdate();
+            var bindBufferDesc = new BindBufferDesc
+            {
+                Binding = GpuDrawLayout.Instances.Binding,
+                Resource = _dataBuffers[i].Buffer,
+                ResourceOffset = _dataBuffers[i].Offset
+            };
+            bg.CbvWithDesc(bindBufferDesc);
+            bg.EndUpdate();
+        }
+    }
+
+    public BindGroup Get(int frameIndex, GameObject gameObject)
+    {
+        var transform = gameObject.WorldMatrix;
+        this._dataBuffers[frameIndex].Buffer.WriteData(transform);
+        return _bindGroups[frameIndex];
     }
 }
