@@ -28,7 +28,7 @@ public class GpuView : IDisposable
     private LightConstants _lights;
     private Texture? _shadowAtlas;
     private readonly Sampler? _shadowSampler;
-    private readonly object _updateLock = new();
+    private readonly Lock _updateLock = new();
     private bool _isDirty = true;
 
     public GpuView(GraphicsContext ctx)

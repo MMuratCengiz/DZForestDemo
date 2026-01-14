@@ -138,14 +138,27 @@ public class ImGuiDemoWindow : IDisposable
 
         _stepTimer.Tick();
 
-        _imGuiRenderer.NewFrame((uint)_viewport.Width, (uint)_viewport.Height, (float)_stepTimer.GetDeltaTime());
-
         var frameIndex = _frameSync.NextFrame();
         var commandList = _frameSync.GetCommandList(frameIndex);
         
+        _imGuiRenderer.NewFrame((uint)_viewport.Width, (uint)_viewport.Height, (float)_stepTimer.GetDeltaTime());
         BuildImGuiUi();
 
-        var image = Render(commandList, frameIndex);
+        
+        commandList.Begin();
+        
+        var image = _frameSync.AcquireNextImage();
+        var renderTarget = _swapChain.GetRenderTarget(image);
+        
+        _resourceTracking.TransitionTexture(commandList, renderTarget,
+            (uint)ResourceUsageFlagBits.RenderTarget, QueueType.Graphics);
+
+        _imGuiRenderer.Render(renderTarget, commandList, frameIndex);
+
+        _resourceTracking.TransitionTexture(commandList, renderTarget,
+            (uint)ResourceUsageFlagBits.Present, QueueType.Graphics);
+
+        commandList.End();
 
         _frameSync.ExecuteCommandList(frameIndex, _emptySemaphoreArray);
         _frameSync.Present(image);
@@ -204,25 +217,6 @@ public class ImGuiDemoWindow : IDisposable
         }
 
         ImGui.End();
-    }
-
-    private uint Render(CommandList commandList, uint frameIndex)
-    {
-        commandList.Begin();
-        
-        var image = _frameSync.AcquireNextImage();
-        var renderTarget = _swapChain.GetRenderTarget(image);
-        
-        _resourceTracking.TransitionTexture(commandList, renderTarget,
-            (uint)ResourceUsageFlagBits.RenderTarget, QueueType.Graphics);
-
-        _imGuiRenderer.Render(renderTarget, commandList, frameIndex);
-
-        _resourceTracking.TransitionTexture(commandList, renderTarget,
-            (uint)ResourceUsageFlagBits.Present, QueueType.Graphics);
-
-        commandList.End();
-        return image;
     }
 }
 

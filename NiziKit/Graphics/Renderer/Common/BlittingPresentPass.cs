@@ -1,3 +1,4 @@
+using System.IO.Pipelines;
 using DenOfIz;
 using NiziKit.Assets;
 using NiziKit.Graphics.Binding;
@@ -9,7 +10,11 @@ public class BlittingPresentPass : PresentPass
 {
     private static readonly string[] ReadAttachments = ["SceneColor"];
 
-    private readonly GpuShader _blitShader;
+    private readonly InputLayout _layout;
+    private readonly RootSignature _rootSignature;
+    private readonly ShaderProgram _program;
+    private readonly Pipeline _pipeline;
+
     private readonly CachedBindGroup _bindGroups;
     private readonly Sampler _linearSampler;
     private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments = new(1);
@@ -19,8 +24,8 @@ public class BlittingPresentPass : PresentPass
 
     public BlittingPresentPass(GraphicsContext context) : base(context)
     {
-        var shaderProgram = BuiltinShader.Load("BlitShader")
-                            ?? throw new InvalidOperationException("BlitShader not found");
+        _program = BuiltinShader.Load("BlitShader")
+                   ?? throw new InvalidOperationException("BlitShader not found");
 
         var blendDesc = new BlendDesc
         {
@@ -36,22 +41,39 @@ public class BlittingPresentPass : PresentPass
 
         using var renderTargets = RenderTargetDescArray.Create([renderTarget]);
 
-        var graphicsDesc = new GraphicsPipelineDesc
+
+        var reflection = _program.Reflect();
+        var bindGroupLayoutDescs = reflection.BindGroupLayouts.ToArray();
+        var blitBindGroupLayout = context.LogicalDevice.CreateBindGroupLayout(bindGroupLayoutDescs[0]);
+        var rootSigDesc = new RootSignatureDesc
         {
-            PrimitiveTopology = PrimitiveTopology.Triangle,
-            CullMode = CullMode.None,
-            FillMode = FillMode.Solid,
-            DepthTest = new DepthTest
+            BindGroupLayouts = BindGroupLayoutArray.Create([blitBindGroupLayout]),
+        };
+        _rootSignature = context.LogicalDevice.CreateRootSignature(rootSigDesc);
+        _layout = context.LogicalDevice.CreateInputLayout(reflection.InputLayout);
+
+        var pipelineDesc = new PipelineDesc
+        {
+            RootSignature = _rootSignature,
+            InputLayout = _layout,
+            ShaderProgram = _program,
+            BindPoint = BindPoint.Graphics,
+            Graphics = new GraphicsPipelineDesc
             {
-                Enable = false,
-                CompareOp = CompareOp.Always,
-                Write = false
-            },
-            RenderTargets = renderTargets
+                PrimitiveTopology = PrimitiveTopology.Triangle,
+                CullMode = CullMode.None,
+                FillMode = FillMode.Solid,
+                DepthTest = new DepthTest
+                {
+                    Enable = false,
+                    CompareOp = CompareOp.Always,
+                    Write = false
+                },
+                RenderTargets = renderTargets
+            }
         };
 
-        _blitShader = GpuShader.Graphics(context, shaderProgram, graphicsDesc);
-
+        _pipeline = context.LogicalDevice.CreatePipeline(pipelineDesc);
         _linearSampler = context.LogicalDevice.CreateSampler(new SamplerDesc
         {
             AddressModeU = SamplerAddressMode.ClampToEdge,
@@ -62,25 +84,20 @@ public class BlittingPresentPass : PresentPass
             MipmapMode = MipmapMode.Nearest
         });
 
-        var reflection = shaderProgram.Reflect();
-        var bindGroupLayoutDescs = reflection.BindGroupLayouts.ToArray();
-        var blitBindGroupLayout = context.LogicalDevice.CreateBindGroupLayout(bindGroupLayoutDescs[0]);
-
         _bindGroups = new CachedBindGroup(context.LogicalDevice, blitBindGroupLayout, (int)context.NumFrames, 4);
-   
     }
 
     public override void Execute(ref RenderPassContext ctx, Texture swapChainImage)
     {
         var cmd = ctx.CommandList;
         var sceneColor = ctx.GetTexture("SceneColor");
-        
+
         ctx.ResourceTracking.TransitionTexture(
             cmd,
             sceneColor,
             (uint)ResourceUsageFlagBits.ShaderResource,
             QueueType.Graphics);
-        
+
         ctx.ResourceTracking.TransitionTexture(
             cmd,
             swapChainImage,
@@ -111,7 +128,7 @@ public class BlittingPresentPass : PresentPass
         cmd.BindViewport(0, 0, ctx.Width, ctx.Height);
         cmd.BindScissorRect(0, 0, ctx.Width, ctx.Height);
 
-        cmd.BindPipeline(_blitShader.Pipeline);
+        cmd.BindPipeline(_pipeline);
         cmd.BindGroup(bindGroup);
 
         cmd.Draw(3, 1, 0, 0);
@@ -127,7 +144,10 @@ public class BlittingPresentPass : PresentPass
 
     public override void Dispose()
     {
-        _blitShader.Dispose();
+        _layout.Dispose();
+        _rootSignature.Dispose();
+        _pipeline.Dispose();
+        _program.Dispose();
         _linearSampler.Dispose();
         _rtAttachments.Dispose();
         _bindGroups.Dispose();

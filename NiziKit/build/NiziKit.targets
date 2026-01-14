@@ -1,0 +1,24 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <NiziKitAssetsDir Condition="'$(NiziKitAssetsDir)' == ''">$(ProjectDir)Assets</NiziKitAssetsDir>
+    <_IsBlazorWasm Condition="'$(UsingMicrosoftNETSdkBlazorWebAssembly)' == 'true'">true</_IsBlazorWasm>
+  </PropertyGroup>
+
+  <!-- Desktop: Copy to output directory -->
+  <ItemGroup Condition="Exists('$(NiziKitAssetsDir)') AND '$(_IsBlazorWasm)' != 'true'">
+    <Content Include="$(NiziKitAssetsDir)\**\*" Exclude="$(NiziKitAssetsDir)\**\.gitkeep;$(NiziKitAssetsDir)\**\.niziassets">
+      <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!-- Blazor WASM: Copy to wwwroot -->
+  <ItemGroup Condition="Exists('$(NiziKitAssetsDir)') AND '$(_IsBlazorWasm)' == 'true'">
+    <Content Include="$(NiziKitAssetsDir)\**\*" Exclude="$(NiziKitAssetsDir)\**\.gitkeep;$(NiziKitAssetsDir)\**\.niziassets">
+      <Link>wwwroot\Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

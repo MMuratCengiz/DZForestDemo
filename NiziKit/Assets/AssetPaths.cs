@@ -1,47 +1,17 @@
-using System.Reflection;
+using NiziKit.ContentPipeline;
 
 namespace NiziKit.Assets;
 
 public static class AssetPaths
 {
-    private static string? _contentRoot;
-    private static readonly Lock Lock = new();
+    public static string Shaders => Content.ResolvePath("Shaders");
+    public static string Models => Content.ResolvePath("Models");
+    public static string Meshes => Content.ResolvePath("Meshes");
+    public static string Textures => Content.ResolvePath("Textures");
+    public static string Animations => Content.ResolvePath("Animations");
+    public static string Skeletons => Content.ResolvePath("Skeletons");
 
-    public static string ContentRoot
-    {
-        get
-        {
-            if (_contentRoot != null)
-            {
-                return _contentRoot;
-            }
-
-            lock (Lock)
-            {
-                _contentRoot ??= ResolveDefaultContentRoot();
-                return _contentRoot;
-            }
-        }
-        set
-        {
-            lock (Lock)
-            {
-                _contentRoot = Path.GetFullPath(value);
-            }
-        }
-    }
-
-    public static string Shaders => Path.Combine(ContentRoot, "Shaders");
-    public static string Models => Path.Combine(ContentRoot, "Models");
-    public static string Meshes => Path.Combine(ContentRoot, "Meshes");
-    public static string Textures => Path.Combine(ContentRoot, "Textures");
-    public static string Animations => Path.Combine(ContentRoot, "Animations");
-    public static string Skeletons => Path.Combine(ContentRoot, "Skeletons");
-
-    public static string Resolve(string relativePath)
-    {
-        return Path.GetFullPath(Path.Combine(ContentRoot, relativePath));
-    }
+    public static string Resolve(string relativePath) => Content.ResolvePath(relativePath);
 
     public static string ResolveShader(string shaderPath)
     {
@@ -49,8 +19,7 @@ public static class AssetPaths
         {
             return shaderPath;
         }
-
-        return Path.GetFullPath(Path.Combine(Shaders, shaderPath));
+        return Content.ResolvePath($"Shaders/{shaderPath}");
     }
 
     public static string ResolveModel(string modelPath)
@@ -59,8 +28,7 @@ public static class AssetPaths
         {
             return modelPath;
         }
-
-        return Path.GetFullPath(Path.Combine(Models, modelPath));
+        return Content.ResolvePath($"Models/{modelPath}");
     }
 
     public static string ResolveMesh(string meshPath)
@@ -69,8 +37,7 @@ public static class AssetPaths
         {
             return meshPath;
         }
-
-        return Path.GetFullPath(Path.Combine(Meshes, meshPath));
+        return Content.ResolvePath($"Meshes/{meshPath}");
     }
 
     public static string ResolveTexture(string texturePath)
@@ -79,8 +46,7 @@ public static class AssetPaths
         {
             return texturePath;
         }
-
-        return Path.GetFullPath(Path.Combine(Textures, texturePath));
+        return Content.ResolvePath($"Textures/{texturePath}");
     }
 
     public static string ResolveAnimation(string animationPath)
@@ -89,8 +55,7 @@ public static class AssetPaths
         {
             return animationPath;
         }
-
-        return Path.GetFullPath(Path.Combine(Animations, animationPath));
+        return Content.ResolvePath($"Animations/{animationPath}");
     }
 
     public static string ResolveSkeleton(string skeletonPath)
@@ -99,62 +64,8 @@ public static class AssetPaths
         {
             return skeletonPath;
         }
-
-        return Path.GetFullPath(Path.Combine(Skeletons, skeletonPath));
+        return Content.ResolvePath($"Skeletons/{skeletonPath}");
     }
 
-    public static bool Exists(string relativePath)
-    {
-        return File.Exists(Resolve(relativePath));
-    }
-
-    public static IEnumerable<string> EnumerateFiles(string subDirectory, string pattern = "*.*",
-        bool recursive = false)
-    {
-        var directory = Path.Combine(ContentRoot, subDirectory);
-        if (!Directory.Exists(directory))
-        {
-            yield break;
-        }
-
-        var searchOption = recursive ? SearchOption.AllDirectories : SearchOption.TopDirectoryOnly;
-        foreach (var file in Directory.EnumerateFiles(directory, pattern, searchOption))
-        {
-            yield return file;
-        }
-    }
-
-    private static string ResolveDefaultContentRoot()
-    {
-        var exePath = Assembly.GetEntryAssembly()?.Location;
-        if (!string.IsNullOrEmpty(exePath))
-        {
-            var exeDir = Path.GetDirectoryName(exePath);
-            if (!string.IsNullOrEmpty(exeDir))
-            {
-                var assetsDir = Path.Combine(exeDir, "Assets");
-                if (Directory.Exists(assetsDir))
-                {
-                    return assetsDir;
-                }
-            }
-        }
-
-        var currentAssets = Path.Combine(Environment.CurrentDirectory, "Assets");
-        if (Directory.Exists(currentAssets))
-        {
-            return currentAssets;
-        }
-
-        if (!string.IsNullOrEmpty(exePath))
-        {
-            var exeDir = Path.GetDirectoryName(exePath);
-            if (!string.IsNullOrEmpty(exeDir))
-            {
-                return Path.Combine(exeDir, "Assets");
-            }
-        }
-
-        return Path.Combine(Environment.CurrentDirectory, "Assets");
-    }
+    public static bool Exists(string relativePath) => Content.Exists(relativePath);
 }

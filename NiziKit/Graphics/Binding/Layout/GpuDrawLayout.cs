@@ -18,7 +18,7 @@ public class GpuDrawLayout : ILayout
             {
                 Binding = Instances.Binding,
                 ArraySize = 1,
-                Stages = (uint)ShaderStageFlagBits.Vertex,
+                Stages = (uint)(ShaderStageFlagBits.Vertex | ShaderStageFlagBits.Pixel),
                 Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer
             },
             new()

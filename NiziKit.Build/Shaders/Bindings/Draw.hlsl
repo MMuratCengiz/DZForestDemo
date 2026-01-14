@@ -24,7 +24,7 @@ struct InstanceData
 #define MAX_BONES 256
 #endif
 
-cbuffer MaterialConstants : register(b0, space3)
+cbuffer InstanceConstants : register(b0, space3)
 {
     InstanceData Instances[MAX_INSTANCES];
 };

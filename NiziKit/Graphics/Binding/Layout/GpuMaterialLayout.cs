@@ -16,25 +16,27 @@ public class GpuMaterialLayout : ILayout
 
     public GpuMaterialLayout(LogicalDevice device)
     {
-        var bindings = new List<BindingDesc>();
-        bindings.Add(TextureBindingDesc(Albedo.Binding));
-        bindings.Add(TextureBindingDesc(Normal.Binding));
-        bindings.Add(TextureBindingDesc(Roughness.Binding));
-        bindings.Add(TextureBindingDesc(Metallic.Binding));
-        bindings.Add(new BindingDesc
+        var bindings = new List<BindingDesc>
         {
-            ArraySize = 1,
-            Binding = Constants.Binding,
-            Stages = (uint)ShaderStageFlagBits.Pixel,
-            Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
-        });
-        bindings.Add(new BindingDesc
-        {
-            ArraySize = 1,
-            Binding = TextureSampler.Binding,
-            Stages = (uint)ShaderStageFlagBits.Pixel,
-            Descriptor = (uint)ResourceDescriptorFlagBits.Sampler,
-        });
+            TextureBindingDesc(Albedo.Binding),
+            TextureBindingDesc(Normal.Binding),
+            TextureBindingDesc(Roughness.Binding),
+            TextureBindingDesc(Metallic.Binding),
+            new()
+            {
+                ArraySize = 1,
+                Binding = Constants.Binding,
+                Stages = (uint)ShaderStageFlagBits.Pixel,
+                Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
+            },
+            new()
+            {
+                ArraySize = 1,
+                Binding = TextureSampler.Binding,
+                Stages = (uint)ShaderStageFlagBits.Pixel,
+                Descriptor = (uint)ResourceDescriptorFlagBits.Sampler,
+            }
+        };
         var desc = new BindGroupLayoutDesc
         {
             RegisterSpace = (uint)FrequencySpace,

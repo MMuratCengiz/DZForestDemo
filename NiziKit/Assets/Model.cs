@@ -1,8 +1,10 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 using DenOfIz;
+using NiziKit.ContentPipeline;
 using NiziKit.Graphics;
 using SharpGLTF.Schema2;
+using SharpGLTF.Validation;
 
 namespace NiziKit.Assets;
 
@@ -17,19 +19,22 @@ public class Model : IAsset
 
     public void Load(GraphicsContext context, string path)
     {
-        var resolvedPath = AssetPaths.ResolveModel(path);
-        SourcePath = resolvedPath;
-        Name = Path.GetFileNameWithoutExtension(resolvedPath);
-
-        var gltf = ModelRoot.Load(resolvedPath);
-        ExtractMeshes(gltf);
+        var bytes = Content.ReadBytes($"Models/{path}");
+        LoadFromBytes(bytes, path);
     }
 
-    public void Load(GraphicsContext context, byte[] bytes)
+    public async Task LoadAsync(GraphicsContext context, string path, CancellationToken ct = default)
+    {
+        var bytes = await Content.ReadBytesAsync($"Models/{path}", ct);
+        LoadFromBytes(bytes, path);
+    }
+
+    public void LoadFromBytes(byte[] bytes, string name)
     {
         using var stream = new MemoryStream(bytes);
-        var gltf = ModelRoot.ReadGLB(stream);
-        Name = "InMemoryModel";
+        var gltf = ModelRoot.ReadGLB(stream, new ReadSettings{ Validation = ValidationMode.Skip });
+        Name = Path.GetFileNameWithoutExtension(name);
+        SourcePath = name;
         ExtractMeshes(gltf);
     }
 

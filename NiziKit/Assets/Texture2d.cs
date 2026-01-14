@@ -1,5 +1,5 @@
-using System.Runtime.InteropServices;
 using DenOfIz;
+using NiziKit.ContentPipeline;
 using NiziKit.Graphics;
 
 namespace NiziKit.Assets;
@@ -20,14 +20,25 @@ public class Texture2d : IAsset
 
     public void Load(GraphicsContext context, string path)
     {
-        var resolvedPath = AssetPaths.ResolveTexture(path);
+        var bytes = Content.ReadBytes($"Textures/{path}");
+        LoadFromBytes(context, bytes, path);
+    }
+
+    public async Task LoadAsync(GraphicsContext context, string path, CancellationToken ct = default)
+    {
+        var bytes = await Content.ReadBytesAsync($"Textures/{path}", ct);
+        LoadFromBytes(context, bytes, path);
+    }
+
+    public void LoadFromBytes(GraphicsContext context, byte[] bytes, string name)
+    {
         var device = context.LogicalDevice;
 
-        var textureDataDesc = new TextureCreateFromPathDesc
+        var textureDataDesc = new TextureCreateFromDataDesc
         {
-            Path = StringView.Create(resolvedPath)
+            Data = ByteArrayView.Create(bytes)
         };
-        using var textureData = TextureData.CreateFromPath(textureDataDesc);
+        using var textureData = TextureData.CreateFromData(textureDataDesc);
 
         var gpuTexture = device.CreateTexture(new TextureDesc
         {
@@ -38,7 +49,7 @@ public class Texture2d : IAsset
             ArraySize = textureData.GetArraySize(),
             Format = textureData.GetFormat(),
             Usage = (uint)(TextureUsageFlagBits.CopyDst | TextureUsageFlagBits.TextureBinding),
-            DebugName = StringView.Create(Path.GetFileNameWithoutExtension(resolvedPath))
+            DebugName = StringView.Create(Path.GetFileNameWithoutExtension(name))
         });
 
         using var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
@@ -47,15 +58,15 @@ public class Texture2d : IAsset
             IssueBarriers = false
         });
         batchCopy.Begin();
-        batchCopy.LoadTexture(new LoadTextureDesc
+        batchCopy.LoadTextureFromData(new LoadTextureFromDataDesc
         {
-            File = StringView.Create(resolvedPath),
+            TextureData = textureData,
             DstTexture = gpuTexture
         });
         batchCopy.Submit(null);
 
-        Name = Path.GetFileNameWithoutExtension(resolvedPath);
-        SourcePath = resolvedPath;
+        Name = Path.GetFileNameWithoutExtension(name);
+        SourcePath = name;
         Width = textureData.GetWidth();
         Height = textureData.GetHeight();
         MipLevels = textureData.GetMipLevels();

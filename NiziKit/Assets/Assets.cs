@@ -143,40 +143,67 @@ public sealed class Assets : IDisposable
 
     public Model LoadModel(string path)
     {
-        var resolvedPath = AssetPaths.ResolveModel(path);
-        if (_modelCache.TryGetValue(resolvedPath, out var cached))
+        if (_modelCache.TryGetValue(path, out var cached))
         {
             return cached;
         }
 
-        var model = new Model
-        {
-            Name = Path.GetFileNameWithoutExtension(path),
-            SourcePath = resolvedPath
-        };
-        model.Load(_context, resolvedPath);
+        var model = new Model();
+        model.Load(_context, path);
 
         foreach (var mesh in model.Meshes)
         {
-            Register(mesh, $"{resolvedPath}:{mesh.Name}");
+            Register(mesh, $"{path}:{mesh.Name}");
         }
 
-        _modelCache[resolvedPath] = model;
+        _modelCache[path] = model;
+        return model;
+    }
+
+    public async Task<Model> LoadModelAsync(string path, CancellationToken ct = default)
+    {
+        if (_modelCache.TryGetValue(path, out var cached))
+        {
+            return cached;
+        }
+
+        var model = new Model();
+        await model.LoadAsync(_context, path, ct);
+
+        foreach (var mesh in model.Meshes)
+        {
+            Register(mesh, $"{path}:{mesh.Name}");
+        }
+
+        _modelCache[path] = model;
         return model;
     }
 
     public Texture2d LoadTexture(string path)
     {
-        var resolvedPath = AssetPaths.ResolveTexture(path);
-        if (_textureCache.TryGetValue(resolvedPath, out var cached))
+        if (_textureCache.TryGetValue(path, out var cached))
         {
             return cached;
         }
 
         var texture = new Texture2d();
-        texture.Load(_context, resolvedPath);
+        texture.Load(_context, path);
         _textureList.Add(texture);
-        _textureCache[resolvedPath] = texture;
+        _textureCache[path] = texture;
+        return texture;
+    }
+
+    public async Task<Texture2d> LoadTextureAsync(string path, CancellationToken ct = default)
+    {
+        if (_textureCache.TryGetValue(path, out var cached))
+        {
+            return cached;
+        }
+
+        var texture = new Texture2d();
+        await texture.LoadAsync(_context, path, ct);
+        _textureList.Add(texture);
+        _textureCache[path] = texture;
         return texture;
     }
 

@@ -10,7 +10,7 @@
 
     <ItemGroup>
       <PackageReference Include="BepuPhysics" Version="2.4.0" />
-      <PackageReference Include="DenOfIzGraphics" Version="0.5.8-alpha" />
+      <PackageReference Include="DenOfIzGraphics" Version="0.5.9-alpha" />
       <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
       <PackageReference Include="SharpGLTF.Core" Version="1.0.6" />
     </ItemGroup>
@@ -19,6 +19,10 @@
       <EmbeddedResource Include="Graphics\BuiltInShaders\**\*">
         <LogicalName>NiziKit.Graphics.BuiltInShaders.%(Filename)%(Extension)</LogicalName>
       </EmbeddedResource>
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Include="build\NiziKit.targets" Pack="true" PackagePath="build\" />
     </ItemGroup>
 
 </Project>

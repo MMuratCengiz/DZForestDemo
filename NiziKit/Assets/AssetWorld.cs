@@ -3,15 +3,8 @@ using NiziKit.Core;
 
 namespace NiziKit.Assets;
 
-public class AssetWorld : IWorldEventListener
+public class AssetWorld(Assets assets) : IWorldEventListener
 {
-    private readonly Assets _assets;
-
-    public AssetWorld(Assets assets)
-    {
-        _assets = assets;
-    }
-
     public void SceneReset()
     {
     }
@@ -21,7 +14,7 @@ public class AssetWorld : IWorldEventListener
         var meshComp = go.GetComponent<MeshComponent>();
         if (meshComp?.Mesh != null && !meshComp.Mesh.IsUploaded)
         {
-            _assets.Upload(meshComp.Mesh);
+            assets.Upload(meshComp.Mesh);
         }
     }
 
