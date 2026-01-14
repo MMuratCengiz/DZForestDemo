@@ -37,4 +37,9 @@ public class GpuDrawLayout : ILayout
         };
         Layout = device.CreateBindGroupLayout(desc);
     }
+
+    public void Dispose()
+    {
+        Layout.Dispose();
+    }
 }

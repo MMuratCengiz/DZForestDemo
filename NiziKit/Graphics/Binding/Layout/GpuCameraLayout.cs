@@ -53,4 +53,9 @@ public class GpuCameraLayout : ILayout
         };
         Layout = device.CreateBindGroupLayout(desc);
     }
+
+    public void Dispose()
+    {
+        Layout.Dispose();
+    }
 }

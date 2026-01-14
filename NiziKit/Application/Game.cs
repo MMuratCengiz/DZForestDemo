@@ -65,6 +65,7 @@ public class Game : IDisposable
 
     public void Dispose()
     {
+        _world.Dispose();
         Graphics.Dispose();
         Window.Dispose();
         Engine.Shutdown();

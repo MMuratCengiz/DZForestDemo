@@ -41,7 +41,7 @@ public class DemoScene : Scene
     {
         var camera = CreateObject<CameraObject>("Main Camera");
         camera.LocalPosition = new Vector3(0, 12, 25);
-        camera.LookAt(new Vector3(0, 2, 0));
+        camera.LookAt(new Vector3(0, 0, 0));
         camera.FieldOfView = MathF.PI / 4f;
         camera.NearPlane = 0.1f;
         camera.FarPlane = 1000f;

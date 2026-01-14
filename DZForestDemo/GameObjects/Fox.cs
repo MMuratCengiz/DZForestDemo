@@ -21,7 +21,7 @@ public class Fox : GameObject
     
     public Fox(Assets assets, Vector3? position = null) : base("Fox")
     {
-        LocalPosition = position ?? new Vector3(-4f, -1.5f, 0f);
+        LocalPosition = position ?? new Vector3(0f, 0f, 0f);
 
         var material = assets.RegisterMaterial(new FoxMaterial(assets, assets.GraphicsContext));        
         var model = assets.LoadModel("Fox.glb");

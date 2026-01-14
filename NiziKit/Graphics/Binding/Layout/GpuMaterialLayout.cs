@@ -55,4 +55,9 @@ public class GpuMaterialLayout : ILayout
             Descriptor = (uint)ResourceDescriptorFlagBits.Texture
         };
     }
+
+    public void Dispose()
+    {
+        Layout.Dispose();
+    }
 }

@@ -105,6 +105,10 @@ public sealed class GraphicsContext : IDisposable
     {
         WaitIdle();
         ResourceTracking.Dispose();
+        NullTexture.Dispose();
+        UniformBufferArena.Dispose();
+        RootSignatureStore.Dispose();
+        BindGroupLayoutStore.Dispose();
         SwapChain.Dispose();
         CopyQueue.Dispose();
         ComputeQueue.Dispose();
