@@ -21,22 +21,40 @@ public class Texture2d : IAsset
     public void Load(GraphicsContext context, string path)
     {
         var bytes = Content.ReadBytes($"Textures/{path}");
-        LoadFromBytes(context, bytes, path);
+        LoadFromBytes(context, GetTextureExtension(path), bytes, path);
     }
 
     public async Task LoadAsync(GraphicsContext context, string path, CancellationToken ct = default)
     {
         var bytes = await Content.ReadBytesAsync($"Textures/{path}", ct);
-        LoadFromBytes(context, bytes, path);
+        LoadFromBytes(context, GetTextureExtension(path), bytes, path);
     }
 
-    public void LoadFromBytes(GraphicsContext context, byte[] bytes, string name)
+    private static TextureExtension GetTextureExtension(string path)
+    {
+        var ext = Path.GetExtension(path).ToLowerInvariant();
+        return ext switch
+        {
+            ".dds" => TextureExtension.Dds,
+            ".png" => TextureExtension.Png,
+            ".jpg" or ".jpeg" => TextureExtension.Jpg,
+            ".bmp" => TextureExtension.Bmp,
+            ".tga" => TextureExtension.Tga,
+            ".hdr" => TextureExtension.Hdr,
+            ".gif" => TextureExtension.Gif,
+            ".pic" => TextureExtension.Pic,
+            _ => throw new ArgumentException($"Unsupported texture extension: {ext}", nameof(path))
+        };
+    }
+
+    public void LoadFromBytes(GraphicsContext context, TextureExtension extension, byte[] bytes, string name)
     {
         var device = context.LogicalDevice;
 
         var textureDataDesc = new TextureCreateFromDataDesc
         {
-            Data = ByteArrayView.Create(bytes)
+            Data = ByteArrayView.Create(bytes),
+            Extension = extension
         };
         using var textureData = TextureData.CreateFromData(textureDataDesc);
 

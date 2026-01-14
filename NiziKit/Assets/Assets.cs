@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 using DenOfIz;
-using NiziKit.Assets.Loaders;
+using NiziKit.Assets.Store;
 using NiziKit.Graphics;
 
 namespace NiziKit.Assets;
@@ -11,12 +11,16 @@ public sealed class Assets : IDisposable
     private readonly BufferPool _indexPool;
     private readonly GraphicsContext _context;
 
+    public GraphicsContext GraphicsContext =>
+        _context; // TODO this has no business being public, come up with another way
+
     private readonly Dictionary<string, Model> _modelCache = new();
     private readonly Dictionary<string, Texture2d> _textureCache = new();
     private readonly Dictionary<string, Skeleton> _skeletonCache = new();
     private readonly Dictionary<string, Animation> _animationCache = new();
     private readonly Dictionary<string, Mesh> _meshCache = new();
     private readonly Dictionary<string, Material> _materialCache = new();
+    private readonly ShaderStore _shaderStore = new();
 
     private readonly List<Mesh> _meshList = [];
     private readonly List<Texture2d> _textureList = [];
@@ -30,7 +34,8 @@ public sealed class Assets : IDisposable
         _indexPool = new BufferPool(context.LogicalDevice,
             (uint)(BufferUsageFlagBits.Index | BufferUsageFlagBits.CopyDst));
 
-        _materialCache["Builtin/Default"] = new DefaultMaterial(context);
+        _shaderStore.Register("Builtin/Shaders/Default", new DefaultShader(context).Value);
+        _materialCache["Builtin/Materials/Default"] = new DefaultMaterial(context, _shaderStore);
     }
 
     public void Upload(Mesh mesh)
@@ -215,7 +220,7 @@ public sealed class Assets : IDisposable
             return cached;
         }
 
-        var skeleton = SkeletonLoader.Load(resolvedPath);
+        var skeleton = Skeleton.Load(resolvedPath);
         _skeletonCache[resolvedPath] = skeleton;
         return skeleton;
     }
@@ -229,19 +234,35 @@ public sealed class Assets : IDisposable
             return cached;
         }
 
-        var animation = AnimationLoader.Load(resolvedPath, skeleton);
+        var animation = Animation.Load(resolvedPath, skeleton);
         _animationCache[cacheKey] = animation;
         return animation;
     }
 
-    public Material LoadMaterial(string path)
+    public void RegisterShader(string name, GpuShader shader)
     {
-        if (_materialCache.TryGetValue(path, out var cached))
+        _shaderStore.Register(name, shader);
+    }
+
+    public GpuShader? GetShader(string name)
+    {
+        return _shaderStore[name];
+    }
+
+    public Material RegisterMaterial(Material material)
+    {
+        if (!_materialCache.TryAdd(material.Name, material))
         {
-            return cached;
+            return _materialCache[material.Name];
         }
 
-        throw new NotImplementedException();
+        _materialList.Add(material);
+        return material;
+    }
+
+    public Material? GetMaterial(string name)
+    {
+        return _materialCache.GetValueOrDefault(name);
     }
 
     public Mesh CreateBox(float width, float height, float depth)
@@ -324,57 +345,48 @@ public sealed class Assets : IDisposable
         return _meshList[(int)index];
     }
 
-    public void RegisterMaterial(Material material)
-    {
-        if (!_materialCache.TryAdd(material.Name, material))
-        {
-            return;
-        }
-
-        _materialList.Add(material);
-    }
-
-    public Material? GetMaterial(string name)
-    {
-        return _materialCache.GetValueOrDefault(name);
-    }
-
     public void Dispose()
     {
         foreach (var model in _modelCache.Values)
         {
             model.Dispose();
         }
+
         _modelCache.Clear();
 
         foreach (var texture in _textureCache.Values)
         {
             texture.Dispose();
         }
+
         _textureCache.Clear();
 
         foreach (var skeleton in _skeletonCache.Values)
         {
             skeleton.Dispose();
         }
+
         _skeletonCache.Clear();
 
         foreach (var animation in _animationCache.Values)
         {
             animation.Dispose();
         }
+
         _animationCache.Clear();
 
         foreach (var mesh in _meshCache.Values)
         {
             mesh.Dispose();
         }
+
         _meshCache.Clear();
 
         foreach (var material in _materialCache.Values)
         {
             material.Dispose();
         }
+
         _materialCache.Clear();
 
         _vertexPool.Dispose();
