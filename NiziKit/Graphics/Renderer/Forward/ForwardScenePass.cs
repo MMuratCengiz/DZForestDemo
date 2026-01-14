@@ -41,7 +41,15 @@ public class ForwardScenePass : RenderPass
         var renderWorld = ctx.RenderWorld;
         var cmd = ctx.CommandList;
         var sceneColor = GetAttachment("SceneColor");
+        var sceneDepth = GetAttachment("SceneDepth");
 
+        ctx.ResourceTracking.TransitionTexture(
+            cmd,
+            sceneDepth,
+            (uint)ResourceUsageFlagBits.DepthWrite,
+            QueueType.Graphics
+        );
+        
         ctx.ResourceTracking.TransitionTexture(
             cmd,
             sceneColor,
@@ -57,6 +65,11 @@ public class ForwardScenePass : RenderPass
         var renderingDesc = new RenderingDesc
         {
             RTAttachments = RenderingAttachmentDescArray.FromPinned(_colorAttachments.Handle, 1),
+            DepthAttachment = new RenderingAttachmentDesc
+            {
+                Resource = sceneDepth,
+                LoadOp = LoadOp.Clear
+            },
             NumLayers = 1
         };
 
@@ -87,8 +100,7 @@ public class ForwardScenePass : RenderPass
 
                 var mesh = draw.Mesh;
                 
-                cmd.BindVertexBuffer(mesh.VertexBuffer.View.Buffer, 0, mesh.VertexBuffer.Stride,
-                    mesh.VertexBuffer.View.Offset);
+                cmd.BindVertexBuffer(mesh.VertexBuffer.View.Buffer, mesh.VertexBuffer.View.Offset, mesh.VertexBuffer.Stride, 0);
                 cmd.BindIndexBuffer(mesh.IndexBuffer.View.Buffer, mesh.IndexBuffer.IndexType, mesh.IndexBuffer.View.Offset);
 
                 cmd.DrawIndexed(

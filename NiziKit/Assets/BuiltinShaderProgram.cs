@@ -5,9 +5,9 @@ using BinaryReader = DenOfIz.BinaryReader;
 
 namespace NiziKit.Assets;
 
-public static class BuiltinShader
+public static class BuiltinShaderProgram
 {
-    private static readonly Assembly Assembly = typeof(BuiltinShader).Assembly;
+    private static readonly Assembly Assembly = typeof(BuiltinShaderProgram).Assembly;
     private const string ResourcePrefix = "NiziKit.Graphics.BuiltInShaders.";
 
     public static ShaderProgram? Load(string name)

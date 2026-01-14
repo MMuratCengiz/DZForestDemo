@@ -144,23 +144,43 @@ public static class GltfAnimationExtractor
             foreach (var kf in channelData.Keyframes)
             {
                 var value = kf.Value;
+                var inTangent = kf.InTangent;
+                var outTangent = kf.OutTangent;
 
                 if (convertToLeftHanded)
                 {
                     if (channelData.Path == AnimationPath.Translation)
                     {
                         value = new Vector4(value.X, value.Y, -value.Z, 0);
+                        if (inTangent.HasValue)
+                        {
+                            inTangent = new Vector4(inTangent.Value.X, inTangent.Value.Y, -inTangent.Value.Z, 0);
+                        }
+                        if (outTangent.HasValue)
+                        {
+                            outTangent = new Vector4(outTangent.Value.X, outTangent.Value.Y, -outTangent.Value.Z, 0);
+                        }
                     }
                     else if (channelData.Path == AnimationPath.Rotation)
                     {
                         value = new Vector4(-value.X, -value.Y, value.Z, value.W);
+                        if (inTangent.HasValue)
+                        {
+                            inTangent = new Vector4(-inTangent.Value.X, -inTangent.Value.Y, inTangent.Value.Z, inTangent.Value.W);
+                        }
+                        if (outTangent.HasValue)
+                        {
+                            outTangent = new Vector4(-outTangent.Value.X, -outTangent.Value.Y, outTangent.Value.Z, outTangent.Value.W);
+                        }
                     }
                 }
 
                 keyframes.Add(new Keyframe
                 {
                     Time = kf.Time,
-                    Value = value
+                    Value = value,
+                    InTangent = inTangent,
+                    OutTangent = outTangent
                 });
             }
 

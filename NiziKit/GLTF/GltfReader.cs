@@ -53,6 +53,16 @@ public static class GltfReader
             var chunkType = BinaryPrimitives.ReadUInt32LittleEndian(data[(offset + 4)..]);
             offset += 8;
 
+            if (chunkLength == 0)
+            {
+                throw new InvalidDataException("GLB chunk has zero length");
+            }
+
+            if ((chunkLength & 3) != 0)
+            {
+                throw new InvalidDataException($"GLB chunk length {chunkLength} is not 4-byte aligned");
+            }
+
             if (offset + chunkLength > data.Length)
             {
                 break;
@@ -62,10 +72,18 @@ public static class GltfReader
 
             if (chunkType == ChunkJson)
             {
+                if (root != null)
+                {
+                    throw new InvalidDataException("GLB file has duplicate JSON chunk");
+                }
                 root = JsonSerializer.Deserialize<GltfRoot>(chunkData, JsonOptions);
             }
             else if (chunkType == ChunkBin)
             {
+                if (binChunk != null)
+                {
+                    throw new InvalidDataException("GLB file has duplicate BIN chunk");
+                }
                 binChunk = chunkData.ToArray();
             }
 

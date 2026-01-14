@@ -10,7 +10,7 @@ public class DefaultMaterial : Material
     public DefaultMaterial(GraphicsContext context) : base(context)
     {
         Name = "Default";
-        _program = BuiltinShader.Load("DefaultShader")
+        _program = BuiltinShaderProgram.Load("DefaultShader")
                    ?? throw new InvalidOperationException("DefaultShader not found");
         var blendDesc = new BlendDesc
         {

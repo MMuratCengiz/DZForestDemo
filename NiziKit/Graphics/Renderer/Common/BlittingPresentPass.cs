@@ -24,7 +24,7 @@ public class BlittingPresentPass : PresentPass
 
     public BlittingPresentPass(GraphicsContext context) : base(context)
     {
-        _program = BuiltinShader.Load("BlitShader")
+        _program = BuiltinShaderProgram.Load("BlitShader")
                    ?? throw new InvalidOperationException("BlitShader not found");
 
         var blendDesc = new BlendDesc

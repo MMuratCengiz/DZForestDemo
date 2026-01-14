@@ -1,8 +1,12 @@
+using NiziKit.Components;
+
 namespace NiziKit.Core;
 
 public interface IWorldEventListener
 {
-    public void SceneReset();
-    public void GameObjectCreated(GameObject go);
-    public void GameObjectDestroyed(GameObject go);
+    void SceneReset();
+    void GameObjectCreated(GameObject go);
+    void GameObjectDestroyed(GameObject go);
+    void ComponentAdded(GameObject go, IComponent component);
+    void ComponentRemoved(GameObject go, IComponent component);
 }

@@ -14,6 +14,8 @@ public class Keyframe
 {
     public float Time { get; set; }
     public Vector4 Value { get; set; }
+    public Vector4? InTangent { get; set; }
+    public Vector4? OutTangent { get; set; }
 }
 
 public class AnimationChannel

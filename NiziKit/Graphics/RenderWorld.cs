@@ -27,10 +27,41 @@ public class RenderWorld : IWorldEventListener
 
     public void GameObjectCreated(GameObject go)
     {
+        TryRegister(go);
+    }
+
+    public void GameObjectDestroyed(GameObject go)
+    {
+        Unregister(go);
+    }
+
+    public void ComponentAdded(GameObject go, IComponent component)
+    {
+        if (component is MeshComponent or MaterialComponent)
+        {
+            TryRegister(go);
+        }
+    }
+
+    public void ComponentRemoved(GameObject go, IComponent component)
+    {
+        if (component is MeshComponent or MaterialComponent)
+        {
+            Unregister(go);
+        }
+    }
+
+    private void TryRegister(GameObject go)
+    {
+        if (_objectLookup.ContainsKey(go))
+        {
+            return;
+        }
+
         var materialComp = go.GetComponent<MaterialComponent>();
         var meshComp = go.GetComponent<MeshComponent>();
-        
-        if (materialComp == null || meshComp == null)
+
+        if (materialComp == null || meshComp?.Mesh == null)
         {
             return;
         }
@@ -54,7 +85,7 @@ public class RenderWorld : IWorldEventListener
         bucket.Add(renderObj);
     }
 
-    public void GameObjectDestroyed(GameObject go)
+    private void Unregister(GameObject go)
     {
         if (!_objectLookup.Remove(go, out var entry))
         {
@@ -90,7 +121,7 @@ public class RenderWorld : IWorldEventListener
         {
             return CollectionsMarshal.AsSpan(bucket);
         }
-        
+
         return ReadOnlySpan<RenderObject>.Empty;
     }
 }

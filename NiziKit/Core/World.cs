@@ -1,10 +1,11 @@
 using NiziKit.Assets;
+using NiziKit.Components;
 using NiziKit.Graphics;
 using NiziKit.Physics;
 
 namespace NiziKit.Core;
 
-public class World : IDisposable
+public class World : IWorldEventListener, IDisposable
 {
     private readonly IWorldEventListener[] _worldEventListeners;
 
@@ -26,10 +27,19 @@ public class World : IDisposable
 
     public void LoadScene(Scene scene)
     {
+        CurrentScene?.Dispose();
+        foreach (var listener in _worldEventListeners)
+        {
+            listener.SceneReset();
+        }
+
+        CurrentScene = scene;
         scene.Assets = Assets;
         scene.Load();
-        CurrentScene?.Dispose();
-        CurrentScene = scene;
+    }
+
+    public void SceneReset()
+    {
         foreach (var listener in _worldEventListeners)
         {
             listener.SceneReset();
@@ -38,11 +48,13 @@ public class World : IDisposable
 
     public void GameObjectCreated(GameObject go)
     {
+        go.WorldEventListener = this;
+
         foreach (var child in go.Children)
         {
             GameObjectCreated(child);
         }
-        
+
         foreach (var listener in _worldEventListeners)
         {
             listener.GameObjectCreated(go);
@@ -53,12 +65,30 @@ public class World : IDisposable
     {
         foreach (var child in go.Children)
         {
-            GameObjectDestroyed(child);            
+            GameObjectDestroyed(child);
         }
 
         foreach (var listener in _worldEventListeners)
         {
             listener.GameObjectDestroyed(go);
+        }
+
+        go.WorldEventListener = null;
+    }
+
+    public void ComponentAdded(GameObject go, IComponent component)
+    {
+        foreach (var listener in _worldEventListeners)
+        {
+            listener.ComponentAdded(go, component);
+        }
+    }
+
+    public void ComponentRemoved(GameObject go, IComponent component)
+    {
+        foreach (var listener in _worldEventListeners)
+        {
+            listener.ComponentRemoved(go, component);
         }
     }
 

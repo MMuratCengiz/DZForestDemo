@@ -12,6 +12,8 @@ public class Fox : GameObject
         LocalPosition = position ?? new Vector3(-4f, -1.5f, 0f);
 
         var model = assets.LoadModel("Fox.glb");
+        var material = AddComponent<MaterialComponent>();
+        material.Material = assets.LoadMaterial("Builtin/Default");
         AddComponent<MeshComponent>().Mesh = model.Meshes[0];
 
         var skeleton = assets.LoadSkeleton("Fox_skeleton.ozz");

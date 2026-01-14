@@ -59,31 +59,50 @@ public static class GltfMeshExtractor
 
         foreach (var primitive in gltfMesh.Primitives)
         {
-            if (primitive.Mode != GltfPrimitiveMode.Triangles)
+            if (!primitive.Attributes.TryGetValue("POSITION", out var positionAccessorIndex))
             {
                 continue;
             }
 
-            if (!primitive.Attributes.TryGetValue("POSITION", out var positionAccessor))
+            var posAccessor = document.Root.Accessors?[positionAccessorIndex];
+            if (posAccessor == null || posAccessor.Count == 0)
             {
                 continue;
             }
 
-            var posReader = new GltfAccessorReader(document, positionAccessor);
-            var vertexCount = posReader.Count;
+            var vertexCount = posAccessor.Count;
 
-            var hasNormal = primitive.Attributes.TryGetValue("NORMAL", out var normalAcc);
-            var hasTexCoord = primitive.Attributes.TryGetValue("TEXCOORD_0", out var texCoordAcc);
-            var hasTangent = primitive.Attributes.TryGetValue("TANGENT", out var tangentAcc);
+            var hasNormal = primitive.Attributes.TryGetValue("NORMAL", out var normalAccIndex);
+            var hasTexCoord = primitive.Attributes.TryGetValue("TEXCOORD_0", out var texCoordAccIndex);
+            var hasTangent = primitive.Attributes.TryGetValue("TANGENT", out var tangentAccIndex);
 
             var hasJoints = false;
             var hasWeights = false;
-            int jointsAcc = 0, weightsAcc = 0;
+            int jointsAccIndex = 0, weightsAccIndex = 0;
             if (isSkinned)
             {
-                hasJoints = primitive.Attributes.TryGetValue("JOINTS_0", out jointsAcc);
-                hasWeights = primitive.Attributes.TryGetValue("WEIGHTS_0", out weightsAcc);
+                hasJoints = primitive.Attributes.TryGetValue("JOINTS_0", out jointsAccIndex);
+                hasWeights = primitive.Attributes.TryGetValue("WEIGHTS_0", out weightsAccIndex);
             }
+
+            var posData = document.GetAccessorData(positionAccessorIndex);
+            var posStride = document.GetAccessorStride(positionAccessorIndex);
+
+            var normalData = hasNormal ? document.GetAccessorData(normalAccIndex) : ReadOnlySpan<byte>.Empty;
+            var normalStride = hasNormal ? document.GetAccessorStride(normalAccIndex) : 0;
+
+            var texCoordData = hasTexCoord ? document.GetAccessorData(texCoordAccIndex) : ReadOnlySpan<byte>.Empty;
+            var texCoordStride = hasTexCoord ? document.GetAccessorStride(texCoordAccIndex) : 0;
+
+            var tangentData = hasTangent ? document.GetAccessorData(tangentAccIndex) : ReadOnlySpan<byte>.Empty;
+            var tangentStride = hasTangent ? document.GetAccessorStride(tangentAccIndex) : 0;
+
+            var jointsData = hasJoints ? document.GetAccessorData(jointsAccIndex) : ReadOnlySpan<byte>.Empty;
+            var jointsStride = hasJoints ? document.GetAccessorStride(jointsAccIndex) : 0;
+            var jointsAccessor = hasJoints ? document.Root.Accessors?[jointsAccIndex] : null;
+
+            var weightsData = hasWeights ? document.GetAccessorData(weightsAccIndex) : ReadOnlySpan<byte>.Empty;
+            var weightsStride = hasWeights ? document.GetAccessorStride(weightsAccIndex) : 0;
 
             var vertexBytes = new byte[vertexCount * format.Stride];
             var span = vertexBytes.AsSpan();
@@ -92,7 +111,7 @@ public static class GltfMeshExtractor
             {
                 var offset = i * format.Stride;
 
-                var pos = posReader.ReadVector3(i);
+                var pos = ReadVector3(posData, i, posStride);
                 if (convertToLeftHanded)
                 {
                     pos.Z = -pos.Z;
@@ -100,10 +119,9 @@ public static class GltfMeshExtractor
                 MemoryMarshal.Write(span[offset..], in pos);
 
                 Vector3 normal;
-                if (hasNormal)
+                if (hasNormal && !normalData.IsEmpty)
                 {
-                    var normalReader = new GltfAccessorReader(document, normalAcc);
-                    normal = normalReader.ReadVector3(i);
+                    normal = ReadVector3(normalData, i, normalStride);
                 }
                 else
                 {
@@ -116,10 +134,9 @@ public static class GltfMeshExtractor
                 MemoryMarshal.Write(span[(offset + 12)..], in normal);
 
                 Vector2 uv;
-                if (hasTexCoord)
+                if (hasTexCoord && !texCoordData.IsEmpty)
                 {
-                    var texCoordReader = new GltfAccessorReader(document, texCoordAcc);
-                    uv = texCoordReader.ReadVector2(i);
+                    uv = ReadVector2(texCoordData, i, texCoordStride);
                 }
                 else
                 {
@@ -128,10 +145,9 @@ public static class GltfMeshExtractor
                 MemoryMarshal.Write(span[(offset + 24)..], in uv);
 
                 Vector4 tangent;
-                if (hasTangent)
+                if (hasTangent && !tangentData.IsEmpty)
                 {
-                    var tangentReader = new GltfAccessorReader(document, tangentAcc);
-                    tangent = tangentReader.ReadVector4(i);
+                    tangent = ReadVector4(tangentData, i, tangentStride);
                 }
                 else
                 {
@@ -146,23 +162,21 @@ public static class GltfMeshExtractor
                 if (isSkinned)
                 {
                     Vector4 weight;
-                    if (hasWeights)
+                    if (hasWeights && !weightsData.IsEmpty)
                     {
-                        var weightsReader = new GltfAccessorReader(document, weightsAcc);
-                        weight = weightsReader.ReadVector4(i);
+                        weight = ReadVector4(weightsData, i, weightsStride);
+                        weight = NormalizeWeights(weight);
                     }
                     else
                     {
-                        weight = Vector4.Zero;
+                        weight = new Vector4(1, 0, 0, 0);
                     }
                     MemoryMarshal.Write(span[(offset + 48)..], in weight);
 
                     UInt4 jointData;
-                    if (hasJoints)
+                    if (hasJoints && !jointsData.IsEmpty && jointsAccessor != null)
                     {
-                        var jointsReader = new GltfAccessorReader(document, jointsAcc);
-                        var joints = jointsReader.ReadUInt4(i);
-                        jointData = new UInt4 { X = joints.a, Y = joints.b, Z = joints.c, W = joints.d };
+                        jointData = ReadJoints(jointsData, i, jointsStride, jointsAccessor.ComponentType);
                     }
                     else
                     {
@@ -174,43 +188,7 @@ public static class GltfMeshExtractor
 
             allVertices.AddRange(vertexBytes);
 
-            if (primitive.Indices.HasValue)
-            {
-                var indexReader = new GltfAccessorReader(document, primitive.Indices.Value);
-                for (var i = 0; i < indexReader.Count; i += 3)
-                {
-                    if (convertToLeftHanded)
-                    {
-                        allIndices.Add(baseVertex + indexReader.ReadIndex(i));
-                        allIndices.Add(baseVertex + indexReader.ReadIndex(i + 2));
-                        allIndices.Add(baseVertex + indexReader.ReadIndex(i + 1));
-                    }
-                    else
-                    {
-                        allIndices.Add(baseVertex + indexReader.ReadIndex(i));
-                        allIndices.Add(baseVertex + indexReader.ReadIndex(i + 1));
-                        allIndices.Add(baseVertex + indexReader.ReadIndex(i + 2));
-                    }
-                }
-            }
-            else
-            {
-                for (uint i = 0; i < vertexCount; i += 3)
-                {
-                    if (convertToLeftHanded)
-                    {
-                        allIndices.Add(baseVertex + i);
-                        allIndices.Add(baseVertex + i + 2);
-                        allIndices.Add(baseVertex + i + 1);
-                    }
-                    else
-                    {
-                        allIndices.Add(baseVertex + i);
-                        allIndices.Add(baseVertex + i + 1);
-                        allIndices.Add(baseVertex + i + 2);
-                    }
-                }
-            }
+            ExtractIndices(document, primitive, vertexCount, baseVertex, convertToLeftHanded, allIndices);
 
             baseVertex += (uint)vertexCount;
         }
@@ -229,6 +207,248 @@ public static class GltfMeshExtractor
         };
     }
 
+    private static void ExtractIndices(GltfDocument document, GltfPrimitive primitive, int vertexCount, uint baseVertex, bool convertToLeftHanded, List<uint> allIndices)
+    {
+        if (primitive.Indices.HasValue)
+        {
+            var indexData = document.GetAccessorData(primitive.Indices.Value);
+            var indexAccessor = document.Root.Accessors?[primitive.Indices.Value];
+            if (indexAccessor == null || indexData.IsEmpty)
+            {
+                return;
+            }
+
+            var indexCount = indexAccessor.Count;
+
+            switch (primitive.Mode)
+            {
+                case GltfPrimitiveMode.Triangles:
+                    ExtractTriangles(indexData, indexAccessor.ComponentType, indexCount, baseVertex, convertToLeftHanded, allIndices);
+                    break;
+                case GltfPrimitiveMode.TriangleStrip:
+                    ExtractTriangleStrip(indexData, indexAccessor.ComponentType, indexCount, baseVertex, convertToLeftHanded, allIndices);
+                    break;
+                case GltfPrimitiveMode.TriangleFan:
+                    ExtractTriangleFan(indexData, indexAccessor.ComponentType, indexCount, baseVertex, convertToLeftHanded, allIndices);
+                    break;
+                default:
+                    break;
+            }
+        }
+        else
+        {
+            switch (primitive.Mode)
+            {
+                case GltfPrimitiveMode.Triangles:
+                    for (uint i = 0; i + 2 < vertexCount; i += 3)
+                    {
+                        AddTriangle(allIndices, baseVertex + i, baseVertex + i + 1, baseVertex + i + 2, convertToLeftHanded);
+                    }
+                    break;
+                case GltfPrimitiveMode.TriangleStrip:
+                    for (uint i = 0; i + 2 < vertexCount; i++)
+                    {
+                        if ((i & 1) == 0)
+                        {
+                            AddTriangle(allIndices, baseVertex + i, baseVertex + i + 1, baseVertex + i + 2, convertToLeftHanded);
+                        }
+                        else
+                        {
+                            AddTriangle(allIndices, baseVertex + i + 1, baseVertex + i, baseVertex + i + 2, convertToLeftHanded);
+                        }
+                    }
+                    break;
+                case GltfPrimitiveMode.TriangleFan:
+                    for (uint i = 1; i + 1 < vertexCount; i++)
+                    {
+                        AddTriangle(allIndices, baseVertex, baseVertex + i, baseVertex + i + 1, convertToLeftHanded);
+                    }
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    private static void ExtractTriangles(ReadOnlySpan<byte> data, int componentType, int count, uint baseVertex, bool convertToLeftHanded, List<uint> indices)
+    {
+        for (var i = 0; i + 2 < count; i += 3)
+        {
+            var a = baseVertex + ReadIndex(data, i, componentType);
+            var b = baseVertex + ReadIndex(data, i + 1, componentType);
+            var c = baseVertex + ReadIndex(data, i + 2, componentType);
+
+            if (!IsDegenerate(a, b, c))
+            {
+                AddTriangle(indices, a, b, c, convertToLeftHanded);
+            }
+        }
+    }
+
+    private static void ExtractTriangleStrip(ReadOnlySpan<byte> data, int componentType, int count, uint baseVertex, bool convertToLeftHanded, List<uint> indices)
+    {
+        for (var i = 0; i + 2 < count; i++)
+        {
+            var a = baseVertex + ReadIndex(data, i, componentType);
+            var b = baseVertex + ReadIndex(data, i + 1, componentType);
+            var c = baseVertex + ReadIndex(data, i + 2, componentType);
+
+            if (!IsDegenerate(a, b, c))
+            {
+                if ((i & 1) == 0)
+                {
+                    AddTriangle(indices, a, b, c, convertToLeftHanded);
+                }
+                else
+                {
+                    AddTriangle(indices, b, a, c, convertToLeftHanded);
+                }
+            }
+        }
+    }
+
+    private static void ExtractTriangleFan(ReadOnlySpan<byte> data, int componentType, int count, uint baseVertex, bool convertToLeftHanded, List<uint> indices)
+    {
+        if (count < 3)
+        {
+            return;
+        }
+
+        var center = baseVertex + ReadIndex(data, 0, componentType);
+
+        for (var i = 1; i + 1 < count; i++)
+        {
+            var b = baseVertex + ReadIndex(data, i, componentType);
+            var c = baseVertex + ReadIndex(data, i + 1, componentType);
+
+            if (!IsDegenerate(center, b, c))
+            {
+                AddTriangle(indices, center, b, c, convertToLeftHanded);
+            }
+        }
+    }
+
+    private static void AddTriangle(List<uint> indices, uint a, uint b, uint c, bool convertToLeftHanded)
+    {
+        if (convertToLeftHanded)
+        {
+            indices.Add(a);
+            indices.Add(c);
+            indices.Add(b);
+        }
+        else
+        {
+            indices.Add(a);
+            indices.Add(b);
+            indices.Add(c);
+        }
+    }
+
+    private static bool IsDegenerate(uint a, uint b, uint c)
+    {
+        return a == b || b == c || a == c;
+    }
+
+    private static uint ReadIndex(ReadOnlySpan<byte> data, int index, int componentType)
+    {
+        var stride = componentType switch
+        {
+            GltfComponentType.UnsignedByte => 1,
+            GltfComponentType.UnsignedShort => 2,
+            GltfComponentType.UnsignedInt => 4,
+            _ => 4
+        };
+
+        var offset = index * stride;
+        if (offset + stride > data.Length)
+        {
+            return 0;
+        }
+
+        return componentType switch
+        {
+            GltfComponentType.UnsignedByte => data[offset],
+            GltfComponentType.UnsignedShort => BitConverter.ToUInt16(data[offset..]),
+            GltfComponentType.UnsignedInt => BitConverter.ToUInt32(data[offset..]),
+            _ => 0
+        };
+    }
+
+    private static Vector2 ReadVector2(ReadOnlySpan<byte> data, int index, int stride)
+    {
+        var offset = index * stride;
+        if (offset + 8 > data.Length)
+        {
+            return Vector2.Zero;
+        }
+        return MemoryMarshal.Read<Vector2>(data[offset..]);
+    }
+
+    private static Vector3 ReadVector3(ReadOnlySpan<byte> data, int index, int stride)
+    {
+        var offset = index * stride;
+        if (offset + 12 > data.Length)
+        {
+            return Vector3.Zero;
+        }
+        return MemoryMarshal.Read<Vector3>(data[offset..]);
+    }
+
+    private static Vector4 ReadVector4(ReadOnlySpan<byte> data, int index, int stride)
+    {
+        var offset = index * stride;
+        if (offset + 16 > data.Length)
+        {
+            return Vector4.Zero;
+        }
+        return MemoryMarshal.Read<Vector4>(data[offset..]);
+    }
+
+    private static UInt4 ReadJoints(ReadOnlySpan<byte> data, int index, int stride, int componentType)
+    {
+        var offset = index * stride;
+
+        switch (componentType)
+        {
+            case GltfComponentType.UnsignedByte:
+                if (offset + 4 > data.Length)
+                {
+                    return default;
+                }
+                return new UInt4
+                {
+                    X = data[offset],
+                    Y = data[offset + 1],
+                    Z = data[offset + 2],
+                    W = data[offset + 3]
+                };
+            case GltfComponentType.UnsignedShort:
+                if (offset + 8 > data.Length)
+                {
+                    return default;
+                }
+                return new UInt4
+                {
+                    X = BitConverter.ToUInt16(data[offset..]),
+                    Y = BitConverter.ToUInt16(data[(offset + 2)..]),
+                    Z = BitConverter.ToUInt16(data[(offset + 4)..]),
+                    W = BitConverter.ToUInt16(data[(offset + 6)..])
+                };
+            default:
+                return default;
+        }
+    }
+
+    private static Vector4 NormalizeWeights(Vector4 weights)
+    {
+        var sum = weights.X + weights.Y + weights.Z + weights.W;
+        if (sum > 0.0001f)
+        {
+            return weights / sum;
+        }
+        return new Vector4(1, 0, 0, 0);
+    }
+
     private static Vector4 ComputeTangent(Vector3 normal)
     {
         var up = MathF.Abs(normal.Y) < 0.999f ? Vector3.UnitY : Vector3.UnitX;
@@ -238,6 +458,11 @@ public static class GltfMeshExtractor
 
     private static BoundingBox ComputeBounds(byte[] vertices, VertexFormat format)
     {
+        if (vertices.Length == 0)
+        {
+            return new BoundingBox(Vector3.Zero, Vector3.Zero);
+        }
+
         var min = new Vector3(float.MaxValue);
         var max = new Vector3(float.MinValue);
         var vertexCount = vertices.Length / format.Stride;

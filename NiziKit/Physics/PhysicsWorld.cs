@@ -5,6 +5,7 @@ using BepuPhysics.CollisionDetection;
 using BepuPhysics.Constraints;
 using BepuUtilities;
 using BepuUtilities.Memory;
+using NiziKit.Components;
 using NiziKit.Core;
 
 namespace NiziKit.Physics;
@@ -136,6 +137,14 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
     }
 
     public void GameObjectDestroyed(GameObject go)
+    {
+    }
+
+    public void ComponentAdded(GameObject go, IComponent component)
+    {
+    }
+
+    public void ComponentRemoved(GameObject go, IComponent component)
     {
     }
 }
