@@ -1,5 +1,5 @@
 using System.Numerics;
-using SharpGLTF.Schema2;
+using NiziKit.GLTF;
 
 namespace NiziKit.Offline;
 
@@ -66,15 +66,26 @@ public sealed class GltfInspector
 
         try
         {
-            var model = ModelRoot.Load(gltfPath);
-            var meshes = InspectMeshes(model);
-            var materials = InspectMaterials(model, gltfPath);
+            var bytes = File.ReadAllBytes(gltfPath);
+            var basePath = Path.GetDirectoryName(gltfPath);
+
+            Func<string, byte[]> loadBuffer = uri =>
+            {
+                var fullPath = Path.Combine(basePath ?? "", uri);
+                return File.Exists(fullPath) ? File.ReadAllBytes(fullPath) : [];
+            };
+
+            var document = GltfReader.Read(bytes, loadBuffer, basePath);
+            var root = document.Root;
+
+            var meshes = InspectMeshes(document);
+            var materials = InspectMaterials(document, gltfPath);
 
             return GltfInspectionResult.Succeeded(
                 meshes,
                 materials,
-                model.LogicalAnimations.Count > 0,
-                model.LogicalSkins.Count > 0
+                root.Animations?.Count > 0,
+                root.Skins?.Count > 0
             );
         }
         catch (Exception ex)
@@ -83,56 +94,55 @@ public sealed class GltfInspector
         }
     }
 
-    private static List<GltfMeshInfo> InspectMeshes(ModelRoot model)
+    private static List<GltfMeshInfo> InspectMeshes(GltfDocument document)
     {
         var meshes = new List<GltfMeshInfo>();
-        var skinMeshIndices = new HashSet<int>();
+        var root = document.Root;
 
-        foreach (var skin in model.LogicalSkins)
+        if (root.Meshes == null)
         {
-            foreach (var node in model.LogicalNodes)
-            {
-                if (node.Skin == skin && node.Mesh != null)
-                {
-                    skinMeshIndices.Add(node.Mesh.LogicalIndex);
-                }
-            }
+            return meshes;
         }
 
-        foreach (var mesh in model.LogicalMeshes)
+        var skinMeshIndices = GltfMeshExtractor.GetSkinnedMeshIndices(document);
+
+        for (var meshIndex = 0; meshIndex < root.Meshes.Count; meshIndex++)
         {
+            var mesh = root.Meshes[meshIndex];
             var vertexCount = 0;
             var indexCount = 0;
             var materialIndex = -1;
 
             foreach (var primitive in mesh.Primitives)
             {
-                var positionAccessor = primitive.GetVertexAccessor("POSITION");
-                if (positionAccessor != null)
+                if (primitive.Attributes.TryGetValue("POSITION", out var positionAccessorIndex))
                 {
-                    vertexCount += positionAccessor.Count;
+                    if (root.Accessors != null && positionAccessorIndex < root.Accessors.Count)
+                    {
+                        vertexCount += root.Accessors[positionAccessorIndex].Count;
+                    }
                 }
 
-                var indexAccessor = primitive.IndexAccessor;
-                if (indexAccessor != null)
+                if (primitive.Indices.HasValue && root.Accessors != null &&
+                    primitive.Indices.Value < root.Accessors.Count)
                 {
-                    indexCount += indexAccessor.Count;
+                    indexCount += root.Accessors[primitive.Indices.Value].Count;
                 }
 
-                if (materialIndex < 0 && primitive.Material != null)
+                if (materialIndex < 0 && primitive.Material.HasValue)
                 {
-                    materialIndex = primitive.Material.LogicalIndex;
+                    materialIndex = primitive.Material.Value;
                 }
             }
 
             meshes.Add(new GltfMeshInfo
             {
-                Index = mesh.LogicalIndex,
-                Name = mesh.Name ?? $"Mesh_{mesh.LogicalIndex}",
+                Index = meshIndex,
+                Name = mesh.Name ?? $"Mesh_{meshIndex}",
                 PrimitiveCount = mesh.Primitives.Count,
                 VertexCount = vertexCount,
                 IndexCount = indexCount,
-                HasSkinning = skinMeshIndices.Contains(mesh.LogicalIndex),
+                HasSkinning = skinMeshIndices.Contains(meshIndex),
                 MaterialIndex = materialIndex
             });
         }
@@ -140,81 +150,72 @@ public sealed class GltfInspector
         return meshes;
     }
 
-    private static List<GltfMaterialInfo> InspectMaterials(ModelRoot model, string gltfPath)
+    private static List<GltfMaterialInfo> InspectMaterials(GltfDocument document, string gltfPath)
     {
-        var materials = new List<GltfMaterialInfo>();
+        var result = new List<GltfMaterialInfo>();
         var gltfDirectory = Path.GetDirectoryName(gltfPath) ?? "";
 
-        foreach (var material in model.LogicalMaterials)
+        var materials = GltfMaterialExtractor.ExtractMaterials(document);
+
+        for (var i = 0; i < materials.Count; i++)
         {
-            var pbr = material.FindChannel("BaseColor");
-            var baseColor = Vector4.One;
+            var material = materials[i];
+
             string? baseColorTexture = null;
-
-            if (pbr != null)
-            {
-                baseColor = pbr.Value.Color;
-                baseColorTexture = GetTexturePath(pbr.Value.Texture, gltfDirectory);
-            }
-
-            var metallicRoughness = material.FindChannel("MetallicRoughness");
-            var metallic = 1.0f;
-            var roughness = 1.0f;
+            string? normalTexture = null;
             string? metallicRoughnessTexture = null;
 
-            if (metallicRoughness != null)
+            if (material.BaseColorTexture != null)
             {
-                var parameters = metallicRoughness.Value.Parameters;
-                foreach (var param in parameters)
-                {
-                    if (param.Name == "MetallicFactor")
-                    {
-                        metallic = (float)param.Value;
-                    }
-                    else if (param.Name == "RoughnessFactor")
-                    {
-                        roughness = (float)param.Value;
-                    }
-                }
-                metallicRoughnessTexture = GetTexturePath(metallicRoughness.Value.Texture, gltfDirectory);
+                baseColorTexture = GetTexturePath(document, material.BaseColorTexture.TextureIndex, gltfDirectory);
             }
 
-            var normalChannel = material.FindChannel("Normal");
-            string? normalTexture = null;
-            if (normalChannel != null)
+            if (material.NormalTexture != null)
             {
-                normalTexture = GetTexturePath(normalChannel.Value.Texture, gltfDirectory);
+                normalTexture = GetTexturePath(document, material.NormalTexture.TextureIndex, gltfDirectory);
             }
 
-            materials.Add(new GltfMaterialInfo
+            if (material.MetallicRoughnessTexture != null)
             {
-                Index = material.LogicalIndex,
-                Name = material.Name ?? $"Material_{material.LogicalIndex}",
-                BaseColor = baseColor,
-                Metallic = metallic,
-                Roughness = roughness,
+                metallicRoughnessTexture = GetTexturePath(document, material.MetallicRoughnessTexture.TextureIndex, gltfDirectory);
+            }
+
+            result.Add(new GltfMaterialInfo
+            {
+                Index = i,
+                Name = material.Name,
+                BaseColor = material.BaseColorFactor,
+                Metallic = material.MetallicFactor,
+                Roughness = material.RoughnessFactor,
                 BaseColorTexturePath = baseColorTexture,
                 NormalTexturePath = normalTexture,
                 MetallicRoughnessTexturePath = metallicRoughnessTexture
             });
         }
 
-        return materials;
+        return result;
     }
 
-    private static string? GetTexturePath(Texture? texture, string gltfDirectory)
+    private static string? GetTexturePath(GltfDocument document, int textureIndex, string gltfDirectory)
     {
-        if (texture?.PrimaryImage?.Content == null)
+        var imageIndex = GltfMaterialExtractor.GetImageIndex(document, textureIndex);
+        if (!imageIndex.HasValue)
         {
             return null;
         }
 
-        var sourceUri = texture.PrimaryImage.Content.SourcePath;
-        if (string.IsNullOrEmpty(sourceUri))
+        var images = GltfMaterialExtractor.ExtractImages(document);
+        if (imageIndex.Value >= images.Count)
         {
             return null;
         }
 
-        return Path.IsPathRooted(sourceUri) ? sourceUri : Path.Combine(gltfDirectory, sourceUri);
+        var image = images[imageIndex.Value];
+        if (string.IsNullOrEmpty(image.Uri) || image.Uri.StartsWith("data:"))
+        {
+            return null;
+        }
+
+        return Path.IsPathRooted(image.Uri) ? image.Uri : Path.Combine(gltfDirectory, image.Uri);
     }
 }

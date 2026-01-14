@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
-using SharpGLTF.Schema2;
+using NiziKit.GLTF;
+using NiziKit.GLTF.Data;
 
 namespace NiziKit.Offline;
 
@@ -59,22 +60,24 @@ public sealed class MeshExporter
 
         try
         {
-            var model = ModelRoot.Load(gltfPath);
+            var document = LoadDocument(gltfPath);
+            var root = document.Root;
 
-            if (meshIndex < 0 || meshIndex >= model.LogicalMeshes.Count)
+            if (root.Meshes == null || meshIndex < 0 || meshIndex >= root.Meshes.Count)
             {
                 return MeshExportResult.Failed($"Invalid mesh index: {meshIndex}");
             }
 
-            var mesh = model.LogicalMeshes[meshIndex];
-            var isSkinned = IsMeshSkinned(model, meshIndex);
+            var mesh = root.Meshes[meshIndex];
+            var skinMeshIndices = GltfMeshExtractor.GetSkinnedMeshIndices(document);
+            var isSkinned = skinMeshIndices.Contains(meshIndex);
 
-            var (vertices, indices) = ExtractMeshData(mesh, isSkinned, desc.ConvertToLeftHanded);
+            var (vertices, indices) = ExtractMeshData(document, mesh, isSkinned, desc.ConvertToLeftHanded);
 
             MeshMaterial? material = null;
             if (desc.IncludeMaterial)
             {
-                material = ExtractMaterial(mesh, model, gltfPath);
+                material = ExtractMaterial(document, mesh, gltfPath);
             }
 
             WriteMesh(desc.OutputPath, vertices, indices, isSkinned, material);
@@ -103,18 +106,19 @@ public sealed class MeshExporter
 
         try
         {
-            var model = ModelRoot.Load(gltfPath);
+            var document = LoadDocument(gltfPath);
+            var root = document.Root;
             Directory.CreateDirectory(outputDirectory);
 
             foreach (var meshIndex in meshIndices)
             {
-                if (meshIndex < 0 || meshIndex >= model.LogicalMeshes.Count)
+                if (root.Meshes == null || meshIndex < 0 || meshIndex >= root.Meshes.Count)
                 {
                     results.Add(MeshExportResult.Failed($"Invalid mesh index: {meshIndex}"));
                     continue;
                 }
 
-                var mesh = model.LogicalMeshes[meshIndex];
+                var mesh = root.Meshes[meshIndex];
                 var meshName = mesh.Name ?? $"Mesh_{meshIndex}";
                 var outputPath = Path.Combine(outputDirectory, $"{meshName}.dzmesh");
 
@@ -144,8 +148,9 @@ public sealed class MeshExporter
 
         try
         {
-            var model = ModelRoot.Load(gltfPath);
-            var indices = Enumerable.Range(0, model.LogicalMeshes.Count);
+            var document = LoadDocument(gltfPath);
+            var meshCount = document.Root.Meshes?.Count ?? 0;
+            var indices = Enumerable.Range(0, meshCount);
             return ExportMeshes(gltfPath, indices, outputDirectory, includeMaterials);
         }
         catch (Exception ex)
@@ -154,24 +159,23 @@ public sealed class MeshExporter
         }
     }
 
-    private static bool IsMeshSkinned(ModelRoot model, int meshIndex)
+    private static GltfDocument LoadDocument(string gltfPath)
     {
-        foreach (var skin in model.LogicalSkins)
-        {
-            foreach (var node in model.LogicalNodes)
-            {
-                if (node.Skin == skin && node.Mesh?.LogicalIndex == meshIndex)
-                {
-                    return true;
-                }
-            }
-        }
+        var bytes = File.ReadAllBytes(gltfPath);
+        var basePath = Path.GetDirectoryName(gltfPath);
 
-        return false;
+        Func<string, byte[]> loadBuffer = uri =>
+        {
+            var fullPath = Path.Combine(basePath ?? "", uri);
+            return File.Exists(fullPath) ? File.ReadAllBytes(fullPath) : [];
+        };
+
+        return GltfReader.Read(bytes, loadBuffer, basePath);
     }
 
     private static (ExportVertex[] vertices, uint[] indices) ExtractMeshData(
-        Mesh mesh,
+        GltfDocument document,
+        GltfMesh mesh,
         bool isSkinned,
         bool convertToLeftHanded)
     {
@@ -180,37 +184,89 @@ public sealed class MeshExporter
 
         foreach (var primitive in mesh.Primitives)
         {
-            var baseVertex = (uint)allVertices.Count;
-
-            var posAccessor = primitive.GetVertexAccessor("POSITION");
-            if (posAccessor == null)
+            if (primitive.Mode != GltfPrimitiveMode.Triangles)
             {
                 continue;
             }
 
-            var positions = posAccessor.AsVector3Array();
-            var normals = primitive.GetVertexAccessor("NORMAL")?.AsVector3Array();
-            var texCoords = primitive.GetVertexAccessor("TEXCOORD_0")?.AsVector2Array();
-            var tangents = primitive.GetVertexAccessor("TANGENT")?.AsVector4Array();
-            var joints = primitive.GetVertexAccessor("JOINTS_0");
-            var weights = primitive.GetVertexAccessor("WEIGHTS_0")?.AsVector4Array();
-
-            for (var i = 0; i < positions.Count; i++)
+            if (!primitive.Attributes.TryGetValue("POSITION", out var positionAccessor))
             {
-                var pos = positions[i];
-                var normal = normals != null && i < normals.Count ? normals[i] : Vector3.UnitY;
-                var texCoord = texCoords != null && i < texCoords.Count ? texCoords[i] : Vector2.Zero;
-                var tangent = tangents != null && i < tangents.Count ? tangents[i] : new Vector4(1, 0, 0, 1);
-                var weight = weights != null && i < weights.Count ? weights[i] : Vector4.Zero;
+                continue;
+            }
 
-                uint j0 = 0, j1 = 0, j2 = 0, j3 = 0;
-                if (joints != null && i < joints.Count)
+            var baseVertex = (uint)allVertices.Count;
+            var posReader = new GltfAccessorReader(document, positionAccessor);
+            var vertexCount = posReader.Count;
+
+            primitive.Attributes.TryGetValue("NORMAL", out var normalAcc);
+            primitive.Attributes.TryGetValue("TEXCOORD_0", out var texCoordAcc);
+            primitive.Attributes.TryGetValue("TANGENT", out var tangentAcc);
+            primitive.Attributes.TryGetValue("JOINTS_0", out var jointsAcc);
+            primitive.Attributes.TryGetValue("WEIGHTS_0", out var weightsAcc);
+
+            var hasNormal = normalAcc > 0 || primitive.Attributes.ContainsKey("NORMAL");
+            var hasTexCoord = texCoordAcc > 0 || primitive.Attributes.ContainsKey("TEXCOORD_0");
+            var hasTangent = tangentAcc > 0 || primitive.Attributes.ContainsKey("TANGENT");
+            var hasJoints = jointsAcc > 0 || primitive.Attributes.ContainsKey("JOINTS_0");
+            var hasWeights = weightsAcc > 0 || primitive.Attributes.ContainsKey("WEIGHTS_0");
+
+            for (var i = 0; i < vertexCount; i++)
+            {
+                var pos = posReader.ReadVector3(i);
+
+                Vector3 normal;
+                if (hasNormal)
                 {
-                    var jointData = ReadJointIndices(joints, i);
-                    j0 = jointData.X;
-                    j1 = jointData.Y;
-                    j2 = jointData.Z;
-                    j3 = jointData.W;
+                    var normalReader = new GltfAccessorReader(document, normalAcc);
+                    normal = normalReader.ReadVector3(i);
+                }
+                else
+                {
+                    normal = Vector3.UnitY;
+                }
+
+                Vector2 texCoord;
+                if (hasTexCoord)
+                {
+                    var texCoordReader = new GltfAccessorReader(document, texCoordAcc);
+                    texCoord = texCoordReader.ReadVector2(i);
+                }
+                else
+                {
+                    texCoord = Vector2.Zero;
+                }
+
+                Vector4 tangent;
+                if (hasTangent)
+                {
+                    var tangentReader = new GltfAccessorReader(document, tangentAcc);
+                    tangent = tangentReader.ReadVector4(i);
+                }
+                else
+                {
+                    tangent = new Vector4(1, 0, 0, 1);
+                }
+
+                Vector4 weight;
+                if (hasWeights)
+                {
+                    var weightsReader = new GltfAccessorReader(document, weightsAcc);
+                    weight = weightsReader.ReadVector4(i);
+                }
+                else
+                {
+                    weight = Vector4.Zero;
+                }
+
+                (uint a, uint b, uint c, uint d) joints;
+                if (hasJoints)
+                {
+                    var jointsReader = new GltfAccessorReader(document, jointsAcc);
+                    joints = jointsReader.ReadUInt4(i);
+                }
+                else
+                {
+                    joints = (0u, 0u, 0u, 0u);
                 }
 
                 if (convertToLeftHanded)
@@ -227,36 +283,35 @@ public sealed class MeshExporter
                     TexCoord = texCoord,
                     Tangent = tangent,
                     BoneWeights = isSkinned ? weight : Vector4.Zero,
-                    BoneIndex0 = isSkinned ? j0 : 0,
-                    BoneIndex1 = isSkinned ? j1 : 0,
-                    BoneIndex2 = isSkinned ? j2 : 0,
-                    BoneIndex3 = isSkinned ? j3 : 0
+                    BoneIndex0 = isSkinned ? joints.a : 0,
+                    BoneIndex1 = isSkinned ? joints.b : 0,
+                    BoneIndex2 = isSkinned ? joints.c : 0,
+                    BoneIndex3 = isSkinned ? joints.d : 0
                 });
             }
 
-            var indexAccessor = primitive.IndexAccessor;
-            if (indexAccessor != null)
+            if (primitive.Indices.HasValue)
             {
-                var indices = indexAccessor.AsIndicesArray();
-                for (var i = 0; i < indices.Count; i += 3)
+                var indexReader = new GltfAccessorReader(document, primitive.Indices.Value);
+                for (var i = 0; i < indexReader.Count; i += 3)
                 {
                     if (convertToLeftHanded)
                     {
-                        allIndices.Add(baseVertex + (uint)indices[i]);
-                        allIndices.Add(baseVertex + (uint)indices[i + 2]);
-                        allIndices.Add(baseVertex + (uint)indices[i + 1]);
+                        allIndices.Add(baseVertex + indexReader.ReadIndex(i));
+                        allIndices.Add(baseVertex + indexReader.ReadIndex(i + 2));
+                        allIndices.Add(baseVertex + indexReader.ReadIndex(i + 1));
                     }
                     else
                     {
-                        allIndices.Add(baseVertex + (uint)indices[i]);
-                        allIndices.Add(baseVertex + (uint)indices[i + 1]);
-                        allIndices.Add(baseVertex + (uint)indices[i + 2]);
+                        allIndices.Add(baseVertex + indexReader.ReadIndex(i));
+                        allIndices.Add(baseVertex + indexReader.ReadIndex(i + 1));
+                        allIndices.Add(baseVertex + indexReader.ReadIndex(i + 2));
                     }
                 }
             }
             else
             {
-                for (uint i = 0; i < positions.Count; i += 3)
+                for (uint i = 0; i < vertexCount; i += 3)
                 {
                     if (convertToLeftHanded)
                     {
@@ -277,96 +332,70 @@ public sealed class MeshExporter
         return (allVertices.ToArray(), allIndices.ToArray());
     }
 
-    private static (uint X, uint Y, uint Z, uint W) ReadJointIndices(Accessor accessor, int index)
+    private static MeshMaterial? ExtractMaterial(GltfDocument document, GltfMesh mesh, string gltfPath)
     {
-        var encoding = accessor.Encoding;
-        if (encoding == EncodingType.UNSIGNED_BYTE)
-        {
-            var data = accessor.AsVector4Array();
-            var v = data[index];
-            return ((uint)v.X, (uint)v.Y, (uint)v.Z, (uint)v.W);
-        }
-        else if (encoding == EncodingType.UNSIGNED_SHORT)
-        {
-            var data = accessor.AsVector4Array();
-            var v = data[index];
-            return ((uint)v.X, (uint)v.Y, (uint)v.Z, (uint)v.W);
-        }
-        else
-        {
-            var data = accessor.AsVector4Array();
-            var v = data[index];
-            return ((uint)v.X, (uint)v.Y, (uint)v.Z, (uint)v.W);
-        }
-    }
-
-    private static MeshMaterial? ExtractMaterial(Mesh mesh, ModelRoot model, string gltfPath)
-    {
-        Material? gltfMaterial = null;
+        var materialIndex = -1;
         foreach (var primitive in mesh.Primitives)
         {
-            if (primitive.Material != null)
+            if (primitive.Material.HasValue)
             {
-                gltfMaterial = primitive.Material;
+                materialIndex = primitive.Material.Value;
                 break;
             }
         }
 
-        if (gltfMaterial == null)
+        if (materialIndex < 0)
         {
             return null;
         }
 
-        var gltfDirectory = Path.GetDirectoryName(gltfPath) ?? "";
-        var baseColorChannel = gltfMaterial.FindChannel("BaseColor");
-        var metallicRoughnessChannel = gltfMaterial.FindChannel("MetallicRoughness");
-        var normalChannel = gltfMaterial.FindChannel("Normal");
-
-        var baseColor = baseColorChannel?.Color ?? Vector4.One;
-        var metallic = 1.0f;
-        var roughness = 1.0f;
-
-        if (metallicRoughnessChannel != null)
+        var materials = GltfMaterialExtractor.ExtractMaterials(document);
+        if (materialIndex >= materials.Count)
         {
-            foreach (var param in metallicRoughnessChannel.Value.Parameters)
-            {
-                if (param.Name == "MetallicFactor")
-                {
-                    metallic = (float)param.Value;
-                }
-                else if (param.Name == "RoughnessFactor")
-                {
-                    roughness = (float)param.Value;
-                }
-            }
+            return null;
         }
+
+        var material = materials[materialIndex];
+        var gltfDirectory = Path.GetDirectoryName(gltfPath) ?? "";
 
         return new MeshMaterial
         {
-            Name = gltfMaterial.Name ?? "Material",
-            BaseColor = [baseColor.X, baseColor.Y, baseColor.Z, baseColor.W],
-            Metallic = metallic,
-            Roughness = roughness,
-            BaseColorTexture = GetTexturePath(baseColorChannel?.Texture, gltfDirectory),
-            NormalTexture = GetTexturePath(normalChannel?.Texture, gltfDirectory),
-            MetallicRoughnessTexture = GetTexturePath(metallicRoughnessChannel?.Texture, gltfDirectory)
+            Name = material.Name,
+            BaseColor = [material.BaseColorFactor.X, material.BaseColorFactor.Y, material.BaseColorFactor.Z, material.BaseColorFactor.W],
+            Metallic = material.MetallicFactor,
+            Roughness = material.RoughnessFactor,
+            BaseColorTexture = GetTexturePath(document, material.BaseColorTexture, gltfDirectory),
+            NormalTexture = GetTexturePath(document, material.NormalTexture, gltfDirectory),
+            MetallicRoughnessTexture = GetTexturePath(document, material.MetallicRoughnessTexture, gltfDirectory)
         };
     }
 
-    private static string? GetTexturePath(Texture? texture, string gltfDirectory)
+    private static string? GetTexturePath(GltfDocument document, GltfTextureReference? textureRef, string gltfDirectory)
     {
-        if (texture?.PrimaryImage?.Content == null)
+        if (textureRef == null)
         {
             return null;
         }
 
-        var sourceUri = texture.PrimaryImage.Content.SourcePath;
-        if (string.IsNullOrEmpty(sourceUri))
+        var imageIndex = GltfMaterialExtractor.GetImageIndex(document, textureRef.TextureIndex);
+        if (!imageIndex.HasValue)
         {
             return null;
         }
 
-        return Path.IsPathRooted(sourceUri) ? sourceUri : Path.Combine(gltfDirectory, sourceUri);
+        var images = GltfMaterialExtractor.ExtractImages(document);
+        if (imageIndex.Value >= images.Count)
+        {
+            return null;
+        }
+
+        var image = images[imageIndex.Value];
+        if (string.IsNullOrEmpty(image.Uri) || image.Uri.StartsWith("data:"))
+        {
+            return null;
+        }
+
+        return Path.IsPathRooted(image.Uri) ? image.Uri : Path.Combine(gltfDirectory, image.Uri);
     }
 
     private static void WriteMesh(

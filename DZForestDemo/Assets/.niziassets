@@ -1,0 +1,8 @@
+# NiziKit Asset Manifest Configuration
+# Lines starting with # are comments
+# Plain patterns exclude files
+# Patterns starting with ! force-include (overrides excludes)
+
+# Only include HLSL shaders from lygia
+!*.hlsl
+Shaders/lygia/**

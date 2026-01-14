@@ -10,7 +10,6 @@
 
     <ItemGroup>
         <PackageReference Include="DenOfIzGraphics" Version="0.5.2-alpha" />
-        <PackageReference Include="SharpGLTF.Core" Version="1.0.6" />
     </ItemGroup>
 
 </Project>

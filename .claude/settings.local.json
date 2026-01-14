@@ -54,7 +54,9 @@
       "Bash(/Users/muratcengiz/RiderProjects/DZForestDemo/DenOfIz.Graphics/Binding/SrvUavData.cs)",
       "WebFetch(domain:docs.spacestation14.com)",
       "WebFetch(domain:godotengine.org)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "WebFetch(domain:docs.godotengine.org)",
+      "WebFetch(domain:mzaks.medium.com)"
     ]
   }
 }
