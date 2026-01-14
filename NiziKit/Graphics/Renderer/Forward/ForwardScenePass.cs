@@ -83,7 +83,7 @@ public class ForwardScenePass : RenderPass
             foreach (var draw in renderWorld.GetObjects(material))
             {
                 var drawBindGroup = GpuDraw.Get(_graphicsContext, (int)ctx.FrameIndex, draw.Owner);
-                cmd.BindGroup(drawBindGroup.GetBindGroup((int)ctx.FrameIndex));
+                cmd.BindGroup(drawBindGroup.Get((int)ctx.FrameIndex));
 
                 var mesh = draw.Mesh;
                 

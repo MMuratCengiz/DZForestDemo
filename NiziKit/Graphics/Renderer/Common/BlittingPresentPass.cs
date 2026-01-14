@@ -1,5 +1,6 @@
 using DenOfIz;
 using NiziKit.Assets;
+using NiziKit.Graphics.Binding;
 using NiziKit.Graphics.Graph;
 
 namespace NiziKit.Graphics.Renderer.Common;
@@ -9,7 +10,7 @@ public class BlittingPresentPass : PresentPass
     private static readonly string[] ReadAttachments = ["SceneColor"];
 
     private readonly GpuShader _blitShader;
-    private readonly BindGroup[] _bindGroups;
+    private readonly CachedBindGroup _bindGroups;
     private readonly Sampler _linearSampler;
     private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments = new(1);
 
@@ -63,45 +64,34 @@ public class BlittingPresentPass : PresentPass
 
         var reflection = shaderProgram.Reflect();
         var bindGroupLayoutDescs = reflection.BindGroupLayouts.ToArray();
+        var blitBindGroupLayout = context.LogicalDevice.CreateBindGroupLayout(bindGroupLayoutDescs[0]);
 
-        BindGroupLayout? blitBindGroupLayout = null;
-        if (bindGroupLayoutDescs.Length > 0)
-        {
-            blitBindGroupLayout = context.LogicalDevice.CreateBindGroupLayout(bindGroupLayoutDescs[0]);
-        }
-
-        _bindGroups = new BindGroup[context.NumFrames];
-        for (var i = 0; i < context.NumFrames; i++)
-        {
-            if (blitBindGroupLayout != null)
-            {
-                _bindGroups[i] = context.LogicalDevice.CreateBindGroup(new BindGroupDesc
-                {
-                    Layout = blitBindGroupLayout
-                });
-            }
-        }
-
-        blitBindGroupLayout?.Dispose();
+        _bindGroups = new CachedBindGroup(context.LogicalDevice, blitBindGroupLayout, (int)context.NumFrames, 4);
+   
     }
 
     public override void Execute(ref RenderPassContext ctx, Texture swapChainImage)
     {
         var cmd = ctx.CommandList;
         var sceneColor = ctx.GetTexture("SceneColor");
-
+        
+        ctx.ResourceTracking.TransitionTexture(
+            cmd,
+            sceneColor,
+            (uint)ResourceUsageFlagBits.ShaderResource,
+            QueueType.Graphics);
+        
         ctx.ResourceTracking.TransitionTexture(
             cmd,
             swapChainImage,
             (uint)ResourceUsageFlagBits.RenderTarget,
             QueueType.Graphics);
 
-        var bindGroup = _bindGroups[ctx.FrameIndex];
-        bindGroup.BeginUpdate();
-        bindGroup.SrvTexture(200, sceneColor);
-        bindGroup.SrvTexture(201, Context.NullTexture.Texture);
-        bindGroup.Sampler(400, _linearSampler);
-        bindGroup.EndUpdate();
+        _bindGroups.BeginUpdate((int)ctx.FrameIndex);
+        _bindGroups.SrvTexture(0, sceneColor);
+        _bindGroups.SrvTexture(1, Context.NullTexture.Texture);
+        _bindGroups.Sampler(0, _linearSampler);
+        var bindGroup = _bindGroups.EndUpdate();
 
         _rtAttachments[0] = new RenderingAttachmentDesc
         {
@@ -140,12 +130,7 @@ public class BlittingPresentPass : PresentPass
         _blitShader.Dispose();
         _linearSampler.Dispose();
         _rtAttachments.Dispose();
-
-        foreach (var bindGroup in _bindGroups)
-        {
-            bindGroup?.Dispose();
-        }
-
+        _bindGroups.Dispose();
         base.Dispose();
     }
 }

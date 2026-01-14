@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using DenOfIz;
 using NiziKit.Application;
@@ -16,66 +18,80 @@ public enum GpuDrawType : byte
 public readonly struct GpuDraw
 {
     // Per frame + per draw index
-    private static readonly List<Dictionary<GameObject, GpuDraw>> Instances = new();
+    private static readonly List<ConcurrentDictionary<GameObject, GpuDraw>> Instances = new();
+    private static readonly object Lock = new();
 
+    private readonly GameObject _gameObject;
     private readonly BindGroup[] _bindGroups;
-    private readonly GpuBufferView[] _dataBuffers;
-    
+    private readonly GpuBufferView[] _instanceBuffer;
+    private readonly GpuBufferView[] _boneMatricesBuffer;
+
     public static GpuDraw Get(GraphicsContext context, int frameIndex, GameObject gameObject)
     {
         if (Instances.Count < context.NumFrames)
         {
-            for (var i = Instances.Count; i < context.NumFrames; i++)
+            lock (Lock)
             {
-                Instances.Add([]);
+                while (Instances.Count < context.NumFrames)
+                {
+                    Instances.Add(new ConcurrentDictionary<GameObject, GpuDraw>());
+                }
             }
         }
 
         var gpuDraws = Instances[frameIndex];
-        if (!gpuDraws.TryGetValue(gameObject, out var value))
+        if (gpuDraws.TryGetValue(gameObject, out var existing))
         {
-            value = new GpuDraw(context, gameObject);
-            gpuDraws.Add(gameObject, value);
+            return existing;
         }
 
-        return value;
+        return gpuDraws.GetOrAdd(gameObject, go => new GpuDraw(context, go));
     }
 
     public BindGroup GetBindGroup(int frameIndex)
     {
         return _bindGroups[frameIndex];
     }
-    
+
     public GpuDraw(GraphicsContext context, GameObject go)
     {
+        _gameObject = go;
         var bindGroupDesc = new BindGroupDesc
         {
             Layout = context.BindGroupLayoutStore.Draw
         };
         _bindGroups = new BindGroup[context.NumFrames];
-        _dataBuffers = new GpuBufferView[context.NumFrames];
+        _instanceBuffer = new GpuBufferView[context.NumFrames];
+        _boneMatricesBuffer = new GpuBufferView[context.NumFrames];
         for (var i = 0; i < context.NumFrames; i++)
         {
             _bindGroups[i] = context.LogicalDevice.CreateBindGroup(bindGroupDesc);
-            _dataBuffers[i] = context.UniformBufferArena.Request(Marshal.SizeOf<GpuDrawData>());
+            _instanceBuffer[i] = context.UniformBufferArena.Request(Marshal.SizeOf<GpuDrawData>());
+            _boneMatricesBuffer[i] = context.UniformBufferArena.Request(Marshal.SizeOf<Matrix4x4>());
 
             var bg = _bindGroups[i];
             bg.BeginUpdate();
-            var bindBufferDesc = new BindBufferDesc
+            var bindInstancesBufferDesc = new BindBufferDesc
             {
                 Binding = GpuDrawLayout.Instances.Binding,
-                Resource = _dataBuffers[i].Buffer,
-                ResourceOffset = _dataBuffers[i].Offset
+                Resource = _instanceBuffer[i].Buffer,
+                ResourceOffset = _instanceBuffer[i].Offset
             };
-            bg.CbvWithDesc(bindBufferDesc);
+            bg.CbvWithDesc(bindInstancesBufferDesc);
+            var bindBoneMatricesBufferDesc = new BindBufferDesc
+            {
+                Binding = GpuDrawLayout.BoneMatrices.Binding,
+                Resource = _boneMatricesBuffer[i].Buffer,
+                ResourceOffset = _boneMatricesBuffer[i].Offset
+            };
             bg.EndUpdate();
         }
     }
 
-    public BindGroup Get(int frameIndex, GameObject gameObject)
+    public BindGroup Get(int frameIndex)
     {
-        var transform = gameObject.WorldMatrix;
-        this._dataBuffers[frameIndex].Buffer.WriteData(transform);
+        var transform = _gameObject.WorldMatrix;
+        _instanceBuffer[frameIndex].Buffer.WriteData(transform);
         return _bindGroups[frameIndex];
     }
 }

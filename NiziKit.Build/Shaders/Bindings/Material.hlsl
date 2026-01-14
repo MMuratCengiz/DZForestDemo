@@ -9,11 +9,7 @@ SamplerState TextureSampler : register(s0, space2);
 
 cbuffer MaterialConstants : register(b4, space2)
 {
-    float4 MaterialBaseColor;
-    float MaterialMetallic;
-    float MaterialRoughness;
-    float MaterialAO;
-    float _MatPadding;
+    float _Placeholder;
 };
 
 #endif

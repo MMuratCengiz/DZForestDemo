@@ -8,7 +8,7 @@ public class GpuMaterialLayout : ILayout
     public static readonly BindingSlot Normal = BindingSlot.ShaderResource(1);
     public static readonly BindingSlot Roughness = BindingSlot.ShaderResource(2);
     public static readonly BindingSlot Metallic = BindingSlot.ShaderResource(3);
-    public static readonly BindingSlot Material = BindingSlot.ConstantBuffer(4);
+    public static readonly BindingSlot Constants = BindingSlot.ConstantBuffer(4);
     public static readonly BindingSlot TextureSampler = BindingSlot.Sampler(0);
     public static readonly FrequencySpace FrequencySpace = FrequencySpace.Material;
 
@@ -24,7 +24,7 @@ public class GpuMaterialLayout : ILayout
         bindings.Add(new BindingDesc
         {
             ArraySize = 1,
-            Binding = Material.Binding,
+            Binding = Constants.Binding,
             Stages = (uint)ShaderStageFlagBits.Pixel,
             Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer,
         });
@@ -35,9 +35,11 @@ public class GpuMaterialLayout : ILayout
             Stages = (uint)ShaderStageFlagBits.Pixel,
             Descriptor = (uint)ResourceDescriptorFlagBits.Sampler,
         });
-        BindGroupLayoutDesc desc = new();
-        desc.RegisterSpace = (uint)FrequencySpace;
-        desc.Bindings = BindingDescArray.Create(bindings.ToArray());
+        var desc = new BindGroupLayoutDesc
+        {
+            RegisterSpace = (uint)FrequencySpace,
+            Bindings = BindingDescArray.Create(bindings.ToArray())
+        };
         Layout = device.CreateBindGroupLayout(desc);
     }
 

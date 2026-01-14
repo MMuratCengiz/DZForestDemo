@@ -28,6 +28,7 @@ public class GpuView : IDisposable
     private LightConstants _lights;
     private Texture? _shadowAtlas;
     private readonly Sampler? _shadowSampler;
+    private readonly object _updateLock = new();
     private bool _isDirty = true;
 
     public GpuView(GraphicsContext ctx)
@@ -229,12 +230,15 @@ public class GpuView : IDisposable
 
     public BindGroup GetBindGroup(uint frameIndex)
     {
-        if (_isDirty)
+        lock (_updateLock)
         {
-            UpdateBindings(frameIndex);
-        }
+            if (_isDirty)
+            {
+                UpdateBindings(frameIndex);
+            }
 
-        return _bindGroups[frameIndex];
+            return _bindGroups[frameIndex];
+        }
     }
 
     [Obsolete("Use Update(Scene, frameIndex, deltaTime, totalTime) instead")]

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using DenOfIz;
 using NiziKit.Assets;
@@ -8,7 +9,8 @@ namespace NiziKit.Graphics.Binding;
 
 public class GpuMaterial
 {
-    private static readonly Dictionary<Material, GpuMaterial> Instances = new();
+    private static readonly ConcurrentDictionary<Material, GpuMaterial> Instances = new();
+    private static readonly object Lock = new();
     
     private readonly Material _material;
     private readonly Texture2d? _albedo;
@@ -17,20 +19,31 @@ public class GpuMaterial
     private readonly Texture2d? _metallic;
     private readonly GpuBufferView _dataBuffer;
     private readonly BindGroup _bindGroup;
+    private readonly Sampler _sampler;
     private readonly GraphicsContext _ctx;
+    private readonly object _updateLock = new();
     private GpuMaterialData _data; // TODO
     private bool _isDirty;
 
 
     public static GpuMaterial Get(GraphicsContext context, Material material)
     {
-        if (Instances.TryGetValue(material, out var instance1))
+        if (Instances.TryGetValue(material, out var existing))
         {
-            return instance1;
+            return existing;
         }
-        var instance = new GpuMaterial(context, material);
-        Instances.Add(material, instance);
-        return instance;
+
+        lock (Lock)
+        {
+            if (Instances.TryGetValue(material, out existing))
+            {
+                return existing;
+            }
+
+            var instance = new GpuMaterial(context, material);
+            Instances.TryAdd(material, instance);
+            return instance;
+        }
     }
 
     public GpuMaterial(GraphicsContext context, Material material)
@@ -48,29 +61,34 @@ public class GpuMaterial
         };
         _bindGroup = context.LogicalDevice.CreateBindGroup(bindGroupDesc);
         _dataBuffer = _ctx.UniformBufferArena.Request(Marshal.SizeOf<GpuMaterialData>());
+        _sampler = context.LogicalDevice.CreateSampler(new SamplerDesc
+        {
+            AddressModeU = SamplerAddressMode.Repeat,
+            AddressModeV = SamplerAddressMode.Repeat,
+            AddressModeW = SamplerAddressMode.Repeat,
+            MinFilter = Filter.Linear,
+            MagFilter = Filter.Linear,
+            MipmapMode = MipmapMode.Linear
+        });
         _isDirty = true;
         Update();
     }
 
-    public void BindTexture(uint binding, Texture? texture)
+    private void BindTexture(uint binding, Texture? texture)
     {
-        if (texture == null)
-        {
-            _bindGroup.SrvTexture(binding, _ctx.NullTexture.Texture);
-        }
-        else
-        {
-            _bindGroup.SrvTexture(binding, texture);
-        }
+        _bindGroup.SrvTexture(binding, texture ?? _ctx.NullTexture.Texture);
     }
 
     public BindGroup BindGroup
     {
         get
         {
-            Validate();
-            Update();
-            return _bindGroup;
+            lock (_updateLock)
+            {
+                Validate();
+                Update();
+                return _bindGroup;
+            }
         }
     }
 
@@ -94,15 +112,18 @@ public class GpuMaterial
         var placeHolder = new GpuMaterialData();
         _dataBuffer.Buffer.WriteData(in placeHolder, _dataBuffer.Offset);
         _bindGroup.BeginUpdate();
-        var bindBufferDesc = new BindBufferDesc();
 
         BindTexture(GpuMaterialLayout.Albedo.Binding, _albedo?.GpuTexture);
         BindTexture(GpuMaterialLayout.Normal.Binding, _normal?.GpuTexture);
         BindTexture(GpuMaterialLayout.Roughness.Binding, _roughness?.GpuTexture);
         BindTexture(GpuMaterialLayout.Metallic.Binding, _metallic?.GpuTexture);
-        bindBufferDesc.Binding = GpuMaterialLayout.Material.Binding;
-        bindBufferDesc.Resource = _dataBuffer.Buffer;
-        bindBufferDesc.ResourceOffset = _dataBuffer.Offset;
+        _bindGroup.Sampler(GpuMaterialLayout.TextureSampler.Binding, _sampler);
+        var bindBufferDesc = new BindBufferDesc
+        {
+            Binding = GpuMaterialLayout.Constants.Binding,
+            Resource = _dataBuffer.Buffer,
+            ResourceOffset = _dataBuffer.Offset
+        };
         _bindGroup.CbvWithDesc(bindBufferDesc);
         _bindGroup.EndUpdate();
     }

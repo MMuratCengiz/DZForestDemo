@@ -1,4 +1,5 @@
 using DenOfIz;
+using NiziKit.Graphics.RootSignatures;
 
 namespace NiziKit.Graphics;
 
@@ -9,30 +10,29 @@ public class GpuShader : IDisposable
     public RootSignature RootSignature { get; private set; }
     public InputLayout InputLayout { get; private set; }
 
-    private readonly BindGroupLayout[] _bindGroupLayouts;
-
     private GpuShader(GraphicsContext context, ShaderProgram program, GraphicsPipelineDesc? graphicsDesc,
         RayTracingPipelineDesc? rayTracingPipelineDesc)
     {
         ShaderProgram = program;
         var reflection = program.Reflect();
 
-        var bindGroupLayoutDescs = reflection.BindGroupLayouts.ToArray();
-        _bindGroupLayouts = new BindGroupLayout[bindGroupLayoutDescs.Length];
-        for (var i = 0; i < bindGroupLayoutDescs.Length; i++)
+        var store = context.BindGroupLayoutStore;
+        var bindGroupLayouts = new[]
         {
-            _bindGroupLayouts[i] = context.LogicalDevice.CreateBindGroupLayout(bindGroupLayoutDescs[i]);
-        }
+            store.Camera,
+            store.Material,
+            store.Draw
+        };
 
         var rootSigDesc = new RootSignatureDesc
         {
-            BindGroupLayouts = BindGroupLayoutArray.Create(_bindGroupLayouts),
+            BindGroupLayouts = BindGroupLayoutArray.Create(bindGroupLayouts),
             RootConstants = reflection.RootConstants
         };
         RootSignature = context.LogicalDevice.CreateRootSignature(rootSigDesc);
         InputLayout = context.LogicalDevice.CreateInputLayout(reflection.InputLayout);
 
-        BindPoint bindPoint = BindPoint.Compute;
+        var bindPoint = BindPoint.Compute;
         if (rayTracingPipelineDesc != null)
         {
             bindPoint = BindPoint.Raytracing;
@@ -69,17 +69,12 @@ public class GpuShader : IDisposable
     {
         return new GpuShader(context, program, null, rayTracingPipelineDesc);
     }
-    
+
     public void Dispose()
     {
         Pipeline.Dispose();
         RootSignature.Dispose();
         InputLayout.Dispose();
-        foreach (var layout in _bindGroupLayouts)
-        {
-            layout.Dispose();
-        }
-
         ShaderProgram.Dispose();
     }
 }

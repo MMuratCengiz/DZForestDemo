@@ -44,14 +44,18 @@ public sealed class UniformBufferArena : IDisposable
 
     private void AddChunk()
     {
-        var desc = new BufferDesc();
-        desc.Usage = (uint)BufferUsageFlagBits.Uniform;
-        desc.NumBytes = BufferChunkSize;
-        desc.HeapType = HeapType.CpuGpu;
-        desc.DebugName = StringView.Create("Uniform Buffer Arena Chunk #" + _chunks.Count);
+        var desc = new BufferDesc
+        {
+            Usage = (uint)BufferUsageFlagBits.Uniform,
+            NumBytes = BufferChunkSize,
+            HeapType = HeapType.CpuGpu,
+            DebugName = StringView.Create("Uniform Buffer Arena Chunk #" + _chunks.Count)
+        };
 
-        var chunk = new Chunk();
-        chunk.Buffer = _device.CreateBuffer(desc);
+        var chunk = new Chunk
+        {
+            Buffer = _device.CreateBuffer(desc)
+        };
         chunk.Data = chunk.Buffer.MapMemory();
         chunk.Offset = 0;
         _chunks.Add(chunk);
