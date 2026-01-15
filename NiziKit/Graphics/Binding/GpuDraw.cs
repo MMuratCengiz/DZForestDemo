@@ -26,13 +26,13 @@ public readonly struct GpuDraw
     private readonly GpuBufferView[] _instanceBuffer;
     private readonly GpuBufferView[] _boneMatricesBuffer;
 
-    public static GpuDraw Get(GraphicsContext context, int frameIndex, GameObject gameObject)
+    public static GpuDraw Get(int frameIndex, GameObject gameObject)
     {
-        if (Instances.Count < context.NumFrames)
+        if (Instances.Count < GraphicsContext.NumFrames)
         {
             lock (Lock)
             {
-                while (Instances.Count < context.NumFrames)
+                while (Instances.Count < GraphicsContext.NumFrames)
                 {
                     Instances.Add(new ConcurrentDictionary<GameObject, GpuDraw>());
                 }
@@ -45,29 +45,24 @@ public readonly struct GpuDraw
             return existing;
         }
 
-        return gpuDraws.GetOrAdd(gameObject, go => new GpuDraw(context, go));
+        return gpuDraws.GetOrAdd(gameObject, go => new GpuDraw(go));
     }
 
-    public BindGroup GetBindGroup(int frameIndex)
-    {
-        return _bindGroups[frameIndex];
-    }
-
-    public GpuDraw(GraphicsContext context, GameObject go)
+    public GpuDraw(GameObject go)
     {
         _gameObject = go;
         var bindGroupDesc = new BindGroupDesc
         {
-            Layout = context.BindGroupLayoutStore.Draw
+            Layout = GraphicsContext.BindGroupLayoutStore.Draw
         };
-        _bindGroups = new BindGroup[context.NumFrames];
-        _instanceBuffer = new GpuBufferView[context.NumFrames];
-        _boneMatricesBuffer = new GpuBufferView[context.NumFrames];
-        for (var i = 0; i < context.NumFrames; i++)
+        _bindGroups = new BindGroup[GraphicsContext.NumFrames];
+        _instanceBuffer = new GpuBufferView[GraphicsContext.NumFrames];
+        _boneMatricesBuffer = new GpuBufferView[GraphicsContext.NumFrames];
+        for (var i = 0; i < GraphicsContext.NumFrames; i++)
         {
-            _bindGroups[i] = context.LogicalDevice.CreateBindGroup(bindGroupDesc);
-            _instanceBuffer[i] = context.UniformBufferArena.Request(Marshal.SizeOf<GpuDrawData>());
-            _boneMatricesBuffer[i] = context.UniformBufferArena.Request(Marshal.SizeOf<Matrix4x4>());
+            _bindGroups[i] = GraphicsContext.Device.CreateBindGroup(bindGroupDesc);
+            _instanceBuffer[i] = GraphicsContext.UniformBufferArena.Request(Marshal.SizeOf<GpuInstanceData>());
+            _boneMatricesBuffer[i] = GraphicsContext.UniformBufferArena.Request(Marshal.SizeOf<Matrix4x4>());
 
             var bg = _bindGroups[i];
             bg.BeginUpdate();
@@ -84,6 +79,7 @@ public readonly struct GpuDraw
                 Resource = _boneMatricesBuffer[i].Buffer,
                 ResourceOffset = _boneMatricesBuffer[i].Offset
             };
+            bg.CbvWithDesc(bindBoneMatricesBufferDesc);
             bg.EndUpdate();
         }
     }
@@ -91,7 +87,12 @@ public readonly struct GpuDraw
     public BindGroup Get(int frameIndex)
     {
         var transform = _gameObject.WorldMatrix;
-        _instanceBuffer[frameIndex].Buffer.WriteData(transform);
+        var instanceData = new GpuInstanceData
+        {
+            Model = transform,
+            BoneOffset = 0 // TODO
+        };
+        _instanceBuffer[frameIndex].Buffer.WriteData(instanceData);
         return _bindGroups[frameIndex];
     }
 }

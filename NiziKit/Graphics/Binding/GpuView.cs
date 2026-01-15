@@ -15,7 +15,6 @@ public class GpuView : IDisposable
     private const uint LightTypePoint = 1;
     private const uint LightTypeSpot = 2;
 
-    private readonly GraphicsContext _ctx;
     private readonly uint _numFrames;
 
     private readonly Buffer[] _cameraBuffers;
@@ -31,10 +30,9 @@ public class GpuView : IDisposable
     private readonly Lock _updateLock = new();
     private bool _isDirty = true;
 
-    public GpuView(GraphicsContext ctx)
+    public GpuView()
     {
-        _ctx = ctx;
-        _numFrames = ctx.NumFrames;
+        _numFrames = GraphicsContext.NumFrames;
 
         _cameraBuffers = new Buffer[_numFrames];
         _lightBuffers = new Buffer[_numFrames];
@@ -47,7 +45,7 @@ public class GpuView : IDisposable
 
         for (var i = 0; i < _numFrames; i++)
         {
-            _cameraBuffers[i] = ctx.LogicalDevice.CreateBuffer(new BufferDesc
+            _cameraBuffers[i] = GraphicsContext.Device.CreateBuffer(new BufferDesc
             {
                 NumBytes = cameraSize,
                 HeapType = HeapType.CpuGpu,
@@ -56,7 +54,7 @@ public class GpuView : IDisposable
             });
             _cameraMappedPtrs[i] = _cameraBuffers[i].MapMemory();
 
-            _lightBuffers[i] = ctx.LogicalDevice.CreateBuffer(new BufferDesc
+            _lightBuffers[i] = GraphicsContext.Device.CreateBuffer(new BufferDesc
             {
                 NumBytes = lightSize,
                 HeapType = HeapType.CpuGpu,
@@ -65,21 +63,20 @@ public class GpuView : IDisposable
             });
             _lightMappedPtrs[i] = _lightBuffers[i].MapMemory();
 
-            _bindGroups[i] = ctx.LogicalDevice.CreateBindGroup(new BindGroupDesc
+            _bindGroups[i] = GraphicsContext.Device.CreateBindGroup(new BindGroupDesc
             {
-                Layout = ctx.BindGroupLayoutStore.Camera
+                Layout = GraphicsContext.BindGroupLayoutStore.Camera
             });
         }
 
-        _shadowSampler = ctx.LogicalDevice.CreateSampler(new SamplerDesc
+        _shadowSampler = GraphicsContext.Device.CreateSampler(new SamplerDesc
         {
             AddressModeU = SamplerAddressMode.ClampToBorder,
             AddressModeV = SamplerAddressMode.ClampToBorder,
             AddressModeW = SamplerAddressMode.ClampToBorder,
             MinFilter = Filter.Linear,
             MagFilter = Filter.Linear,
-            MipmapMode = MipmapMode.Nearest,
-            CompareOp = CompareOp.LessOrEqual
+            MipmapMode = MipmapMode.Nearest
         });
     }
 
@@ -110,7 +107,7 @@ public class GpuView : IDisposable
             InverseViewProjection = invVp,
             CameraPosition = cam.WorldPosition,
             CameraForward = cam.Forward,
-            ScreenSize = new Vector2(_ctx.Width, _ctx.Height),
+            ScreenSize = new Vector2(GraphicsContext.Width, GraphicsContext.Height),
             NearPlane = cam.NearPlane,
             FarPlane = cam.FarPlane,
             Time = totalTime,
@@ -259,19 +256,20 @@ public class GpuView : IDisposable
         bg.Cbv(GpuCameraLayout.Camera.Binding, _cameraBuffers[frameIndex]);
         bg.Cbv(GpuCameraLayout.Lights.Binding, _lightBuffers[frameIndex]);
 
-        if (_shadowAtlas != null)
-        {
-            bg.SrvTexture(GpuCameraLayout.ShadowAtlas.Binding, _shadowAtlas);
-        }
-        else
-        {
-            bg.SrvTexture(GpuCameraLayout.ShadowAtlas.Binding, _ctx.NullTexture.Texture);
-        }
-
-        if (_shadowSampler != null)
-        {
-            bg.Sampler(GpuCameraLayout.ShadowSampler.Binding, _shadowSampler);
-        }
+        // ShadowAtlas and ShadowSampler commented out - not used by default shader
+        // if (_shadowAtlas != null)
+        // {
+        //     bg.SrvTexture(GpuCameraLayout.ShadowAtlas.Binding, _shadowAtlas);
+        // }
+        // else
+        // {
+        //     bg.SrvTexture(GpuCameraLayout.ShadowAtlas.Binding, _ctx.MissingTexture.Texture);
+        // }
+        //
+        // if (_shadowSampler != null)
+        // {
+        //     bg.Sampler(GpuCameraLayout.ShadowSampler.Binding, _shadowSampler);
+        // }
 
         bg.EndUpdate();
         _isDirty = false;

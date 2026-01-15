@@ -10,16 +10,14 @@ namespace DZForestDemo.Scenes;
 
 public class DemoScene : Scene
 {
-    private readonly Assets _assets;
     private readonly Random _random = new();
 
     private Mesh _cubeMesh = null!;
     private Mesh _platformMesh = null!;
     private Mesh _sphereMesh = null!;
 
-    public DemoScene(World world) : base(world, world.Assets, "Demo Scene")
+    public DemoScene() : base("Demo Scene")
     {
-        _assets = World.Assets;
     }
 
     public override void Load()
@@ -32,9 +30,9 @@ public class DemoScene : Scene
 
     private void LoadAssets()
     {
-        _cubeMesh = _assets.CreateBox(1.0f, 1.0f, 1.0f);
-        _platformMesh = _assets.CreateBox(20.0f, 1.0f, 20.0f);
-        _sphereMesh = _assets.CreateSphere(1.0f);
+        _cubeMesh = Assets.CreateBox(1.0f, 1.0f, 1.0f);
+        _platformMesh = Assets.CreateBox(20.0f, 1.0f, 20.0f);
+        _sphereMesh = Assets.CreateSphere(1.0f);
     }
 
     private void CreateCamera()
@@ -105,7 +103,7 @@ public class DemoScene : Scene
 
     private void SpawnFox()
     {
-        Add(new Fox(_assets));
+        Add(new Fox());
     }
 
     private void SpawnInitialCubes()

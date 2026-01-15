@@ -1,5 +1,7 @@
+using System.Numerics;
 using DenOfIz;
 using NiziKit.Assets;
+using NiziKit.Core;
 using NiziKit.Graphics.Binding;
 using NiziKit.Graphics.Graph;
 
@@ -15,16 +17,12 @@ public class ForwardScenePass : RenderPass
 
     private readonly PinnedArray<RenderingAttachmentDesc> _colorAttachments = new(1);
     private readonly PinnedArray<RenderingAttachmentDesc> _depthAttachments = new(1);
-    private readonly GraphicsContext _graphicsContext;
 
     public override string Name => "Forward Scene Pass";
     public override ReadOnlySpan<AttachmentDesc> Writes => _attachments.AsSpan();
 
-    public NiziKit.Assets.Assets? Assets { get; set; }
-
-    public ForwardScenePass(GraphicsContext context, GpuView gpuView) : base(context)
+    public ForwardScenePass(GpuView gpuView)
     {
-        _graphicsContext = context;
         _gpuView = gpuView;
         _attachments = [_sceneColorDesc, _sceneDepthDesc];
         CreateTextures(_sceneColorDesc);
@@ -33,12 +31,7 @@ public class ForwardScenePass : RenderPass
 
     public override void Execute(ref RenderPassContext ctx)
     {
-        if (Assets == null)
-        {
-            return;
-        }
-
-        var renderWorld = ctx.RenderWorld;
+        var renderWorld = World.RenderWorld;
         var cmd = ctx.CommandList;
         var sceneColor = GetAttachment("SceneColor");
         var sceneDepth = GetAttachment("SceneDepth");
@@ -68,7 +61,8 @@ public class ForwardScenePass : RenderPass
             DepthAttachment = new RenderingAttachmentDesc
             {
                 Resource = sceneDepth,
-                LoadOp = LoadOp.Clear
+                LoadOp = LoadOp.Clear,
+                ClearDepthStencil = new Vector2(1, 0)
             },
             NumLayers = 1
         };
@@ -90,12 +84,12 @@ public class ForwardScenePass : RenderPass
             }
             cmd.BindPipeline(gpuShader.Pipeline);
             
-            var materialBindGroup = GpuMaterial.Get(_graphicsContext, material);
+            var materialBindGroup = GpuMaterial.Get(material);
             cmd.BindGroup(materialBindGroup.BindGroup);
 
             foreach (var draw in renderWorld.GetObjects(material))
             {
-                var drawBindGroup = GpuDraw.Get(_graphicsContext, (int)ctx.FrameIndex, draw.Owner);
+                var drawBindGroup = GpuDraw.Get((int)ctx.FrameIndex, draw.Owner);
                 cmd.BindGroup(drawBindGroup.Get((int)ctx.FrameIndex));
 
                 var mesh = draw.Mesh;

@@ -13,14 +13,9 @@ struct PSInput
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    InstanceData inst = Instances[input.InstanceID];
-
-    float4 albedo = inst.UseAlbedoTexture ?
-        AlbedoTexture.Sample(TextureSampler, input.TexCoord) * inst.BaseColor :
-        inst.BaseColor;
+    float4 albedo = AlbedoTexture.Sample(TextureSampler, input.TexCoord);
 
     float3 N = normalize(input.WorldNormal);
-    float3 V = normalize(CameraPosition - input.WorldPos);
     float3 L = normalize(float3(0.5, 1.0, 0.3));
 
     float NdotL = saturate(dot(N, L));

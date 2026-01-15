@@ -25,18 +25,16 @@ public class CommandListAllocator : IDisposable
 
     private readonly CommandQueueData[] _graphicsQueueData;
     private readonly CommandQueueData[] _computeQueueData;
-    private readonly GraphicsContext _context;
 
-    public CommandListAllocator(GraphicsContext context, int numFrames)
+    public CommandListAllocator(int numFrames)
     {
-        _context = context;
         _graphicsQueueData = new CommandQueueData[numFrames];
         _computeQueueData = new CommandQueueData[numFrames];
 
         for (var i = 0; i < numFrames; i++)
         {
-            _graphicsQueueData[i] = CreateCommandQueueData(QueueType.Graphics, context.GraphicsCommandQueue);
-            _computeQueueData[i] = CreateCommandQueueData(QueueType.Compute, context.ComputeCommandQueue);
+            _graphicsQueueData[i] = CreateCommandQueueData(QueueType.Graphics, GraphicsContext.GraphicsCommandQueue);
+            _computeQueueData[i] = CreateCommandQueueData(QueueType.Compute, GraphicsContext.ComputeCommandQueue);
         }
 
         return;
@@ -99,13 +97,13 @@ public class CommandListAllocator : IDisposable
             CommandQueue = queueData.Queue,
             NumCommandLists = PoolSize,
         };
-        var commandListPool = _context.LogicalDevice.CreateCommandListPool(commandListPoolDesc);
+        var commandListPool = GraphicsContext.Device.CreateCommandListPool(commandListPoolDesc);
         var lists = commandListPool.GetCommandLists().ToArray();
 
         var semaphores = new Semaphore[PoolSize];
         for (var i = 0; i < PoolSize; i++)
         {
-            semaphores[i] = _context.LogicalDevice.CreateSemaphore();
+            semaphores[i] = GraphicsContext.Device.CreateSemaphore();
         }
 
         queueData.Buckets.Add(new CommandListBucket(commandListPool, lists, semaphores));

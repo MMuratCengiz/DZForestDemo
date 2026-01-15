@@ -10,13 +10,13 @@ public class GpuShader : IDisposable
     public RootSignature RootSignature { get; private set; }
     public InputLayout InputLayout { get; private set; }
 
-    private GpuShader(GraphicsContext context, ShaderProgram program, GraphicsPipelineDesc? graphicsDesc,
+    private GpuShader(ShaderProgram program, GraphicsPipelineDesc? graphicsDesc,
         RayTracingPipelineDesc? rayTracingPipelineDesc)
     {
         ShaderProgram = program;
         var reflection = program.Reflect();
 
-        var store = context.BindGroupLayoutStore;
+        var store = GraphicsContext.BindGroupLayoutStore;
         var bindGroupLayouts = new[]
         {
             store.Camera,
@@ -29,8 +29,8 @@ public class GpuShader : IDisposable
             BindGroupLayouts = BindGroupLayoutArray.Create(bindGroupLayouts),
             RootConstants = reflection.RootConstants
         };
-        RootSignature = context.LogicalDevice.CreateRootSignature(rootSigDesc);
-        InputLayout = context.LogicalDevice.CreateInputLayout(reflection.InputLayout);
+        RootSignature = GraphicsContext.Device.CreateRootSignature(rootSigDesc);
+        InputLayout = GraphicsContext.Device.CreateInputLayout(reflection.InputLayout);
 
         var bindPoint = BindPoint.Compute;
         if (rayTracingPipelineDesc != null)
@@ -51,23 +51,22 @@ public class GpuShader : IDisposable
             RayTracing = rayTracingPipelineDesc ?? new RayTracingPipelineDesc(),
         };
 
-        Pipeline = context.LogicalDevice.CreatePipeline(pipelineDesc);
+        Pipeline = GraphicsContext.Device.CreatePipeline(pipelineDesc);
     }
 
-    public static GpuShader Compute(GraphicsContext context, ShaderProgram program)
+    public static GpuShader Compute(ShaderProgram program)
     {
-        return new GpuShader(context, program, null, null);
+        return new GpuShader(program, null, null);
     }
 
-    public static GpuShader Graphics(GraphicsContext context, ShaderProgram program, GraphicsPipelineDesc graphicsDesc)
+    public static GpuShader Graphics(ShaderProgram program, GraphicsPipelineDesc graphicsDesc)
     {
-        return new GpuShader(context, program, graphicsDesc, null);
+        return new GpuShader(program, graphicsDesc, null);
     }
 
-    public static GpuShader RayTracing(GraphicsContext context, ShaderProgram program,
-        RayTracingPipelineDesc rayTracingPipelineDesc)
+    public static GpuShader RayTracing(ShaderProgram program, RayTracingPipelineDesc rayTracingPipelineDesc)
     {
-        return new GpuShader(context, program, null, rayTracingPipelineDesc);
+        return new GpuShader(program, null, rayTracingPipelineDesc);
     }
 
     public void Dispose()

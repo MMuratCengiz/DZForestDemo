@@ -3,7 +3,7 @@ using NiziKit.Core;
 
 namespace NiziKit.Assets;
 
-public class AssetWorld(Assets assets) : IWorldEventListener
+public class AssetWorld : IWorldEventListener
 {
     public void SceneReset()
     {
@@ -30,12 +30,12 @@ public class AssetWorld(Assets assets) : IWorldEventListener
     {
     }
 
-    private void TryUploadMesh(GameObject go)
+    private static void TryUploadMesh(GameObject go)
     {
         var meshComp = go.GetComponent<MeshComponent>();
         if (meshComp?.Mesh != null && !meshComp.Mesh.IsUploaded)
         {
-            assets.Upload(meshComp.Mesh);
+            Assets.Upload(meshComp.Mesh);
         }
     }
 }

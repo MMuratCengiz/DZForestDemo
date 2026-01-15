@@ -1,22 +1,21 @@
+using System.Numerics;
 using DenOfIz;
 using Buffer = DenOfIz.Buffer;
 
 namespace NiziKit.Graphics.Graph;
 
-public abstract class RenderPassBase(GraphicsContext context) : IDisposable
+public abstract class RenderPassBase : IDisposable
 {
-    protected GraphicsContext Context { get; } = context;
-
     public abstract string Name { get; }
     public virtual ReadOnlySpan<string> Reads => [];
     public virtual ReadOnlySpan<AttachmentDesc> Writes => [];
 
     private readonly Dictionary<string, Texture[]> _textures = new();
     private readonly Dictionary<string, Buffer[]> _buffers = new();
-    private readonly uint _numFrames = context.NumFrames;
+    private readonly uint _numFrames = GraphicsContext.NumFrames;
     private uint _currentFrameIndex;
-    private uint _width = context.Width;
-    private uint _height = context.Height;
+    private uint _width = GraphicsContext.Width;
+    private uint _height = GraphicsContext.Height;
 
 
     public Texture GetAttachment(string name) => _textures[name][_currentFrameIndex];
@@ -102,13 +101,13 @@ public abstract class RenderPassBase(GraphicsContext context) : IDisposable
 
         if (desc is { Format: Format.Undefined, Type: AttachmentType.Color })
         {
-            desc.Format = Context.BackBufferFormat;
+            desc.Format = GraphicsContext.BackBufferFormat;
         }
-        
+
         var textures = new Texture[_numFrames];
         for (var i = 0; i < _numFrames; i++)
         {
-            var texture = Context.LogicalDevice.CreateTexture(new TextureDesc
+            var texture = GraphicsContext.Device.CreateTexture(new TextureDesc
             {
                 Width = desc.Width,
                 Height = desc.Height,
@@ -118,10 +117,11 @@ public abstract class RenderPassBase(GraphicsContext context) : IDisposable
                 ArraySize = 1,
                 Usage = desc.Usage,
                 HeapType = HeapType.Gpu,
-                DebugName = StringView.Intern($"{desc.Name}_{i}")
+                DebugName = StringView.Intern($"{desc.Name}_{i}"),
+                ClearDepthStencilHint = new Vector2(1, 0)
             });
 
-            Context.ResourceTracking.TrackTexture(texture, QueueType.Graphics);
+            GraphicsContext.ResourceTracking.TrackTexture(texture, QueueType.Graphics);
             textures[i] = texture;
         }
 
@@ -138,7 +138,7 @@ public abstract class RenderPassBase(GraphicsContext context) : IDisposable
         var buffers = new Buffer[_numFrames];
         for (var i = 0; i < _numFrames; i++)
         {
-            var buffer = Context.LogicalDevice.CreateBuffer(new BufferDesc
+            var buffer = GraphicsContext.Device.CreateBuffer(new BufferDesc
             {
                 NumBytes = desc.NumBytes,
                 Usage = (uint)BufferUsageFlagBits.Storage,
@@ -146,7 +146,7 @@ public abstract class RenderPassBase(GraphicsContext context) : IDisposable
                 DebugName = StringView.Intern($"{desc.Name}_{i}")
             });
 
-            Context.ResourceTracking.TrackBuffer(buffer, QueueType.Graphics);
+            GraphicsContext.ResourceTracking.TrackBuffer(buffer, QueueType.Graphics);
             buffers[i] = buffer;
         }
 

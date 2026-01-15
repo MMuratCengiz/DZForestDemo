@@ -6,114 +6,145 @@ namespace NiziKit.Graphics;
 
 public sealed class GraphicsContext : IDisposable
 {
-    public GraphicsApi GraphicsApi { get; }
-    public LogicalDevice LogicalDevice { get; }
-    public SwapChain SwapChain { get; }
-    public CommandQueue GraphicsQueue { get; }
-    public CommandQueue ComputeQueue { get; }
-    public CommandQueue CopyQueue { get; }
-    public ResourceTracking ResourceTracking { get; } = new();
+    private static GraphicsContext? _instance;
+    public static GraphicsContext Instance => _instance ?? throw new InvalidOperationException("GraphicsContext not initialized");
 
-    public CommandQueue GraphicsCommandQueue => GraphicsQueue;
-    public CommandQueue ComputeCommandQueue => ComputeQueue;
-    public CommandQueue CopyCommandQueue => CopyQueue;
+    public static GraphicsApi GraphicsApi => Instance._graphicsApi;
+    public static LogicalDevice Device => Instance._logicalDevice;
+    public static SwapChain SwapChain => Instance._swapChain;
+    public static CommandQueue GraphicsQueue => Instance._graphicsQueue;
+    public static CommandQueue ComputeQueue => Instance._computeQueue;
+    public static CommandQueue CopyQueue => Instance._copyQueue;
+    public static ResourceTracking ResourceTracking => Instance._resourceTracking;
 
-    public uint NumFrames { get; }
-    public Format BackBufferFormat { get; }
-    public Format DepthBufferFormat { get; }
-    public uint FrameIndex { get; private set; }
-    public uint Width { get; private set; }
-    public uint Height { get; private set; }
-    public UniformBufferArena UniformBufferArena { get; }
-    public BindGroupLayoutStore BindGroupLayoutStore { get; }
-    public RootSignatureStore RootSignatureStore { get; }
-    
-    public NullTexture NullTexture { get; }
-    
+    public static CommandQueue GraphicsCommandQueue => Instance._graphicsQueue;
+    public static CommandQueue ComputeCommandQueue => Instance._computeQueue;
+    public static CommandQueue CopyCommandQueue => Instance._copyQueue;
+
+    public static uint NumFrames => Instance._numFrames;
+    public static Format BackBufferFormat => Instance._backBufferFormat;
+    public static Format DepthBufferFormat => Instance._depthBufferFormat;
+    public static uint FrameIndex => Instance._frameIndex;
+    public static uint Width => Instance._width;
+    public static uint Height => Instance._height;
+    public static UniformBufferArena UniformBufferArena => Instance._uniformBufferArena;
+    public static BindGroupLayoutStore BindGroupLayoutStore => Instance._bindGroupLayoutStore;
+    public static RootSignatureStore RootSignatureStore => Instance._rootSignatureStore;
+
+    public static ColorTexture EmptyTexture => Instance._emptyTexture;
+    public static ColorTexture MissingTexture => Instance._missingTexture;
+
+    public static void Resize(uint width, uint height) => Instance._Resize(width, height);
+    public static void WaitIdle() => Instance._WaitIdle();
+
+    private readonly GraphicsApi _graphicsApi;
+    private readonly LogicalDevice _logicalDevice;
+    private readonly SwapChain _swapChain;
+    private readonly CommandQueue _graphicsQueue;
+    private readonly CommandQueue _computeQueue;
+    private readonly CommandQueue _copyQueue;
+    private readonly ResourceTracking _resourceTracking = new();
+
+    private readonly uint _numFrames;
+    private readonly Format _backBufferFormat;
+    private readonly Format _depthBufferFormat;
+    private uint _frameIndex;
+    private uint _width;
+    private uint _height;
+    private readonly UniformBufferArena _uniformBufferArena;
+    private readonly BindGroupLayoutStore _bindGroupLayoutStore;
+    private readonly RootSignatureStore _rootSignatureStore;
+
+    private readonly ColorTexture _emptyTexture;
+    private readonly ColorTexture _missingTexture;
 
     public GraphicsContext(Window window, GraphicsDesc? desc = null)
     {
         desc ??= new GraphicsDesc();
 
-        NumFrames = desc.NumFrames;
-        BackBufferFormat = desc.BackBufferFormat;
-        DepthBufferFormat = desc.DepthBufferFormat;
+        _numFrames = desc.NumFrames;
+        _backBufferFormat = desc.BackBufferFormat;
+        _depthBufferFormat = desc.DepthBufferFormat;
 
-        GraphicsApi = new GraphicsApi(desc.ApiPreference);
-        LogicalDevice = GraphicsApi.CreateAndLoadOptimalLogicalDevice(new LogicalDeviceDesc
+        _graphicsApi = new GraphicsApi(desc.ApiPreference);
+        _logicalDevice = _graphicsApi.CreateAndLoadOptimalLogicalDevice(new LogicalDeviceDesc
         {
 #if DEBUG
             EnableValidationLayers = true
 #endif
         });
 
-        GraphicsQueue = LogicalDevice.CreateCommandQueue(new CommandQueueDesc { QueueType = QueueType.Graphics });
-        ComputeQueue = LogicalDevice.CreateCommandQueue(new CommandQueueDesc { QueueType = QueueType.Compute });
-        CopyQueue = LogicalDevice.CreateCommandQueue(new CommandQueueDesc { QueueType = QueueType.Copy });
+        _graphicsQueue = _logicalDevice.CreateCommandQueue(new CommandQueueDesc { QueueType = QueueType.Graphics });
+        _computeQueue = _logicalDevice.CreateCommandQueue(new CommandQueueDesc { QueueType = QueueType.Compute });
+        _copyQueue = _logicalDevice.CreateCommandQueue(new CommandQueueDesc { QueueType = QueueType.Copy });
 
-        Width = (uint)window.GetSize().Width;
-        Height = (uint)window.GetSize().Height;
+        _width = (uint)window.GetSize().Width;
+        _height = (uint)window.GetSize().Height;
 
-        SwapChain = LogicalDevice.CreateSwapChain(new SwapChainDesc
+        _swapChain = _logicalDevice.CreateSwapChain(new SwapChainDesc
         {
             AllowTearing = desc.AllowTearing,
             BackBufferFormat = desc.BackBufferFormat,
             DepthBufferFormat = desc.DepthBufferFormat,
-            CommandQueue = GraphicsQueue,
+            CommandQueue = _graphicsQueue,
             WindowHandle = window.GetGraphicsWindowHandle(),
-            Width = Width,
-            Height = Height,
+            Width = _width,
+            Height = _height,
             NumBuffers = desc.NumFrames
         });
-        
-        for (uint i = 0; i < NumFrames; ++i)
+
+        for (uint i = 0; i < _numFrames; ++i)
         {
-            ResourceTracking.TrackTexture(SwapChain.GetRenderTarget(i), QueueType.Graphics);
+            _resourceTracking.TrackTexture(_swapChain.GetRenderTarget(i), QueueType.Graphics);
         }
 
-        UniformBufferArena = new UniformBufferArena(LogicalDevice);
-        BindGroupLayoutStore = new BindGroupLayoutStore(LogicalDevice);
-        RootSignatureStore = new RootSignatureStore(LogicalDevice, BindGroupLayoutStore);
-        NullTexture = new NullTexture(LogicalDevice);
+        _uniformBufferArena = new UniformBufferArena(_logicalDevice);
+        _bindGroupLayoutStore = new BindGroupLayoutStore(_logicalDevice);
+        _rootSignatureStore = new RootSignatureStore(_logicalDevice, _bindGroupLayoutStore);
+        _emptyTexture = new ColorTexture(_logicalDevice, 0, 0, 0, 0, "EmptyTexture");
+        _missingTexture = new ColorTexture(_logicalDevice, 255, 0, 255, 255, "MissingTexture");
+
+        _instance = this;
     }
 
-    public void Resize(uint width, uint height)
+    private void _Resize(uint width, uint height)
     {
         if (width == 0 || height == 0)
         {
             return;
         }
 
-        WaitIdle();
-        SwapChain.Resize(width, height);
-        Width = width;
-        Height = height;
+        _WaitIdle();
+        _swapChain.Resize(width, height);
+        _width = width;
+        _height = height;
 
-        for (uint i = 0; i < NumFrames; ++i)
+        for (uint i = 0; i < _numFrames; ++i)
         {
-            ResourceTracking.TrackTexture(SwapChain.GetRenderTarget(i), QueueType.Graphics);
+            _resourceTracking.TrackTexture(_swapChain.GetRenderTarget(i), QueueType.Graphics);
         }
     }
 
-    public void WaitIdle()
+    private void _WaitIdle()
     {
-        LogicalDevice.WaitIdle();
-        GraphicsQueue.WaitIdle();
+        _logicalDevice.WaitIdle();
+        _graphicsQueue.WaitIdle();
     }
 
     public void Dispose()
     {
-        WaitIdle();
-        ResourceTracking.Dispose();
-        NullTexture.Dispose();
-        UniformBufferArena.Dispose();
-        RootSignatureStore.Dispose();
-        BindGroupLayoutStore.Dispose();
-        SwapChain.Dispose();
-        CopyQueue.Dispose();
-        ComputeQueue.Dispose();
-        GraphicsQueue.Dispose();
-        LogicalDevice.Dispose();
+        _WaitIdle();
+        _resourceTracking.Dispose();
+        _emptyTexture.Dispose();
+        _missingTexture.Dispose();
+        _uniformBufferArena.Dispose();
+        _rootSignatureStore.Dispose();
+        _bindGroupLayoutStore.Dispose();
+        _swapChain.Dispose();
+        _copyQueue.Dispose();
+        _computeQueue.Dispose();
+        _graphicsQueue.Dispose();
+        _logicalDevice.Dispose();
         GraphicsApi.ReportLiveObjects();
     }
 }

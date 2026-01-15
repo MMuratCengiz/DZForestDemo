@@ -3,17 +3,11 @@ using DenOfIz;
 
 namespace NiziKit.Graphics.Binding;
 
-/// <summary>
-/// Creates and manages a 1x1 purple placeholder texture commonly used as a fallback when textures are missing or not
-/// yet loaded.
-/// </summary>
-public sealed class NullTexture : IDisposable
+public sealed class ColorTexture : IDisposable
 {
-    private static readonly byte[] PurplePixel = [255, 0, 255, 255]; // RGBA
-
     public Texture Texture { get; }
 
-    public NullTexture(LogicalDevice device)
+    public ColorTexture(LogicalDevice device, byte r, byte g, byte b, byte a, string debugName)
     {
         Texture = device.CreateTexture(new TextureDesc
         {
@@ -24,23 +18,23 @@ public sealed class NullTexture : IDisposable
             ArraySize = 1,
             Format = Format.R8G8B8A8Unorm,
             Usage = (uint)(TextureUsageFlagBits.CopyDst | TextureUsageFlagBits.TextureBinding),
-            DebugName = StringView.Create("NullTexture_Purple")
+            DebugName = StringView.Create(debugName)
         });
-        UploadPixelData(device);
+        UploadPixelData(device, [r, g, b, a], debugName);
     }
 
-    private void UploadPixelData(LogicalDevice device)
+    private void UploadPixelData(LogicalDevice device, byte[] pixelData, string debugName)
     {
         var stagingBuffer = device.CreateBuffer(new BufferDesc
         {
             NumBytes = 4, // 4 bytes for RGBA
             HeapType = HeapType.CpuGpu,
             Usage = (uint)BufferUsageFlagBits.CopySrc,
-            DebugName = StringView.Create("NullTexture_Staging")
+            DebugName = StringView.Create($"{debugName}_Staging")
         });
 
         var mappedPtr = stagingBuffer.MapMemory();
-        Marshal.Copy(PurplePixel, 0, mappedPtr, 4);
+        Marshal.Copy(pixelData, 0, mappedPtr, 4);
         stagingBuffer.UnmapMemory();
 
         var commandQueue = device.CreateCommandQueue(new CommandQueueDesc

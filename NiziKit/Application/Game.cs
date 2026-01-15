@@ -2,37 +2,49 @@ using System.Runtime.CompilerServices;
 using DenOfIz;
 using NiziKit.Application.Timing;
 using NiziKit.Application.Windowing;
-using NiziKit.Core;
 using NiziKit.Graphics;
+using NiziKit.Services;
 
 namespace NiziKit.Application;
 
 public class Game : IDisposable
 {
+    private static Game? _instance;
+    public static Game Instance => _instance ?? throw new InvalidOperationException("Game not initialized");
+
     private readonly FixedTimestep _fixedTimestep;
-    private readonly World _world;
-    
+    private readonly GameComposition _composition;
+
     public AppWindow Window { get; }
     public FrameClock Clock { get; }
-    public GraphicsContext Graphics { get; }
-    public World World => _world;
-    
     public bool IsRunning { get; set; }
     
-    static Game()
+    public static void Run<TGame>(GameDesc? desc = null) where TGame : Game
     {
+        if (_instance != null)
+        {
+            throw new InvalidOperationException("A game is already running. Only one game instance is allowed per process.");
+        }
+
         DenOfIzRuntime.Initialize();
         Engine.Init(new EngineDesc());
+        using var game = (TGame)Activator.CreateInstance(typeof(TGame), desc)!;
+        game.Run();
     }
 
-    public Game(GameDesc? desc = null)
+    protected Game(GameDesc? desc = null)
     {
         desc ??= new GameDesc();
         _fixedTimestep = new FixedTimestep(desc.FixedUpdateRate);
         Window = new AppWindow(desc.Title, desc.Width, desc.Height);
         Clock = new FrameClock();
-        Graphics = new GraphicsContext(Window.NativeWindow, desc.Graphics);
-        _world = new World(Graphics);
+
+        _composition = new GameComposition(Window.NativeWindow, desc.Graphics);
+        _ = _composition.Graphics;
+        _ = _composition.Assets;
+        _ = _composition.World;
+
+        _instance = this;
     }
 
     
@@ -42,7 +54,7 @@ public class Game : IDisposable
     protected virtual void OnEvent(ref Event ev) { }
     protected virtual void OnShutdown() { }
     
-    public void Run()
+    private void Run()
     {
         Window.Show();
         Load(this);
@@ -65,8 +77,8 @@ public class Game : IDisposable
 
     public void Dispose()
     {
-        _world.Dispose();
-        Graphics.Dispose();
+        _instance = null;
+        _composition.Dispose();
         Window.Dispose();
         Engine.Shutdown();
     }
@@ -112,7 +124,7 @@ public class Game : IDisposable
 
                 if (ev.Window.Event == WindowEventType.Resized)
                 {
-                    Graphics.Resize((uint)ev.Window.Data1, (uint)ev.Window.Data2);
+                    GraphicsContext.Resize((uint)ev.Window.Data1, (uint)ev.Window.Data2);
                 }
             }
 

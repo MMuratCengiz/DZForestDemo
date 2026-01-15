@@ -56,7 +56,8 @@
       "WebFetch(domain:godotengine.org)",
       "Bash(ls:*)",
       "WebFetch(domain:docs.godotengine.org)",
-      "WebFetch(domain:mzaks.medium.com)"
+      "WebFetch(domain:mzaks.medium.com)",
+      "WebFetch(domain:ignatandrei.github.io)"
     ]
   }
 }

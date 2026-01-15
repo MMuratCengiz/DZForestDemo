@@ -6,7 +6,7 @@ namespace NiziKit.Assets;
 
 public class DefaultMaterial : Material
 {
-    public DefaultMaterial(GraphicsContext context, ShaderStore shaderStore) : base(context)
+    internal DefaultMaterial(ShaderStore shaderStore)
     {
         Name = "Default";
         GpuShader = shaderStore["Builtin/Shaders/Default"];

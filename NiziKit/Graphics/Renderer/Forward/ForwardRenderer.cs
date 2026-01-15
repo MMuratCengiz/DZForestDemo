@@ -8,7 +8,6 @@ namespace NiziKit.Graphics.Renderer.Forward;
 
 public class ForwardRenderer : IRenderer
 {
-    private readonly GraphicsContext _ctx;
     private readonly RenderGraph _graph;
     private readonly RenderPass[] _passes;
     private readonly PresentPass _presentPass;
@@ -20,22 +19,20 @@ public class ForwardRenderer : IRenderer
     private float _lastFrameTime;
     private float _totalTime;
 
-    public ForwardRenderer(World world, GraphicsContext ctx)
+    public ForwardRenderer()
     {
-        _ctx = ctx;
-        _graph = new RenderGraph(ctx, world.RenderWorld);
+        _graph = new RenderGraph();
+        _gpuView = new GpuView();
 
-        _gpuView = new GpuView(ctx);
-        
-        _forwardScenePass = new ForwardScenePass(ctx, _gpuView);
+        _forwardScenePass = new ForwardScenePass(_gpuView);
         _passes = [_forwardScenePass];
-        _presentPass = new BlittingPresentPass(ctx);
+        _presentPass = new BlittingPresentPass();
     }
 
-    public void Render(World world)
+    public void Render()
     {
-        var renderWorld = world.RenderWorld;
-        var scene = world.CurrentScene;
+        var renderWorld = World.RenderWorld;
+        var scene = World.CurrentScene;
         if (scene == null)
         {
             return;
@@ -47,8 +44,6 @@ public class ForwardRenderer : IRenderer
         _totalTime = currentTime;
 
         _gpuView.Update(scene, _graph.FrameIndex, deltaTime, _totalTime);
-        
-        _forwardScenePass.Assets = world.Assets;
         _graph.Execute(_passes.AsSpan(), _presentPass);
     }
 

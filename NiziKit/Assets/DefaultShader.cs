@@ -7,7 +7,7 @@ public class DefaultShader
 {
     public GpuShader Value { get; }
 
-    public DefaultShader(GraphicsContext context)
+    public DefaultShader()
     {
         var program = BuiltinShaderProgram.Load("DefaultShader")
                    ?? throw new InvalidOperationException("DefaultShader not found");
@@ -19,7 +19,7 @@ public class DefaultShader
 
         var renderTarget = new RenderTargetDesc
         {
-            Format = context.BackBufferFormat,
+            Format = GraphicsContext.BackBufferFormat,
             Blend = blendDesc
         };
 
@@ -36,10 +36,10 @@ public class DefaultShader
                 CompareOp = CompareOp.Less,
                 Write = true
             },
-            DepthStencilAttachmentFormat = context.DepthBufferFormat,
+            DepthStencilAttachmentFormat = GraphicsContext.DepthBufferFormat,
             RenderTargets = renderTargets
         };
 
-        Value = GpuShader.Graphics(context, program, graphicsDesc);
+        Value = GpuShader.Graphics(program, graphicsDesc);
     }
 }

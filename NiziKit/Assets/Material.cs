@@ -10,14 +10,12 @@ public abstract class Material : IDisposable
     public Texture2d? Normal { get; set; }
     public Texture2d? Metallic { get; set; }
     public Texture2d? Roughness { get; set; }
-    public  GpuShader? GpuShader { get; set; }
+    public GpuShader? GpuShader { get; set; }
 
-    protected Material(GraphicsContext context)
-    {
-    }
-    
+    protected static GraphicsContext Context => GraphicsContext.Instance;
+
     public virtual void Dispose()
     {
-        GpuShader?.Dispose();
+        // Note: GpuShader is owned by ShaderStore, not by Material
     }
 }

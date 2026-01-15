@@ -13,7 +13,7 @@ public class GameObject(string name = "GameObject")
 
     public GameObject? Parent { get; private set; }
 
-    internal IWorldEventListener? WorldEventListener { get; set; }
+    internal bool IsInWorld { get; set; }
 
     private readonly List<GameObject> _children = [];
     public IReadOnlyList<GameObject> Children => _children;
@@ -143,14 +143,14 @@ public class GameObject(string name = "GameObject")
     {
         var component = new T { };
         _components.Add(component);
-        WorldEventListener?.ComponentAdded(this, component);
+        if (IsInWorld) World.OnComponentAdded(this, component);
         return component;
     }
 
     public void AddComponent(IComponent component)
     {
         _components.Add(component);
-        WorldEventListener?.ComponentAdded(this, component);
+        if (IsInWorld) World.OnComponentAdded(this, component);
     }
 
     public bool RemoveComponent<T>() where T : class, IComponent
@@ -160,7 +160,7 @@ public class GameObject(string name = "GameObject")
             if (_components[i] is T component)
             {
                 _components.RemoveAt(i);
-                WorldEventListener?.ComponentRemoved(this, component);
+                if (IsInWorld) World.OnComponentRemoved(this, component);
                 return true;
             }
         }

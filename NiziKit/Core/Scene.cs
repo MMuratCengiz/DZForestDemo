@@ -1,10 +1,9 @@
 namespace NiziKit.Core;
 
-public abstract class Scene(World world, Assets.Assets assets, string name = "Scene") : IDisposable
+public abstract class Scene(string name = "Scene") : IDisposable
 {
     public string Name { get; set; } = name;
-    protected World World { get; } = world;
-    public Assets.Assets Assets { get; internal set; } = assets;
+    protected World World => World.Instance;
 
     private readonly List<GameObject> _rootObjects = [];
     public IReadOnlyList<GameObject> RootObjects => _rootObjects;
@@ -46,7 +45,7 @@ public abstract class Scene(World world, Assets.Assets assets, string name = "Sc
 
     public void Add(GameObject obj)
     {
-        World.GameObjectCreated(obj);
+        World.OnGameObjectCreated(obj);
         _rootObjects.Add(obj);
         RegisterObjectByType(obj);
     }
@@ -60,7 +59,7 @@ public abstract class Scene(World world, Assets.Assets assets, string name = "Sc
 
     public void Destroy(GameObject obj)
     {
-        World.GameObjectDestroyed(obj);
+        World.OnGameObjectDestroyed(obj);
         _rootObjects.Remove(obj);
         UnregisterObjectByType(obj);
     }

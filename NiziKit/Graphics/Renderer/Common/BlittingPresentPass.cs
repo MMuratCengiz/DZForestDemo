@@ -22,7 +22,7 @@ public class BlittingPresentPass : PresentPass
     public override string Name => "Blitting Present Pass";
     public override ReadOnlySpan<string> Reads => ReadAttachments;
 
-    public BlittingPresentPass(GraphicsContext context) : base(context)
+    public BlittingPresentPass()
     {
         _program = BuiltinShaderProgram.Load("BlitShader")
                    ?? throw new InvalidOperationException("BlitShader not found");
@@ -35,7 +35,7 @@ public class BlittingPresentPass : PresentPass
 
         var renderTarget = new RenderTargetDesc
         {
-            Format = context.BackBufferFormat,
+            Format = GraphicsContext.BackBufferFormat,
             Blend = blendDesc
         };
 
@@ -44,13 +44,13 @@ public class BlittingPresentPass : PresentPass
 
         var reflection = _program.Reflect();
         var bindGroupLayoutDescs = reflection.BindGroupLayouts.ToArray();
-        var blitBindGroupLayout = context.LogicalDevice.CreateBindGroupLayout(bindGroupLayoutDescs[0]);
+        var blitBindGroupLayout = GraphicsContext.Device.CreateBindGroupLayout(bindGroupLayoutDescs[0]);
         var rootSigDesc = new RootSignatureDesc
         {
             BindGroupLayouts = BindGroupLayoutArray.Create([blitBindGroupLayout]),
         };
-        _rootSignature = context.LogicalDevice.CreateRootSignature(rootSigDesc);
-        _layout = context.LogicalDevice.CreateInputLayout(reflection.InputLayout);
+        _rootSignature = GraphicsContext.Device.CreateRootSignature(rootSigDesc);
+        _layout = GraphicsContext.Device.CreateInputLayout(reflection.InputLayout);
 
         var pipelineDesc = new PipelineDesc
         {
@@ -73,8 +73,8 @@ public class BlittingPresentPass : PresentPass
             }
         };
 
-        _pipeline = context.LogicalDevice.CreatePipeline(pipelineDesc);
-        _linearSampler = context.LogicalDevice.CreateSampler(new SamplerDesc
+        _pipeline = GraphicsContext.Device.CreatePipeline(pipelineDesc);
+        _linearSampler = GraphicsContext.Device.CreateSampler(new SamplerDesc
         {
             AddressModeU = SamplerAddressMode.ClampToEdge,
             AddressModeV = SamplerAddressMode.ClampToEdge,
@@ -84,7 +84,7 @@ public class BlittingPresentPass : PresentPass
             MipmapMode = MipmapMode.Nearest
         });
 
-        _bindGroups = new CachedBindGroup(context.LogicalDevice, blitBindGroupLayout, (int)context.NumFrames, 4);
+        _bindGroups = new CachedBindGroup(GraphicsContext.Device, blitBindGroupLayout, (int)GraphicsContext.NumFrames, 4);
     }
 
     public override void Execute(ref RenderPassContext ctx, Texture swapChainImage)
@@ -106,7 +106,7 @@ public class BlittingPresentPass : PresentPass
 
         _bindGroups.BeginUpdate((int)ctx.FrameIndex);
         _bindGroups.SrvTexture(0, sceneColor);
-        _bindGroups.SrvTexture(1, Context.NullTexture.Texture);
+        _bindGroups.SrvTexture(1, GraphicsContext.EmptyTexture.Texture);
         _bindGroups.Sampler(0, _linearSampler);
         var bindGroup = _bindGroups.EndUpdate();
 

@@ -20,13 +20,12 @@ public class GpuMaterial
     private readonly GpuBufferView _dataBuffer;
     private readonly BindGroup _bindGroup;
     private readonly Sampler _sampler;
-    private readonly GraphicsContext _ctx;
     private readonly object _updateLock = new();
     private GpuMaterialData _data; // TODO
     private bool _isDirty;
 
 
-    public static GpuMaterial Get(GraphicsContext context, Material material)
+    public static GpuMaterial Get(Material material)
     {
         if (Instances.TryGetValue(material, out var existing))
         {
@@ -40,15 +39,14 @@ public class GpuMaterial
                 return existing;
             }
 
-            var instance = new GpuMaterial(context, material);
+            var instance = new GpuMaterial(material);
             Instances.TryAdd(material, instance);
             return instance;
         }
     }
 
-    public GpuMaterial(GraphicsContext context, Material material)
+    public GpuMaterial(Material material)
     {
-        _ctx = context;
         _material = material;
         _albedo = material.Albedo;
         _normal = material.Normal;
@@ -57,11 +55,11 @@ public class GpuMaterial
 
         var bindGroupDesc = new BindGroupDesc
         {
-            Layout = context.BindGroupLayoutStore.Material
+            Layout = GraphicsContext.BindGroupLayoutStore.Material
         };
-        _bindGroup = context.LogicalDevice.CreateBindGroup(bindGroupDesc);
-        _dataBuffer = _ctx.UniformBufferArena.Request(Marshal.SizeOf<GpuMaterialData>());
-        _sampler = context.LogicalDevice.CreateSampler(new SamplerDesc
+        _bindGroup = GraphicsContext.Device.CreateBindGroup(bindGroupDesc);
+        _dataBuffer = GraphicsContext.UniformBufferArena.Request(Marshal.SizeOf<GpuMaterialData>());
+        _sampler = GraphicsContext.Device.CreateSampler(new SamplerDesc
         {
             AddressModeU = SamplerAddressMode.Repeat,
             AddressModeV = SamplerAddressMode.Repeat,
@@ -76,7 +74,7 @@ public class GpuMaterial
 
     private void BindTexture(uint binding, Texture? texture)
     {
-        _bindGroup.SrvTexture(binding, texture ?? _ctx.NullTexture.Texture);
+        _bindGroup.SrvTexture(binding, texture ?? GraphicsContext.MissingTexture.Texture);
     }
 
     public BindGroup BindGroup

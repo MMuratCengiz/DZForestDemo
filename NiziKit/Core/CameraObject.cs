@@ -28,8 +28,12 @@ public class CameraObject(string name) : GameObject(name)
     {
         get
         {
-            var forward = Vector3.Transform(-Vector3.UnitZ, LocalRotation);
-            return Vector3.Normalize(forward);
+            var cosP = MathF.Cos(_pitch);
+            return new Vector3(
+                MathF.Sin(_yaw) * cosP,
+                MathF.Sin(_pitch),
+                MathF.Cos(_yaw) * cosP
+            );
         }
     }
 

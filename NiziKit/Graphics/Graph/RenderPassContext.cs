@@ -5,8 +5,6 @@ namespace NiziKit.Graphics.Graph;
 
 public struct RenderPassContext
 {
-    public RenderWorld RenderWorld;
-    public GraphicsContext GraphicsContext;
     public FrameResources Resources;
     public CommandList CommandList;
     public uint FrameIndex;
@@ -14,7 +12,7 @@ public struct RenderPassContext
     public uint Height;
 
     public ResourceTracking ResourceTracking => GraphicsContext.ResourceTracking;
-    public LogicalDevice LogicalDevice => GraphicsContext.LogicalDevice;
+    public LogicalDevice LogicalDevice => GraphicsContext.Device;
 
     public Texture GetTexture(string name) => Resources.GetTexture(name);
     public Buffer GetBuffer(string name) => Resources.GetBuffer(name);

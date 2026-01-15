@@ -6,12 +6,17 @@
         <Nullable>enable</Nullable>
         <RootNamespace>NiziKit</RootNamespace>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
     </PropertyGroup>
 
     <ItemGroup>
       <PackageReference Include="BepuPhysics" Version="2.4.0" />
       <PackageReference Include="DenOfIzGraphics" Version="0.5.9-alpha" />
       <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
+      <PackageReference Include="Pure.DI" Version="2.3.1">
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PrivateAssets>all</PrivateAssets>
+      </PackageReference>
     </ItemGroup>
 
     <ItemGroup>
@@ -22,6 +27,10 @@
 
     <ItemGroup>
       <None Include="build\NiziKit.targets" Pack="true" PackagePath="build\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Graphics\Recording\" />
     </ItemGroup>
 
 </Project>

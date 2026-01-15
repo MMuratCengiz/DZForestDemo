@@ -1,5 +1,4 @@
 using NiziKit.GLTF;
-using NiziKit.Graphics;
 
 namespace NiziKit.Assets;
 
@@ -12,13 +11,13 @@ public class Model : IAsset
     public List<Animation> Animations { get; set; } = [];
     public List<Material> Materials { get; set; } = [];
 
-    public void Load(GraphicsContext context, string path)
+    public void Load(string path)
     {
         var gltfModel = GltfModel.Load(path);
         ApplyGltfModel(gltfModel);
     }
 
-    public async Task LoadAsync(GraphicsContext context, string path, CancellationToken ct = default)
+    public async Task LoadAsync(string path, CancellationToken ct = default)
     {
         var gltfModel = await GltfModel.LoadAsync(path, null, ct);
         ApplyGltfModel(gltfModel);

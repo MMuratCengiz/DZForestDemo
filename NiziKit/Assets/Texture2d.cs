@@ -18,16 +18,16 @@ public class Texture2d : IAsset
     {
     }
 
-    public void Load(GraphicsContext context, string path)
+    public void Load(string path)
     {
         var bytes = Content.ReadBytes($"Textures/{path}");
-        LoadFromBytes(context, GetTextureExtension(path), bytes, path);
+        LoadFromBytes(GetTextureExtension(path), bytes, path);
     }
 
-    public async Task LoadAsync(GraphicsContext context, string path, CancellationToken ct = default)
+    public async Task LoadAsync(string path, CancellationToken ct = default)
     {
         var bytes = await Content.ReadBytesAsync($"Textures/{path}", ct);
-        LoadFromBytes(context, GetTextureExtension(path), bytes, path);
+        LoadFromBytes(GetTextureExtension(path), bytes, path);
     }
 
     private static TextureExtension GetTextureExtension(string path)
@@ -47,9 +47,9 @@ public class Texture2d : IAsset
         };
     }
 
-    public void LoadFromBytes(GraphicsContext context, TextureExtension extension, byte[] bytes, string name)
+    public void LoadFromBytes(TextureExtension extension, byte[] bytes, string name)
     {
-        var device = context.LogicalDevice;
+        var device = GraphicsContext.Device;
 
         var textureDataDesc = new TextureCreateFromDataDesc
         {

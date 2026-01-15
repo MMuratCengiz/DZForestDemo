@@ -65,6 +65,7 @@ public sealed class UniformBufferArena : IDisposable
     {
         foreach (var chunk in _chunks)
         {
+            chunk.Buffer.UnmapMemory();
             chunk.Buffer.Dispose();
         }
     }

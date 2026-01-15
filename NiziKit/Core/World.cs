@@ -5,54 +5,60 @@ using NiziKit.Physics;
 
 namespace NiziKit.Core;
 
-public class World : IWorldEventListener, IDisposable
+public class World : IDisposable
 {
+    private static World? _instance;
+    public static World Instance => _instance ?? throw new InvalidOperationException("World not initialized");
+
+    public static Scene? CurrentScene => Instance._currentScene;
+    public static PhysicsWorld PhysicsWorld => Instance._physicsWorld;
+    public static RenderWorld RenderWorld => Instance._renderWorld;
+    public static AssetWorld AssetWorld => Instance._assetWorld;
+
+    public static void LoadScene(Scene scene) => Instance._LoadScene(scene);
+
+    internal static void OnGameObjectCreated(GameObject go) => Instance._OnGameObjectCreated(go);
+    internal static void OnGameObjectDestroyed(GameObject go) => Instance._OnGameObjectDestroyed(go);
+    internal static void OnComponentAdded(GameObject go, IComponent component) => Instance._OnComponentAdded(go, component);
+    internal static void OnComponentRemoved(GameObject go, IComponent component) => Instance._OnComponentRemoved(go, component);
+
     private readonly IWorldEventListener[] _worldEventListeners;
 
-    public Scene? CurrentScene { get; private set; }
-    public PhysicsWorld PhysicsWorld { get; }
-    public RenderWorld RenderWorld { get; }
-    public AssetWorld AssetWorld { get; }
-    public Assets.Assets Assets { get; }
+    private Scene? _currentScene;
+    private readonly PhysicsWorld _physicsWorld;
+    private readonly RenderWorld _renderWorld;
+    private readonly AssetWorld _assetWorld;
 
-    public World(GraphicsContext context)
+    public World()
     {
-        Assets = new Assets.Assets(context);
-        PhysicsWorld = new PhysicsWorld();
-        RenderWorld = new RenderWorld();
-        AssetWorld = new AssetWorld(Assets);
+        _physicsWorld = new PhysicsWorld();
+        _renderWorld = new RenderWorld();
+        _assetWorld = new AssetWorld();
 
-        _worldEventListeners = [AssetWorld, PhysicsWorld, RenderWorld];
+        _worldEventListeners = [_assetWorld, _physicsWorld, _renderWorld];
+
+        _instance = this;
     }
 
-    public void LoadScene(Scene scene)
+    private void _LoadScene(Scene scene)
     {
-        CurrentScene?.Dispose();
+        _currentScene?.Dispose();
         foreach (var listener in _worldEventListeners)
         {
             listener.SceneReset();
         }
 
-        CurrentScene = scene;
-        scene.Assets = Assets;
+        _currentScene = scene;
         scene.Load();
     }
 
-    public void SceneReset()
+    private void _OnGameObjectCreated(GameObject go)
     {
-        foreach (var listener in _worldEventListeners)
-        {
-            listener.SceneReset();
-        }
-    }
-
-    public void GameObjectCreated(GameObject go)
-    {
-        go.WorldEventListener = this;
+        go.IsInWorld = true;
 
         foreach (var child in go.Children)
         {
-            GameObjectCreated(child);
+            _OnGameObjectCreated(child);
         }
 
         foreach (var listener in _worldEventListeners)
@@ -61,11 +67,11 @@ public class World : IWorldEventListener, IDisposable
         }
     }
 
-    public void GameObjectDestroyed(GameObject go)
+    private void _OnGameObjectDestroyed(GameObject go)
     {
         foreach (var child in go.Children)
         {
-            GameObjectDestroyed(child);
+            _OnGameObjectDestroyed(child);
         }
 
         foreach (var listener in _worldEventListeners)
@@ -73,10 +79,10 @@ public class World : IWorldEventListener, IDisposable
             listener.GameObjectDestroyed(go);
         }
 
-        go.WorldEventListener = null;
+        go.IsInWorld = false;
     }
 
-    public void ComponentAdded(GameObject go, IComponent component)
+    private void _OnComponentAdded(GameObject go, IComponent component)
     {
         foreach (var listener in _worldEventListeners)
         {
@@ -84,7 +90,7 @@ public class World : IWorldEventListener, IDisposable
         }
     }
 
-    public void ComponentRemoved(GameObject go, IComponent component)
+    private void _OnComponentRemoved(GameObject go, IComponent component)
     {
         foreach (var listener in _worldEventListeners)
         {
@@ -94,8 +100,7 @@ public class World : IWorldEventListener, IDisposable
 
     public void Dispose()
     {
-        CurrentScene?.Dispose();
-        PhysicsWorld.Dispose();
-        Assets.Dispose();
+        _currentScene?.Dispose();
+        _physicsWorld.Dispose();
     }
 }

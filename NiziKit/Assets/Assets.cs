@@ -7,12 +7,11 @@ namespace NiziKit.Assets;
 
 public sealed class Assets : IDisposable
 {
+    private static Assets? _instance;
+    public static Assets Instance => _instance ?? throw new InvalidOperationException("Assets not initialized");
+
     private readonly BufferPool _vertexPool;
     private readonly BufferPool _indexPool;
-    private readonly GraphicsContext _context;
-
-    public GraphicsContext GraphicsContext =>
-        _context; // TODO this has no business being public, come up with another way
 
     private readonly Dictionary<string, Model> _modelCache = new();
     private readonly Dictionary<string, Texture2d> _textureCache = new();
@@ -26,19 +25,44 @@ public sealed class Assets : IDisposable
     private readonly List<Texture2d> _textureList = [];
     private readonly List<Material> _materialList = [];
 
-    public Assets(GraphicsContext context)
+    public Assets()
     {
-        _context = context;
-        _vertexPool = new BufferPool(context.LogicalDevice,
+        _vertexPool = new BufferPool(GraphicsContext.Device,
             (uint)(BufferUsageFlagBits.Vertex | BufferUsageFlagBits.CopyDst));
-        _indexPool = new BufferPool(context.LogicalDevice,
+        _indexPool = new BufferPool(GraphicsContext.Device,
             (uint)(BufferUsageFlagBits.Index | BufferUsageFlagBits.CopyDst));
 
-        _shaderStore.Register("Builtin/Shaders/Default", new DefaultShader(context).Value);
-        _materialCache["Builtin/Materials/Default"] = new DefaultMaterial(context, _shaderStore);
+        _shaderStore.Register("Builtin/Shaders/Default", new DefaultShader().Value);
+        _materialCache["Builtin/Materials/Default"] = new DefaultMaterial(_shaderStore);
+
+        _instance = this;
     }
 
-    public void Upload(Mesh mesh)
+    public static Model LoadModel(string path) => Instance._LoadModel(path);
+    public static Task<Model> LoadModelAsync(string path, CancellationToken ct = default) => Instance._LoadModelAsync(path, ct);
+    public static Texture2d LoadTexture(string path) => Instance._LoadTexture(path);
+    public static Task<Texture2d> LoadTextureAsync(string path, CancellationToken ct = default) => Instance._LoadTextureAsync(path, ct);
+    public static Skeleton LoadSkeleton(string path) => Instance._LoadSkeleton(path);
+    public static Animation LoadAnimation(string path, Skeleton skeleton) => Instance._LoadAnimation(path, skeleton);
+    public static void RegisterShader(string name, GpuShader shader) => Instance._RegisterShader(name, shader);
+    public static GpuShader? GetShader(string name) => Instance._GetShader(name);
+    public static Material RegisterMaterial(Material material) => Instance._RegisterMaterial(material);
+    public static Material? GetMaterial(string name) => Instance._GetMaterial(name);
+    public static Mesh CreateBox(float width, float height, float depth) => Instance._CreateBox(width, height, depth);
+    public static Mesh CreateSphere(float diameter, uint tessellation = 16) => Instance._CreateSphere(diameter, tessellation);
+    public static Mesh CreateQuad(float width, float height) => Instance._CreateQuad(width, height);
+    public static Mesh CreateCylinder(float diameter, float height, uint tessellation = 16) => Instance._CreateCylinder(diameter, height, tessellation);
+    public static Mesh CreateCone(float diameter, float height, uint tessellation = 16) => Instance._CreateCone(diameter, height, tessellation);
+    public static Mesh CreateTorus(float diameter, float thickness, uint tessellation = 16) => Instance._CreateTorus(diameter, thickness, tessellation);
+    public static Mesh? GetMeshByIndex(uint index) => Instance._GetMeshByIndex(index);
+    public static void Upload(Mesh mesh) => Instance._Upload(mesh);
+    public static Mesh Register(Mesh mesh, string? cacheKey = null) => Instance._Register(mesh, cacheKey);
+
+    public static IReadOnlyList<Mesh> AllMeshes => Instance._meshList;
+    public static IReadOnlyList<Texture2d> AllTextures => Instance._textureList;
+    public static IReadOnlyList<Material> AllMaterials => Instance._materialList;
+
+    private void _Upload(Mesh mesh)
     {
         if (mesh.IsUploaded || mesh.CpuVertices == null || mesh.CpuIndices == null)
         {
@@ -52,14 +76,14 @@ public sealed class Assets : IDisposable
         mesh.CpuIndices = null;
     }
 
-    public Mesh Register(Mesh mesh, string? cacheKey = null)
+    private Mesh _Register(Mesh mesh, string? cacheKey = null)
     {
         if (cacheKey != null && _meshCache.TryGetValue(cacheKey, out var cached))
         {
             return cached;
         }
 
-        Upload(mesh);
+        _Upload(mesh);
         mesh.Index = (uint)_meshList.Count;
         _meshList.Add(mesh);
 
@@ -78,7 +102,7 @@ public sealed class Assets : IDisposable
 
         var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
         {
-            Device = _context.LogicalDevice,
+            Device = GraphicsContext.Device,
             IssueBarriers = false
         });
         batchCopy.Begin();
@@ -116,7 +140,7 @@ public sealed class Assets : IDisposable
 
         var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
         {
-            Device = _context.LogicalDevice,
+            Device = GraphicsContext.Device,
             IssueBarriers = false
         });
         batchCopy.Begin();
@@ -146,7 +170,7 @@ public sealed class Assets : IDisposable
         return new IndexBufferView(gpuView, IndexType.Uint32, (uint)indices.Length);
     }
 
-    public Model LoadModel(string path)
+    private Model _LoadModel(string path)
     {
         if (_modelCache.TryGetValue(path, out var cached))
         {
@@ -154,18 +178,18 @@ public sealed class Assets : IDisposable
         }
 
         var model = new Model();
-        model.Load(_context, path);
+        model.Load(path);
 
         foreach (var mesh in model.Meshes)
         {
-            Register(mesh, $"{path}:{mesh.Name}");
+            _Register(mesh, $"{path}:{mesh.Name}");
         }
 
         _modelCache[path] = model;
         return model;
     }
 
-    public async Task<Model> LoadModelAsync(string path, CancellationToken ct = default)
+    private async Task<Model> _LoadModelAsync(string path, CancellationToken ct = default)
     {
         if (_modelCache.TryGetValue(path, out var cached))
         {
@@ -173,18 +197,18 @@ public sealed class Assets : IDisposable
         }
 
         var model = new Model();
-        await model.LoadAsync(_context, path, ct);
+        await model.LoadAsync(path, ct);
 
         foreach (var mesh in model.Meshes)
         {
-            Register(mesh, $"{path}:{mesh.Name}");
+            _Register(mesh, $"{path}:{mesh.Name}");
         }
 
         _modelCache[path] = model;
         return model;
     }
 
-    public Texture2d LoadTexture(string path)
+    private Texture2d _LoadTexture(string path)
     {
         if (_textureCache.TryGetValue(path, out var cached))
         {
@@ -192,13 +216,13 @@ public sealed class Assets : IDisposable
         }
 
         var texture = new Texture2d();
-        texture.Load(_context, path);
+        texture.Load(path);
         _textureList.Add(texture);
         _textureCache[path] = texture;
         return texture;
     }
 
-    public async Task<Texture2d> LoadTextureAsync(string path, CancellationToken ct = default)
+    private async Task<Texture2d> _LoadTextureAsync(string path, CancellationToken ct = default)
     {
         if (_textureCache.TryGetValue(path, out var cached))
         {
@@ -206,13 +230,13 @@ public sealed class Assets : IDisposable
         }
 
         var texture = new Texture2d();
-        await texture.LoadAsync(_context, path, ct);
+        await texture.LoadAsync(path, ct);
         _textureList.Add(texture);
         _textureCache[path] = texture;
         return texture;
     }
 
-    public Skeleton LoadSkeleton(string path)
+    private Skeleton _LoadSkeleton(string path)
     {
         var resolvedPath = AssetPaths.ResolveSkeleton(path);
         if (_skeletonCache.TryGetValue(resolvedPath, out var cached))
@@ -225,7 +249,7 @@ public sealed class Assets : IDisposable
         return skeleton;
     }
 
-    public Animation LoadAnimation(string path, Skeleton skeleton)
+    private Animation _LoadAnimation(string path, Skeleton skeleton)
     {
         var resolvedPath = AssetPaths.ResolveAnimation(path);
         var cacheKey = $"{resolvedPath}:{skeleton.Name}";
@@ -239,17 +263,17 @@ public sealed class Assets : IDisposable
         return animation;
     }
 
-    public void RegisterShader(string name, GpuShader shader)
+    private void _RegisterShader(string name, GpuShader shader)
     {
         _shaderStore.Register(name, shader);
     }
 
-    public GpuShader? GetShader(string name)
+    private GpuShader? _GetShader(string name)
     {
         return _shaderStore[name];
     }
 
-    public Material RegisterMaterial(Material material)
+    private Material _RegisterMaterial(Material material)
     {
         if (!_materialCache.TryAdd(material.Name, material))
         {
@@ -260,12 +284,12 @@ public sealed class Assets : IDisposable
         return material;
     }
 
-    public Material? GetMaterial(string name)
+    private Material? _GetMaterial(string name)
     {
         return _materialCache.GetValueOrDefault(name);
     }
 
-    public Mesh CreateBox(float width, float height, float depth)
+    private Mesh _CreateBox(float width, float height, float depth)
     {
         var cacheKey = $"box:{width}:{height}:{depth}";
         if (_meshCache.TryGetValue(cacheKey, out var cached))
@@ -273,10 +297,10 @@ public sealed class Assets : IDisposable
             return cached;
         }
 
-        return Register(GeometryMesh.Box(width, height, depth), cacheKey);
+        return _Register(GeometryMesh.Box(width, height, depth), cacheKey);
     }
 
-    public Mesh CreateSphere(float diameter, uint tessellation = 16)
+    private Mesh _CreateSphere(float diameter, uint tessellation = 16)
     {
         var cacheKey = $"sphere:{diameter}:{tessellation}";
         if (_meshCache.TryGetValue(cacheKey, out var cached))
@@ -284,10 +308,10 @@ public sealed class Assets : IDisposable
             return cached;
         }
 
-        return Register(GeometryMesh.Sphere(diameter, tessellation), cacheKey);
+        return _Register(GeometryMesh.Sphere(diameter, tessellation), cacheKey);
     }
 
-    public Mesh CreateQuad(float width, float height)
+    private Mesh _CreateQuad(float width, float height)
     {
         var cacheKey = $"quad:{width}:{height}";
         if (_meshCache.TryGetValue(cacheKey, out var cached))
@@ -295,10 +319,10 @@ public sealed class Assets : IDisposable
             return cached;
         }
 
-        return Register(GeometryMesh.Quad(width, height), cacheKey);
+        return _Register(GeometryMesh.Quad(width, height), cacheKey);
     }
 
-    public Mesh CreateCylinder(float diameter, float height, uint tessellation = 16)
+    private Mesh _CreateCylinder(float diameter, float height, uint tessellation = 16)
     {
         var cacheKey = $"cylinder:{diameter}:{height}:{tessellation}";
         if (_meshCache.TryGetValue(cacheKey, out var cached))
@@ -306,10 +330,10 @@ public sealed class Assets : IDisposable
             return cached;
         }
 
-        return Register(GeometryMesh.Cylinder(diameter, height, tessellation), cacheKey);
+        return _Register(GeometryMesh.Cylinder(diameter, height, tessellation), cacheKey);
     }
 
-    public Mesh CreateCone(float diameter, float height, uint tessellation = 16)
+    private Mesh _CreateCone(float diameter, float height, uint tessellation = 16)
     {
         var cacheKey = $"cone:{diameter}:{height}:{tessellation}";
         if (_meshCache.TryGetValue(cacheKey, out var cached))
@@ -317,10 +341,10 @@ public sealed class Assets : IDisposable
             return cached;
         }
 
-        return Register(GeometryMesh.Cone(diameter, height, tessellation), cacheKey);
+        return _Register(GeometryMesh.Cone(diameter, height, tessellation), cacheKey);
     }
 
-    public Mesh CreateTorus(float diameter, float thickness, uint tessellation = 16)
+    private Mesh _CreateTorus(float diameter, float thickness, uint tessellation = 16)
     {
         var cacheKey = $"torus:{diameter}:{thickness}:{tessellation}";
         if (_meshCache.TryGetValue(cacheKey, out var cached))
@@ -328,14 +352,10 @@ public sealed class Assets : IDisposable
             return cached;
         }
 
-        return Register(GeometryMesh.Torus(diameter, thickness, tessellation), cacheKey);
+        return _Register(GeometryMesh.Torus(diameter, thickness, tessellation), cacheKey);
     }
 
-    public IReadOnlyList<Mesh> AllMeshes => _meshList;
-    public IReadOnlyList<Texture2d> AllTextures => _textureList;
-    public IReadOnlyList<Material> AllMaterials => _materialList;
-
-    public Mesh? GetMeshByIndex(uint index)
+    private Mesh? _GetMeshByIndex(uint index)
     {
         if (index >= _meshList.Count)
         {
@@ -389,6 +409,7 @@ public sealed class Assets : IDisposable
 
         _materialCache.Clear();
 
+        _shaderStore.Dispose();
         _vertexPool.Dispose();
         _indexPool.Dispose();
     }

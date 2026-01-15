@@ -50,7 +50,7 @@ public class RenderGraph : IDisposable
 
             CommandList.End();
 
-            Context.GraphicsContext.GraphicsCommandQueue.ExecuteCommandLists(
+            GraphicsContext.GraphicsCommandQueue.ExecuteCommandLists(
                 new ReadOnlySpan<CommandList>(ref CommandList),
                 SignalFence,
                 new ReadOnlySpan<Semaphore>(_waitSemaphores, 0, _waitCount),
@@ -76,28 +76,25 @@ public class RenderGraph : IDisposable
     }
 
     private readonly TaskExecutor _executor;
-    private readonly GraphicsContext _context;
     private readonly FrameContext[] _frames;
     private readonly CommandListAllocator _commandListAllocator;
     private readonly RenderPassTask[] _taskPool;
-    private readonly RenderWorld _world;
     private uint _frameIndex = 0;
     private uint _nextFrameIndex = 0;
+    private bool _isCapturing = false;
 
     public uint Width { get; private set; }
     public uint Height { get; private set; }
     public uint FrameIndex => _frameIndex;
 
-    public RenderGraph(GraphicsContext context, RenderWorld renderWorld, int numThreads = 0, int numFrames = 3)
+    public RenderGraph(int numThreads = 0, int numFrames = 3)
     {
         _executor = new TaskExecutor(numThreads);
-        _context = context;
         _frames = new FrameContext[numFrames];
-        _commandListAllocator = new CommandListAllocator(context, numFrames);
+        _commandListAllocator = new CommandListAllocator(numFrames);
         _taskPool = new RenderPassTask[TaskGraph.MaxTasks];
-        _world = renderWorld;
-        Width = context.Width;
-        Height = context.Height;
+        Width = GraphicsContext.Width;
+        Height = GraphicsContext.Height;
 
         for (var i = 0; i < TaskGraph.MaxTasks; i++)
         {
@@ -108,7 +105,7 @@ public class RenderGraph : IDisposable
         {
             _frames[i] = new FrameContext
             {
-                Fence = context.LogicalDevice.CreateFence(),
+                Fence = GraphicsContext.Device.CreateFence(),
                 Graph = new TaskGraph(),
                 Resources = new FrameResources(),
                 WriterLookup = new Dictionary<string, RenderPassTask>(64)
@@ -118,6 +115,8 @@ public class RenderGraph : IDisposable
 
     public void Execute(ReadOnlySpan<RenderPass> renderPasses, PresentPass presentPass)
     {
+        CaptureMetal();
+
         _frameIndex = _nextFrameIndex;
         _nextFrameIndex = (uint)((_nextFrameIndex + 1) % _frames.Length);
 
@@ -135,8 +134,6 @@ public class RenderGraph : IDisposable
 
         var ctx = new RenderPassContext
         {
-            RenderWorld = _world,
-            GraphicsContext = _context,
             Resources = resources,
             FrameIndex = _frameIndex,
             Width = Width,
@@ -184,12 +181,12 @@ public class RenderGraph : IDisposable
         var (presentCommandList, presentSemaphore) =
             _commandListAllocator.GetCommandList(QueueType.Graphics, _frameIndex);
 
-        var image = _context.SwapChain.AcquireNextImage();
+        var image = GraphicsContext.SwapChain.AcquireNextImage();
 
         var presentTask = _taskPool[presentTaskIndex];
         presentTask.Reset();
         presentTask.PresentPass = presentPass;
-        presentTask.SwapChainImage = _context.SwapChain.GetRenderTarget(image);
+        presentTask.SwapChainImage = GraphicsContext.SwapChain.GetRenderTarget(image);
         presentTask.CommandList = presentCommandList;
         presentTask.Semaphore = presentSemaphore;
         presentTask.SignalFence = frame.Fence;
@@ -213,15 +210,31 @@ public class RenderGraph : IDisposable
         }
 
         graph.Execute(_executor);
-        switch (_context.SwapChain.Present(_frameIndex))
+        switch (GraphicsContext.SwapChain.Present(_frameIndex))
         {
             case PresentResult.Success:
             case PresentResult.Suboptimal:
                 break;
             case PresentResult.Timeout:
             case PresentResult.DeviceLost:
-                _context.WaitIdle();
+                GraphicsContext.WaitIdle();
                 break;
+        }
+    }
+
+    private void CaptureMetal()
+    {
+        if (_isCapturing)
+        {
+            Metal.EndGpuCapture(GraphicsContext.Device);
+            _isCapturing = false;
+        }
+
+        if (InputSystem.GetKeyState(KeyCode.F11) == KeyState.Pressed &&
+            (InputSystem.GetModState() & (uint)KeyMod.Gui) == (uint)KeyMod.Gui)
+        {
+            _isCapturing = true;
+            Metal.BeginGpuCapture(GraphicsContext.Device);
         }
     }
 
@@ -232,14 +245,14 @@ public class RenderGraph : IDisposable
             return;
         }
 
-        _context.GraphicsCommandQueue.WaitIdle();
+        GraphicsContext.GraphicsCommandQueue.WaitIdle();
         Width = width;
         Height = height;
     }
 
     public void Dispose()
     {
-        _context.GraphicsCommandQueue.WaitIdle();
+        GraphicsContext.GraphicsCommandQueue.WaitIdle();
         foreach (var frame in _frames)
         {
             frame.Fence.Dispose();

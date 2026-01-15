@@ -8,29 +8,28 @@ namespace DZForestDemo.GameObjects;
 
 public class Fox : GameObject
 {
-    
     class FoxMaterial : Material
     {
-        public FoxMaterial(Assets assets, GraphicsContext context) : base(context)
+        public FoxMaterial()
         {
             Name = "FoxMaterial";
-            Albedo = assets.LoadTexture("Texture.png");
-            GpuShader = assets.GetShader("Builtin/Shaders/Default");
+            Albedo = Assets.LoadTexture("Texture.png");
+            GpuShader = Assets.GetShader("Builtin/Shaders/Default");
         }
     }
-    
-    public Fox(Assets assets, Vector3? position = null) : base("Fox")
+
+    public Fox(Vector3? position = null) : base("Fox")
     {
         LocalPosition = position ?? new Vector3(0f, 0f, 0f);
 
-        var material = assets.RegisterMaterial(new FoxMaterial(assets, assets.GraphicsContext));        
-        var model = assets.LoadModel("Fox.glb");
+        var material = Assets.RegisterMaterial(new FoxMaterial());
+        var model = Assets.LoadModel("Fox.glb");
         var materialComponent = AddComponent<MaterialComponent>();
         materialComponent.Material = material;
         AddComponent<MeshComponent>().Mesh = model.Meshes[0];
 
-        var skeleton = assets.LoadSkeleton("Fox_skeleton.ozz");
-        var animation = assets.LoadAnimation("Fox_Run.ozz", skeleton);
+        var skeleton = Assets.LoadSkeleton("Fox_skeleton.ozz");
+        var animation = Assets.LoadAnimation("Fox_Run.ozz", skeleton);
         var animator = AddComponent<AnimatorComponent>();
         animator.Skeleton = skeleton;
         animator.CurrentAnimation = animation;

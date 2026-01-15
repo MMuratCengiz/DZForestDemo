@@ -8,7 +8,7 @@ internal static class Program
 {
     private static void Main(string[] args)
     {
-        var desc = new GameDesc
+        Game.Run<DemoGame>(new GameDesc
         {
             Title = "DenOfIz Scene Demo - Press F1/F2 to switch scenes",
             Width = 1920,
@@ -20,12 +20,10 @@ internal static class Program
                 DepthBufferFormat = Format.D32Float,
                 ApiPreference = new APIPreference
                 {
-                    Windows = APIPreferenceWindows.Directx12
+                    Windows = APIPreferenceWindows.Directx12,
+                    OSX = APIPreferenceOSX.Metal
                 }
             }
-        };
-
-        using var game = new DemoGame(desc);
-        game.Run();
+        });
     }
 }
