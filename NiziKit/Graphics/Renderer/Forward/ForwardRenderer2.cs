@@ -61,9 +61,6 @@ public class ForwardRenderer2 : IRenderer
         _viewData.DeltaTime = Time.DeltaTime;
         _viewData.TotalTime = Time.TotalTime;
 
-        var viewBinding = GpuBinding.Get<ViewBinding>(_viewData);
-        viewBinding.Update(_viewData);
-
         _renderFrame.BeginFrame();
 
         var pass = _renderFrame.BeginGraphicsPass();
@@ -72,7 +69,7 @@ public class ForwardRenderer2 : IRenderer
 
         pass.Begin();
 
-        pass.Bind(viewBinding);
+        pass.Bind<ViewBinding>(_viewData);
 
         foreach (var material in renderWorld.GetMaterials())
         {
@@ -83,23 +80,12 @@ public class ForwardRenderer2 : IRenderer
             }
 
             pass.BindPipeline(gpuShader.Pipeline);
-
-            var materialBinding = GpuBinding.Get<MaterialBinding>(material);
-            materialBinding.Update(material);
-            pass.Bind(materialBinding);
+            pass.Bind<MaterialBinding>(material);
 
             foreach (var draw in renderWorld.GetObjects(material))
             {
-                var drawBinding = GpuBinding.Get<DrawBinding>(draw.Owner);
-                drawBinding.Update(draw.Owner);
-                pass.Bind(drawBinding);
-
-                var mesh = draw.Mesh;
-
-                pass.BindVertexBuffer(mesh.VertexBuffer.View.Buffer, mesh.VertexBuffer.View.Offset, mesh.VertexBuffer.Stride, 0);
-                pass.BindIndexBuffer(mesh.IndexBuffer.View.Buffer, mesh.IndexBuffer.IndexType, mesh.IndexBuffer.View.Offset);
-
-                pass.DrawIndexed((uint)mesh.NumIndices, 1, 0, 0, 0);
+                pass.Bind<DrawBinding>(draw.Owner);
+                pass.DrawMesh(draw.Mesh);
             }
         }
 

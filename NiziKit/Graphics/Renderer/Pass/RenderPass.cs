@@ -1,4 +1,5 @@
 using DenOfIz;
+using NiziKit.Assets;
 using NiziKit.Graphics.Binding;
 
 namespace NiziKit.Graphics.Renderer.Pass;
@@ -70,6 +71,13 @@ public abstract class RenderPass : IDisposable
     public void Bind(BindGroup bindGroup)
     {
         _commandList.BindGroup(bindGroup);
+    }
+
+    public void Bind<TBinding>(object target) where TBinding : IShaderBinding, new()
+    {
+        var binding = GpuBinding.Get<TBinding>(target);
+        binding.Update(target);
+        Bind(binding);
     }
 
     public void BindPipeline(Pipeline pipeline)

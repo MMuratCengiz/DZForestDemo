@@ -1,4 +1,5 @@
 using DenOfIz;
+using NiziKit.Assets;
 using NiziKit.Graphics.Resources;
 
 namespace NiziKit.Graphics.Renderer.Pass;
@@ -220,6 +221,13 @@ public class GraphicsPass : RenderPass
     public void DrawIndexed(uint indexCount, uint instanceCount = 1, uint firstIndex = 0, uint vertexOffset = 0, uint firstInstance = 0)
     {
         _commandList.DrawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+    }
+
+    public void DrawMesh(Mesh mesh, uint instanceCount = 1)
+    {
+        BindVertexBuffer(mesh.VertexBuffer.View.Buffer, mesh.VertexBuffer.View.Offset, mesh.VertexBuffer.Stride, 0);
+        BindIndexBuffer(mesh.IndexBuffer.View.Buffer, mesh.IndexBuffer.IndexType, mesh.IndexBuffer.View.Offset);
+        DrawIndexed((uint)mesh.NumIndices, instanceCount, 0, 0, 0);
     }
 
     public void DrawIndirect(DenOfIz.Buffer buffer, ulong offset, uint drawCount, uint stride)

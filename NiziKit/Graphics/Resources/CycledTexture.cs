@@ -19,6 +19,9 @@ public partial class CycledTexture : IDisposable
     }
     
     public Texture this[int index]  => _textures[index];
+    public uint Width => _textureDesc.Width;
+    public uint Height => _textureDesc.Height;
+    public Format Format => _textureDesc.Format;
     public Vector4 ClearColor => _textureDesc.ClearColorHint;
     public Vector2 ClearDepthStencil => _textureDesc.ClearDepthStencilHint;
     public void Dispose()

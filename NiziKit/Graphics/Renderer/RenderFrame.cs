@@ -9,7 +9,7 @@ using RaytracingPass = NiziKit.Graphics.Renderer.Pass.RaytracingPass;
 
 namespace NiziKit.Graphics.Renderer;
 
-public class RenderFrame : IDisposable
+public partial class RenderFrame : IDisposable
 {
     private const int MaxPassesPerFrame = 8;
     private const int MaxDependenciesPerPass = 8;
@@ -146,6 +146,7 @@ public class RenderFrame : IDisposable
         _graphicsPassCount = 0;
         _computePassCount = 0;
         _raytracingPassCount = 0;
+        ResetBlitPassIndex();
     }
 
     public GraphicsPass BeginGraphicsPass()
@@ -186,6 +187,28 @@ public class RenderFrame : IDisposable
     {
         var depIndex = FindPassIndex(dependency);
         return BeginRaytracingPassInternal(depIndex);
+    }
+
+    public GraphicsPass AllocateBlitPass()
+    {
+        var pass = _graphicsPasses[_currentFrame][_graphicsPassCount];
+        var semaphore = _graphicsSemaphores[_currentFrame][_graphicsPassCount];
+        _graphicsPassCount++;
+
+        pass.Reset();
+
+        ref var passData = ref _passes[_passCount];
+        passData.Pass = pass;
+        passData.SignalSemaphore = semaphore;
+        passData.DependencyCount = 0;
+
+        for (var i = 0; i < _passCount && passData.DependencyCount < MaxDependenciesPerPass; i++)
+        {
+            AddDependency(_passCount, i);
+        }
+
+        _passCount++;
+        return pass;
     }
 
     private GraphicsPass BeginGraphicsPassInternal(int dependencyIndex)
@@ -334,6 +357,8 @@ public class RenderFrame : IDisposable
     public void Dispose()
     {
         GraphicsContext.GraphicsCommandQueue.WaitIdle();
+
+        DisposeBlitResources();
 
         var numFrames = (int)GraphicsContext.NumFrames;
         for (var frame = 0; frame < numFrames; frame++)
