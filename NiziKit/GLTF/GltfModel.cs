@@ -114,9 +114,13 @@ public sealed class GltfModel
         for (var i = 0; i < Document.Root.Meshes.Count && i < Meshes.Count; i++)
         {
             var gltfMesh = Document.Root.Meshes[i];
-            if (gltfMesh.Primitives.Count > 0 && gltfMesh.Primitives[0].Material.HasValue)
+            if (gltfMesh.Primitives.Count > 0)
             {
-                Meshes[i].MaterialIndex = gltfMesh.Primitives[0].Material.Value;
+                var materialIndex = gltfMesh.Primitives[0].Material;
+                if (materialIndex.HasValue)
+                {
+                    Meshes[i].MaterialIndex = materialIndex.Value;
+                }
             }
         }
     }

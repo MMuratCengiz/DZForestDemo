@@ -7,21 +7,7 @@ public sealed class AssetExporter : IDisposable
     private readonly GltfExporter _gltfExporter = new();
     private readonly OzzExporter _ozzExporter = new();
 
-    public IReadOnlyList<string> SupportedExtensions
-    {
-        get
-        {
-            var extensions = _gltfExporter.GetSupportedExtensions();
-            var result = new List<string>((int)extensions.NumElements);
-            for (var i = 0u; i < extensions.NumElements; i++)
-            {
-                var ext = extensions.ToArray()[i];
-                result.Add(ext.ToString());
-            }
-
-            return result;
-        }
-    }
+    public IReadOnlyList<string> SupportedExtensions => _gltfExporter.SupportedExtensions;
 
     public void Dispose()
     {
@@ -31,7 +17,7 @@ public sealed class AssetExporter : IDisposable
 
     public bool CanProcess(string filePath)
     {
-        return _gltfExporter.ValidateFile(StringView.Create(filePath));
+        return _gltfExporter.ValidateFile(filePath);
     }
 
     public AssetExportResult Export(AssetExportDesc desc)
@@ -82,20 +68,13 @@ public sealed class AssetExporter : IDisposable
         var gltfExportDesc = desc.ToGltfExportDesc();
         var result = _gltfExporter.Export(in gltfExportDesc);
 
-        try
+        if (result.Success)
         {
-            if (result.ResultCode == GltfExportResultCode.Success)
-            {
-                return AssetExportResult.Succeeded(result.GltfFilePath.ToString());
-            }
+            return AssetExportResult.Succeeded(result.GltfFilePath!);
+        }
 
-            var error = result.ErrorMessage.ToString();
-            return AssetExportResult.Failed(string.IsNullOrEmpty(error) ? "GLTF export failed." : error);
-        }
-        finally
-        {
-            result.Destroy();
-        }
+        var error = result.ErrorMessage;
+        return AssetExportResult.Failed(string.IsNullOrEmpty(error) ? "GLTF export failed." : error);
     }
 
     private AssetExportResult ExportOzz(AssetExportDesc desc, string gltfOutputPath)

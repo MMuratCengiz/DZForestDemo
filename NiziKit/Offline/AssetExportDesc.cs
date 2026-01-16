@@ -39,13 +39,11 @@ public sealed class AssetExportDesc
     {
         return new GltfExportDesc
         {
-            SourceFilePath = StringView.Create(SourcePath),
-            TargetDirectory = StringView.Create(OutputDirectory),
-            AssetNamePrefix = StringView.Create(AssetName),
-            OutputFormat = Format == ExportFormat.Glb ? GltfExportFormat.Glb : GltfExportFormat.GltfBin,
+            SourceFilePath = SourcePath,
+            TargetDirectory = OutputDirectory,
+            AssetNamePrefix = AssetName,
+            OutputFormat = Format == ExportFormat.Glb ? GltfExportFormat.Glb : GltfExportFormat.Gltf,
             ScaleFactor = Scale,
-            EmbedTextures = EmbedTextures,
-            OverwriteExisting = OverwriteExisting,
             OptimizeMeshes = OptimizeMeshes,
             GenerateNormals = GenerateNormals,
             CalculateTangentSpace = CalculateTangents,
@@ -59,7 +57,6 @@ public sealed class AssetExportDesc
             RemoveRedundantMaterials = true,
             MergeMeshes = false,
             OptimizeGraph = false,
-            PreservePivots = true,
             DropNormals = false,
             FixInfacingNormals = false
         };
