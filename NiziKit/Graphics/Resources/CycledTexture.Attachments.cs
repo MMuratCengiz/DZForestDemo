@@ -10,7 +10,8 @@ public partial class CycledTexture
     {
         var desc = Common(name, width, height);
         desc.Format = format == Format.Undefined ? GraphicsContext.BackBufferFormat : format;
-        desc.Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding);
+        desc.Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding |
+                            TextureUsageFlagBits.CopyDst | TextureUsageFlagBits.CopySrc);
         return new CycledTexture(desc);
     }
 
@@ -18,7 +19,7 @@ public partial class CycledTexture
     {
         var desc = Common(name, width, height);
         desc.Format = Format.D32Float;
-        desc.Usage = (uint)(TextureUsageFlagBits.RenderAttachment  | TextureUsageFlagBits.TextureBinding);
+        desc.Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding);
         desc.ClearDepthStencilHint = new Vector2(1.0f, 0.0f);
         return new CycledTexture(desc);
     }
@@ -39,7 +40,8 @@ public partial class CycledTexture
             Depth = 1,
             DebugName = StringView.Intern(name),
             ArraySize = 1,
-            MipLevels = 1
+            MipLevels = 1,
+            ClearColorHint = Vector4.Zero,
         };
     }
 }

@@ -147,6 +147,7 @@ public partial class RenderFrame : IDisposable
         _computePassCount = 0;
         _raytracingPassCount = 0;
         ResetBlitPassIndex();
+        ResetUi();
     }
 
     public GraphicsPass BeginGraphicsPass()
@@ -189,7 +190,7 @@ public partial class RenderFrame : IDisposable
         return BeginRaytracingPassInternal(depIndex);
     }
 
-    public GraphicsPass AllocateBlitPass()
+    private GraphicsPass AllocateBlitPass()
     {
         var pass = _graphicsPasses[_currentFrame][_graphicsPassCount];
         var semaphore = _graphicsSemaphores[_currentFrame][_graphicsPassCount];
@@ -335,14 +336,14 @@ public partial class RenderFrame : IDisposable
         _submitSignalSemaphores[0] = semaphore;
 
         var waitCount = 0;
-        for (var i = 0; i < _passCount; i++)
+        for (var i = 0; i < _passCount && waitCount < MaxDependenciesPerPass; i++)
         {
-            if (waitCount >= MaxDependenciesPerPass)
-            {
-                break;
-            }
-
             _submitWaitSemaphores[waitCount++] = _passes[i].SignalSemaphore;
+        }
+
+        for (var i = 0; i < _externalSemaphoreCount && waitCount < MaxDependenciesPerPass; i++)
+        {
+            _submitWaitSemaphores[waitCount++] = _externalSemaphores[i];
         }
 
         GraphicsContext.GraphicsCommandQueue.ExecuteCommandLists(
@@ -359,6 +360,8 @@ public partial class RenderFrame : IDisposable
         GraphicsContext.GraphicsCommandQueue.WaitIdle();
 
         DisposeBlitResources();
+        DisposeUi();
+        DisposeDebugOverlay();
 
         var numFrames = (int)GraphicsContext.NumFrames;
         for (var frame = 0; frame < numFrames; frame++)

@@ -1,10 +1,8 @@
-using System.Numerics;
 using DenOfIz;
 using NiziKit.Application.Timing;
 using NiziKit.Core;
 using NiziKit.Graphics.Binding;
 using NiziKit.Graphics.Resources;
-using RenderFrame = NiziKit.Graphics.Renderer.RenderFrame;
 
 namespace NiziKit.Graphics.Renderer.Forward;
 
@@ -25,6 +23,8 @@ public class ForwardRenderer2 : IRenderer
     public ForwardRenderer2()
     {
         _renderFrame = new RenderFrame();
+        _renderFrame.EnableDebugOverlay(DebugOverlayConfig.Default);
+
         _viewData = new ViewData();
         _width = GraphicsContext.Width;
         _height = GraphicsContext.Height;
@@ -90,6 +90,9 @@ public class ForwardRenderer2 : IRenderer
         }
 
         pass.End();
+
+        var debugOverlay = _renderFrame.ExecuteDebugOverlay();
+        _renderFrame.AlphaBlit(debugOverlay, _sceneColor);
 
         _renderFrame.Submit();
         _renderFrame.Present(_sceneColor);

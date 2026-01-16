@@ -9,8 +9,10 @@ public partial class RenderFrame
     private const int MaxBlitPassesPerFrame = 8;
 
     private readonly BlitPass[] _blitPasses = new BlitPass[MaxBlitPassesPerFrame];
+    private readonly AlphaBlitPass[] _alphaBlitPasses = new AlphaBlitPass[MaxBlitPassesPerFrame];
     private readonly CycledTexture?[] _blitDestinations = new CycledTexture?[MaxBlitPassesPerFrame];
     private int _blitPassIndex;
+    private int _alphaBlitPassIndex;
 
     public CycledTexture Blit(CycledTexture source)
     {
@@ -39,10 +41,38 @@ public partial class RenderFrame
         return dest;
     }
 
+    public void AlphaBlit(CycledTexture source, CycledTexture dest)
+    {
+        var blitPass = GetOrCreateAlphaBlitPass(_alphaBlitPassIndex);
+        _alphaBlitPassIndex++;
+
+        var pass = AllocateBlitPass();
+        pass.CommandList.Begin();
+        blitPass.Execute(pass.CommandList, source, dest);
+        pass.CommandList.End();
+    }
+
+    public void AlphaBlit(Texture source, CycledTexture dest)
+    {
+        var blitPass = GetOrCreateAlphaBlitPass(_alphaBlitPassIndex);
+        _alphaBlitPassIndex++;
+
+        var pass = AllocateBlitPass();
+        pass.CommandList.Begin();
+        blitPass.Execute(pass.CommandList, source, dest);
+        pass.CommandList.End();
+    }
+
     private BlitPass GetOrCreateBlitPass(int index)
     {
         _blitPasses[index] ??= new BlitPass();
         return _blitPasses[index];
+    }
+
+    private AlphaBlitPass GetOrCreateAlphaBlitPass(int index)
+    {
+        _alphaBlitPasses[index] ??= new AlphaBlitPass();
+        return _alphaBlitPasses[index];
     }
 
     private CycledTexture GetOrCreateBlitDestination(int index, Format format, uint width, uint height)
@@ -61,6 +91,7 @@ public partial class RenderFrame
     private void ResetBlitPassIndex()
     {
         _blitPassIndex = 0;
+        _alphaBlitPassIndex = 0;
     }
 
     private void DisposeBlitResources()
@@ -68,6 +99,7 @@ public partial class RenderFrame
         for (var i = 0; i < MaxBlitPassesPerFrame; i++)
         {
             _blitPasses[i]?.Dispose();
+            _alphaBlitPasses[i]?.Dispose();
             _blitDestinations[i]?.Dispose();
         }
     }
