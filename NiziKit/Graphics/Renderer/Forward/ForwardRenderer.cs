@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using NiziKit.Application.Timing;
 using NiziKit.Core;
 using NiziKit.Graphics.Binding;
 using NiziKit.Graphics.Graph;
@@ -14,10 +14,6 @@ public class ForwardRenderer : IRenderer
 
     private readonly ViewData _viewData;
     private readonly ForwardScenePass _forwardScenePass;
-
-    private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
-    private float _lastFrameTime;
-    private float _totalTime;
 
     private int _frameCount;
     private float _fpsAccumulator;
@@ -42,25 +38,20 @@ public class ForwardRenderer : IRenderer
             return;
         }
 
-        var currentTime = (float)_stopwatch.Elapsed.TotalSeconds;
-        var deltaTime = currentTime - _lastFrameTime;
-        _lastFrameTime = currentTime;
-        _totalTime = currentTime;
-
         _frameCount++;
-        _fpsAccumulator += deltaTime;
-        if (currentTime - _lastFpsPrintTime >= 1.0f)
+        _fpsAccumulator += Time.DeltaTime;
+        if (Time.TotalTime - _lastFpsPrintTime >= 1.0f)
         {
             var fps = _frameCount / _fpsAccumulator;
             Console.WriteLine($"ForwardRenderer FPS: {fps:F1}");
             _frameCount = 0;
             _fpsAccumulator = 0;
-            _lastFpsPrintTime = currentTime;
+            _lastFpsPrintTime = Time.TotalTime;
         }
 
         _viewData.Scene = scene;
-        _viewData.DeltaTime = deltaTime;
-        _viewData.TotalTime = _totalTime;
+        _viewData.DeltaTime = Time.DeltaTime;
+        _viewData.TotalTime = Time.TotalTime;
 
         var viewBinding = GpuBinding.Get<ViewBinding>(_viewData);
         viewBinding.Update(_viewData);

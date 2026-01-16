@@ -1,4 +1,5 @@
 using DenOfIz;
+using NiziKit.Application.Timing;
 using NiziKit.Assets;
 using NiziKit.Core;
 using NiziKit.Graphics;
@@ -12,8 +13,10 @@ public partial class GameComposition
 {
     private static void Setup() =>
         DI.Setup(nameof(GameComposition))
+            .Bind<Time>().As(Lifetime.Singleton)
+                .To(() => new Time())
             .Bind<GraphicsContext>().As(Lifetime.Singleton)
-                .To((Window window, GraphicsDesc desc) => new GraphicsContext(window, desc))
+                .To((Time _, Window window, GraphicsDesc desc) => new GraphicsContext(window, desc))
             .Bind<GpuBinding>().As(Lifetime.Singleton)
                 .To((GraphicsContext _) => new GpuBinding())
             .Bind<Assets.Assets>().As(Lifetime.Singleton)
@@ -24,6 +27,7 @@ public partial class GameComposition
                 .To((World _) => new ForwardRenderer())
             .Arg<Window>("window")
             .Arg<GraphicsDesc>("graphicsDesc")
+            .Root<Time>("Time")
             .Root<GraphicsContext>("Graphics")
             .Root<GpuBinding>("Binding")
             .Root<Assets.Assets>("Assets")

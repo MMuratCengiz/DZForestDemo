@@ -16,7 +16,6 @@ public class Game : IDisposable
     private readonly GameComposition _composition;
 
     public AppWindow Window { get; }
-    public FrameClock Clock { get; }
     public bool IsRunning { get; set; }
     
     public static void Run<TGame>(GameDesc? desc = null) where TGame : Game
@@ -37,9 +36,9 @@ public class Game : IDisposable
         desc ??= new GameDesc();
         _fixedTimestep = new FixedTimestep(desc.FixedUpdateRate);
         Window = new AppWindow(desc.Title, desc.Width, desc.Height);
-        Clock = new FrameClock();
 
         _composition = new GameComposition(Window.NativeWindow, desc.Graphics);
+        _ = _composition.Time;
         _ = _composition.Graphics;
         _ = _composition.Assets;
         _ = _composition.World;
@@ -60,7 +59,7 @@ public class Game : IDisposable
         Load(this);
 
         IsRunning = true;
-        Clock.Start();
+        Time.Start();
 
         while (IsRunning)
         {
@@ -86,7 +85,7 @@ public class Game : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void RunFrame()
     {
-        Clock.Tick();
+        Time.Tick();
         ProcessEvents();
 
         if (!IsRunning)
@@ -99,13 +98,13 @@ public class Game : IDisposable
             return;
         }
 
-        var fixedSteps = _fixedTimestep.Accumulate(Clock.DeltaTime);
+        var fixedSteps = _fixedTimestep.Accumulate(Time.UnscaledDeltaTime);
         for (var i = 0; i < fixedSteps; i++)
         {
             FixedUpdate((float)_fixedTimestep.FixedDeltaTime);
         }
 
-        Update((float)Clock.DeltaTime);
+        Update(Time.DeltaTime);
     }
 
     private void ProcessEvents()

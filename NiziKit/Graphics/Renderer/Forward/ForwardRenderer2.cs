@@ -1,6 +1,6 @@
-using System.Diagnostics;
 using System.Numerics;
 using DenOfIz;
+using NiziKit.Application.Timing;
 using NiziKit.Core;
 using NiziKit.Graphics.Binding;
 using NiziKit.Graphics.Resources;
@@ -18,10 +18,6 @@ public class ForwardRenderer2 : IRenderer
     private uint _width;
     private uint _height;
 
-    private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
-    private float _lastFrameTime;
-    private float _totalTime;
-
     private int _frameCount;
     private float _fpsAccumulator;
     private float _lastFpsPrintTime;
@@ -37,32 +33,8 @@ public class ForwardRenderer2 : IRenderer
 
     private void CreateRenderTargets()
     {
-        _sceneColor = new CycledTexture(new TextureDesc
-        {
-            Width = _width,
-            Height = _height,
-            Depth = 1,
-            Format = GraphicsContext.BackBufferFormat,
-            MipLevels = 1,
-            ArraySize = 1,
-            Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding),
-            HeapType = HeapType.Gpu,
-            DebugName = StringView.Intern("SceneColor")
-        });
-
-        _sceneDepth = new CycledTexture(new TextureDesc
-        {
-            Width = _width,
-            Height = _height,
-            Depth = 1,
-            Format = Format.D32Float,
-            MipLevels = 1,
-            ArraySize = 1,
-            Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding),
-            HeapType = HeapType.Gpu,
-            DebugName = StringView.Intern("SceneDepth"),
-            ClearDepthStencilHint = new Vector2(1, 0)
-        });
+        _sceneColor = CycledTexture.ColorAttachment("SceneColor");
+        _sceneDepth = CycledTexture.DepthAttachment("SceneDepth");
     }
 
     public void Render()
@@ -74,25 +46,20 @@ public class ForwardRenderer2 : IRenderer
             return;
         }
 
-        var currentTime = (float)_stopwatch.Elapsed.TotalSeconds;
-        var deltaTime = currentTime - _lastFrameTime;
-        _lastFrameTime = currentTime;
-        _totalTime = currentTime;
-
         _frameCount++;
-        _fpsAccumulator += deltaTime;
-        if (currentTime - _lastFpsPrintTime >= 1.0f)
+        _fpsAccumulator += Time.DeltaTime;
+        if (Time.TotalTime - _lastFpsPrintTime >= 1.0f)
         {
             var fps = _frameCount / _fpsAccumulator;
             Console.WriteLine($"ForwardRenderer2 FPS: {fps:F1}");
             _frameCount = 0;
             _fpsAccumulator = 0;
-            _lastFpsPrintTime = currentTime;
+            _lastFpsPrintTime = Time.TotalTime;
         }
 
         _viewData.Scene = scene;
-        _viewData.DeltaTime = deltaTime;
-        _viewData.TotalTime = _totalTime;
+        _viewData.DeltaTime = Time.DeltaTime;
+        _viewData.TotalTime = Time.TotalTime;
 
         var viewBinding = GpuBinding.Get<ViewBinding>(_viewData);
         viewBinding.Update(_viewData);

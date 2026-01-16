@@ -1,3 +1,4 @@
+using System.Numerics;
 using DenOfIz;
 
 namespace NiziKit.Graphics.Resources;
@@ -9,6 +10,7 @@ public partial class CycledTexture
     {
         var desc = Common(name, width, height);
         desc.Format = format == Format.Undefined ? GraphicsContext.BackBufferFormat : format;
+        desc.Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding);
         return new CycledTexture(desc);
     }
 
@@ -16,6 +18,8 @@ public partial class CycledTexture
     {
         var desc = Common(name, width, height);
         desc.Format = Format.D32Float;
+        desc.Usage = (uint)(TextureUsageFlagBits.RenderAttachment  | TextureUsageFlagBits.TextureBinding);
+        desc.ClearDepthStencilHint = new Vector2(1.0f, 0.0f);
         return new CycledTexture(desc);
     }
 
@@ -28,7 +32,7 @@ public partial class CycledTexture
 
     private static TextureDesc Common(string name, int width, int height)
     {
-        return  new TextureDesc
+        return new TextureDesc
         {
             Width = width == 0 ? GraphicsContext.Width : (uint)width,
             Height = height == 0 ? GraphicsContext.Height : (uint)height,
