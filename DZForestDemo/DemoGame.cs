@@ -13,14 +13,14 @@ namespace DZForestDemo;
 public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 {
     private Camera _cameraController = null!;
-    private ForwardRenderer _renderer = null!;
+    private ForwardRenderer2 _renderer = null!;
     private DemoScene? _demoScene;
 
     private AnimationManager? _animation;
 
     protected override void Load(Game game)
     {
-        _renderer = new ForwardRenderer();
+        _renderer = new ForwardRenderer2();
         _cameraController = new Camera(
             new Vector3(0, 12, 25),
             new Vector3(0, 2, 0)

@@ -1,5 +1,5 @@
 using DenOfIz;
-using NiziKit.ContentPipeline;
+using NiziKit.ContentPIpeline;
 using NiziKit.Graphics;
 
 namespace NiziKit.Assets;

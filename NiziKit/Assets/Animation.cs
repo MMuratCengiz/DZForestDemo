@@ -58,7 +58,7 @@ public class Animation : IDisposable
     {
         if ((ulong)OzzContext != 0)
         {
-            OzzContext = default;
+            OzzContext = null;
         }
     }
 }

@@ -1,12 +1,11 @@
 using System.Reflection;
 
-namespace NiziKit.ContentPipeline;
+namespace NiziKit.ContentPIpeline;
 
 public static class Content
 {
     private static readonly Lock Lock = new();
     private static IContentProvider? _provider;
-    private static AssetManifest? _manifest;
     private static string _basePath = "Assets";
 
     public static bool IsInitialized => _provider != null;
@@ -81,9 +80,9 @@ public static class Content
         {
             return _provider.ExistsAsync(NormalizePath(path)).GetAwaiter().GetResult();
         }
-        if (_manifest != null)
+        if (Manifest != null)
         {
-            return _manifest.Contains(NormalizePath(path));
+            return Manifest.Contains(NormalizePath(path));
         }
         throw new InvalidOperationException("Synchronous Exists() requires filesystem or loaded manifest.");
     }
@@ -102,10 +101,10 @@ public static class Content
     {
         EnsureInitialized();
         var json = await _provider!.ReadAllTextAsync("manifest.json", ct);
-        _manifest = AssetManifest.FromJson(json);
+        Manifest = AssetManifest.FromJson(json);
     }
 
-    public static AssetManifest? Manifest => _manifest;
+    public static AssetManifest? Manifest { get; private set; }
 
     private static void EnsureInitialized()
     {
@@ -133,7 +132,7 @@ public static class Content
             var manifestPath = Path.Combine(assetsPath, "manifest.json");
             if (File.Exists(manifestPath))
             {
-                _manifest = AssetManifest.FromJson(File.ReadAllText(manifestPath));
+                Manifest = AssetManifest.FromJson(File.ReadAllText(manifestPath));
             }
         }
     }

@@ -24,7 +24,7 @@ public sealed class GraphicsContext : IDisposable
     public static uint NumFrames => Instance._numFrames;
     public static Format BackBufferFormat => Instance._backBufferFormat;
     public static Format DepthBufferFormat => Instance._depthBufferFormat;
-    public static uint FrameIndex => Instance._frameIndex;
+    public static int FrameIndex => Instance._currentFrame;
     public static uint Width => Instance._width;
     public static uint Height => Instance._height;
     public static UniformBufferArena UniformBufferArena => Instance._uniformBufferArena;
@@ -35,6 +35,7 @@ public sealed class GraphicsContext : IDisposable
     public static ColorTexture MissingTexture => Instance._missingTexture;
 
     public static void Resize(uint width, uint height) => Instance._Resize(width, height);
+    public static void BeginFrame() => Instance._BeginFrame();
     public static void WaitIdle() => Instance._WaitIdle();
 
     private readonly GraphicsApi _graphicsApi;
@@ -48,7 +49,8 @@ public sealed class GraphicsContext : IDisposable
     private readonly uint _numFrames;
     private readonly Format _backBufferFormat;
     private readonly Format _depthBufferFormat;
-    private uint _frameIndex;
+    private int _currentFrame = 0;
+    private int _nextFrame = 0;
     private uint _width;
     private uint _height;
     private readonly UniformBufferArena _uniformBufferArena;
@@ -103,7 +105,6 @@ public sealed class GraphicsContext : IDisposable
         _rootSignatureStore = new RootSignatureStore(_logicalDevice, _bindGroupLayoutStore);
         _emptyTexture = new ColorTexture(_logicalDevice, 0, 0, 0, 0, "EmptyTexture");
         _missingTexture = new ColorTexture(_logicalDevice, 255, 0, 255, 255, "MissingTexture");
-
         _instance = this;
     }
 
@@ -123,6 +124,12 @@ public sealed class GraphicsContext : IDisposable
         {
             _resourceTracking.TrackTexture(_swapChain.GetRenderTarget(i), QueueType.Graphics);
         }
+    }
+
+    public void _BeginFrame()
+    {
+        _currentFrame = _nextFrame;
+        _nextFrame = (_nextFrame + 1) % (int)NumFrames;
     }
 
     private void _WaitIdle()

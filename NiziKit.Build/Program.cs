@@ -12,3 +12,4 @@ Directory.CreateDirectory(outputDir);
 var exporter = new ShaderExporter(outputDir);
 exporter.Export(new Blit(shaderSourceDir));
 exporter.Export(new DefaultShader(shaderSourceDir));
+exporter.Export(new Present(shaderSourceDir));

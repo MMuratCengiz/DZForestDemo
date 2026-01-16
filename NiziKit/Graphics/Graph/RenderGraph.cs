@@ -79,19 +79,18 @@ public class RenderGraph : IDisposable
     private readonly FrameContext[] _frames;
     private readonly CommandListAllocator _commandListAllocator;
     private readonly RenderPassTask[] _taskPool;
-    private uint _frameIndex = 0;
     private uint _nextFrameIndex = 0;
     private bool _isCapturing = false;
 
     public uint Width { get; private set; }
     public uint Height { get; private set; }
-    public uint FrameIndex => _frameIndex;
+    public uint FrameIndex { get; private set; } = 0;
 
-    public RenderGraph(int numThreads = 0, int numFrames = 3)
+    public RenderGraph(int numThreads = 0)
     {
         _executor = new TaskExecutor(numThreads);
-        _frames = new FrameContext[numFrames];
-        _commandListAllocator = new CommandListAllocator(numFrames);
+        _frames = new FrameContext[GraphicsContext.NumFrames];
+        _commandListAllocator = new CommandListAllocator();
         _taskPool = new RenderPassTask[TaskGraph.MaxTasks];
         Width = GraphicsContext.Width;
         Height = GraphicsContext.Height;
@@ -101,7 +100,7 @@ public class RenderGraph : IDisposable
             _taskPool[i] = new RenderPassTask();
         }
 
-        for (var i = 0; i < numFrames; i++)
+        for (var i = 0; i < GraphicsContext.NumFrames; i++)
         {
             _frames[i] = new FrameContext
             {
@@ -117,10 +116,10 @@ public class RenderGraph : IDisposable
     {
         CaptureMetal();
 
-        _frameIndex = _nextFrameIndex;
+        FrameIndex = _nextFrameIndex;
         _nextFrameIndex = (uint)((_nextFrameIndex + 1) % _frames.Length);
 
-        ref var frame = ref _frames[_frameIndex];
+        ref var frame = ref _frames[FrameIndex];
         frame.Fence.Wait();
 
         var graph = frame.Graph;
@@ -130,12 +129,12 @@ public class RenderGraph : IDisposable
         graph.Reset();
         writerLookup.Clear();
         resources.Clear();
-        _commandListAllocator.Reset(_frameIndex);
+        _commandListAllocator.Reset(FrameIndex);
 
         var ctx = new RenderPassContext
         {
             Resources = resources,
-            FrameIndex = _frameIndex,
+            FrameIndex = FrameIndex,
             Width = Width,
             Height = Height
         };
@@ -143,9 +142,9 @@ public class RenderGraph : IDisposable
         for (var i = 0; i < renderPasses.Length; i++)
         {
             var pass = renderPasses[i];
-            pass.Resize(Width, Height, _frameIndex, resources);
+            pass.Resize(Width, Height, FrameIndex, resources);
 
-            var (commandList, semaphore) = _commandListAllocator.GetCommandList(QueueType.Graphics, _frameIndex);
+            var (commandList, semaphore) = _commandListAllocator.GetCommandList(QueueType.Graphics, FrameIndex);
             var task = _taskPool[i];
             task.Reset();
             task.Pass = pass;
@@ -175,11 +174,11 @@ public class RenderGraph : IDisposable
             }
         }
 
-        presentPass.Resize(Width, Height, _frameIndex, resources);
+        presentPass.Resize(Width, Height, FrameIndex, resources);
 
         var presentTaskIndex = renderPasses.Length;
         var (presentCommandList, presentSemaphore) =
-            _commandListAllocator.GetCommandList(QueueType.Graphics, _frameIndex);
+            _commandListAllocator.GetCommandList(QueueType.Graphics, FrameIndex);
 
         var image = GraphicsContext.SwapChain.AcquireNextImage();
 
@@ -210,7 +209,7 @@ public class RenderGraph : IDisposable
         }
 
         graph.Execute(_executor);
-        switch (GraphicsContext.SwapChain.Present(_frameIndex))
+        switch (GraphicsContext.SwapChain.Present(FrameIndex))
         {
             case PresentResult.Success:
             case PresentResult.Suboptimal:

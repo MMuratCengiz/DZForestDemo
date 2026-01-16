@@ -26,8 +26,9 @@ public class CommandListAllocator : IDisposable
     private readonly CommandQueueData[] _graphicsQueueData;
     private readonly CommandQueueData[] _computeQueueData;
 
-    public CommandListAllocator(int numFrames)
+    public CommandListAllocator()
     {
+        var numFrames = (int)GraphicsContext.NumFrames;
         _graphicsQueueData = new CommandQueueData[numFrames];
         _computeQueueData = new CommandQueueData[numFrames];
 

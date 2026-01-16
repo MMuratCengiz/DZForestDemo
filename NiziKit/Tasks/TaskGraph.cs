@@ -18,11 +18,10 @@ public class TaskGraph
     private int _executionCount;
     private bool _isCompiled;
 
-    private int _edgeCount;
+    internal int EdgeCount { get; private set; }
 
-    internal int EdgeCount => _edgeCount;
-    internal ReadOnlySpan<int> EdgeFrom => new(_edgeFrom, 0, _edgeCount);
-    internal ReadOnlySpan<int> EdgeTo => new(_edgeTo, 0, _edgeCount);
+    internal ReadOnlySpan<int> EdgeFrom => new(_edgeFrom, 0, EdgeCount);
+    internal ReadOnlySpan<int> EdgeTo => new(_edgeTo, 0, EdgeCount);
 
     public void Reset()
     {
@@ -33,7 +32,7 @@ public class TaskGraph
         }
 
         TaskCount = 0;
-        _edgeCount = 0;
+        EdgeCount = 0;
         _executionCount = 0;
         _isCompiled = false;
     }
@@ -55,9 +54,9 @@ public class TaskGraph
 
     public void Precede(TaskHandle first, TaskHandle second)
     {
-        _edgeFrom[_edgeCount] = first.Index;
-        _edgeTo[_edgeCount] = second.Index;
-        _edgeCount++;
+        _edgeFrom[EdgeCount] = first.Index;
+        _edgeTo[EdgeCount] = second.Index;
+        EdgeCount++;
     }
 
     public void Precede(TaskHandle first, TaskHandle second, TaskHandle third)
@@ -75,9 +74,9 @@ public class TaskGraph
 
     public void Succeed(TaskHandle first, TaskHandle second)
     {
-        _edgeFrom[_edgeCount] = second.Index;
-        _edgeTo[_edgeCount] = first.Index;
-        _edgeCount++;
+        _edgeFrom[EdgeCount] = second.Index;
+        _edgeTo[EdgeCount] = first.Index;
+        EdgeCount++;
     }
 
     public void Succeed(TaskHandle first, TaskHandle second, TaskHandle third)
@@ -130,7 +129,7 @@ public class TaskGraph
             _adjacencyOffset[i] = 0;
         }
 
-        for (var e = 0; e < _edgeCount; e++)
+        for (var e = 0; e < EdgeCount; e++)
         {
             _adjacencyOffset[_edgeFrom[e] + 1]++;
         }
@@ -146,7 +145,7 @@ public class TaskGraph
             currentOffset[i] = _adjacencyOffset[i];
         }
 
-        for (var e = 0; e < _edgeCount; e++)
+        for (var e = 0; e < EdgeCount; e++)
         {
             var from = _edgeFrom[e];
             var to = _edgeTo[e];
@@ -161,7 +160,7 @@ public class TaskGraph
             _inDegree[i] = 0;
         }
 
-        for (var e = 0; e < _edgeCount; e++)
+        for (var e = 0; e < EdgeCount; e++)
         {
             _inDegree[_edgeTo[e]]++;
         }

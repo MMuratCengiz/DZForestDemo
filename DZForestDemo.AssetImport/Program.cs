@@ -1,4 +1,4 @@
-using NiziKit.ContentPipeline;
+using NiziKit.ContentPIpeline;
 using NiziKit.Offline;
 
 var verbose = args.Contains("-v") || args.Contains("--verbose");

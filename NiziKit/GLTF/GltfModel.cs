@@ -1,5 +1,5 @@
 using NiziKit.Assets;
-using NiziKit.ContentPipeline;
+using NiziKit.ContentPIpeline;
 
 namespace NiziKit.GLTF;
 

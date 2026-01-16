@@ -29,8 +29,4 @@
       <None Include="build\NiziKit.targets" Pack="true" PackagePath="build\" />
     </ItemGroup>
 
-    <ItemGroup>
-      <Folder Include="Graphics\Recording\" />
-    </ItemGroup>
-
 </Project>

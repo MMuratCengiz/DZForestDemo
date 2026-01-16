@@ -12,19 +12,23 @@ public class ForwardRenderer : IRenderer
     private readonly RenderPass[] _passes;
     private readonly PresentPass _presentPass;
 
-    private readonly GpuView _gpuView;
+    private readonly ViewData _viewData;
     private readonly ForwardScenePass _forwardScenePass;
 
     private readonly Stopwatch _stopwatch = Stopwatch.StartNew();
     private float _lastFrameTime;
     private float _totalTime;
 
+    private int _frameCount;
+    private float _fpsAccumulator;
+    private float _lastFpsPrintTime;
+
     public ForwardRenderer()
     {
         _graph = new RenderGraph();
-        _gpuView = new GpuView();
+        _viewData = new ViewData();
 
-        _forwardScenePass = new ForwardScenePass(_gpuView);
+        _forwardScenePass = new ForwardScenePass(_viewData);
         _passes = [_forwardScenePass];
         _presentPass = new BlittingPresentPass();
     }
@@ -43,7 +47,24 @@ public class ForwardRenderer : IRenderer
         _lastFrameTime = currentTime;
         _totalTime = currentTime;
 
-        _gpuView.Update(scene, _graph.FrameIndex, deltaTime, _totalTime);
+        _frameCount++;
+        _fpsAccumulator += deltaTime;
+        if (currentTime - _lastFpsPrintTime >= 1.0f)
+        {
+            var fps = _frameCount / _fpsAccumulator;
+            Console.WriteLine($"ForwardRenderer FPS: {fps:F1}");
+            _frameCount = 0;
+            _fpsAccumulator = 0;
+            _lastFpsPrintTime = currentTime;
+        }
+
+        _viewData.Scene = scene;
+        _viewData.DeltaTime = deltaTime;
+        _viewData.TotalTime = _totalTime;
+
+        var viewBinding = GpuBinding.Get<ViewBinding>(_viewData);
+        viewBinding.Update(_viewData);
+
         _graph.Execute(_passes.AsSpan(), _presentPass);
     }
 
@@ -61,6 +82,5 @@ public class ForwardRenderer : IRenderer
 
         _presentPass.Dispose();
         _graph.Dispose();
-        _gpuView.Dispose();
     }
 }

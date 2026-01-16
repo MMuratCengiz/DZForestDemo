@@ -13,7 +13,7 @@ public class ForwardScenePass : RenderPass
     private readonly AttachmentDesc _sceneColorDesc = AttachmentDesc.Color("SceneColor");
     private readonly AttachmentDesc _sceneDepthDesc = AttachmentDesc.Depth("SceneDepth");
 
-    private readonly GpuView _gpuView;
+    private readonly ViewData _viewData;
 
     private readonly PinnedArray<RenderingAttachmentDesc> _colorAttachments = new(1);
     private readonly PinnedArray<RenderingAttachmentDesc> _depthAttachments = new(1);
@@ -21,9 +21,9 @@ public class ForwardScenePass : RenderPass
     public override string Name => "Forward Scene Pass";
     public override ReadOnlySpan<AttachmentDesc> Writes => _attachments.AsSpan();
 
-    public ForwardScenePass(GpuView gpuView)
+    public ForwardScenePass(ViewData viewData)
     {
-        _gpuView = gpuView;
+        _viewData = viewData;
         _attachments = [_sceneColorDesc, _sceneDepthDesc];
         CreateTextures(_sceneColorDesc);
         CreateTextures(_sceneDepthDesc);
@@ -42,7 +42,7 @@ public class ForwardScenePass : RenderPass
             (uint)ResourceUsageFlagBits.DepthWrite,
             QueueType.Graphics
         );
-        
+
         ctx.ResourceTracking.TransitionTexture(
             cmd,
             sceneColor,
@@ -71,9 +71,9 @@ public class ForwardScenePass : RenderPass
 
         cmd.BindViewport(0, 0, ctx.Width, ctx.Height);
         cmd.BindScissorRect(0, 0, ctx.Width, ctx.Height);
-        
-        var cameraBindGroup = _gpuView.GetBindGroup(ctx.FrameIndex);
-        cmd.BindGroup(cameraBindGroup);
+
+        var viewBinding = GpuBinding.Get<ViewBinding>(_viewData);
+        cmd.BindGroup(viewBinding.BindGroup);
 
         foreach (var material in renderWorld.GetMaterials())
         {
@@ -83,17 +83,19 @@ public class ForwardScenePass : RenderPass
                 continue;
             }
             cmd.BindPipeline(gpuShader.Pipeline);
-            
-            var materialBindGroup = GpuMaterial.Get(material);
-            cmd.BindGroup(materialBindGroup.BindGroup);
+
+            var materialBinding = GpuBinding.Get<MaterialBinding>(material);
+            materialBinding.Update(material);
+            cmd.BindGroup(materialBinding.BindGroup);
 
             foreach (var draw in renderWorld.GetObjects(material))
             {
-                var drawBindGroup = GpuDraw.Get((int)ctx.FrameIndex, draw.Owner);
-                cmd.BindGroup(drawBindGroup.Get((int)ctx.FrameIndex));
+                var drawBinding = GpuBinding.Get<DrawBinding>(draw.Owner);
+                drawBinding.Update(draw.Owner);
+                cmd.BindGroup(drawBinding.BindGroup);
 
                 var mesh = draw.Mesh;
-                
+
                 cmd.BindVertexBuffer(mesh.VertexBuffer.View.Buffer, mesh.VertexBuffer.View.Offset, mesh.VertexBuffer.Stride, 0);
                 cmd.BindIndexBuffer(mesh.IndexBuffer.View.Buffer, mesh.IndexBuffer.IndexType, mesh.IndexBuffer.View.Offset);
 
