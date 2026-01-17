@@ -51,6 +51,15 @@ public class RenderWorld : IWorldEventListener
         }
     }
 
+    public void ComponentChanged(GameObject go, IComponent component)
+    {
+        if (component is MeshComponent or MaterialComponent)
+        {
+            Unregister(go);
+            TryRegister(go);
+        }
+    }
+
     private void TryRegister(GameObject go)
     {
         if (_objectLookup.ContainsKey(go))

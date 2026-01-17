@@ -21,6 +21,7 @@ public class World : IDisposable
     internal static void OnGameObjectDestroyed(GameObject go) => Instance._OnGameObjectDestroyed(go);
     internal static void OnComponentAdded(GameObject go, IComponent component) => Instance._OnComponentAdded(go, component);
     internal static void OnComponentRemoved(GameObject go, IComponent component) => Instance._OnComponentRemoved(go, component);
+    internal static void OnComponentChanged(GameObject go, IComponent component) => Instance._OnComponentChanged(go, component);
 
     private readonly IWorldEventListener[] _worldEventListeners;
 
@@ -95,6 +96,14 @@ public class World : IDisposable
         foreach (var listener in _worldEventListeners)
         {
             listener.ComponentRemoved(go, component);
+        }
+    }
+
+    private void _OnComponentChanged(GameObject go, IComponent component)
+    {
+        foreach (var listener in _worldEventListeners)
+        {
+            listener.ComponentChanged(go, component);
         }
     }
 

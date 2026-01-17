@@ -2,7 +2,8 @@ using NiziKit.Assets;
 
 namespace NiziKit.Components;
 
-public class MaterialComponent : IComponent
+[NiziComponent]
+public partial class MaterialComponent
 {
-    public Material Material;
+    public partial Material? Material { get; set; }
 }

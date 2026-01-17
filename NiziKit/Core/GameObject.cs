@@ -142,6 +142,7 @@ public class GameObject(string name = "GameObject")
     public T AddComponent<T>() where T : IComponent, new()
     {
         var component = new T { };
+        component.Owner = this;
         _components.Add(component);
         if (IsInWorld) World.OnComponentAdded(this, component);
         return component;
@@ -149,6 +150,7 @@ public class GameObject(string name = "GameObject")
 
     public void AddComponent(IComponent component)
     {
+        component.Owner = this;
         _components.Add(component);
         if (IsInWorld) World.OnComponentAdded(this, component);
     }
@@ -160,12 +162,18 @@ public class GameObject(string name = "GameObject")
             if (_components[i] is T component)
             {
                 _components.RemoveAt(i);
+                component.Owner = null;
                 if (IsInWorld) World.OnComponentRemoved(this, component);
                 return true;
             }
         }
 
         return false;
+    }
+
+    public void NotifyComponentChanged(IComponent component)
+    {
+        if (IsInWorld) World.OnComponentChanged(this, component);
     }
 
     public bool HasComponent<T>() where T : class, IComponent

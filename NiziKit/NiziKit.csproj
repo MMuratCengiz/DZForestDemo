@@ -10,6 +10,10 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\NiziKit.Generators\NiziKit.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+    <ItemGroup>
       <PackageReference Include="BepuPhysics" Version="2.4.0" />
       <PackageReference Include="DenOfIzGraphics" Version="0.6.3-alpha" />
       <PackageReference Include="ImGui.NET" Version="1.91.6.1" />

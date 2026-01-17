@@ -30,6 +30,14 @@ public class AssetWorld : IWorldEventListener
     {
     }
 
+    public void ComponentChanged(GameObject go, IComponent component)
+    {
+        if (component is MeshComponent)
+        {
+            TryUploadMesh(go);
+        }
+    }
+
     private static void TryUploadMesh(GameObject go)
     {
         var meshComp = go.GetComponent<MeshComponent>();

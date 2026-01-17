@@ -18,18 +18,27 @@ public struct StaticBody(StaticHandle handle)
     public StaticHandle Handle = handle;
 }
 
-public class RigidbodyComponent : IComponent
+[NiziComponent]
+public partial class RigidbodyComponent
 {
-    public PhysicsShape Shape { get; set; }
-    public PhysicsBodyType BodyType { get; set; } = PhysicsBodyType.Dynamic;
-    public float Mass { get; set; } = 1f;
-    public float SpeculativeMargin { get; set; } = 0.1f;
-    public float SleepThreshold { get; set; } = 0.01f;
+    public partial PhysicsShape Shape { get; set; }
+    public partial PhysicsBodyType BodyType { get; set; }
+    public partial float Mass { get; set; }
+    public partial float SpeculativeMargin { get; set; }
+    public partial float SleepThreshold { get; set; }
 
     internal BodyHandle? BodyHandle { get; set; }
     internal StaticHandle? StaticHandle { get; set; }
 
     public bool IsRegistered => BodyHandle.HasValue || StaticHandle.HasValue;
+
+    public RigidbodyComponent()
+    {
+        __bodyType = PhysicsBodyType.Dynamic;
+        __mass = 1f;
+        __speculativeMargin = 0.1f;
+        __sleepThreshold = 0.01f;
+    }
 
     public static RigidbodyComponent Dynamic(PhysicsShape shape, float mass = 1f)
     {

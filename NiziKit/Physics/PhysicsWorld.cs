@@ -169,6 +169,15 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
         }
     }
 
+    public void ComponentChanged(GameObject go, IComponent component)
+    {
+        if (component is RigidbodyComponent)
+        {
+            Unregister(go);
+            TryRegister(go);
+        }
+    }
+
     private void TryRegister(GameObject go)
     {
         if (_trackedObjects.ContainsKey(go.Id))

@@ -9,4 +9,5 @@ public interface IWorldEventListener
     void GameObjectDestroyed(GameObject go);
     void ComponentAdded(GameObject go, IComponent component);
     void ComponentRemoved(GameObject go, IComponent component);
+    void ComponentChanged(GameObject go, IComponent component);
 }

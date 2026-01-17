@@ -2,7 +2,8 @@ using NiziKit.Assets;
 
 namespace NiziKit.Components;
 
-public class MeshComponent : IComponent
+[NiziComponent]
+public partial class MeshComponent
 {
-    public Mesh? Mesh;
+    public partial Mesh? Mesh { get; set; }
 }

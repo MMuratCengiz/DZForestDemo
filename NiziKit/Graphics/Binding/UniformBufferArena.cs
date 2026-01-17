@@ -31,11 +31,11 @@ public sealed class UniformBufferArena : IDisposable
 
     public GpuBufferView Request(int size)
     {
-        var chunk = _chunks[_currentChunk];
+        ref var chunk = ref System.Runtime.InteropServices.CollectionsMarshal.AsSpan(_chunks)[_currentChunk];
         if (chunk.Offset + size >= BufferChunkSize)
         {
             AddChunk();
-            chunk = _chunks[_currentChunk];
+            chunk = ref System.Runtime.InteropServices.CollectionsMarshal.AsSpan(_chunks)[_currentChunk];
         }
         var offset = (uint)chunk.Offset;
         chunk.Offset += size;
@@ -59,6 +59,7 @@ public sealed class UniformBufferArena : IDisposable
         chunk.Data = chunk.Buffer.MapMemory();
         chunk.Offset = 0;
         _chunks.Add(chunk);
+        _currentChunk = _chunks.Count - 1;
     }
 
     public void Dispose()
