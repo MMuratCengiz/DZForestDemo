@@ -1,3 +1,4 @@
+using NiziKit.Assets;
 using NiziKit.Build;
 using NiziKit.Offline;
 
@@ -11,5 +12,8 @@ Directory.CreateDirectory(outputDir);
 
 var exporter = new ShaderExporter(outputDir);
 exporter.Export(new Blit(shaderSourceDir));
-exporter.Export(new DefaultShader(shaderSourceDir));
 exporter.Export(new Present(shaderSourceDir));
+
+var defaultShaderOffline = new NiziKit.Build.DefaultShader(shaderSourceDir);
+exporter.Export(defaultShaderOffline);
+exporter.Export(defaultShaderOffline, ShaderVariants.Skinned());

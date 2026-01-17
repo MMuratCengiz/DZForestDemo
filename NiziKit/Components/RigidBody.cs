@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using BepuPhysics;
+using NiziKit.Physics;
 
 namespace NiziKit.Components;
 
@@ -15,6 +16,64 @@ public struct RigidBody(BodyHandle handle, bool isStatic = false)
 public struct StaticBody(StaticHandle handle)
 {
     public StaticHandle Handle = handle;
+}
+
+public class RigidbodyComponent : IComponent
+{
+    public PhysicsShape Shape { get; set; }
+    public PhysicsBodyType BodyType { get; set; } = PhysicsBodyType.Dynamic;
+    public float Mass { get; set; } = 1f;
+    public float SpeculativeMargin { get; set; } = 0.1f;
+    public float SleepThreshold { get; set; } = 0.01f;
+
+    internal BodyHandle? BodyHandle { get; set; }
+    internal StaticHandle? StaticHandle { get; set; }
+
+    public bool IsRegistered => BodyHandle.HasValue || StaticHandle.HasValue;
+
+    public static RigidbodyComponent Dynamic(PhysicsShape shape, float mass = 1f)
+    {
+        return new RigidbodyComponent
+        {
+            Shape = shape,
+            BodyType = PhysicsBodyType.Dynamic,
+            Mass = mass
+        };
+    }
+
+    public static RigidbodyComponent Static(PhysicsShape shape)
+    {
+        return new RigidbodyComponent
+        {
+            Shape = shape,
+            BodyType = PhysicsBodyType.Static,
+            Mass = 0f,
+            SleepThreshold = 0f
+        };
+    }
+
+    public static RigidbodyComponent Kinematic(PhysicsShape shape)
+    {
+        return new RigidbodyComponent
+        {
+            Shape = shape,
+            BodyType = PhysicsBodyType.Kinematic,
+            Mass = 0f,
+            SleepThreshold = 0f
+        };
+    }
+
+    internal PhysicsBodyDesc ToBodyDesc()
+    {
+        return new PhysicsBodyDesc
+        {
+            Shape = Shape,
+            BodyType = BodyType,
+            Mass = Mass,
+            SpeculativeMargin = SpeculativeMargin,
+            SleepThreshold = SleepThreshold
+        };
+    }
 }
 
 public enum ColliderShape

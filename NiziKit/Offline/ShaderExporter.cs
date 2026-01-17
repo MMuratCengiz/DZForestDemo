@@ -7,6 +7,11 @@ public class ShaderExporter(string output)
 {
     public void Export(ShaderProgramDesc programDesc, string relativeOutputPath)
     {
+        ExportInternal(programDesc, relativeOutputPath);
+    }
+
+    private void ExportInternal(ShaderProgramDesc programDesc, string relativeOutputPath)
+    {
         var program = new ShaderProgram(programDesc);
         try
         {

@@ -11,11 +11,11 @@ public abstract class Material : IDisposable
     public Texture2d? Metallic { get; set; }
     public Texture2d? Roughness { get; set; }
     public GpuShader? GpuShader { get; set; }
+    public IReadOnlyDictionary<string, string?>? Variants { get; set; }
 
     protected static GraphicsContext Context => GraphicsContext.Instance;
 
     public virtual void Dispose()
     {
-        // Note: GpuShader is owned by ShaderStore, not by Material
     }
 }

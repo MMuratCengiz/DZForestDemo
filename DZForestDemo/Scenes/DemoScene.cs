@@ -3,6 +3,8 @@ using DZForestDemo.GameObjects;
 using NiziKit.Assets;
 using NiziKit.Components;
 using NiziKit.Core;
+using NiziKit.Graphics;
+using NiziKit.Graphics.Binding;
 using NiziKit.Light;
 using NiziKit.Physics;
 
@@ -10,11 +12,38 @@ namespace DZForestDemo.Scenes;
 
 public class DemoScene : Scene
 {
+    private class ColorMaterial : Material
+    {
+        private readonly ColorTexture _colorTexture;
+
+        public ColorMaterial(string name, byte r, byte g, byte b)
+        {
+            Name = name;
+            _colorTexture = new ColorTexture(GraphicsContext.Device, r, g, b, 255, name);
+            Albedo = new Texture2d
+            {
+                Name = name,
+                Width = 1,
+                Height = 1,
+                GpuTexture = _colorTexture.Texture
+            };
+            GpuShader = Assets.GetShader("Builtin/Shaders/Default");
+        }
+
+        public override void Dispose()
+        {
+            _colorTexture.Dispose();
+            base.Dispose();
+        }
+    }
+
     private readonly Random _random = new();
 
     private Mesh _cubeMesh = null!;
     private Mesh _platformMesh = null!;
     private Mesh _sphereMesh = null!;
+    private Material _cubeMaterial = null!;
+    private Material _platformMaterial = null!;
 
     public DemoScene() : base("Demo Scene")
     {
@@ -33,6 +62,9 @@ public class DemoScene : Scene
         _cubeMesh = Assets.CreateBox(1.0f, 1.0f, 1.0f);
         _platformMesh = Assets.CreateBox(20.0f, 1.0f, 20.0f);
         _sphereMesh = Assets.CreateSphere(1.0f);
+
+        _cubeMaterial = Assets.RegisterMaterial(new ColorMaterial("CubeMaterial", 200, 100, 50));
+        _platformMaterial = Assets.RegisterMaterial(new ColorMaterial("PlatformMaterial", 100, 100, 100));
     }
 
     private void CreateCamera()
@@ -91,14 +123,9 @@ public class DemoScene : Scene
         var platform = CreateObject("Platform");
         platform.LocalPosition = new Vector3(0, -2, 0);
 
-        var mesh = platform.AddComponent<MeshComponent>();
-        mesh.Mesh = _platformMesh;
-
-        World.PhysicsWorld?.CreateStaticBody(
-            platform.Id,
-            platform.LocalPosition,
-            Quaternion.Identity,
-            PhysicsShape.Box(new Vector3(20f, 1f, 20f)));
+        platform.AddComponent(new MeshComponent { Mesh = _platformMesh });
+        platform.AddComponent(new MaterialComponent { Material = _platformMaterial });
+        platform.AddComponent(RigidbodyComponent.Static(PhysicsShape.Box(new Vector3(20f, 1f, 20f))));
     }
 
     private void SpawnFox()
@@ -108,12 +135,12 @@ public class DemoScene : Scene
 
     private void SpawnInitialCubes()
     {
-        for (var i = 0; i < 5; i++)
+        for (var i = 0; i < 20; i++)
         {
             var position = new Vector3(
-                (_random.NextSingle() - 0.5f) * 4f,
-                5f + i * 2f,
-                (_random.NextSingle() - 0.5f) * 4f
+                (_random.NextSingle() - 0.5f) * 8f,
+                5f + i * 1.5f,
+                (_random.NextSingle() - 0.5f) * 8f
             );
             SpawnDynamicCube(position);
         }
@@ -147,14 +174,9 @@ public class DemoScene : Scene
             _random.NextSingle() * MathF.PI * 2
         );
 
-        var mesh = cube.AddComponent<MeshComponent>();
-        mesh.Mesh = _cubeMesh;
-
-        World.PhysicsWorld?.CreateBody(
-            cube.Id,
-            position,
-            cube.LocalRotation,
-            PhysicsBodyDesc.Dynamic(PhysicsShape.Box(Vector3.One), 1f));
+        cube.AddComponent(new MeshComponent { Mesh = _cubeMesh });
+        cube.AddComponent(new MaterialComponent { Material = _cubeMaterial });
+        cube.AddComponent(RigidbodyComponent.Dynamic(PhysicsShape.Box(Vector3.One), 1f));
     }
 
     private void SpawnDynamicSphere(Vector3 position)
@@ -162,13 +184,8 @@ public class DemoScene : Scene
         var sphere = CreateObject("Sphere");
         sphere.LocalPosition = position;
 
-        var mesh = sphere.AddComponent<MeshComponent>();
-        mesh.Mesh = _sphereMesh;
-
-        World.PhysicsWorld?.CreateBody(
-            sphere.Id,
-            position,
-            Quaternion.Identity,
-            PhysicsBodyDesc.Dynamic(PhysicsShape.Sphere(1f), 1f));
+        sphere.AddComponent(new MeshComponent { Mesh = _sphereMesh });
+        sphere.AddComponent(new MaterialComponent { Material = _cubeMaterial });
+        sphere.AddComponent(RigidbodyComponent.Dynamic(PhysicsShape.Sphere(1f), 1f));
     }
 }

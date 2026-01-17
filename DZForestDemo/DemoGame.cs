@@ -6,21 +6,20 @@ using NiziKit.Assets;
 using NiziKit.Core;
 using NiziKit.Graphics;
 using NiziKit.Graphics.Renderer.Forward;
-using NiziKit.Physics;
 
 namespace DZForestDemo;
 
 public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 {
     private Camera _cameraController = null!;
-    private ForwardRenderer2 _renderer = null!;
+    private ForwardRenderer _renderer = null!;
     private DemoScene? _demoScene;
 
     private AnimationManager? _animation;
 
     protected override void Load(Game game)
     {
-        _renderer = new ForwardRenderer2();
+        _renderer = new ForwardRenderer();
         _cameraController = new Camera(
             new Vector3(0, 12, 25),
             new Vector3(0, 2, 0)
@@ -38,8 +37,7 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
         _animation?.Update(dt);
 
         SyncCameraToScene();
-        SyncPhysicsToSceneObjects();
-        
+
         _renderer.Render();
     }
 
@@ -60,36 +58,6 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
         camera.AspectRatio = _cameraController.AspectRatio;
         camera.NearPlane = _cameraController.NearPlane;
         camera.FarPlane = _cameraController.FarPlane;
-    }
-
-    private void SyncPhysicsToSceneObjects()
-    {
-        var scene = World.CurrentScene;
-        var physics = World.PhysicsWorld;
-        if (scene == null || physics == null)
-        {
-            return;
-        }
-
-        foreach (var obj in scene.RootObjects)
-        {
-            SyncPhysicsRecursive(obj, physics);
-        }
-    }
-
-    private static void SyncPhysicsRecursive(GameObject obj, PhysicsWorld physics)
-    {
-        var pose = physics.GetPose(obj.Id);
-        if (pose.HasValue)
-        {
-            obj.LocalPosition = pose.Value.Position;
-            obj.LocalRotation = pose.Value.Rotation;
-        }
-
-        foreach (var child in obj.Children)
-        {
-            SyncPhysicsRecursive(child, physics);
-        }
     }
 
     protected override void FixedUpdate(float fixedDt)

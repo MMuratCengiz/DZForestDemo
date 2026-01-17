@@ -1,19 +1,20 @@
+using DenOfIz;
 using NiziKit.Application.Timing;
 using NiziKit.Core;
 using NiziKit.Graphics.Binding;
-using NiziKit.Graphics.Graph;
-using NiziKit.Graphics.Renderer.Common;
+using NiziKit.Graphics.Resources;
 
 namespace NiziKit.Graphics.Renderer.Forward;
 
 public class ForwardRenderer : IRenderer
 {
-    private readonly RenderGraph _graph;
-    private readonly RenderPass[] _passes;
-    private readonly PresentPass _presentPass;
-
+    private readonly RenderFrame _renderFrame;
     private readonly ViewData _viewData;
-    private readonly ForwardScenePass _forwardScenePass;
+
+    private CycledTexture _sceneColor = null!;
+    private CycledTexture _sceneDepth = null!;
+    private uint _width;
+    private uint _height;
 
     private int _frameCount;
     private float _fpsAccumulator;
@@ -21,12 +22,19 @@ public class ForwardRenderer : IRenderer
 
     public ForwardRenderer()
     {
-        _graph = new RenderGraph();
-        _viewData = new ViewData();
+        _renderFrame = new RenderFrame();
+        _renderFrame.EnableDebugOverlay(DebugOverlayConfig.Default);
 
-        _forwardScenePass = new ForwardScenePass(_viewData);
-        _passes = [_forwardScenePass];
-        _presentPass = new BlittingPresentPass();
+        _viewData = new ViewData();
+        _width = GraphicsContext.Width;
+        _height = GraphicsContext.Height;
+        CreateRenderTargets();
+    }
+
+    private void CreateRenderTargets()
+    {
+        _sceneColor = CycledTexture.ColorAttachment("SceneColor");
+        _sceneDepth = CycledTexture.DepthAttachment("SceneDepth");
     }
 
     public void Render()
@@ -43,7 +51,7 @@ public class ForwardRenderer : IRenderer
         if (Time.TotalTime - _lastFpsPrintTime >= 1.0f)
         {
             var fps = _frameCount / _fpsAccumulator;
-            Console.WriteLine($"ForwardRenderer FPS: {fps:F1}");
+            Console.WriteLine($"ForwardRenderer2 FPS: {fps:F1}");
             _frameCount = 0;
             _fpsAccumulator = 0;
             _lastFpsPrintTime = Time.TotalTime;
@@ -53,25 +61,65 @@ public class ForwardRenderer : IRenderer
         _viewData.DeltaTime = Time.DeltaTime;
         _viewData.TotalTime = Time.TotalTime;
 
-        var viewBinding = GpuBinding.Get<ViewBinding>(_viewData);
-        viewBinding.Update(_viewData);
+        _renderFrame.BeginFrame();
 
-        _graph.Execute(_passes.AsSpan(), _presentPass);
+        var pass = _renderFrame.BeginGraphicsPass();
+        pass.SetRenderTarget(0, _sceneColor, LoadOp.Clear);
+        pass.SetDepthTarget(_sceneDepth, LoadOp.Clear);
+
+        pass.Begin();
+
+        pass.Bind<ViewBinding>(_viewData);
+
+        foreach (var material in renderWorld.GetMaterials())
+        {
+            var gpuShader = material.GpuShader;
+            if (gpuShader == null)
+            {
+                continue;
+            }
+
+            pass.BindPipeline(gpuShader.Pipeline);
+            pass.Bind<MaterialBinding>(material);
+
+            foreach (var draw in renderWorld.GetObjects(material))
+            {
+                pass.Bind<DrawBinding>(draw.Owner);
+                pass.DrawMesh(draw.Mesh);
+            }
+        }
+
+        pass.End();
+
+        var debugOverlay = _renderFrame.ExecuteDebugOverlay();
+        _renderFrame.AlphaBlit(debugOverlay, _sceneColor);
+
+        _renderFrame.Submit();
+        _renderFrame.Present(_sceneColor);
     }
 
     public void OnResize(uint width, uint height)
     {
-        _graph.Resize(width, height);
+        if (_width == width && _height == height)
+        {
+            return;
+        }
+
+        GraphicsContext.WaitIdle();
+
+        _sceneColor.Dispose();
+        _sceneDepth.Dispose();
+
+        _width = width;
+        _height = height;
+        CreateRenderTargets();
     }
 
     public void Dispose()
     {
-        foreach (var pass in _passes)
-        {
-            pass.Dispose();
-        }
-
-        _presentPass.Dispose();
-        _graph.Dispose();
+        GraphicsContext.WaitIdle();
+        _sceneColor.Dispose();
+        _sceneDepth.Dispose();
+        _renderFrame.Dispose();
     }
 }

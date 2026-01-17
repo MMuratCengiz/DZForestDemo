@@ -14,7 +14,8 @@ public class Fox : GameObject
         {
             Name = "FoxMaterial";
             Albedo = Assets.LoadTexture("Texture.png");
-            GpuShader = Assets.GetShader("Builtin/Shaders/Default");
+            Variants = ShaderVariants.Skinned();
+            GpuShader = Assets.GetShader("Builtin/Shaders/Default", Variants);
         }
     }
 

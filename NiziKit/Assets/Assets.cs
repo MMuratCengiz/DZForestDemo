@@ -32,7 +32,11 @@ public sealed class Assets : IDisposable
         _indexPool = new BufferPool(GraphicsContext.Device,
             (uint)(BufferUsageFlagBits.Index | BufferUsageFlagBits.CopyDst));
 
-        _shaderStore.Register("Builtin/Shaders/Default", new DefaultShader().Value);
+        var defaultShader = new DefaultShader();
+        _shaderStore.Register("Builtin/Shaders/Default", defaultShader.StaticVariant);
+        _shaderStore.Register(
+            ShaderVariants.EncodeName("Builtin/Shaders/Default", ShaderVariants.Skinned()),
+            defaultShader.SkinnedVariant);
         _materialCache["Builtin/Materials/Default"] = new DefaultMaterial(_shaderStore);
 
         _instance = this;
@@ -46,6 +50,7 @@ public sealed class Assets : IDisposable
     public static Animation LoadAnimation(string path, Skeleton skeleton) => Instance._LoadAnimation(path, skeleton);
     public static void RegisterShader(string name, GpuShader shader) => Instance._RegisterShader(name, shader);
     public static GpuShader? GetShader(string name) => Instance._GetShader(name);
+    public static GpuShader? GetShader(string name, IReadOnlyDictionary<string, string?>? variants) => Instance._GetShader(name, variants);
     public static Material RegisterMaterial(Material material) => Instance._RegisterMaterial(material);
     public static Material? GetMaterial(string name) => Instance._GetMaterial(name);
     public static Mesh CreateBox(float width, float height, float depth) => Instance._CreateBox(width, height, depth);
@@ -271,6 +276,11 @@ public sealed class Assets : IDisposable
     private GpuShader? _GetShader(string name)
     {
         return _shaderStore[name];
+    }
+
+    private GpuShader? _GetShader(string name, IReadOnlyDictionary<string, string?>? variants)
+    {
+        return _shaderStore.Get(name, variants);
     }
 
     private Material _RegisterMaterial(Material material)

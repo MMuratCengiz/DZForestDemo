@@ -61,12 +61,11 @@ public class RenderWorld : IWorldEventListener
         var materialComp = go.GetComponent<MaterialComponent>();
         var meshComp = go.GetComponent<MeshComponent>();
 
-        if (materialComp == null || meshComp?.Mesh == null)
+        var material = materialComp?.Material;
+        if (material == null || meshComp?.Mesh == null)
         {
             return;
         }
-
-        var material = materialComp.Material;
         if (!_materialRenderObjects.TryGetValue(material, out var bucket))
         {
             bucket = new List<RenderObject>(32);

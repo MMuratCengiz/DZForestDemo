@@ -14,7 +14,7 @@ public class Texture2d : IAsset
     public Format Format { get; set; }
     public Texture GpuTexture { get; set; } = null!;
 
-    internal Texture2d()
+    public Texture2d()
     {
     }
 

@@ -17,6 +17,7 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
     private readonly ThreadDispatcher _threadDispatcher;
     private readonly Dictionary<int, BodyHandle> _bodyHandles = new();
     private readonly Dictionary<int, StaticHandle> _staticHandles = new();
+    private readonly Dictionary<int, GameObject> _trackedObjects = new();
 
     public Vector3 Gravity { get; set; }
 
@@ -42,6 +43,7 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
     public void Step(float dt)
     {
         _simulation.Timestep(dt, _threadDispatcher);
+        SyncToGameObjects();
     }
 
     public BodyHandle CreateBody(int id, Vector3 position, Quaternion rotation, PhysicsBodyDesc desc)
@@ -130,22 +132,98 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
 
     public void SceneReset()
     {
+        foreach (var id in _bodyHandles.Keys.ToArray())
+        {
+            RemoveBody(id);
+        }
+        foreach (var id in _staticHandles.Keys.ToArray())
+        {
+            RemoveBody(id);
+        }
+        _trackedObjects.Clear();
     }
 
     public void GameObjectCreated(GameObject go)
     {
+        TryRegister(go);
     }
 
     public void GameObjectDestroyed(GameObject go)
     {
+        Unregister(go);
     }
 
     public void ComponentAdded(GameObject go, IComponent component)
     {
+        if (component is RigidbodyComponent)
+        {
+            TryRegister(go);
+        }
     }
 
     public void ComponentRemoved(GameObject go, IComponent component)
     {
+        if (component is RigidbodyComponent)
+        {
+            Unregister(go);
+        }
+    }
+
+    private void TryRegister(GameObject go)
+    {
+        if (_trackedObjects.ContainsKey(go.Id))
+        {
+            return;
+        }
+
+        var rigidbody = go.GetComponent<RigidbodyComponent>();
+        if (rigidbody == null)
+        {
+            return;
+        }
+
+        if (rigidbody.BodyType == PhysicsBodyType.Static)
+        {
+            var handle = CreateStaticBody(go.Id, go.LocalPosition, go.LocalRotation, rigidbody.Shape);
+            rigidbody.StaticHandle = handle;
+        }
+        else
+        {
+            var handle = CreateBody(go.Id, go.LocalPosition, go.LocalRotation, rigidbody.ToBodyDesc());
+            rigidbody.BodyHandle = handle;
+        }
+
+        _trackedObjects[go.Id] = go;
+    }
+
+    private void Unregister(GameObject go)
+    {
+        if (!_trackedObjects.Remove(go.Id))
+        {
+            return;
+        }
+
+        var rigidbody = go.GetComponent<RigidbodyComponent>();
+        if (rigidbody != null)
+        {
+            rigidbody.BodyHandle = null;
+            rigidbody.StaticHandle = null;
+        }
+
+        RemoveBody(go.Id);
+    }
+
+    private void SyncToGameObjects()
+    {
+        foreach (var (id, go) in _trackedObjects)
+        {
+            var pose = GetPose(id);
+            if (pose.HasValue)
+            {
+                go.LocalPosition = pose.Value.Position;
+                go.LocalRotation = pose.Value.Rotation;
+            }
+        }
     }
 }
 

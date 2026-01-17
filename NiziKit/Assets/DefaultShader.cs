@@ -5,12 +5,20 @@ namespace NiziKit.Assets;
 
 public class DefaultShader
 {
-    public GpuShader Value { get; }
+    public GpuShader StaticVariant { get; }
+    public GpuShader SkinnedVariant { get; }
 
     public DefaultShader()
     {
-        var program = BuiltinShaderProgram.Load("DefaultShader")
-                   ?? throw new InvalidOperationException("DefaultShader not found");
+        StaticVariant = CreateVariant("DefaultShader");
+        SkinnedVariant = CreateVariant(ShaderVariants.EncodeName("DefaultShader", ShaderVariants.Skinned()));
+    }
+
+    private static GpuShader CreateVariant(string shaderName)
+    {
+        var program = BuiltinShaderProgram.Load(shaderName)
+                   ?? throw new InvalidOperationException($"{shaderName} not found");
+
         var blendDesc = new BlendDesc
         {
             Enable = false,
@@ -40,6 +48,6 @@ public class DefaultShader
             RenderTargets = renderTargets
         };
 
-        Value = GpuShader.Graphics(program, graphicsDesc);
+        return GpuShader.Graphics(program, graphicsDesc);
     }
 }
