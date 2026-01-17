@@ -1,4 +1,6 @@
 using System.Numerics;
+using DenOfIz;
+using NiziKit.Components;
 
 namespace NiziKit.Core;
 
@@ -13,8 +15,16 @@ public class CameraObject(string name) : GameObject(name)
     public float FarPlane { get; set; } = 1000f;
     public float AspectRatio { get; set; } = 16f / 9f;
 
-    private float _yaw;
-    private float _pitch;
+    private CameraController? _cachedController;
+
+    public CameraController? Controller
+    {
+        get
+        {
+            _cachedController ??= GetComponent<CameraController>();
+            return _cachedController;
+        }
+    }
 
     public void SetAspectRatio(uint width, uint height)
     {
@@ -24,18 +34,7 @@ public class CameraObject(string name) : GameObject(name)
         }
     }
 
-    public Vector3 Forward
-    {
-        get
-        {
-            var cosP = MathF.Cos(_pitch);
-            return new Vector3(
-                MathF.Sin(_yaw) * cosP,
-                MathF.Sin(_pitch),
-                MathF.Cos(_yaw) * cosP
-            );
-        }
-    }
+    public Vector3 Forward => Controller!.Forward;
 
     public Vector3 Right
     {
@@ -62,20 +61,21 @@ public class CameraObject(string name) : GameObject(name)
 
     public Matrix4x4 ViewProjectionMatrix => ViewMatrix * ProjectionMatrix;
 
-    public void SetYawPitch(float yaw, float pitch)
+    public void Update(float deltaTime)
     {
-        _yaw = yaw;
-        _pitch = pitch;
-        LocalRotation = Quaternion.CreateFromYawPitchRoll(yaw, pitch, 0);
+        Controller?.Update(deltaTime);
+    }
+
+    public bool HandleEvent(in Event ev)
+    {
+        return Controller?.HandleEvent(in ev) ?? false;
     }
 
     public void LookAt(Vector3 target)
     {
         var direction = Vector3.Normalize(target - WorldPosition);
-
-        _yaw = MathF.Atan2(direction.X, direction.Z);
-        _pitch = MathF.Asin(Math.Clamp(direction.Y, -1f, 1f));
-
-        LocalRotation = Quaternion.CreateFromYawPitchRoll(_yaw, _pitch, 0);
+        var yaw = MathF.Atan2(direction.X, direction.Z);
+        var pitch = MathF.Asin(Math.Clamp(direction.Y, -1f, 1f));
+        LocalRotation = Quaternion.CreateFromYawPitchRoll(yaw, pitch, 0);
     }
 }

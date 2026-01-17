@@ -14,6 +14,7 @@ public class AnimatorLayer
     public List<AnimatorState> States { get; } = [];
     public AnimatorState? DefaultState { get; set; }
     public AnimatorState? AnyState { get; private set; }
+    public HashSet<int>? BoneMask { get; set; }
 
     public AnimatorState AddState(string name)
     {
@@ -42,5 +43,15 @@ public class AnimatorLayer
     {
         AnyState ??= new AnimatorState { Name = "Any State" };
         return AnyState.AddTransition(destination);
+    }
+
+    public void SetBoneMask(params int[] boneIndices)
+    {
+        BoneMask = [..boneIndices];
+    }
+
+    public void ClearBoneMask()
+    {
+        BoneMask = null;
     }
 }

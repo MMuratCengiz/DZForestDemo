@@ -2,6 +2,7 @@ using System.Runtime.CompilerServices;
 using DenOfIz;
 using NiziKit.Application.Timing;
 using NiziKit.Application.Windowing;
+using NiziKit.Core;
 using NiziKit.Graphics;
 using NiziKit.Services;
 
@@ -104,6 +105,9 @@ public class Game : IDisposable
             FixedUpdate((float)_fixedTimestep.FixedDeltaTime);
         }
 
+        // Update camera before user code
+        World.CurrentScene?.MainCamera?.Update(Time.DeltaTime);
+
         Update(Time.DeltaTime);
     }
 
@@ -123,9 +127,15 @@ public class Game : IDisposable
 
                 if (ev.Window.Event == WindowEventType.Resized)
                 {
-                    GraphicsContext.Resize((uint)ev.Window.Data1, (uint)ev.Window.Data2);
+                    var width = (uint)ev.Window.Data1;
+                    var height = (uint)ev.Window.Data2;
+                    GraphicsContext.Resize(width, height);
+                    World.CurrentScene?.MainCamera?.SetAspectRatio(width, height);
                 }
             }
+
+            // Route events to camera first
+            World.CurrentScene?.MainCamera?.HandleEvent(in ev);
 
             OnEvent(ref ev);
         }

@@ -6,22 +6,33 @@ using NiziKit.Core;
 
 namespace NiziKit.Animation;
 
+public class AnimatorEventArgs : EventArgs
+{
+    public AnimatorState State { get; init; } = null!;
+    public int LayerIndex { get; init; }
+}
+
 public class Animator : IComponent, IDisposable
 {
     private const int MaxBones = 256;
+    private const int MaxTransitionsPerFrame = 8;
 
     public GameObject? Owner { get; set; }
     public Skeleton? Skeleton { get; set; }
     public AnimatorController? Controller { get; set; }
 
+    public event EventHandler<AnimatorEventArgs>? StateCompleted;
+    public event EventHandler<AnimatorEventArgs>? StateStarted;
+
     private Dictionary<string, AnimatorParameter> _parameters = [];
     private readonly AnimatorLayerState[] _layerStates = new AnimatorLayerState[8];
     private readonly Matrix4x4[] _boneMatrices = new Matrix4x4[MaxBones];
-    private readonly Matrix4x4[] _sampledTransforms = new Matrix4x4[MaxBones];
-    private readonly Matrix4x4[] _blendTransforms = new Matrix4x4[MaxBones];
+    private readonly Matrix4x4[] _layerTransforms = new Matrix4x4[MaxBones];
     private Matrix4x4[]? _inverseBindMatrices;
     private Matrix4x4 _nodeTransform = Matrix4x4.Identity;
-    private Float4x4Array? _ozzTransforms;
+    private Float4x4Array _ozzTransforms;
+    private Float4x4Array _ozzBlendTransforms;
+    private bool _initialized;
 
     public int BoneCount { get; private set; }
     public ReadOnlySpan<Matrix4x4> BoneMatrices => _boneMatrices.AsSpan(0, BoneCount);
@@ -36,6 +47,7 @@ public class Animator : IComponent, IDisposable
         for (var i = 0; i < MaxBones; i++)
         {
             _boneMatrices[i] = Matrix4x4.Identity;
+            _layerTransforms[i] = Matrix4x4.Identity;
         }
     }
 
@@ -49,6 +61,8 @@ public class Animator : IComponent, IDisposable
         _parameters = Controller.CloneParameters();
         BoneCount = Math.Min(Skeleton.JointCount, MaxBones);
         _ozzTransforms = Float4x4Array.Create(new Matrix4x4[BoneCount]);
+        _ozzBlendTransforms = Float4x4Array.Create(new Matrix4x4[BoneCount]);
+        _initialized = true;
 
         var meshComponent = Owner?.GetComponent<MeshComponent>();
         _inverseBindMatrices = meshComponent?.Mesh?.InverseBindMatrices;
@@ -60,6 +74,7 @@ public class Animator : IComponent, IDisposable
             _layerStates[i].CurrentState = layer.DefaultState;
             _layerStates[i].StateTime = 0;
             _layerStates[i].NormalizedTime = 0;
+            _layerStates[i].PlaybackDirection = 1;
         }
     }
 
@@ -82,28 +97,33 @@ public class Animator : IComponent, IDisposable
     {
         var layer = Controller!.Layers[layerIndex];
         var state = _layerStates[layerIndex];
+        state.TransitionsThisFrame = 0;
 
         if (state.CurrentState == null)
         {
             return;
         }
 
-        CheckAnyStateTransitions(layer, state);
+        CheckAnyStateTransitions(layer, state, layerIndex);
 
         if (state.IsTransitioning)
         {
-            UpdateTransition(state, deltaTime);
+            if (state.CurrentTransition?.CanInterruptSource == true)
+            {
+                CheckTransitions(state, layerIndex);
+            }
+            UpdateTransition(state, deltaTime, layerIndex);
         }
         else
         {
-            UpdateState(state, deltaTime);
-            CheckTransitions(state);
+            UpdateState(state, deltaTime, layerIndex);
+            CheckTransitions(state, layerIndex);
         }
 
         SampleLayer(layerIndex);
     }
 
-    private void UpdateState(AnimatorLayerState state, float deltaTime)
+    private void UpdateState(AnimatorLayerState state, float deltaTime, int layerIndex)
     {
         if (state.CurrentState?.Clip == null)
         {
@@ -111,56 +131,114 @@ public class Animator : IComponent, IDisposable
         }
 
         var speed = state.CurrentState.GetSpeed(_parameters);
-        state.StateTime += deltaTime * speed;
+        var effectiveSpeed = speed * state.PlaybackDirection;
+        state.StateTime += deltaTime * effectiveSpeed;
 
         var duration = state.CurrentState.Clip.Duration;
-        if (duration > 0)
-        {
-            if (state.CurrentState.Loop)
-            {
-                while (state.StateTime >= duration)
-                {
-                    state.StateTime -= duration;
-                }
-
-                while (state.StateTime < 0)
-                {
-                    state.StateTime += duration;
-                }
-            }
-            else
-            {
-                state.StateTime = Math.Clamp(state.StateTime, 0, duration);
-            }
-            state.NormalizedTime = state.StateTime / duration;
-        }
-    }
-
-    private void CheckTransitions(AnimatorLayerState state)
-    {
-        if (state.CurrentState == null)
+        if (duration <= 0)
         {
             return;
         }
 
-        foreach (var transition in state.CurrentState.Transitions)
+        var wasComplete = false;
+
+        switch (state.CurrentState.LoopMode)
+        {
+            case AnimationLoopMode.Loop:
+                if (state.StateTime >= duration)
+                {
+                    state.StateTime = state.StateTime % duration;
+                    wasComplete = true;
+                }
+                else if (state.StateTime < 0)
+                {
+                    state.StateTime = duration - ((-state.StateTime) % duration);
+                    if (state.StateTime >= duration)
+                    {
+                        state.StateTime = 0;
+                    }
+
+                    wasComplete = true;
+                }
+                break;
+
+            case AnimationLoopMode.PingPong:
+                if (state.StateTime >= duration)
+                {
+                    state.StateTime = duration - (state.StateTime - duration);
+                    state.PlaybackDirection = -1;
+                    if (state.StateTime < 0)
+                    {
+                        state.StateTime = 0;
+                    }
+                }
+                else if (state.StateTime < 0)
+                {
+                    state.StateTime = -state.StateTime;
+                    state.PlaybackDirection = 1;
+                    if (state.StateTime > duration)
+                    {
+                        state.StateTime = duration;
+                    }
+
+                    wasComplete = true;
+                }
+                break;
+
+            case AnimationLoopMode.Once:
+            default:
+                if (state.StateTime >= duration)
+                {
+                    state.StateTime = duration;
+                    wasComplete = !state.HasCompleted;
+                    state.HasCompleted = true;
+                }
+                else if (state.StateTime < 0)
+                {
+                    state.StateTime = 0;
+                    wasComplete = !state.HasCompleted;
+                    state.HasCompleted = true;
+                }
+                break;
+        }
+
+        state.NormalizedTime = state.StateTime / duration;
+
+        if (wasComplete && state.CurrentState != null)
+        {
+            StateCompleted?.Invoke(this, new AnimatorEventArgs
+            {
+                State = state.CurrentState,
+                LayerIndex = layerIndex
+            });
+        }
+    }
+
+    private void CheckTransitions(AnimatorLayerState state, int layerIndex)
+    {
+        if (state.CurrentState == null || state.TransitionsThisFrame >= MaxTransitionsPerFrame)
+        {
+            return;
+        }
+
+        foreach (var transition in state.CurrentState.GetOrderedTransitions())
         {
             if (transition.CanTransition(_parameters, state.NormalizedTime))
             {
-                StartTransition(state, transition);
+                StartTransition(state, transition, layerIndex);
                 break;
             }
         }
     }
 
-    private void CheckAnyStateTransitions(AnimatorLayer layer, AnimatorLayerState state)
+    private void CheckAnyStateTransitions(AnimatorLayer layer, AnimatorLayerState state, int layerIndex)
     {
-        if (layer.AnyState == null)
+        if (layer.AnyState == null || state.TransitionsThisFrame >= MaxTransitionsPerFrame)
         {
             return;
         }
 
-        foreach (var transition in layer.AnyState.Transitions)
+        foreach (var transition in layer.AnyState.GetOrderedTransitions())
         {
             if (transition.DestinationState == state.CurrentState)
             {
@@ -169,24 +247,38 @@ public class Animator : IComponent, IDisposable
 
             if (transition.CanTransition(_parameters, state.NormalizedTime))
             {
-                StartTransition(state, transition);
+                StartTransition(state, transition, layerIndex);
                 break;
             }
         }
     }
 
-    private void StartTransition(AnimatorLayerState state, AnimatorTransition transition)
+    private void StartTransition(AnimatorLayerState state, AnimatorTransition transition, int layerIndex)
     {
+        state.TransitionsThisFrame++;
         state.PreviousState = state.CurrentState;
         state.PreviousStateTime = state.StateTime;
+        state.PreviousPlaybackDirection = state.PlaybackDirection;
         state.CurrentState = transition.DestinationState;
+        state.CurrentTransition = transition;
         state.StateTime = transition.Offset * (state.CurrentState?.Clip?.Duration ?? 0);
         state.NormalizedTime = transition.Offset;
         state.TransitionDuration = transition.Duration;
         state.TransitionTime = 0;
         state.IsTransitioning = true;
+        state.PlaybackDirection = 1;
+        state.HasCompleted = false;
 
         ResetTriggersInConditions(transition);
+
+        if (state.CurrentState != null)
+        {
+            StateStarted?.Invoke(this, new AnimatorEventArgs
+            {
+                State = state.CurrentState,
+                LayerIndex = layerIndex
+            });
+        }
     }
 
     private void ResetTriggersInConditions(AnimatorTransition transition)
@@ -201,47 +293,66 @@ public class Animator : IComponent, IDisposable
         }
     }
 
-    private void UpdateTransition(AnimatorLayerState state, float deltaTime)
+    private void UpdateTransition(AnimatorLayerState state, float deltaTime, int layerIndex)
     {
         state.TransitionTime += deltaTime;
 
         if (state.PreviousState?.Clip != null)
         {
             var speed = state.PreviousState.GetSpeed(_parameters);
-            state.PreviousStateTime += deltaTime * speed;
+            state.PreviousStateTime += deltaTime * speed * state.PreviousPlaybackDirection;
+
+            var duration = state.PreviousState.Clip.Duration;
+            if (duration > 0 && state.PreviousState.LoopMode == AnimationLoopMode.Loop)
+            {
+                if (state.PreviousStateTime >= duration)
+                {
+                    state.PreviousStateTime = state.PreviousStateTime % duration;
+                }
+                else if (state.PreviousStateTime < 0)
+                {
+                    state.PreviousStateTime = duration - ((-state.PreviousStateTime) % duration);
+                }
+            }
         }
 
-        UpdateState(state, deltaTime);
+        UpdateState(state, deltaTime, layerIndex);
 
         if (state.TransitionTime >= state.TransitionDuration)
         {
             state.IsTransitioning = false;
             state.PreviousState = null;
+            state.CurrentTransition = null;
         }
     }
 
     private void SampleLayer(int layerIndex)
     {
+        var layer = Controller!.Layers[layerIndex];
         var state = _layerStates[layerIndex];
-        if (Skeleton == null)
+
+        if (Skeleton == null || !_initialized)
         {
             return;
         }
 
-        if (state.IsTransitioning && state.TransitionDuration > 0)
+        if (state.IsTransitioning && state.TransitionDuration > 0 && state.CurrentTransition != null)
         {
-            var blendWeight = Math.Clamp(state.TransitionTime / state.TransitionDuration, 0, 1);
+            var linearWeight = Math.Clamp(state.TransitionTime / state.TransitionDuration, 0, 1);
+            var blendWeight = state.CurrentTransition.ApplyCurve(linearWeight);
             SampleBlended(state, blendWeight);
         }
         else
         {
-            SampleSingle(state.CurrentState, state.NormalizedTime);
+            SampleSingle(state.CurrentState, state.NormalizedTime, _ozzTransforms);
         }
+
+        ApplyLayerBlending(layerIndex, layer);
     }
 
-    private void SampleSingle(AnimatorState? animState, float normalizedTime)
+    private void SampleSingle(AnimatorState? animState, float normalizedTime, Float4x4Array outTransforms)
     {
-        if (animState?.Clip == null || Skeleton == null || _ozzTransforms == null)
+        if (animState?.Clip == null || Skeleton == null)
         {
             return;
         }
@@ -250,37 +361,77 @@ public class Animator : IComponent, IDisposable
         {
             Context = animState.Clip.OzzContext,
             Ratio = normalizedTime,
-            OutTransforms = _ozzTransforms.Value
+            OutTransforms = outTransforms
         };
 
-        if (Skeleton.OzzSkeleton.RunSamplingJob(in samplingDesc))
-        {
-            var span = _ozzTransforms.Value.AsSpan();
-            for (var i = 0; i < BoneCount; i++)
-            {
-                _sampledTransforms[i] = span[i];
-            }
-        }
+        Skeleton.OzzSkeleton.RunSamplingJob(in samplingDesc);
     }
 
     private void SampleBlended(AnimatorLayerState state, float blendWeight)
     {
-        if (Skeleton == null || _ozzTransforms == null)
+        if (Skeleton == null || !_initialized)
         {
             return;
         }
 
-        SampleSingle(state.PreviousState, state.PreviousStateTime / (state.PreviousState?.Clip?.Duration ?? 1));
-        for (var i = 0; i < BoneCount; i++)
+        var prevNormalized = 0f;
+        if (state.PreviousState?.Clip != null && state.PreviousState.Clip.Duration > 0)
         {
-            _blendTransforms[i] = _sampledTransforms[i];
+            prevNormalized = Math.Clamp(state.PreviousStateTime / state.PreviousState.Clip.Duration, 0, 1);
         }
 
-        SampleSingle(state.CurrentState, state.NormalizedTime);
+        SampleSingle(state.PreviousState, prevNormalized, _ozzBlendTransforms);
+        SampleSingle(state.CurrentState, state.NormalizedTime, _ozzTransforms);
+
+        var prevSpan = _ozzBlendTransforms.AsSpan();
+        var currSpan = _ozzTransforms.AsSpan();
 
         for (var i = 0; i < BoneCount; i++)
         {
-            _sampledTransforms[i] = Matrix4x4.Lerp(_blendTransforms[i], _sampledTransforms[i], blendWeight);
+            currSpan[i] = Matrix4x4.Lerp(prevSpan[i], currSpan[i], blendWeight);
+        }
+    }
+
+    private void ApplyLayerBlending(int layerIndex, AnimatorLayer layer)
+    {
+        if (!_initialized)
+        {
+            return;
+        }
+
+        var transforms = _ozzTransforms.AsSpan();
+
+        if (layerIndex == 0)
+        {
+            for (var i = 0; i < BoneCount; i++)
+            {
+                _layerTransforms[i] = transforms[i];
+            }
+            return;
+        }
+
+        var weight = layer.Weight;
+        if (weight <= 0)
+        {
+            return;
+        }
+
+        switch (layer.BlendMode)
+        {
+            case AnimatorLayerBlendMode.Override:
+                for (var i = 0; i < BoneCount; i++)
+                {
+                    _layerTransforms[i] = Matrix4x4.Lerp(_layerTransforms[i], transforms[i], weight);
+                }
+                break;
+
+            case AnimatorLayerBlendMode.Additive:
+                for (var i = 0; i < BoneCount; i++)
+                {
+                    var additive = transforms[i] - Matrix4x4.Identity;
+                    _layerTransforms[i] += additive * weight;
+                }
+                break;
         }
     }
 
@@ -297,7 +448,7 @@ public class Animator : IComponent, IDisposable
                 ? _inverseBindMatrices[i]
                 : Matrix4x4.Identity;
 
-            _boneMatrices[i] = inverseBindMatrix * _sampledTransforms[i] * _nodeTransform;
+            _boneMatrices[i] = inverseBindMatrix * _layerTransforms[i] * _nodeTransform;
         }
     }
 
@@ -350,6 +501,8 @@ public class Animator : IComponent, IDisposable
     public bool GetBool(string name) =>
         _parameters.TryGetValue(name, out var param) && param.BoolValue;
 
+    public bool HasParameter(string name) => _parameters.ContainsKey(name);
+
     public void Play(string stateName, int layerIndex = 0)
     {
         if (Controller == null || layerIndex >= Controller.Layers.Count)
@@ -369,9 +522,17 @@ public class Animator : IComponent, IDisposable
         layerState.StateTime = 0;
         layerState.NormalizedTime = 0;
         layerState.IsTransitioning = false;
+        layerState.PlaybackDirection = 1;
+        layerState.HasCompleted = false;
+
+        StateStarted?.Invoke(this, new AnimatorEventArgs
+        {
+            State = state,
+            LayerIndex = layerIndex
+        });
     }
 
-    public void CrossFade(string stateName, float duration, int layerIndex = 0)
+    public void CrossFade(string stateName, float duration, int layerIndex = 0, TransitionCurve curve = TransitionCurve.Linear)
     {
         if (Controller == null || layerIndex >= Controller.Layers.Count)
         {
@@ -389,9 +550,30 @@ public class Animator : IComponent, IDisposable
         var transition = new AnimatorTransition
         {
             DestinationState = destState,
-            Duration = duration
+            Duration = duration,
+            Curve = curve
         };
-        StartTransition(layerState, transition);
+        StartTransition(layerState, transition, layerIndex);
+    }
+
+    public void SetLayerWeight(int layerIndex, float weight)
+    {
+        if (Controller == null || layerIndex >= Controller.Layers.Count)
+        {
+            return;
+        }
+
+        Controller.Layers[layerIndex].Weight = Math.Clamp(weight, 0f, 1f);
+    }
+
+    public float GetLayerWeight(int layerIndex)
+    {
+        if (Controller == null || layerIndex >= Controller.Layers.Count)
+        {
+            return 0;
+        }
+
+        return Controller.Layers[layerIndex].Weight;
     }
 
     public AnimatorState? GetCurrentState(int layerIndex = 0)
@@ -434,20 +616,35 @@ public class Animator : IComponent, IDisposable
         return _layerStates[layerIndex].IsTransitioning;
     }
 
+    public bool HasStateCompleted(int layerIndex = 0)
+    {
+        if (layerIndex >= _layerStates.Length)
+        {
+            return false;
+        }
+
+        return _layerStates[layerIndex].HasCompleted;
+    }
+
     public void Dispose()
     {
-        _ozzTransforms = null;
+        _initialized = false;
     }
 
     private class AnimatorLayerState
     {
         public AnimatorState? CurrentState;
         public AnimatorState? PreviousState;
+        public AnimatorTransition? CurrentTransition;
         public float StateTime;
         public float PreviousStateTime;
         public float NormalizedTime;
         public bool IsTransitioning;
         public float TransitionTime;
         public float TransitionDuration;
+        public int PlaybackDirection = 1;
+        public int PreviousPlaybackDirection = 1;
+        public int TransitionsThisFrame;
+        public bool HasCompleted;
     }
 }

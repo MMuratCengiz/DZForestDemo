@@ -1,7 +1,7 @@
 using System.Numerics;
 using DenOfIz;
 
-namespace DZForestDemo;
+namespace NiziKit.Components;
 
 public enum CameraMode
 {
@@ -9,9 +9,9 @@ public enum CameraMode
     Orbit
 }
 
-public class Camera
+[NiziComponent]
+public partial class CameraController
 {
-    // Input state
     private bool _isLooking;
     private int _lastMouseX;
     private int _lastMouseY;
@@ -24,7 +24,6 @@ public class Camera
     private bool _speedBoost;
     private bool _speedSlow;
 
-    // Smoothing state
     private Vector3 _currentVelocity;
     private Vector3 _targetPosition;
     private float _currentYaw;
@@ -32,40 +31,43 @@ public class Camera
     private float _targetYaw;
     private float _targetPitch;
 
-    // Camera properties
-    public Vector3 Position { get; set; }
-    public Vector3 Up { get; set; } = Vector3.UnitY;
-    public CameraMode Mode { get; set; } = CameraMode.FreeFly;
+    public partial CameraMode Mode { get; set; }
 
-    // Projection settings
-    public float FieldOfView { get; set; } = MathF.PI / 4f;
-    public float NearPlane { get; set; } = 0.1f;
-    public float FarPlane { get; set; } = 1000f;
-    public float AspectRatio { get; set; } = 16f / 9f;
+    public partial float MoveSpeed { get; set; }
+    public partial float SprintMultiplier { get; set; }
+    public partial float SlowMultiplier { get; set; }
+    public partial float MoveDamping { get; set; }
 
-    // Movement settings
-    public float MoveSpeed { get; set; } = 10f;
-    public float SprintMultiplier { get; set; } = 3f;
-    public float SlowMultiplier { get; set; } = 0.25f;
-    public float MoveSmoothTime { get; set; } = 0.05f;
-    public float MoveDamping { get; set; } = 25f;
+    public partial float LookSensitivity { get; set; }
+    public partial float LookDamping { get; set; }
+    public partial float MinPitch { get; set; }
+    public partial float MaxPitch { get; set; }
 
-    // Look settings
-    public float LookSensitivity { get; set; } = 0.003f;
-    public float LookSmoothTime { get; set; } = 0.02f;
-    public float LookDamping { get; set; } = 50f;
-    public float MinPitch { get; set; } = -MathF.PI / 2f + 0.01f;
-    public float MaxPitch { get; set; } = MathF.PI / 2f - 0.01f;
+    public partial Vector3 OrbitTarget { get; set; }
+    public partial float OrbitDistance { get; set; }
+    public partial float ZoomSensitivity { get; set; }
+    public partial float MinOrbitDistance { get; set; }
+    public partial float MaxOrbitDistance { get; set; }
 
-    // Orbit mode settings
-    public Vector3 OrbitTarget { get; set; }
-    public float OrbitDistance { get; set; } = 10f;
-    public float ZoomSensitivity { get; set; } = 1f;
-    public float MinOrbitDistance { get; set; } = 1f;
-    public float MaxOrbitDistance { get; set; } = 100f;
+    public partial float ScrollZoomSpeed { get; set; }
 
-    // Scroll zoom (works in both modes)
-    public float ScrollZoomSpeed { get; set; } = 2f;
+    public CameraController()
+    {
+        Mode = CameraMode.FreeFly;
+        MoveSpeed = 10f;
+        SprintMultiplier = 3f;
+        SlowMultiplier = 0.25f;
+        MoveDamping = 25f;
+        LookSensitivity = 0.003f;
+        LookDamping = 50f;
+        MinPitch = -MathF.PI / 2f + 0.01f;
+        MaxPitch = MathF.PI / 2f - 0.01f;
+        OrbitDistance = 10f;
+        ZoomSensitivity = 1f;
+        MinOrbitDistance = 1f;
+        MaxOrbitDistance = 100f;
+        ScrollZoomSpeed = 2f;
+    }
 
     public Vector3 Forward
     {
@@ -80,47 +82,35 @@ public class Camera
         }
     }
 
-    public Vector3 Right => Vector3.Normalize(Vector3.Cross(Forward, Up));
-
-    public Matrix4x4 ViewMatrix => Matrix4x4.CreateLookAtLeftHanded(Position, Position + Forward, Up);
-
-    public Matrix4x4 ProjectionMatrix => Matrix4x4.CreatePerspectiveFieldOfViewLeftHanded(
-        FieldOfView, AspectRatio, NearPlane, FarPlane);
-
-    public Matrix4x4 ViewProjectionMatrix => ViewMatrix * ProjectionMatrix;
-
-    public Camera(Vector3 position, Vector3 lookAt)
-    {
-        Position = position;
-        _targetPosition = position;
-        OrbitTarget = lookAt;
-
-        var direction = Vector3.Normalize(lookAt - position);
-        _currentYaw = MathF.Atan2(direction.X, direction.Z);
-        _currentPitch = MathF.Asin(Math.Clamp(direction.Y, -1f, 1f));
-        _targetYaw = _currentYaw;
-        _targetPitch = _currentPitch;
-
-        OrbitDistance = Vector3.Distance(position, lookAt);
-    }
-
-    public void SetAspectRatio(uint width, uint height)
-    {
-        if (height > 0)
-        {
-            AspectRatio = (float)width / height;
-        }
-    }
+    public Vector3 Right => Vector3.Normalize(Vector3.Cross(Forward, Vector3.UnitY));
 
     public void LookAt(Vector3 target)
     {
-        var direction = Vector3.Normalize(target - Position);
+        if (Owner == null)
+        {
+            return;
+        }
+
+        var direction = Vector3.Normalize(target - Owner.LocalPosition);
         _targetYaw = MathF.Atan2(direction.X, direction.Z);
         _targetPitch = MathF.Asin(Math.Clamp(direction.Y, -1f, 1f));
+        _currentYaw = _targetYaw;
+        _currentPitch = _targetPitch;
+        _targetPosition = Owner.LocalPosition;
+
+        OrbitTarget = target;
+        OrbitDistance = Vector3.Distance(Owner.LocalPosition, target);
+
+        UpdateOwnerRotation();
     }
 
     public void SetPositionAndLookAt(Vector3 position, Vector3 target, bool immediate = false)
     {
+        if (Owner == null)
+        {
+            return;
+        }
+
         _targetPosition = position;
         OrbitTarget = target;
         OrbitDistance = Vector3.Distance(position, target);
@@ -131,15 +121,21 @@ public class Camera
 
         if (immediate)
         {
-            Position = position;
+            Owner.LocalPosition = position;
             _currentYaw = _targetYaw;
             _currentPitch = _targetPitch;
             _currentVelocity = Vector3.Zero;
+            UpdateOwnerRotation();
         }
     }
 
     public void Update(float deltaTime)
     {
+        if (Owner == null)
+        {
+            return;
+        }
+
         _currentYaw = SmoothDampAngle(_currentYaw, _targetYaw, LookDamping, deltaTime);
         _currentPitch = SmoothDamp(_currentPitch, _targetPitch, LookDamping, deltaTime);
 
@@ -151,6 +147,8 @@ public class Camera
         {
             UpdateOrbit(deltaTime);
         }
+
+        UpdateOwnerRotation();
     }
 
     private void UpdateFreeFly(float deltaTime)
@@ -179,18 +177,19 @@ public class Camera
 
         if (_moveUp)
         {
-            moveDir += Up;
+            moveDir += Vector3.UnitY;
         }
 
         if (_moveDown)
         {
-            moveDir -= Up;
+            moveDir -= Vector3.UnitY;
         }
 
         if (moveDir.LengthSquared() > 0.001f)
         {
             moveDir = Vector3.Normalize(moveDir);
         }
+
         var speed = MoveSpeed;
         if (_speedBoost)
         {
@@ -206,7 +205,8 @@ public class Camera
 
         _currentVelocity = Vector3.Lerp(_currentVelocity, targetVelocity, 1f - MathF.Exp(-MoveDamping * deltaTime));
         _targetPosition += _currentVelocity * deltaTime;
-        Position = Vector3.Lerp(Position, _targetPosition, 1f - MathF.Exp(-MoveDamping * deltaTime));
+        Owner!.LocalPosition =
+            Vector3.Lerp(Owner.LocalPosition, _targetPosition, 1f - MathF.Exp(-MoveDamping * deltaTime));
     }
 
     private void UpdateOrbit(float deltaTime)
@@ -219,8 +219,18 @@ public class Camera
         ) * OrbitDistance;
 
         _targetPosition = targetOrbitPos;
+        Owner!.LocalPosition =
+            Vector3.Lerp(Owner.LocalPosition, _targetPosition, 1f - MathF.Exp(-MoveDamping * deltaTime));
+    }
 
-        Position = Vector3.Lerp(Position, _targetPosition, 1f - MathF.Exp(-MoveDamping * deltaTime));
+    private void UpdateOwnerRotation()
+    {
+        if (Owner == null)
+        {
+            return;
+        }
+
+        Owner.LocalRotation = Quaternion.CreateFromYawPitchRoll(_currentYaw, _currentPitch, 0);
     }
 
     public bool HandleEvent(in Event ev)
@@ -235,6 +245,7 @@ public class Camera
                     _lastMouseY = (int)ev.MouseButton.Y;
                     return true;
                 }
+
                 break;
 
             case EventType.MouseButtonUp:
@@ -243,6 +254,7 @@ public class Camera
                     _isLooking = false;
                     return true;
                 }
+
                 break;
 
             case EventType.MouseMotion:
@@ -259,6 +271,7 @@ public class Camera
 
                     return true;
                 }
+
                 break;
 
             case EventType.MouseWheel:
@@ -269,9 +282,9 @@ public class Camera
                 }
                 else
                 {
-                    // In free-fly mode, scroll moves camera forward/backward
                     _targetPosition += Forward * ev.MouseWheel.Y * ScrollZoomSpeed;
                 }
+
                 return true;
 
             case EventType.KeyDown:
@@ -301,7 +314,6 @@ public class Camera
                 _moveRight = true;
                 return true;
             case KeyCode.E:
-            case KeyCode.Space:
                 _moveUp = true;
                 return true;
             case KeyCode.Q:
@@ -319,12 +331,14 @@ public class Camera
                 return true;
             case KeyCode.F:
                 Mode = Mode == CameraMode.FreeFly ? CameraMode.Orbit : CameraMode.FreeFly;
-                if (Mode == CameraMode.Orbit)
+                if (Mode == CameraMode.Orbit && Owner != null)
                 {
-                    OrbitTarget = Position + Forward * OrbitDistance;
+                    OrbitTarget = Owner.LocalPosition + Forward * OrbitDistance;
                 }
+
                 return true;
         }
+
         return false;
     }
 
@@ -345,7 +359,6 @@ public class Camera
                 _moveRight = false;
                 return true;
             case KeyCode.E:
-            case KeyCode.Space:
                 _moveUp = false;
                 return true;
             case KeyCode.Q:
@@ -362,6 +375,7 @@ public class Camera
                 _speedSlow = false;
                 return true;
         }
+
         return false;
     }
 
@@ -398,10 +412,11 @@ public class Camera
         {
             OrbitDistance = distance;
         }
-        else
+        else if (Owner != null)
         {
-            OrbitDistance = Vector3.Distance(Position, target);
+            OrbitDistance = Vector3.Distance(Owner.LocalPosition, target);
         }
+
         Mode = CameraMode.Orbit;
     }
 

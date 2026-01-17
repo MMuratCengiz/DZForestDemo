@@ -32,6 +32,7 @@ public class Animation : IDisposable
     public float Duration { get; set; }
     public List<AnimationChannel> Channels { get; set; } = [];
     public OzzContext OzzContext { get; set; }
+    private Skeleton? _skeleton;
 
     public static Animation Load(string path, Skeleton skeleton)
     {
@@ -50,15 +51,18 @@ public class Animation : IDisposable
         {
             Name = Path.GetFileNameWithoutExtension(path),
             Duration = duration,
-            OzzContext = context
+            OzzContext = context,
+            _skeleton = skeleton
         };
     }
 
     public void Dispose()
     {
-        if ((ulong)OzzContext != 0)
+        if ((ulong)OzzContext != 0 && _skeleton != null)
         {
+            _skeleton.OzzSkeleton.DestroyContext(OzzContext);
             OzzContext = null;
+            _skeleton = null;
         }
     }
 }

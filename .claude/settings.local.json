@@ -58,7 +58,8 @@
       "WebFetch(domain:docs.godotengine.org)",
       "WebFetch(domain:mzaks.medium.com)",
       "WebFetch(domain:ignatandrei.github.io)",
-      "Bash(dotnet list:*)"
+      "Bash(dotnet list:*)",
+      "Bash(git show:*)"
     ]
   }
 }

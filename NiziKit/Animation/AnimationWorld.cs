@@ -9,6 +9,10 @@ public sealed class AnimationWorld : IWorldEventListener
 
     public void SceneReset()
     {
+        foreach (var animator in _animators)
+        {
+            animator.Dispose();
+        }
         _animators.Clear();
     }
 
@@ -27,6 +31,7 @@ public sealed class AnimationWorld : IWorldEventListener
         if (animator != null)
         {
             _animators.Remove(animator);
+            animator.Dispose();
         }
     }
 
@@ -43,6 +48,7 @@ public sealed class AnimationWorld : IWorldEventListener
         if (component is Animator animator)
         {
             _animators.Remove(animator);
+            animator.Dispose();
         }
     }
 

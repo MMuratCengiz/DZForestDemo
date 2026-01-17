@@ -1,59 +1,34 @@
-using System.Numerics;
 using DenOfIz;
 using DZForestDemo.Scenes;
+using NiziKit.Animation;
 using NiziKit.Application;
 using NiziKit.Core;
-using NiziKit.Graphics;
 using NiziKit.Graphics.Renderer.Forward;
 
 namespace DZForestDemo;
 
 public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 {
-    private Camera _cameraController = null!;
     private ForwardRenderer _renderer = null!;
     private DemoScene? _demoScene;
+    private float _layerWeight;
 
     protected override void Load(Game game)
     {
         _renderer = new ForwardRenderer();
-        _cameraController = new Camera(
-            new Vector3(0, 12, 25),
-            new Vector3(0, 2, 0)
-        );
-        _cameraController.SetAspectRatio(GraphicsContext.Width, GraphicsContext.Height);
-
         _demoScene = new DemoScene();
         World.LoadScene(_demoScene);
+
+        Console.WriteLine("Animation Blend Test Controls:");
+        Console.WriteLine("  Left Fox: S=Survey, Z/X/C=CrossFade curves, V=Run");
+        Console.WriteLine("  Right Fox: Up/Down=Layer weight");
+        Console.WriteLine("  Space=Add shape, Esc=Quit");
     }
 
     protected override void Update(float dt)
     {
-        _cameraController.Update(dt);
         World.AnimationWorld.Update(dt);
-
-        SyncCameraToScene();
-
         _renderer.Render();
-    }
-
-    private void SyncCameraToScene()
-    {
-        var camera = World.CurrentScene?.MainCamera;
-        if (camera == null)
-        {
-            return;
-        }
-
-        camera.LocalPosition = _cameraController.Position;
-        camera.SetYawPitch(
-            MathF.Atan2(_cameraController.Forward.X, _cameraController.Forward.Z),
-            MathF.Asin(Math.Clamp(_cameraController.Forward.Y, -1f, 1f))
-        );
-        camera.FieldOfView = _cameraController.FieldOfView;
-        camera.AspectRatio = _cameraController.AspectRatio;
-        camera.NearPlane = _cameraController.NearPlane;
-        camera.FarPlane = _cameraController.FarPlane;
     }
 
     protected override void FixedUpdate(float fixedDt)
@@ -61,19 +36,8 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
         World.PhysicsWorld?.Step(fixedDt);
     }
 
-
     protected override void OnEvent(ref Event ev)
     {
-        _cameraController.HandleEvent(ev);
-
-        if (ev is { Type: EventType.WindowEvent, Window.Event: WindowEventType.Resized })
-        {
-            var width = (uint)ev.Window.Data1;
-            var height = (uint)ev.Window.Data2;
-            _cameraController.SetAspectRatio(width, height);
-            World.CurrentScene?.MainCamera?.SetAspectRatio(width, height);
-        }
-
         if (ev.Type == EventType.KeyDown)
         {
             switch (ev.Key.KeyCode)
@@ -83,6 +47,32 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
                     break;
                 case KeyCode.S:
                     _demoScene?.Fox?.TriggerSurvey();
+                    break;
+                case KeyCode.Z:
+                    _demoScene?.Fox?.CrossFadeToSurvey(TransitionCurve.Linear);
+                    Console.WriteLine("CrossFade to Survey (Linear)");
+                    break;
+                case KeyCode.X:
+                    _demoScene?.Fox?.CrossFadeToSurvey(TransitionCurve.EaseIn);
+                    Console.WriteLine("CrossFade to Survey (EaseIn)");
+                    break;
+                case KeyCode.C:
+                    _demoScene?.Fox?.CrossFadeToSurvey(TransitionCurve.EaseOut);
+                    Console.WriteLine("CrossFade to Survey (EaseOut)");
+                    break;
+                case KeyCode.V:
+                    _demoScene?.Fox?.CrossFadeToRun();
+                    Console.WriteLine("CrossFade to Run");
+                    break;
+                case KeyCode.Up:
+                    _layerWeight = Math.Min(1f, _layerWeight + 0.1f);
+                    _demoScene?.LayerBlendFox?.SetOverlayWeight(_layerWeight);
+                    Console.WriteLine($"Layer weight: {_layerWeight:F1}");
+                    break;
+                case KeyCode.Down:
+                    _layerWeight = Math.Max(0f, _layerWeight - 0.1f);
+                    _demoScene?.LayerBlendFox?.SetOverlayWeight(_layerWeight);
+                    Console.WriteLine($"Layer weight: {_layerWeight:F1}");
                     break;
                 case KeyCode.Escape:
                     Quit();

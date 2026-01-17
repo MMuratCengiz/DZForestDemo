@@ -46,6 +46,7 @@ public class DemoScene() : Scene("Demo Scene")
     private Material _platformMaterial = null!;
 
     public Fox? Fox { get; private set; }
+    public Fox? LayerBlendFox { get; private set; }
 
     public override void Load()
     {
@@ -68,11 +69,14 @@ public class DemoScene() : Scene("Demo Scene")
     private void CreateCamera()
     {
         var camera = CreateObject<CameraObject>("Main Camera");
-        camera.LocalPosition = new Vector3(0, 12, 25);
-        camera.LookAt(new Vector3(0, 0, 0));
+        camera.LocalPosition = new Vector3(0, 8, 25);
         camera.FieldOfView = MathF.PI / 4f;
         camera.NearPlane = 0.1f;
         camera.FarPlane = 1000f;
+
+        var controller = camera.AddComponent<CameraController>();
+        controller.LookAt(new Vector3(0, 0, 0));
+
         MainCamera = camera;
     }
 
@@ -128,8 +132,11 @@ public class DemoScene() : Scene("Demo Scene")
 
     private void SpawnFox()
     {
-        Fox = new Fox();
+        Fox = new Fox(new Vector3(-3f, 0f, 0f));
         Add(Fox);
+
+        LayerBlendFox = new Fox(new Vector3(3f, 0f, 0f), useLayerBlending: true);
+        Add(LayerBlendFox);
     }
 
     private void SpawnInitialCubes()

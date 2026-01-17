@@ -4,6 +4,8 @@ public enum AnimatorConditionMode
 {
     Greater,
     Less,
+    GreaterOrEqual,
+    LessOrEqual,
     Equals,
     NotEquals,
     If,
@@ -12,6 +14,8 @@ public enum AnimatorConditionMode
 
 public class AnimatorCondition
 {
+    private const float FloatEpsilon = 1e-6f;
+
     public string ParameterName { get; set; } = string.Empty;
     public AnimatorConditionMode Mode { get; set; }
     public float Threshold { get; set; }
@@ -37,8 +41,12 @@ public class AnimatorCondition
     {
         return Mode switch
         {
-            AnimatorConditionMode.Greater => value > Threshold,
-            AnimatorConditionMode.Less => value < Threshold,
+            AnimatorConditionMode.Greater => value > Threshold + FloatEpsilon,
+            AnimatorConditionMode.Less => value < Threshold - FloatEpsilon,
+            AnimatorConditionMode.GreaterOrEqual => value >= Threshold - FloatEpsilon,
+            AnimatorConditionMode.LessOrEqual => value <= Threshold + FloatEpsilon,
+            AnimatorConditionMode.Equals => Math.Abs(value - Threshold) < FloatEpsilon,
+            AnimatorConditionMode.NotEquals => Math.Abs(value - Threshold) >= FloatEpsilon,
             _ => false
         };
     }
@@ -50,6 +58,8 @@ public class AnimatorCondition
         {
             AnimatorConditionMode.Greater => value > threshold,
             AnimatorConditionMode.Less => value < threshold,
+            AnimatorConditionMode.GreaterOrEqual => value >= threshold,
+            AnimatorConditionMode.LessOrEqual => value <= threshold,
             AnimatorConditionMode.Equals => value == threshold,
             AnimatorConditionMode.NotEquals => value != threshold,
             _ => false

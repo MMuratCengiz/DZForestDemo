@@ -1,6 +1,11 @@
-using NiziKit.Assets;
-
 namespace NiziKit.Animation;
+
+public enum AnimationLoopMode
+{
+    Once,
+    Loop,
+    PingPong
+}
 
 public class AnimatorState
 {
@@ -8,8 +13,14 @@ public class AnimatorState
     public Assets.Animation? Clip { get; set; }
     public float Speed { get; set; } = 1.0f;
     public string? SpeedParameterName { get; set; }
-    public bool Loop { get; set; } = true;
+    public AnimationLoopMode LoopMode { get; set; } = AnimationLoopMode.Loop;
     public List<AnimatorTransition> Transitions { get; } = [];
+
+    public bool Loop
+    {
+        get => LoopMode == AnimationLoopMode.Loop;
+        set => LoopMode = value ? AnimationLoopMode.Loop : AnimationLoopMode.Once;
+    }
 
     public AnimatorTransition AddTransition(AnimatorState destination)
     {
@@ -19,6 +30,11 @@ public class AnimatorState
         };
         Transitions.Add(transition);
         return transition;
+    }
+
+    public IEnumerable<AnimatorTransition> GetOrderedTransitions()
+    {
+        return Transitions.OrderByDescending(t => t.Priority);
     }
 
     public float GetSpeed(Dictionary<string, AnimatorParameter> parameters)
