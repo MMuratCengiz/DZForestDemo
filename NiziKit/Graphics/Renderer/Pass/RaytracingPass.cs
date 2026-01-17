@@ -2,12 +2,8 @@ using DenOfIz;
 
 namespace NiziKit.Graphics.Renderer.Pass;
 
-public class RaytracingPass : RenderPass
+public class RaytracingPass(CommandList commandList) : RenderPass(commandList)
 {
-    public RaytracingPass(CommandList commandList) : base(commandList)
-    {
-    }
-
     public override void Reset()
     {
     }

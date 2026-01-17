@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
-namespace NiziKit.ContentPIpeline;
+namespace NiziKit.ContentPipeline;
 
 public sealed class ManifestOptions
 {

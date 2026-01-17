@@ -66,12 +66,7 @@ public sealed class GltfExporter : IDisposable
         ".zgl", ".ply", ".dxf", ".lwo", ".lws", ".lxo", ".stl", ".x", ".ac", ".ms3d"
     ];
 
-    private readonly Assimp _assimp;
-
-    public GltfExporter()
-    {
-        _assimp = Assimp.GetApi();
-    }
+    private readonly Assimp _assimp = Assimp.GetApi();
 
     public IReadOnlyList<string> SupportedExtensions => SupportedExtensionsList;
 

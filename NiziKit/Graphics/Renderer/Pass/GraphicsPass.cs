@@ -4,15 +4,15 @@ using NiziKit.Graphics.Resources;
 
 namespace NiziKit.Graphics.Renderer.Pass;
 
-public class GraphicsPass : RenderPass
+public class GraphicsPass(CommandList commandList) : RenderPass(commandList)
 {
     private const int MaxRtAttachments = 8;
 
-    private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments;
-    private readonly PinnedArray<RenderingAttachmentDesc> _depthAttachment;
-    private readonly PinnedArray<RenderingAttachmentDesc> _stencilAttachment;
+    private readonly PinnedArray<RenderingAttachmentDesc> _rtAttachments = new(MaxRtAttachments);
+    private readonly PinnedArray<RenderingAttachmentDesc> _depthAttachment = new(1);
+    private readonly PinnedArray<RenderingAttachmentDesc> _stencilAttachment = new(1);
 
-    private readonly Texture?[] _rtTextures;
+    private readonly Texture?[] _rtTextures = new Texture?[MaxRtAttachments];
     private Texture? _depthTexture;
     private Texture? _stencilTexture;
 
@@ -31,14 +31,6 @@ public class GraphicsPass : RenderPass
     private float _scissorWidth;
     private float _scissorHeight;
     private bool _hasScissor;
-
-    public GraphicsPass(CommandList commandList) : base(commandList)
-    {
-        _rtAttachments = new PinnedArray<RenderingAttachmentDesc>(MaxRtAttachments);
-        _depthAttachment = new PinnedArray<RenderingAttachmentDesc>(1);
-        _stencilAttachment = new PinnedArray<RenderingAttachmentDesc>(1);
-        _rtTextures = new Texture?[MaxRtAttachments];
-    }
 
     public void SetRenderTarget(int slot, CycledTexture renderTarget, LoadOp loadOp = LoadOp.DontCare, StoreOp storeOp = StoreOp.Store)
     {

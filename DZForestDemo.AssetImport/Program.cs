@@ -1,4 +1,4 @@
-using NiziKit.ContentPIpeline;
+using NiziKit.ContentPipeline;
 using NiziKit.Offline;
 
 var verbose = args.Contains("-v") || args.Contains("--verbose");
@@ -65,7 +65,11 @@ Log("Done!");
 return 0;
 
 void Log(string msg) => Console.WriteLine(msg);
-void LogVerbose(string msg) { if (verbose) Console.WriteLine(msg); }
+void LogVerbose(string msg) { if (verbose)
+    {
+        Console.WriteLine(msg);
+    }
+}
 
 bool ImportAnimations(AssetDirectories project, string sourcePath, string assetName, float scale)
 {

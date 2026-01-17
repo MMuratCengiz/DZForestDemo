@@ -10,7 +10,7 @@ using NiziKit.Physics;
 
 namespace DZForestDemo.Scenes;
 
-public class DemoScene : Scene
+public class DemoScene() : Scene("Demo Scene")
 {
     private class ColorMaterial : Material
     {
@@ -45,9 +45,7 @@ public class DemoScene : Scene
     private Material _cubeMaterial = null!;
     private Material _platformMaterial = null!;
 
-    public DemoScene() : base("Demo Scene")
-    {
-    }
+    public Fox? Fox { get; private set; }
 
     public override void Load()
     {
@@ -130,7 +128,8 @@ public class DemoScene : Scene
 
     private void SpawnFox()
     {
-        Add(new Fox());
+        Fox = new Fox();
+        Add(Fox);
     }
 
     private void SpawnInitialCubes()

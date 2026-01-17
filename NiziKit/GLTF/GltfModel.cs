@@ -1,5 +1,6 @@
+using System.Numerics;
 using NiziKit.Assets;
-using NiziKit.ContentPIpeline;
+using NiziKit.ContentPipeline;
 
 namespace NiziKit.GLTF;
 
@@ -21,7 +22,7 @@ public sealed class GltfModel
     public List<GltfMaterialData> Materials { get; private set; } = [];
     public List<GltfImageData> Images { get; private set; } = [];
     public List<Skeleton> Skeletons { get; private set; } = [];
-    public List<Animation> Animations { get; private set; } = [];
+    public List<Assets.Animation> Animations { get; private set; } = [];
 
     public static GltfModel Load(string path, GltfLoadOptions? options = null)
     {
@@ -102,6 +103,70 @@ public sealed class GltfModel
             .ToList();
 
         AssignMaterialIndices();
+        AssignInverseBindMatrices();
+        AssignNodeTransforms();
+    }
+
+    private void AssignInverseBindMatrices()
+    {
+        if (Document.Root.Skins == null || Document.Root.Nodes == null)
+        {
+            return;
+        }
+
+        foreach (var node in Document.Root.Nodes)
+        {
+            if (!node.Skin.HasValue || !node.Mesh.HasValue)
+            {
+                continue;
+            }
+
+            var meshIndex = node.Mesh.Value;
+            var skinIndex = node.Skin.Value;
+
+            if (meshIndex >= Meshes.Count || skinIndex >= Document.Root.Skins.Count)
+            {
+                continue;
+            }
+
+            var skin = Document.Root.Skins[skinIndex];
+            if (!skin.InverseBindMatrices.HasValue)
+            {
+                continue;
+            }
+
+            var reader = new GltfAccessorReader(Document, skin.InverseBindMatrices.Value);
+            var matrices = new Matrix4x4[reader.Count];
+
+            for (var i = 0; i < reader.Count; i++)
+            {
+                var m = reader.ReadMatrix4x4(i);
+                if (Options.ConvertToLeftHanded)
+                {
+                    m = GltfSkeletonExtractor.ConvertMatrixToLeftHanded(m);
+                }
+                matrices[i] = m;
+            }
+
+            Meshes[meshIndex].InverseBindMatrices = matrices;
+        }
+    }
+
+    private void AssignNodeTransforms()
+    {
+        foreach (var node in Scene.Nodes)
+        {
+            if (!node.MeshIndex.HasValue)
+            {
+                continue;
+            }
+
+            var meshIndex = node.MeshIndex.Value;
+            if (meshIndex < Meshes.Count)
+            {
+                Meshes[meshIndex].NodeTransform = node.WorldTransform;
+            }
+        }
     }
 
     private void AssignMaterialIndices()

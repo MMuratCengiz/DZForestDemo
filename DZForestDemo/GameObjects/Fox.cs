@@ -1,4 +1,5 @@
 using System.Numerics;
+using NiziKit.Animation;
 using NiziKit.Assets;
 using NiziKit.Components;
 using NiziKit.Core;
@@ -19,6 +20,8 @@ public class Fox : GameObject
         }
     }
 
+    private Animator? _animator;
+
     public Fox(Vector3? position = null) : base("Fox")
     {
         LocalPosition = position ?? new Vector3(0f, 0f, 0f);
@@ -30,11 +33,48 @@ public class Fox : GameObject
         AddComponent<MeshComponent>().Mesh = model.Meshes[0];
 
         var skeleton = Assets.LoadSkeleton("Fox_skeleton.ozz");
-        var animation = Assets.LoadAnimation("Fox_Run.ozz", skeleton);
-        var animator = AddComponent<AnimatorComponent>();
-        animator.Skeleton = skeleton;
-        animator.CurrentAnimation = animation;
-        animator.IsPlaying = true;
-        animator.Loop = true;
+        var runAnimation = Assets.LoadAnimation("Fox_Run.ozz", skeleton);
+        var surveyAnimation = Assets.LoadAnimation("Fox_Survey.ozz", skeleton);
+
+        var controller = CreateFoxController(runAnimation, surveyAnimation);
+
+        _animator = AddComponent<Animator>();
+        _animator.Skeleton = skeleton;
+        _animator.Controller = controller;
+        _animator.Initialize();
     }
+
+    private static AnimatorController CreateFoxController(
+        NiziKit.Assets.Animation runAnimation,
+        NiziKit.Assets.Animation surveyAnimation)
+    {
+        var controller = new AnimatorController { Name = "FoxController" };
+
+        controller.AddBool("IsRunning", true);
+        controller.AddTrigger("Survey");
+        controller.AddFloat("Speed", 1.0f);
+
+        var runState = controller.AddState("Run");
+        runState.Clip = runAnimation;
+        runState.Loop = true;
+        runState.SpeedParameterName = "Speed";
+
+        var surveyState = controller.AddState("Survey");
+        surveyState.Clip = surveyAnimation;
+        surveyState.Loop = false;
+
+        runState.AddTransition(surveyState)
+            .AddCondition("Survey", AnimatorConditionMode.If);
+
+        surveyState.AddTransition(runState)
+            .AddCondition("IsRunning", AnimatorConditionMode.If);
+        surveyState.Transitions[0].HasExitTime = true;
+        surveyState.Transitions[0].ExitTime = 0.9f;
+
+        return controller;
+    }
+
+    public void TriggerSurvey() => _animator?.SetTrigger("Survey");
+    public void SetSpeed(float speed) => _animator?.SetFloat("Speed", speed);
+    public void SetRunning(bool isRunning) => _animator?.SetBool("IsRunning", isRunning);
 }

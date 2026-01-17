@@ -53,7 +53,9 @@ public sealed class VertexFormat
         foreach (var attr in Attributes)
         {
             if (attr.Semantic == semantic)
+            {
                 return attr;
+            }
         }
         return null;
     }

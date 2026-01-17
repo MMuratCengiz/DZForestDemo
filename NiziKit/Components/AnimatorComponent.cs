@@ -11,7 +11,7 @@ public class AnimatorComponent : IComponent
     public GameObject? Owner { get; set; }
 
     public Skeleton? Skeleton { get; set; }
-    public Animation? CurrentAnimation { get; set; }
+    public Assets.Animation? CurrentAnimation { get; set; }
     public float AnimationTime { get; set; }
     public float PlaybackSpeed { get; set; } = 1.0f;
     public bool IsPlaying { get; set; }

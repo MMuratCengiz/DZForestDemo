@@ -34,6 +34,13 @@ public class Model : IAsset
         Name = gltfModel.Name;
         SourcePath = gltfModel.SourcePath;
         Meshes = gltfModel.Meshes;
+
+        if (gltfModel.Skeletons.Count > 0)
+        {
+            Skeleton = gltfModel.Skeletons[0];
+        }
+
+        Animations = gltfModel.Animations;
     }
 
     public void Dispose()

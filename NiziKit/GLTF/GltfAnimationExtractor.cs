@@ -132,7 +132,7 @@ public static class GltfAnimationExtractor
 
     private static Vector4 ToVector4(Vector3 v) => new(v.X, v.Y, v.Z, 0);
 
-    public static Animation ToAnimation(GltfAnimationData data, Dictionary<int, int>? nodeToJointIndex = null, bool convertToLeftHanded = true)
+    public static Assets.Animation ToAnimation(GltfAnimationData data, Dictionary<int, int>? nodeToJointIndex = null, bool convertToLeftHanded = true)
     {
         var channels = new List<AnimationChannel>();
 
@@ -193,7 +193,7 @@ public static class GltfAnimationExtractor
             });
         }
 
-        return new Animation
+        return new Assets.Animation
         {
             Name = data.Name,
             Duration = data.Duration,

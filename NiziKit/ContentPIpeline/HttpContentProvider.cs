@@ -1,4 +1,4 @@
-namespace NiziKit.ContentPIpeline;
+namespace NiziKit.ContentPipeline;
 
 public sealed class HttpContentProvider(HttpClient http, string baseUrl = "Assets/") : IContentProvider
 {

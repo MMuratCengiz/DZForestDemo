@@ -1,3 +1,4 @@
+using NiziKit.Animation;
 using NiziKit.Assets;
 using NiziKit.Components;
 using NiziKit.Graphics;
@@ -14,6 +15,7 @@ public class World : IDisposable
     public static PhysicsWorld PhysicsWorld => Instance._physicsWorld;
     public static RenderWorld RenderWorld => Instance._renderWorld;
     public static AssetWorld AssetWorld => Instance._assetWorld;
+    public static AnimationWorld AnimationWorld => Instance._animationWorld;
 
     public static void LoadScene(Scene scene) => Instance._LoadScene(scene);
 
@@ -29,14 +31,16 @@ public class World : IDisposable
     private readonly PhysicsWorld _physicsWorld;
     private readonly RenderWorld _renderWorld;
     private readonly AssetWorld _assetWorld;
+    private readonly AnimationWorld _animationWorld;
 
     public World()
     {
         _physicsWorld = new PhysicsWorld();
         _renderWorld = new RenderWorld();
         _assetWorld = new AssetWorld();
+        _animationWorld = new AnimationWorld();
 
-        _worldEventListeners = [_assetWorld, _physicsWorld, _renderWorld];
+        _worldEventListeners = [_assetWorld, _physicsWorld, _animationWorld, _renderWorld];
 
         _instance = this;
     }

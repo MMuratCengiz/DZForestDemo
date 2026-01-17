@@ -38,6 +38,8 @@ public class Mesh : IDisposable
     public BoundingBox Bounds { get; set; }
     public MeshType MeshType { get; set; }
     public int MaterialIndex { get; set; } = -1;
+    public Matrix4x4[]? InverseBindMatrices { get; set; }
+    public Matrix4x4 NodeTransform { get; set; } = Matrix4x4.Identity;
 
     public byte[]? CpuVertices { get; internal set; }
     public uint[]? CpuIndices { get; internal set; }

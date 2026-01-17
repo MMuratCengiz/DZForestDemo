@@ -1,4 +1,4 @@
-using NiziKit.ContentPIpeline;
+using NiziKit.ContentPipeline;
 
 namespace NiziKit.Assets;
 

@@ -1,6 +1,6 @@
 using System.Reflection;
 
-namespace NiziKit.ContentPIpeline;
+namespace NiziKit.ContentPipeline;
 
 public static class Content
 {

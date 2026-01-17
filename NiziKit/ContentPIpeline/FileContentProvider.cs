@@ -1,4 +1,4 @@
-namespace NiziKit.ContentPIpeline;
+namespace NiziKit.ContentPipeline;
 
 public sealed class FileContentProvider(string root) : IContentProvider
 {

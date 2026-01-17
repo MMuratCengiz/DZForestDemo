@@ -54,6 +54,18 @@ public class Skeleton : IDisposable
         return joints;
     }
 
+    public void CopyInverseBindMatricesFrom(Skeleton source)
+    {
+        for (var i = 0; i < Math.Min(Joints.Count, source.Joints.Count); i++)
+        {
+            var sourceJoint = source.Joints.FirstOrDefault(j => j.Name == Joints[i].Name);
+            if (sourceJoint != null)
+            {
+                Joints[i].InverseBindMatrix = sourceJoint.InverseBindMatrix;
+            }
+        }
+    }
+
     public void Dispose()
     {
         OzzSkeleton.Dispose();

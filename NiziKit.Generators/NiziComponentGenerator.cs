@@ -53,18 +53,26 @@ public class NiziComponentGenerator : IIncrementalGenerator
     private static void Execute(Compilation compilation, ImmutableArray<ClassDeclarationSyntax?> classes, SourceProductionContext context)
     {
         if (classes.IsDefaultOrEmpty)
+        {
             return;
+        }
 
         var distinctClasses = classes.Where(c => c is not null).Distinct().ToList();
 
         foreach (var classDecl in distinctClasses)
         {
-            if (classDecl is null) continue;
+            if (classDecl is null)
+            {
+                continue;
+            }
 
             var semanticModel = compilation.GetSemanticModel(classDecl.SyntaxTree);
             var classSymbol = semanticModel.GetDeclaredSymbol(classDecl);
 
-            if (classSymbol is null) continue;
+            if (classSymbol is null)
+            {
+                continue;
+            }
 
             var source = GeneratePartialClass(classSymbol, classDecl, compilation);
             context.AddSource($"{classSymbol.Name}.g.cs", SourceText.From(source, Encoding.UTF8));

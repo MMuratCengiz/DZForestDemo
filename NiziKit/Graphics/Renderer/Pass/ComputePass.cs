@@ -2,12 +2,8 @@ using DenOfIz;
 
 namespace NiziKit.Graphics.Renderer.Pass;
 
-public class ComputePass : RenderPass
+public class ComputePass(CommandList commandList) : RenderPass(commandList)
 {
-    public ComputePass(CommandList commandList) : base(commandList)
-    {
-    }
-
     public override void Reset()
     {
     }

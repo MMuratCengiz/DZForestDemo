@@ -8,26 +8,20 @@ namespace NiziKit.Graphics.Binding;
 
 public class MaterialBinding : ShaderBinding<Material>
 {
-    private readonly GpuBufferView _dataBuffer;
-    private readonly Sampler _sampler;
+    private readonly GpuBufferView _dataBuffer = GraphicsContext.UniformBufferArena.Request(Marshal.SizeOf<GpuMaterialData>());
+    private readonly Sampler _sampler = GraphicsContext.Device.CreateSampler(new SamplerDesc
+    {
+        AddressModeU = SamplerAddressMode.Repeat,
+        AddressModeV = SamplerAddressMode.Repeat,
+        AddressModeW = SamplerAddressMode.Repeat,
+        MinFilter = Filter.Linear,
+        MagFilter = Filter.Linear,
+        MipmapMode = MipmapMode.Linear
+    });
     private int _lastTextureHash;
 
     public override BindGroupLayout Layout => GraphicsContext.BindGroupLayoutStore.Material;
     public override bool RequiresCycling => false;
-
-    public MaterialBinding()
-    {
-        _dataBuffer = GraphicsContext.UniformBufferArena.Request(Marshal.SizeOf<GpuMaterialData>());
-        _sampler = GraphicsContext.Device.CreateSampler(new SamplerDesc
-        {
-            AddressModeU = SamplerAddressMode.Repeat,
-            AddressModeV = SamplerAddressMode.Repeat,
-            AddressModeW = SamplerAddressMode.Repeat,
-            MinFilter = Filter.Linear,
-            MagFilter = Filter.Linear,
-            MipmapMode = MipmapMode.Linear
-        });
-    }
 
     protected override void OnUpdate(Material target)
     {

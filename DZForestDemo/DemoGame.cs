@@ -2,7 +2,6 @@ using System.Numerics;
 using DenOfIz;
 using DZForestDemo.Scenes;
 using NiziKit.Application;
-using NiziKit.Assets;
 using NiziKit.Core;
 using NiziKit.Graphics;
 using NiziKit.Graphics.Renderer.Forward;
@@ -15,8 +14,6 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
     private ForwardRenderer _renderer = null!;
     private DemoScene? _demoScene;
 
-    private AnimationManager? _animation;
-
     protected override void Load(Game game)
     {
         _renderer = new ForwardRenderer();
@@ -26,7 +23,6 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
         );
         _cameraController.SetAspectRatio(GraphicsContext.Width, GraphicsContext.Height);
 
-        _animation = new AnimationManager();
         _demoScene = new DemoScene();
         World.LoadScene(_demoScene);
     }
@@ -34,7 +30,7 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
     protected override void Update(float dt)
     {
         _cameraController.Update(dt);
-        _animation?.Update(dt);
+        World.AnimationWorld.Update(dt);
 
         SyncCameraToScene();
 
@@ -85,6 +81,9 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
                 case KeyCode.Space:
                     _demoScene?.AddRandomShape();
                     break;
+                case KeyCode.S:
+                    _demoScene?.Fox?.TriggerSurvey();
+                    break;
                 case KeyCode.Escape:
                     Quit();
                     break;
@@ -95,6 +94,5 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
     protected override void OnShutdown()
     {
         _renderer?.Dispose();
-        _animation?.Dispose();
     }
 }

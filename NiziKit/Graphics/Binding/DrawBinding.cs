@@ -1,5 +1,7 @@
 using System.Numerics;
 using DenOfIz;
+using NiziKit.Animation;
+using NiziKit.Components;
 using NiziKit.Core;
 using NiziKit.Graphics.Binding.Data;
 using NiziKit.Graphics.Binding.Layout;
@@ -10,7 +12,8 @@ namespace NiziKit.Graphics.Binding;
 public class DrawBinding : ShaderBinding<GameObject>
 {
     private readonly UniformBuffer<GpuInstanceData> _instanceBuffer;
-    private readonly UniformBuffer<Matrix4x4> _boneMatricesBuffer;
+    private readonly UniformBuffer<GpuBoneTransforms> _boneMatricesBuffer;
+    private GpuBoneTransforms _boneData;
 
     public override BindGroupLayout Layout => GraphicsContext.BindGroupLayoutStore.Draw;
     public override bool RequiresCycling => true;
@@ -18,7 +21,8 @@ public class DrawBinding : ShaderBinding<GameObject>
     public DrawBinding()
     {
         _instanceBuffer = new UniformBuffer<GpuInstanceData>(true);
-        _boneMatricesBuffer = new UniformBuffer<Matrix4x4>(true);
+        _boneMatricesBuffer = new UniformBuffer<GpuBoneTransforms>(true);
+        _boneData = GpuBoneTransforms.Identity();
 
         for (var i = 0; i < NumBindGroups; i++)
         {
@@ -51,5 +55,24 @@ public class DrawBinding : ShaderBinding<GameObject>
             BoneOffset = 0
         };
         _instanceBuffer.Write(in instanceData);
+
+        var animator = target.GetComponent<Animator>();
+        if (animator != null && animator.BoneCount > 0)
+        {
+            _boneData.CopyFrom(animator.BoneMatrices);
+            _boneMatricesBuffer.Write(in _boneData);
+            return;
+        }
+
+        var legacyAnimator = target.GetComponent<AnimatorComponent>();
+        if (legacyAnimator != null && legacyAnimator.BoneCount > 0)
+        {
+            _boneData.CopyFrom(legacyAnimator.BoneMatrices);
+            _boneMatricesBuffer.Write(in _boneData);
+            return;
+        }
+
+        _boneData = GpuBoneTransforms.Identity();
+        _boneMatricesBuffer.Write(in _boneData);
     }
 }

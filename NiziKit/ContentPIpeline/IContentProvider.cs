@@ -1,4 +1,4 @@
-namespace NiziKit.ContentPIpeline;
+namespace NiziKit.ContentPipeline;
 
 public interface IContentProvider
 {
