@@ -5,7 +5,7 @@ namespace NiziKit.Graphics.Resources;
 
 public partial class CycledTexture : IDisposable
 {
-    private TextureDesc _textureDesc;
+    private readonly TextureDesc _textureDesc;
     private readonly List<Texture> _textures = [];
     
     public CycledTexture(TextureDesc textureDesc)

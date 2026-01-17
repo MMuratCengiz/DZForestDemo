@@ -14,7 +14,7 @@ public partial class RenderFrame
 {
     private UiContext? _uiContext;
     private AlphaBlitPass? _uiBlitPass;
-    private Semaphore[] _externalSemaphores = new Semaphore[4];
+    private readonly Semaphore[] _externalSemaphores = new Semaphore[4];
     private int _externalSemaphoreCount;
 
     public UiContext UiContext => _uiContext ?? throw new InvalidOperationException("UI not enabled. Call EnableUi first.");

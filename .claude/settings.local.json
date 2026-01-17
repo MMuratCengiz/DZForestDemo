@@ -59,7 +59,11 @@
       "WebFetch(domain:mzaks.medium.com)",
       "WebFetch(domain:ignatandrei.github.io)",
       "Bash(dotnet list:*)",
-      "Bash(git show:*)"
+      "Bash(git show:*)",
+      "Bash(Get-ChildItem -Path \"$env:USERPROFILE\\\\.nuget\\\\packages\\\\denofizgraphics\" -Recurse -Include \"*.xml\")",
+      "Bash(Select-Object -First 1)",
+      "Bash(Get-Item)",
+      "Bash(xargs:*)"
     ]
   }
 }

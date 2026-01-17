@@ -106,6 +106,9 @@ public sealed class GraphicsContext : IDisposable
         _emptyTexture = new ColorTexture(_logicalDevice, 0, 0, 0, 0, "EmptyTexture");
         _missingTexture = new ColorTexture(_logicalDevice, 255, 0, 255, 255, "MissingTexture");
         _instance = this;
+
+        _resourceTracking.TrackTexture(_emptyTexture.Texture, QueueType.Graphics);
+        _resourceTracking.TrackTexture(_missingTexture.Texture, QueueType.Graphics);
     }
 
     private void _Resize(uint width, uint height)

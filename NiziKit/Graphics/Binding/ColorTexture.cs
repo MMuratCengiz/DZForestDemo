@@ -25,54 +25,23 @@ public sealed class ColorTexture : IDisposable
 
     private void UploadPixelData(LogicalDevice device, byte[] pixelData, string debugName)
     {
-        var stagingBuffer = device.CreateBuffer(new BufferDesc
+        using var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
         {
-            NumBytes = 4, // 4 bytes for RGBA
-            HeapType = HeapType.CpuGpu,
-            Usage = (uint)BufferUsageFlagBits.CopySrc,
-            DebugName = StringView.Create($"{debugName}_Staging")
+            Device = device,
+            IssueBarriers = true
         });
-
-        var mappedPtr = stagingBuffer.MapMemory();
-        Marshal.Copy(pixelData, 0, mappedPtr, 4);
-        stagingBuffer.UnmapMemory();
-
-        var commandQueue = device.CreateCommandQueue(new CommandQueueDesc
+        batchCopy.Begin();
+        batchCopy.CopyDataToTexture(new CopyDataToTextureDesc
         {
-            QueueType = QueueType.Graphics
-        });
-
-        var commandListPool = device.CreateCommandListPool(new CommandListPoolDesc
-        {
-            CommandQueue = commandQueue,
-            NumCommandLists = 1
-        });
-
-        var commandLists = commandListPool.GetCommandLists();
-        var commandList = commandLists.ToArray()[0];
-
-        commandList.Begin();
-        commandList.CopyBufferToTexture(new CopyBufferToTextureDesc
-        {
-            SrcBuffer = stagingBuffer,
-            SrcOffset = 0,
+            Data = ByteArrayView.Create(pixelData),
             DstTexture = Texture,
-            DstX = 0,
-            DstY = 0,
-            DstZ = 0,
-            Format = Format.R8G8B8A8Unorm,
+            AutoAlign = true,
+            Width = 1,
+            Height = 1,
             MipLevel = 0,
-            ArrayLayer = 0,
-            RowPitch = 4,
-            NumRows = 1
+            ArrayLayer = 0
         });
-
-        commandList.End();
-        commandQueue.ExecuteCommandLists(commandLists);
-        commandQueue.WaitIdle();
-        commandListPool.Dispose();
-        commandQueue.Dispose();
-        stagingBuffer.Dispose();
+        batchCopy.Submit(null);
     }
 
     public void Dispose()

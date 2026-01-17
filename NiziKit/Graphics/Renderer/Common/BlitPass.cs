@@ -71,8 +71,6 @@ public class BlitPass : IDisposable
 
         var pipeline = GetOrCreatePipeline(dest.Format);
 
-        UpdateBindGroup(frameIndex, sourceTexture);
-
         GraphicsContext.ResourceTracking.TransitionTexture(
             commandList,
             sourceTexture,
@@ -84,6 +82,8 @@ public class BlitPass : IDisposable
             destTexture,
             (uint)ResourceUsageFlagBits.RenderTarget,
             QueueType.Graphics);
+
+        UpdateBindGroup(frameIndex, sourceTexture);
 
         _rtAttachment[0] = new RenderingAttachmentDesc
         {

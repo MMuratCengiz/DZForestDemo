@@ -30,8 +30,8 @@ public class Animator : IComponent, IDisposable
     private readonly Matrix4x4[] _layerTransforms = new Matrix4x4[MaxBones];
     private Matrix4x4[]? _inverseBindMatrices;
     private Matrix4x4 _nodeTransform = Matrix4x4.Identity;
-    private Float4x4Array _ozzTransforms;
-    private Float4x4Array _ozzBlendTransforms;
+    private Float4x4Array.Pinned? _ozzTransforms;
+    private Float4x4Array.Pinned? _ozzBlendTransforms;
     private bool _initialized;
 
     public int BoneCount { get; private set; }
@@ -383,8 +383,8 @@ public class Animator : IComponent, IDisposable
         SampleSingle(state.PreviousState, prevNormalized, _ozzBlendTransforms);
         SampleSingle(state.CurrentState, state.NormalizedTime, _ozzTransforms);
 
-        var prevSpan = _ozzBlendTransforms.AsSpan();
-        var currSpan = _ozzTransforms.AsSpan();
+        var prevSpan = _ozzBlendTransforms!.Value.AsSpan();
+        var currSpan = _ozzTransforms!.Value.AsSpan();
 
         for (var i = 0; i < BoneCount; i++)
         {
@@ -399,7 +399,7 @@ public class Animator : IComponent, IDisposable
             return;
         }
 
-        var transforms = _ozzTransforms.AsSpan();
+        var transforms = _ozzTransforms!.Value.AsSpan();
 
         if (layerIndex == 0)
         {
@@ -629,6 +629,8 @@ public class Animator : IComponent, IDisposable
     public void Dispose()
     {
         _initialized = false;
+        _ozzTransforms?.Dispose();
+        _ozzBlendTransforms?.Dispose();
     }
 
     private class AnimatorLayerState

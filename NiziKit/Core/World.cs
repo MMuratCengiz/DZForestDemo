@@ -114,6 +114,11 @@ public class World : IDisposable
     public void Dispose()
     {
         _currentScene?.Dispose();
+        foreach (var listener in _worldEventListeners)
+        {
+            listener.SceneReset();
+        }
+
         _physicsWorld.Dispose();
     }
 }

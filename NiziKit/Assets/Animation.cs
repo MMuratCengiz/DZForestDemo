@@ -58,11 +58,12 @@ public class Animation : IDisposable
 
     public void Dispose()
     {
-        if ((ulong)OzzContext != 0 && _skeleton != null)
+        if ((ulong)OzzContext != 0 && _skeleton?.OzzSkeleton.IsValid() == true)
         {
             _skeleton.OzzSkeleton.DestroyContext(OzzContext);
-            OzzContext = null;
-            _skeleton = null;
         }
+
+        OzzContext = default;
+        _skeleton = null;
     }
 }

@@ -79,8 +79,6 @@ public class AlphaBlitPass : IDisposable
         var frameIndex = GraphicsContext.FrameIndex;
         var pipeline = GetOrCreatePipeline(destFormat);
 
-        UpdateBindGroup(frameIndex, source);
-
         GraphicsContext.ResourceTracking.TransitionTexture(
             commandList,
             source,
@@ -92,6 +90,8 @@ public class AlphaBlitPass : IDisposable
             dest,
             (uint)ResourceUsageFlagBits.RenderTarget,
             QueueType.Graphics);
+
+        UpdateBindGroup(frameIndex, source);
 
         _rtAttachment[0] = new RenderingAttachmentDesc
         {

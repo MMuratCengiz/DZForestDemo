@@ -20,8 +20,8 @@ public class Fox : GameObject
         }
     }
 
-    private Animator? _animator;
-    private bool _useLayerBlending;
+    private readonly Animator? _animator;
+    private readonly bool _useLayerBlending;
 
     public Fox(Vector3? position = null, bool useLayerBlending = false) : base("Fox")
     {

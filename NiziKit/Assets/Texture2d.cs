@@ -73,7 +73,7 @@ public class Texture2d : IAsset
         using var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
         {
             Device = device,
-            IssueBarriers = false
+            IssueBarriers = true
         });
         batchCopy.Begin();
         batchCopy.LoadTextureFromData(new LoadTextureFromDataDesc
@@ -83,6 +83,7 @@ public class Texture2d : IAsset
         });
         batchCopy.Submit(null);
 
+        GraphicsContext.ResourceTracking.TrackTexture(gpuTexture, QueueType.Graphics);
         Name = Path.GetFileNameWithoutExtension(name);
         SourcePath = name;
         Width = textureData.GetWidth();

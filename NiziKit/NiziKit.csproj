@@ -15,7 +15,7 @@
 
     <ItemGroup>
       <PackageReference Include="BepuPhysics" Version="2.4.0" />
-      <PackageReference Include="DenOfIzGraphics" Version="0.6.3-alpha" />
+      <PackageReference Include="DenOfIzGraphics" Version="0.6.5-alpha" />
       <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
       <PackageReference Include="Pure.DI" Version="2.3.1">
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

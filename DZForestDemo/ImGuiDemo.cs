@@ -228,7 +228,7 @@ public static class ImGuiDemoProgram
         Engine.Init(new EngineDesc());
         var preference = new APIPreference
         {
-            Windows = APIPreferenceWindows.Directx12
+            Windows = APIPreferenceWindows.Vulkan
         };
         using var graphicsApi = new GraphicsApi(preference);
         using var logicalDevice = graphicsApi.CreateAndLoadOptimalLogicalDevice(new LogicalDeviceDesc

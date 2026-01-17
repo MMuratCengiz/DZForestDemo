@@ -101,8 +101,6 @@ public class PresentPass : IDisposable
         var frameIndex = GraphicsContext.FrameIndex;
         var texture = sourceTexture[frameIndex];
 
-        UpdateBindGroup(frameIndex, texture);
-
         var swapChainImageIndex = GraphicsContext.SwapChain.AcquireNextImage();
         var swapChainImage = GraphicsContext.SwapChain.GetRenderTarget(swapChainImageIndex);
 
@@ -119,6 +117,8 @@ public class PresentPass : IDisposable
             swapChainImage,
             (uint)ResourceUsageFlagBits.RenderTarget,
             QueueType.Graphics);
+
+        UpdateBindGroup(frameIndex, texture);
 
         _rtAttachment[0] = new RenderingAttachmentDesc
         {
