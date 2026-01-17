@@ -121,7 +121,7 @@ public class NiziComponentGenerator : IIncrementalGenerator
 
             var baseType = typeInfo.Type?.ToDisplayString(displayFormat) ?? prop.Type.ToString();
 
-            var isNullable = prop.Type is Microsoft.CodeAnalysis.CSharp.Syntax.NullableTypeSyntax;
+            var isNullable = prop.Type is NullableTypeSyntax;
             var propType = isNullable && !baseType.EndsWith("?") ? baseType + "?" : baseType;
 
             sb.AppendLine($"    private {propType} {fieldName};");

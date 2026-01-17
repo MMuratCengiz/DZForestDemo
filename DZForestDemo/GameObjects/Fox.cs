@@ -25,6 +25,7 @@ public class Fox : GameObject
     public Fox(Vector3? position = null) : base("Fox")
     {
         LocalPosition = position ?? new Vector3(0f, 0f, 0f);
+        LocalRotation = Quaternion.CreateFromAxisAngle(Vector3.UnitX, (float)Math.PI / 2);
 
         var material = Assets.RegisterMaterial(new FoxMaterial());
         var model = Assets.LoadModel("Fox.glb");
@@ -44,9 +45,7 @@ public class Fox : GameObject
         _animator.Initialize();
     }
 
-    private static AnimatorController CreateFoxController(
-        NiziKit.Assets.Animation runAnimation,
-        NiziKit.Assets.Animation surveyAnimation)
+    private static AnimatorController CreateFoxController(Animation runAnimation, Animation surveyAnimation)
     {
         var controller = new AnimatorController { Name = "FoxController" };
 
