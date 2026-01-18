@@ -15,13 +15,15 @@ public struct RenderObject
 public class RenderWorld : IWorldEventListener
 {
     private readonly List<Material> _materials = new(64);
-    private readonly Dictionary<Material, List<RenderObject>> _materialRenderObjects = new(64);
-    private readonly Dictionary<object, (Material material, int index)> _objectLookup = new(256);
+    private readonly Dictionary<Material, Dictionary<Mesh, DrawBatch>> _materialMeshBuckets = new(64);
+    private readonly Dictionary<object, (Material material, Mesh mesh, int index)> _objectLookup = new(256);
+
+    private readonly List<DrawBatch> _batchCache = new(64);
 
     public void SceneReset()
     {
         _materials.Clear();
-        _materialRenderObjects.Clear();
+        _materialMeshBuckets.Clear();
         _objectLookup.Clear();
     }
 
@@ -71,26 +73,34 @@ public class RenderWorld : IWorldEventListener
         var meshComp = go.GetComponent<MeshComponent>();
 
         var material = materialComp?.Material;
-        if (material == null || meshComp?.Mesh == null)
+        var mesh = meshComp?.Mesh;
+        if (material == null || mesh == null)
         {
             return;
         }
-        if (!_materialRenderObjects.TryGetValue(material, out var bucket))
+
+        if (!_materialMeshBuckets.TryGetValue(material, out var meshBuckets))
         {
-            bucket = new List<RenderObject>(32);
-            _materialRenderObjects[material] = bucket;
+            meshBuckets = new Dictionary<Mesh, DrawBatch>(16);
+            _materialMeshBuckets[material] = meshBuckets;
             _materials.Add(material);
+        }
+
+        if (!meshBuckets.TryGetValue(mesh, out var batch))
+        {
+            batch = new DrawBatch(mesh);
+            meshBuckets[mesh] = batch;
         }
 
         var renderObj = new RenderObject
         {
             Material = material,
-            Mesh = meshComp.Mesh,
+            Mesh = mesh,
             Owner = go
         };
 
-        _objectLookup[go] = (material, bucket.Count);
-        bucket.Add(renderObj);
+        _objectLookup[go] = (material, mesh, batch.Count);
+        batch.Add(renderObj);
     }
 
     private void Unregister(GameObject go)
@@ -100,21 +110,27 @@ public class RenderWorld : IWorldEventListener
             return;
         }
 
-        var bucket = _materialRenderObjects[entry.material];
-        var lastIndex = bucket.Count - 1;
+        var meshBuckets = _materialMeshBuckets[entry.material];
+        var batch = meshBuckets[entry.mesh];
+        var lastIndex = batch.Count - 1;
 
         if (entry.index < lastIndex)
         {
-            var swapped = bucket[lastIndex];
-            bucket[entry.index] = swapped;
-            _objectLookup[swapped.Owner] = (entry.material, entry.index);
+            var swapped = batch.Objects[lastIndex];
+            _objectLookup[swapped.Owner] = (entry.material, entry.mesh, entry.index);
         }
 
-        bucket.RemoveAt(lastIndex);
-        if (bucket.Count == 0)
+        batch.RemoveAt(entry.index);
+
+        if (batch.Count == 0)
         {
-            _materialRenderObjects.Remove(entry.material);
-            _materials.Remove(entry.material);
+            meshBuckets.Remove(entry.mesh);
+
+            if (meshBuckets.Count == 0)
+            {
+                _materialMeshBuckets.Remove(entry.material);
+                _materials.Remove(entry.material);
+            }
         }
     }
 
@@ -123,13 +139,20 @@ public class RenderWorld : IWorldEventListener
         return CollectionsMarshal.AsSpan(_materials);
     }
 
-    public ReadOnlySpan<RenderObject> GetObjects(Material material)
+    public ReadOnlySpan<DrawBatch> GetDrawBatches(Material material)
     {
-        if (_materialRenderObjects.TryGetValue(material, out var bucket))
+        _batchCache.Clear();
+
+        if (!_materialMeshBuckets.TryGetValue(material, out var meshBuckets))
         {
-            return CollectionsMarshal.AsSpan(bucket);
+            return ReadOnlySpan<DrawBatch>.Empty;
         }
 
-        return ReadOnlySpan<RenderObject>.Empty;
+        foreach (var (_, batch) in meshBuckets)
+        {
+            _batchCache.Add(batch);
+        }
+
+        return CollectionsMarshal.AsSpan(_batchCache);
     }
 }

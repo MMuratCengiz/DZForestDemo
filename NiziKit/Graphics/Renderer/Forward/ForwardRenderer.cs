@@ -82,10 +82,10 @@ public class ForwardRenderer : IRenderer
             pass.BindPipeline(gpuShader.Pipeline);
             pass.Bind<MaterialBinding>(material);
 
-            foreach (var draw in renderWorld.GetObjects(material))
+            foreach (var batch in renderWorld.GetDrawBatches(material))
             {
-                pass.Bind<DrawBinding>(draw.Owner);
-                pass.DrawMesh(draw.Mesh);
+                pass.Bind<BatchDrawBinding>(batch);
+                pass.DrawMesh(batch.Mesh, (uint)batch.Count);
             }
         }
 

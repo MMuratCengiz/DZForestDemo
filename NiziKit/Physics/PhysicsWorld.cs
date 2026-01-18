@@ -192,6 +192,32 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
         return false;
     }
 
+    public void AddAttractorForce(Vector3 position, float force, float radius, float falloffPower = 1f)
+    {
+        var radiusSq = radius * radius;
+
+        foreach (var (id, handle) in _bodyHandles)
+        {
+            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
+            var bodyPos = bodyRef.Pose.Position;
+            var diff = position - bodyPos;
+            var distSq = diff.LengthSquared();
+
+            if (distSq > radiusSq || distSq < 0.0001f)
+            {
+                continue;
+            }
+
+            var dist = MathF.Sqrt(distSq);
+            var falloff = MathF.Pow(1f - (dist / radius), falloffPower);
+            var direction = diff / dist;
+
+            var impulse = direction * force * falloff;
+            _simulation.Awakener.AwakenBody(handle);
+            bodyRef.ApplyLinearImpulse(impulse);
+        }
+    }
+
     public void AddExplosionForce(Vector3 position, float force, float radius, float upwardsModifier = 0f)
     {
         var radiusSq = radius * radius;

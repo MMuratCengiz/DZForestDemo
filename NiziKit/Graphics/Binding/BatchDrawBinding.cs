@@ -1,26 +1,25 @@
-using System.Numerics;
 using DenOfIz;
 using NiziKit.Animation;
-using NiziKit.Components;
-using NiziKit.Core;
 using NiziKit.Graphics.Binding.Data;
 using NiziKit.Graphics.Binding.Layout;
 using NiziKit.Graphics.Buffers;
 
 namespace NiziKit.Graphics.Binding;
 
-public class DrawBinding : ShaderBinding<GameObject>
+public class BatchDrawBinding : ShaderBinding<DrawBatch>
 {
-    private readonly UniformBuffer<GpuInstanceData> _instanceBuffer;
+    private readonly UniformBuffer<GpuInstanceArray> _instanceBuffer;
     private readonly UniformBuffer<GpuBoneTransforms> _boneMatricesBuffer;
+
+    private GpuInstanceArray _instanceData;
     private GpuBoneTransforms _boneData;
 
     public override BindGroupLayout Layout => GraphicsContext.BindGroupLayoutStore.Draw;
     public override bool RequiresCycling => true;
 
-    public DrawBinding()
+    public BatchDrawBinding()
     {
-        _instanceBuffer = new UniformBuffer<GpuInstanceData>(true);
+        _instanceBuffer = new UniformBuffer<GpuInstanceArray>(true);
         _boneMatricesBuffer = new UniformBuffer<GpuBoneTransforms>(true);
         _boneData = GpuBoneTransforms.Identity();
 
@@ -47,24 +46,35 @@ public class DrawBinding : ShaderBinding<GameObject>
         }
     }
 
-    protected override void OnUpdate(GameObject target)
+    protected override void OnUpdate(DrawBatch batch)
     {
-        var instanceData = new GpuInstanceData
-        {
-            Model = target.WorldMatrix,
-            BoneOffset = 0
-        };
-        _instanceBuffer.Write(in instanceData);
+        var objects = batch.AsSpan();
+        var count = Math.Min(objects.Length, GpuInstanceArray.MaxInstances);
+        uint boneOffset = 0;
 
-        var animator = target.GetComponent<Animator>();
-        if (animator != null && animator.BoneCount > 0)
+        for (var i = 0; i < count; i++)
         {
-            _boneData.CopyFrom(animator.BoneMatrices);
-            _boneMatricesBuffer.Write(in _boneData);
-            return;
+            var go = objects[i].Owner;
+
+            _instanceData.Instances[i] = new GpuInstanceData
+            {
+                Model = go.WorldMatrix,
+                BoneOffset = boneOffset
+            };
+
+            var animator = go.GetComponent<Animator>();
+            if (animator is { BoneCount: > 0 })
+            {
+                var boneCount = Math.Min(animator.BoneCount, GpuBoneTransforms.MaxBones - (int)boneOffset);
+                for (var b = 0; b < boneCount; b++)
+                {
+                    _boneData.Bones[(int)boneOffset + b] = animator.BoneMatrices[b];
+                }
+                boneOffset += (uint)boneCount;
+            }
         }
 
-        _boneData = GpuBoneTransforms.Identity();
+        _instanceBuffer.Write(in _instanceData);
         _boneMatricesBuffer.Write(in _boneData);
     }
 }

@@ -19,6 +19,12 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
     private const float ExplosionRadius = 4f;
     private const float ExplosionUpwardsModifier = 0.3f;
 
+    private const float MouseGravityForce = 2f;
+    private const float MouseGravityRadius = 15f;
+    private bool _mouseGravityEnabled;
+    private float _mouseX;
+    private float _mouseY;
+
     protected override void Load(Game game)
     {
         _renderer = new ForwardRenderer();
@@ -27,6 +33,7 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 
         Console.WriteLine("Controls:");
         Console.WriteLine("  Left Click = Explosion at cursor");
+        Console.WriteLine("  G = Toggle mouse gravity");
         Console.WriteLine("  Space = Add shape");
         Console.WriteLine("  Left Fox: S=Survey, Z/X/C=CrossFade curves, V=Run");
         Console.WriteLine("  Right Fox: Up/Down=Layer weight");
@@ -40,10 +47,21 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 
     protected override void FixedUpdate(float fixedDt)
     {
+        if (_mouseGravityEnabled)
+        {
+            ApplyMouseGravity();
+        }
     }
 
     protected override void OnEvent(ref Event ev)
     {
+        if (ev.Type == EventType.MouseMotion)
+        {
+            _mouseX = ev.MouseMotion.X;
+            _mouseY = ev.MouseMotion.Y;
+            return;
+        }
+
         if (ev.Type == EventType.MouseButtonDown && ev.MouseButton.Button == MouseButton.Left)
         {
             HandleExplosionClick(ev.MouseButton.X, ev.MouseButton.Y);
@@ -56,6 +74,10 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
             {
                 case KeyCode.Space:
                     _demoScene?.AddRandomShape();
+                    break;
+                case KeyCode.G:
+                    _mouseGravityEnabled = !_mouseGravityEnabled;
+                    Console.WriteLine($"Mouse gravity: {(_mouseGravityEnabled ? "ON" : "OFF")}");
                     break;
                 case KeyCode.S:
                     _demoScene?.Fox?.TriggerSurvey();
@@ -114,6 +136,29 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
         }
 
         World.PhysicsWorld.AddExplosionForce(explosionPoint, ExplosionForce, ExplosionRadius, ExplosionUpwardsModifier);
+    }
+
+    private void ApplyMouseGravity()
+    {
+        var camera = World.CurrentScene?.MainCamera;
+        if (camera == null)
+        {
+            return;
+        }
+
+        var ray = camera.ScreenPointToRay(_mouseX, _mouseY, Window.Width, Window.Height);
+
+        Vector3 gravityPoint;
+        if (World.PhysicsWorld!.Raycast(ray, 100f, out var hit))
+        {
+            gravityPoint = hit.Point;
+        }
+        else
+        {
+            gravityPoint = ray.GetPoint(15f);
+        }
+
+        World.PhysicsWorld.AddAttractorForce(gravityPoint, MouseGravityForce, MouseGravityRadius);
     }
 
     protected override void OnShutdown()
