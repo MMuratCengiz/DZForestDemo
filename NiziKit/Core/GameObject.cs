@@ -1,5 +1,6 @@
 using System.Numerics;
 using NiziKit.Components;
+using NiziKit.Physics;
 
 namespace NiziKit.Core;
 
@@ -84,6 +85,18 @@ public class GameObject(string name = "GameObject")
     {
     }
 
+    public virtual void OnCollisionEnter(in Collision collision)
+    {
+    }
+
+    public virtual void OnCollisionStay(in Collision collision)
+    {
+    }
+
+    public virtual void OnCollisionExit(in Collision collision)
+    {
+    }
+
     public GameObject CreateChild(string name = "SceneObject")
     {
         var child = new GameObject(name);
@@ -97,12 +110,23 @@ public class GameObject(string name = "GameObject")
         child.Parent = this;
         _children.Add(child);
         child.MarkTransformDirty();
+
+        // If parent is in world, register child with world
+        if (IsInWorld && !child.IsInWorld)
+        {
+            World.OnGameObjectCreated(child);
+        }
     }
 
     public void RemoveChild(GameObject child)
     {
         if (_children.Remove(child))
         {
+            // If child was in world, unregister it
+            if (child.IsInWorld)
+            {
+                World.OnGameObjectDestroyed(child);
+            }
             child.Parent = null;
         }
     }
@@ -141,8 +165,10 @@ public class GameObject(string name = "GameObject")
 
     public T AddComponent<T>() where T : IComponent, new()
     {
-        var component = new T { };
-        component.Owner = this;
+        var component = new T
+        {
+            Owner = this
+        };
         _components.Add(component);
         if (IsInWorld)
         {

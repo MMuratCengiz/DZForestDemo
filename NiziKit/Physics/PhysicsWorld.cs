@@ -1,4 +1,6 @@
 using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using BepuPhysics;
 using BepuPhysics.Collidables;
 using BepuPhysics.CollisionDetection;
@@ -13,6 +15,9 @@ namespace NiziKit.Physics;
 
 public sealed class PhysicsWorld : IWorldEventListener, IDisposable
 {
+    private const int MaxCollisionEvents = 1024;
+    private const int MaxTrackedContacts = 2048;
+
     private readonly Simulation _simulation;
     private readonly BufferPool _bufferPool;
     private readonly ThreadDispatcher _threadDispatcher;
@@ -21,6 +26,15 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
     private readonly Dictionary<int, GameObject> _trackedObjects = new();
     private readonly Dictionary<BodyHandle, int> _bodyToId = new();
     private readonly Dictionary<StaticHandle, int> _staticToId = new();
+
+    private readonly CollisionPair[] _activeContactsBuffer = new CollisionPair[MaxTrackedContacts];
+    private readonly CollisionPair[] _previousContactsBuffer = new CollisionPair[MaxTrackedContacts];
+    private int _activeContactCount;
+    private int _previousContactCount;
+
+    private readonly CollisionEventData[] _pendingCollisionEvents = new CollisionEventData[MaxCollisionEvents];
+    private int _pendingEventCount;
+    private readonly Lock _collisionLock = new();
 
     public Vector3 Gravity { get; set; }
 
@@ -38,15 +52,178 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
 
         _simulation = Simulation.Create(
             _bufferPool,
-            new NarrowPhaseCallbacks(),
+            new NarrowPhaseCallbacks(this),
             new PoseIntegratorCallbacks(Gravity),
             new SolveDescription(8, 1));
     }
 
+    internal int GetIdFromCollidablePublic(CollidableReference collidable)
+    {
+        return GetIdFromCollidable(collidable);
+    }
+
     public void Step(float dt)
     {
+        SwapContactBuffers();
         _simulation.Timestep(dt, _threadDispatcher);
         SyncToGameObjects();
+        ProcessCollisionCallbacks();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void SwapContactBuffers()
+    {
+        Array.Copy(_activeContactsBuffer, _previousContactsBuffer, _activeContactCount);
+        _previousContactCount = _activeContactCount;
+        _activeContactCount = 0;
+    }
+
+    private void ProcessCollisionCallbacks()
+    {
+        int eventCount;
+        Span<CollisionEventData> events = stackalloc CollisionEventData[MaxCollisionEvents];
+
+        lock (_collisionLock)
+        {
+            eventCount = _pendingEventCount;
+            for (var i = 0; i < eventCount; i++)
+            {
+                events[i] = _pendingCollisionEvents[i];
+            }
+            _pendingEventCount = 0;
+        }
+
+        for (var i = 0; i < eventCount; i++)
+        {
+            ref var evt = ref events[i];
+            var idA = evt.IdA;
+            var idB = evt.IdB;
+            var key = idA < idB ? new CollisionPair(idA, idB) : new CollisionPair(idB, idA);
+
+            if (!ContainsContact(_activeContactsBuffer, _activeContactCount, key))
+            {
+                if (_activeContactCount < MaxTrackedContacts)
+                {
+                    _activeContactsBuffer[_activeContactCount++] = key;
+                }
+            }
+        }
+
+        for (var i = 0; i < _activeContactCount; i++)
+        {
+            var key = _activeContactsBuffer[i];
+
+            if (!_trackedObjects.TryGetValue(key.IdA, out var goA) ||
+                !_trackedObjects.TryGetValue(key.IdB, out var goB))
+            {
+                continue;
+            }
+
+            var rbA = goA.GetComponent<RigidbodyComponent>();
+            var rbB = goB.GetComponent<RigidbodyComponent>();
+
+            var velA = rbA != null ? GetVelocity(key.IdA) : Vector3.Zero;
+            var velB = rbB != null ? GetVelocity(key.IdB) : Vector3.Zero;
+            var relativeVelocity = velA - velB;
+
+            var wasActive = ContainsContact(_previousContactsBuffer, _previousContactCount, key);
+
+            var collisionA = new Collision
+            {
+                Other = goB,
+                Rigidbody = rbB,
+                RelativeVelocity = relativeVelocity,
+                ContactCount = 0
+            };
+
+            var collisionB = new Collision
+            {
+                Other = goA,
+                Rigidbody = rbA,
+                RelativeVelocity = -relativeVelocity,
+                ContactCount = 0
+            };
+
+            if (wasActive)
+            {
+                goA.OnCollisionStay(in collisionA);
+                goB.OnCollisionStay(in collisionB);
+            }
+            else
+            {
+                goA.OnCollisionEnter(in collisionA);
+                goB.OnCollisionEnter(in collisionB);
+            }
+        }
+
+        for (var i = 0; i < _previousContactCount; i++)
+        {
+            var key = _previousContactsBuffer[i];
+
+            if (ContainsContact(_activeContactsBuffer, _activeContactCount, key))
+            {
+                continue;
+            }
+
+            if (!_trackedObjects.TryGetValue(key.IdA, out var goA) ||
+                !_trackedObjects.TryGetValue(key.IdB, out var goB))
+            {
+                continue;
+            }
+
+            var rbA = goA.GetComponent<RigidbodyComponent>();
+            var rbB = goB.GetComponent<RigidbodyComponent>();
+
+            var collisionA = new Collision
+            {
+                Other = goB,
+                Rigidbody = rbB,
+                RelativeVelocity = Vector3.Zero,
+                ContactCount = 0
+            };
+
+            var collisionB = new Collision
+            {
+                Other = goA,
+                Rigidbody = rbA,
+                RelativeVelocity = Vector3.Zero,
+                ContactCount = 0
+            };
+
+            goA.OnCollisionExit(in collisionA);
+            goB.OnCollisionExit(in collisionB);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static bool ContainsContact(CollisionPair[] buffer, int count, CollisionPair key)
+    {
+        for (var i = 0; i < count; i++)
+        {
+            if (buffer[i].IdA == key.IdA && buffer[i].IdB == key.IdB)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    internal void RecordContact(int idA, int idB, Vector3 contactPoint, Vector3 normal, float depth)
+    {
+        lock (_collisionLock)
+        {
+            if (_pendingEventCount < MaxCollisionEvents)
+            {
+                _pendingCollisionEvents[_pendingEventCount++] = new CollisionEventData
+                {
+                    IdA = idA,
+                    IdB = idB,
+                    ContactPoint = contactPoint,
+                    Normal = normal,
+                    Depth = depth
+                };
+            }
+        }
     }
 
     public BodyHandle CreateBody(int id, Vector3 position, Quaternion rotation, PhysicsBodyDesc desc)
@@ -347,6 +524,9 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
             RemoveBody(id);
         }
         _trackedObjects.Clear();
+        _activeContactCount = 0;
+        _previousContactCount = 0;
+        _pendingEventCount = 0;
     }
 
     public void GameObjectCreated(GameObject go)
@@ -432,17 +612,46 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
     {
         foreach (var (id, go) in _trackedObjects)
         {
-            var pose = GetPose(id);
-            if (pose.HasValue)
+            var rigidbody = go.GetComponent<RigidbodyComponent>();
+            if (rigidbody == null)
             {
-                go.LocalPosition = pose.Value.Position;
-                go.LocalRotation = pose.Value.Rotation;
+                continue;
+            }
+            if (rigidbody.BodyType == PhysicsBodyType.Kinematic)
+            {
+                SetPose(id, go.LocalPosition, go.LocalRotation);
+            }
+            else if (rigidbody.BodyType == PhysicsBodyType.Dynamic)
+            {
+                var pose = GetPose(id);
+                if (pose.HasValue)
+                {
+                    go.LocalPosition = pose.Value.Position;
+                    go.LocalRotation = pose.Value.Rotation;
+                }
             }
         }
     }
 }
 
-internal struct NarrowPhaseCallbacks : INarrowPhaseCallbacks
+[StructLayout(LayoutKind.Sequential)]
+internal struct CollisionPair(int idA, int idB)
+{
+    public int IdA = idA;
+    public int IdB = idB;
+}
+
+[StructLayout(LayoutKind.Sequential)]
+internal struct CollisionEventData
+{
+    public int IdA;
+    public int IdB;
+    public Vector3 ContactPoint;
+    public Vector3 Normal;
+    public float Depth;
+}
+
+internal readonly struct NarrowPhaseCallbacks(PhysicsWorld physicsWorld) : INarrowPhaseCallbacks
 {
     public void Initialize(Simulation simulation) { }
 
@@ -458,6 +667,17 @@ internal struct NarrowPhaseCallbacks : INarrowPhaseCallbacks
         pairMaterial.FrictionCoefficient = 1f;
         pairMaterial.MaximumRecoveryVelocity = 2f;
         pairMaterial.SpringSettings = new SpringSettings(30, 1);
+
+        if (manifold.Count > 0)
+        {
+            var idA = physicsWorld.GetIdFromCollidablePublic(pair.A);
+            var idB = physicsWorld.GetIdFromCollidablePublic(pair.B);
+            if (idA >= 0 && idB >= 0)
+            {
+                manifold.GetContact(0, out var offset, out var normal, out var depth, out _);
+                physicsWorld.RecordContact(idA, idB, offset, normal, depth);
+            }
+        }
         return true;
     }
 
