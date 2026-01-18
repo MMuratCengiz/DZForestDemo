@@ -4,6 +4,7 @@ using NiziKit.Application.Timing;
 using NiziKit.Application.Windowing;
 using NiziKit.Core;
 using NiziKit.Graphics;
+using NiziKit.Inputs;
 using NiziKit.Services;
 
 namespace NiziKit.Application;
@@ -40,6 +41,7 @@ public class Game : IDisposable
 
         _composition = new GameComposition(Window.NativeWindow, desc.Graphics);
         _ = _composition.Time;
+        _ = _composition.Input;
         _ = _composition.Graphics;
         _ = _composition.Assets;
         _ = _composition.World;
@@ -113,8 +115,11 @@ public class Game : IDisposable
 
     private void ProcessEvents()
     {
+        Input.Update();
+
         while (InputSystem.PollEvent(out var ev))
         {
+            Input.ProcessEvent(ref ev);
             if (ev.Type == EventType.Quit)
             {
                 IsRunning = false;
@@ -134,9 +139,7 @@ public class Game : IDisposable
                 }
             }
 
-            // Route events to camera first
             World.CurrentScene?.MainCamera?.HandleEvent(in ev);
-
             OnEvent(ref ev);
         }
     }

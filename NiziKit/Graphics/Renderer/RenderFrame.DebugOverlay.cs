@@ -46,7 +46,6 @@ public partial class RenderFrame
         DisposeDebugOverlay();
 
         _debugRenderTarget = CycledTexture.ColorAttachment("DebugOverlayRT");
-
         _debugRenderer = new FrameDebugRenderer(new FrameDebugRendererDesc
         {
             GraphicsApi = GraphicsContext.GraphicsApi,
@@ -65,7 +64,7 @@ public partial class RenderFrame
         _debugRtAttachment = new PinnedArray<RenderingAttachmentDesc>(1);
     }
 
-    public CycledTexture ExecuteDebugOverlay()
+    public CycledTexture RenderDebugOverlay()
     {
         if (_debugRenderer == null || _debugRenderTarget == null || _debugRtAttachment == null)
         {

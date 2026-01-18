@@ -91,7 +91,7 @@ public sealed class ManifestOptions
 
     private static bool MatchesGlob(string path, string pattern)
     {
-        if (pattern == "**/*" || pattern == "**")
+        if (pattern is "**/*" or "**")
         {
             return true;
         }

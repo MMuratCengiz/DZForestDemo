@@ -3,6 +3,7 @@ using NiziKit.Application.Timing;
 using NiziKit.Core;
 using NiziKit.Graphics.Binding;
 using NiziKit.Graphics.Resources;
+using NiziKit.UI;
 
 namespace NiziKit.Graphics.Renderer.Forward;
 
@@ -20,10 +21,13 @@ public class ForwardRenderer : IRenderer
     private float _fpsAccumulator;
     private float _lastFpsPrintTime;
 
+    private UiBuildCallback? _uiBuildCallback;
+    
     public ForwardRenderer()
     {
         _renderFrame = new RenderFrame();
         _renderFrame.EnableDebugOverlay(DebugOverlayConfig.Default);
+        _renderFrame.EnableUi(UiContextDesc.Default);
 
         _viewData = new ViewData();
         _width = GraphicsContext.Width;
@@ -91,8 +95,14 @@ public class ForwardRenderer : IRenderer
 
         pass.End();
 
-        var debugOverlay = _renderFrame.ExecuteDebugOverlay();
+        var debugOverlay = _renderFrame.RenderDebugOverlay();
         _renderFrame.AlphaBlit(debugOverlay, _sceneColor);
+
+        if (_uiBuildCallback != null)
+        {
+            var ui = _renderFrame.RenderUi(_uiBuildCallback);
+            _renderFrame.AlphaBlit(ui, _sceneColor);
+        }
 
         _renderFrame.Submit();
         _renderFrame.Present(_sceneColor);

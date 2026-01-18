@@ -13,6 +13,7 @@ public delegate void UiBuildCallback(UiFrame frame);
 public partial class RenderFrame
 {
     private UiContext? _uiContext;
+    private CycledTexture? _uiRenderTarget;
     private AlphaBlitPass? _uiBlitPass;
     private readonly Semaphore[] _externalSemaphores = new Semaphore[4];
     private int _externalSemaphoreCount;
@@ -24,6 +25,7 @@ public partial class RenderFrame
         _uiContext?.Dispose();
         _uiContext = new UiContext(desc);
         _uiBlitPass ??= new AlphaBlitPass();
+        _uiRenderTarget = CycledTexture.ColorAttachment("UIRT");
     }
 
     public void EnableUi(UiContext context)
@@ -44,9 +46,9 @@ public partial class RenderFrame
         _uiContext?.SetViewportSize(width, height);
     }
 
-    public void ExecuteUi(UiBuildCallback buildCallback, CycledTexture dest)
+    public CycledTexture RenderUi(UiBuildCallback buildCallback)
     {
-        if (_uiContext == null)
+        if (_uiContext == null || _uiRenderTarget == null)
         {
             throw new InvalidOperationException("UI not enabled. Call EnableUi first.");
         }
@@ -63,8 +65,9 @@ public partial class RenderFrame
 
         var pass = AllocateBlitPass();
         pass.CommandList.Begin();
-        _uiBlitPass!.Execute(pass.CommandList, texture, dest);
+        _uiBlitPass!.Execute(pass.CommandList, texture, _uiRenderTarget);
         pass.CommandList.End();
+        return _uiRenderTarget;
     }
 
     private void ResetUi()
