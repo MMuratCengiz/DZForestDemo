@@ -212,7 +212,7 @@ public partial class CameraController
     private void UpdateOrbit(float deltaTime)
     {
         var cosP = MathF.Cos(_currentPitch);
-        var targetOrbitPos = OrbitTarget + new Vector3(
+        var targetOrbitPos = OrbitTarget - new Vector3(
             MathF.Sin(_currentYaw) * cosP,
             MathF.Sin(_currentPitch),
             MathF.Cos(_currentYaw) * cosP
@@ -230,7 +230,7 @@ public partial class CameraController
             return;
         }
 
-        Owner.LocalRotation = Quaternion.CreateFromYawPitchRoll(_currentYaw, _currentPitch, 0);
+        Owner.LocalRotation = Quaternion.CreateFromYawPitchRoll(_currentYaw, -_currentPitch, 0);
     }
 
     public bool HandleEvent(in Event ev)
