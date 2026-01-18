@@ -1,9 +1,11 @@
+using System.Numerics;
 using DenOfIz;
 using DZForestDemo.Scenes;
 using NiziKit.Animation;
 using NiziKit.Application;
 using NiziKit.Core;
 using NiziKit.Graphics.Renderer.Forward;
+using NiziKit.Physics;
 
 namespace DZForestDemo;
 
@@ -13,16 +15,22 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
     private DemoScene? _demoScene;
     private float _layerWeight;
 
+    private const float ExplosionForce = 10f;
+    private const float ExplosionRadius = 4f;
+    private const float ExplosionUpwardsModifier = 0.3f;
+
     protected override void Load(Game game)
     {
         _renderer = new ForwardRenderer();
         _demoScene = new DemoScene();
         World.LoadScene(_demoScene);
 
-        Console.WriteLine("Animation Blend Test Controls:");
+        Console.WriteLine("Controls:");
+        Console.WriteLine("  Left Click = Explosion at cursor");
+        Console.WriteLine("  Space = Add shape");
         Console.WriteLine("  Left Fox: S=Survey, Z/X/C=CrossFade curves, V=Run");
         Console.WriteLine("  Right Fox: Up/Down=Layer weight");
-        Console.WriteLine("  Space=Add shape, Esc=Quit");
+        Console.WriteLine("  Esc = Quit");
     }
 
     protected override void Update(float dt)
@@ -36,6 +44,12 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 
     protected override void OnEvent(ref Event ev)
     {
+        if (ev.Type == EventType.MouseButtonDown && ev.MouseButton.Button == MouseButton.Left)
+        {
+            HandleExplosionClick(ev.MouseButton.X, ev.MouseButton.Y);
+            return;
+        }
+
         if (ev.Type == EventType.KeyDown)
         {
             switch (ev.Key.KeyCode)
@@ -77,6 +91,29 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
                     break;
             }
         }
+    }
+
+    private void HandleExplosionClick(float mouseX, float mouseY)
+    {
+        var camera = World.CurrentScene?.MainCamera;
+        if (camera == null)
+        {
+            return;
+        }
+
+        var ray = camera.ScreenPointToRay(mouseX, mouseY, Window.Width, Window.Height);
+
+        Vector3 explosionPoint;
+        if (World.PhysicsWorld!.Raycast(ray, 100f, out var hit))
+        {
+            explosionPoint = hit.Point;
+        }
+        else
+        {
+            explosionPoint = ray.GetPoint(20f);
+        }
+
+        World.PhysicsWorld.AddExplosionForce(explosionPoint, ExplosionForce, ExplosionRadius, ExplosionUpwardsModifier);
     }
 
     protected override void OnShutdown()

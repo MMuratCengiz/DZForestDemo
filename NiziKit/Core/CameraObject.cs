@@ -1,6 +1,7 @@
 using System.Numerics;
 using DenOfIz;
 using NiziKit.Components;
+using NiziKit.Physics;
 
 namespace NiziKit.Core;
 
@@ -77,5 +78,27 @@ public class CameraObject(string name) : GameObject(name)
         var yaw = MathF.Atan2(direction.X, direction.Z);
         var pitch = MathF.Asin(Math.Clamp(direction.Y, -1f, 1f));
         LocalRotation = Quaternion.CreateFromYawPitchRoll(yaw, pitch, 0);
+    }
+
+    public Ray ScreenPointToRay(float screenX, float screenY, float screenWidth, float screenHeight)
+    {
+        var ndcX = (2f * screenX / screenWidth) - 1f;
+        var ndcY = 1f - (2f * screenY / screenHeight);
+
+        Matrix4x4.Invert(ViewProjectionMatrix, out var invViewProj);
+
+        var nearPoint = Vector4.Transform(new Vector4(ndcX, ndcY, 0f, 1f), invViewProj);
+        var farPoint = Vector4.Transform(new Vector4(ndcX, ndcY, 1f, 1f), invViewProj);
+
+        var nearWorld = new Vector3(nearPoint.X, nearPoint.Y, nearPoint.Z) / nearPoint.W;
+        var farWorld = new Vector3(farPoint.X, farPoint.Y, farPoint.Z) / farPoint.W;
+
+        return new Ray(nearWorld, farWorld - nearWorld);
+    }
+
+    public Vector3 ScreenToWorldPoint(float screenX, float screenY, float depth, float screenWidth, float screenHeight)
+    {
+        var ray = ScreenPointToRay(screenX, screenY, screenWidth, screenHeight);
+        return ray.GetPoint(depth);
     }
 }

@@ -3,6 +3,7 @@ using BepuPhysics;
 using BepuPhysics.Collidables;
 using BepuPhysics.CollisionDetection;
 using BepuPhysics.Constraints;
+using BepuPhysics.Trees;
 using BepuUtilities;
 using BepuUtilities.Memory;
 using NiziKit.Components;
@@ -18,6 +19,8 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
     private readonly Dictionary<int, BodyHandle> _bodyHandles = new();
     private readonly Dictionary<int, StaticHandle> _staticHandles = new();
     private readonly Dictionary<int, GameObject> _trackedObjects = new();
+    private readonly Dictionary<BodyHandle, int> _bodyToId = new();
+    private readonly Dictionary<StaticHandle, int> _staticToId = new();
 
     public Vector3 Gravity { get; set; }
 
@@ -50,6 +53,7 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
     {
         var handle = _simulation.Bodies.Add(CreateBodyDescription(position, rotation, desc));
         _bodyHandles[id] = handle;
+        _bodyToId[handle] = id;
         return handle;
     }
 
@@ -59,6 +63,7 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
         var handle = _simulation.Statics.Add(new StaticDescription(
             new RigidPose(position, rotation), shapeIndex));
         _staticHandles[id] = handle;
+        _staticToId[handle] = id;
         return handle;
     }
 
@@ -68,12 +73,14 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
         {
             _simulation.Bodies.Remove(bodyHandle);
             _bodyHandles.Remove(id);
+            _bodyToId.Remove(bodyHandle);
         }
 
         if (_staticHandles.TryGetValue(id, out var staticHandle))
         {
             _simulation.Statics.Remove(staticHandle);
             _staticHandles.Remove(id);
+            _staticToId.Remove(staticHandle);
         }
     }
 
@@ -103,6 +110,179 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
         {
             var bodyRef = _simulation.Bodies.GetBodyReference(handle);
             bodyRef.ApplyLinearImpulse(impulse);
+        }
+    }
+
+    public void ApplyImpulse(int id, Vector3 impulse, Vector3 worldPoint)
+    {
+        if (_bodyHandles.TryGetValue(id, out var handle))
+        {
+            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
+            var offset = worldPoint - bodyRef.Pose.Position;
+            bodyRef.ApplyImpulse(impulse, offset);
+        }
+    }
+
+    public void ApplyAngularImpulse(int id, Vector3 angularImpulse)
+    {
+        if (_bodyHandles.TryGetValue(id, out var handle))
+        {
+            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
+            bodyRef.ApplyAngularImpulse(angularImpulse);
+        }
+    }
+
+    public Vector3 GetVelocity(int id)
+    {
+        if (_bodyHandles.TryGetValue(id, out var handle))
+        {
+            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
+            return bodyRef.Velocity.Linear;
+        }
+        return Vector3.Zero;
+    }
+
+    public void SetVelocity(int id, Vector3 velocity)
+    {
+        if (_bodyHandles.TryGetValue(id, out var handle))
+        {
+            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
+            bodyRef.Velocity.Linear = velocity;
+        }
+    }
+
+    public Vector3 GetAngularVelocity(int id)
+    {
+        if (_bodyHandles.TryGetValue(id, out var handle))
+        {
+            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
+            return bodyRef.Velocity.Angular;
+        }
+        return Vector3.Zero;
+    }
+
+    public void SetAngularVelocity(int id, Vector3 angularVelocity)
+    {
+        if (_bodyHandles.TryGetValue(id, out var handle))
+        {
+            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
+            bodyRef.Velocity.Angular = angularVelocity;
+        }
+    }
+
+    public void Awake(int id)
+    {
+        if (_bodyHandles.TryGetValue(id, out var handle))
+        {
+            _simulation.Awakener.AwakenBody(handle);
+        }
+    }
+
+    public bool Raycast(Ray ray, float maxDistance, out RaycastHit hit)
+    {
+        hit = default;
+        var handler = new RayHitHandler(this);
+        _simulation.RayCast(ray.Origin, ray.Direction, maxDistance, ref handler);
+
+        if (handler.HasHit)
+        {
+            hit = handler.Hit;
+            return true;
+        }
+        return false;
+    }
+
+    public void AddExplosionForce(Vector3 position, float force, float radius, float upwardsModifier = 0f)
+    {
+        var radiusSq = radius * radius;
+
+        foreach (var (id, handle) in _bodyHandles)
+        {
+            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
+            var bodyPos = bodyRef.Pose.Position;
+            var diff = bodyPos - position;
+            var distSq = diff.LengthSquared();
+
+            if (distSq > radiusSq || distSq < 0.0001f)
+            {
+                continue;
+            }
+
+            var dist = MathF.Sqrt(distSq);
+            var falloff = 1f - (dist / radius);
+            var direction = diff / dist;
+
+            if (upwardsModifier != 0f)
+            {
+                direction.Y += upwardsModifier;
+                direction = Vector3.Normalize(direction);
+            }
+
+            var impulse = direction * force * falloff;
+            _simulation.Awakener.AwakenBody(handle);
+            bodyRef.ApplyLinearImpulse(impulse);
+        }
+    }
+
+    public IEnumerable<int> OverlapSphere(Vector3 position, float radius)
+    {
+        var radiusSq = radius * radius;
+        foreach (var (id, _) in _trackedObjects)
+        {
+            var pose = GetPose(id);
+            if (!pose.HasValue)
+            {
+                continue;
+            }
+
+            var distSq = (pose.Value.Position - position).LengthSquared();
+            if (distSq <= radiusSq)
+            {
+                yield return id;
+            }
+        }
+    }
+
+    private int GetIdFromCollidable(CollidableReference collidable)
+    {
+        if (collidable.Mobility == CollidableMobility.Static)
+        {
+            var staticHandle = collidable.StaticHandle;
+            return _staticToId.TryGetValue(staticHandle, out var id) ? id : -1;
+        }
+        else
+        {
+            var bodyHandle = collidable.BodyHandle;
+            return _bodyToId.TryGetValue(bodyHandle, out var id) ? id : -1;
+        }
+    }
+
+    private struct RayHitHandler(PhysicsWorld world) : IRayHitHandler
+    {
+        public bool HasHit;
+        public RaycastHit Hit;
+        private float _closestT = float.MaxValue;
+
+        public bool AllowTest(CollidableReference collidable) => true;
+
+        public bool AllowTest(CollidableReference collidable, int childIndex) => true;
+
+        public void OnRayHit(in RayData ray, ref float maximumT, float t, in Vector3 normal, CollidableReference collidable, int childIndex)
+        {
+            if (t < _closestT)
+            {
+                _closestT = t;
+                maximumT = t;
+                HasHit = true;
+                Hit = new RaycastHit
+                {
+                    Point = ray.Origin + ray.Direction * t,
+                    Normal = normal,
+                    Distance = t,
+                    GameObjectId = world.GetIdFromCollidable(collidable),
+                    IsStatic = collidable.Mobility == CollidableMobility.Static
+                };
+            }
         }
     }
 

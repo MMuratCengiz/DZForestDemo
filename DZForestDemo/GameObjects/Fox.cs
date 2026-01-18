@@ -51,7 +51,6 @@ public class Fox : GameObject
 
         _animator.StateCompleted += (_, e) =>
         {
-            Console.WriteLine($"Fox: State '{e.State.Name}' completed on layer {e.LayerIndex}");
         };
     }
 
