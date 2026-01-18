@@ -49,7 +49,7 @@ public sealed class ColorTexture : IDisposable
         {
             Data = ByteArrayView.Create([r, g, b, a]),
             DstTexture = Texture,
-            AutoAlign = true,
+            AutoAlign = false,
             Width = 1,
             Height = 1,
             MipLevel = 0,
