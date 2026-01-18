@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using DenOfIz;
+using NiziKit.Graphics;
 using Semaphore = DenOfIz.Semaphore;
 
 namespace NiziKit.UI;
@@ -15,12 +16,12 @@ public sealed class UiContext : IDisposable
     {
         Clay = new Clay(new ClayDesc
         {
-            LogicalDevice = desc.LogicalDevice,
-            ResourceTracking = desc.ResourceTracking,
-            RenderTargetFormat = desc.RenderTargetFormat,
-            NumFrames = desc.NumFrames,
-            Width = desc.Width,
-            Height = desc.Height,
+            LogicalDevice = GraphicsContext.Device,
+            ResourceTracking = GraphicsContext.ResourceTracking,
+            RenderTargetFormat = GraphicsContext.BackBufferFormat,
+            NumFrames = GraphicsContext.NumFrames,
+            Width = GraphicsContext.Width,
+            Height = GraphicsContext.Height,
             MaxNumElements = desc.MaxNumElements,
             MaxNumTextMeasureCacheElements = desc.MaxNumTextMeasureCacheElements,
             MaxNumFonts = desc.MaxNumFonts
@@ -152,12 +153,6 @@ public sealed class UiContext : IDisposable
 
 public struct UiContextDesc
 {
-    public LogicalDevice LogicalDevice;
-    public ResourceTracking ResourceTracking;
-    public Format RenderTargetFormat;
-    public uint NumFrames;
-    public uint Width;
-    public uint Height;
     public uint MaxNumElements;
     public uint MaxNumTextMeasureCacheElements;
     public uint MaxNumFonts;
