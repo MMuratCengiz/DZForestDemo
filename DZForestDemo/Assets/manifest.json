@@ -3,143 +3,13 @@
   "assets": [
     {
       "path": ".niziassets",
-      "size": 234,
-      "hash": "cbe67a4d09b06fa1"
+      "size": 242,
+      "hash": "ca1edac6727c40c3"
     },
     {
       "path": "manifest.json",
-      "size": 74677,
-      "hash": "b05961c14f5a3a1a"
-    },
-    {
-      "path": "Textures/.gitkeep",
-      "size": 0,
-      "hash": "e3b0c44298fc1c14"
-    },
-    {
-      "path": "Textures/Texture.png",
-      "size": 26764,
-      "hash": "61c8b109ee7f8bf2"
-    },
-    {
-      "path": "Textures/Fox_Texture.dztex",
-      "size": 4194436,
-      "hash": "cc746c250dd5ad0b"
-    },
-    {
-      "path": "Models/.gitkeep",
-      "size": 0,
-      "hash": "e3b0c44298fc1c14"
-    },
-    {
-      "path": "Models/Fox.glb",
-      "size": 295736,
-      "hash": "49fd0c6e4ede09a0"
-    },
-    {
-      "path": "Models/Fox_Run.ozz",
-      "size": 6019,
-      "hash": "806b45b25bebb9ec"
-    },
-    {
-      "path": "Models/Fox_Survey.ozz",
-      "size": 17213,
-      "hash": "7b23a65d65b10acb"
-    },
-    {
-      "path": "Models/Fox.bin",
-      "size": 119904,
-      "hash": "c7d0d8de28a84d5b"
-    },
-    {
-      "path": "Models/Fox.gltf",
-      "size": 31974,
-      "hash": "73dd71969a093df8"
-    },
-    {
-      "path": "Models/Texture.png",
-      "size": 26764,
-      "hash": "61c8b109ee7f8bf2"
-    },
-    {
-      "path": "Models/Fox_skeleton.ozz",
-      "size": 1388,
-      "hash": "beafd6a520be9287"
-    },
-    {
-      "path": "Meshes/fox1.dzmesh",
-      "size": 145344,
-      "hash": "468e70096a55fd66"
-    },
-    {
-      "path": "Skeletons/Fox_skeleton.ozz",
-      "size": 1388,
-      "hash": "beafd6a520be9287"
-    },
-    {
-      "path": "Shaders/geometry_vs.hlsl",
-      "size": 400,
-      "hash": "2bc5e29f819e21f0"
-    },
-    {
-      "path": "Shaders/scene_ps.hlsl",
-      "size": 6249,
-      "hash": "de110619e76d42ba"
-    },
-    {
-      "path": "Shaders/scene_vs_skinned.hlsl",
-      "size": 2018,
-      "hash": "cab3b074ed7aec29"
-    },
-    {
-      "path": "Shaders/shadow_vs_model.hlsl",
-      "size": 687,
-      "hash": "92d294cfd14a6b1c"
-    },
-    {
-      "path": "Shaders/.gitkeep",
-      "size": 0,
-      "hash": "e3b0c44298fc1c14"
-    },
-    {
-      "path": "Shaders/geometry_ps.hlsl",
-      "size": 428,
-      "hash": "91fe2d6e1995078a"
-    },
-    {
-      "path": "Shaders/example_pbr.hlsl",
-      "size": 3039,
-      "hash": "d9f57355475cb19b"
-    },
-    {
-      "path": "Shaders/shadow_vs_skinned.hlsl",
-      "size": 1491,
-      "hash": "f2cf2d13649f7627"
-    },
-    {
-      "path": "Shaders/composite_ps.hlsl",
-      "size": 671,
-      "hash": "731d8ca15bcdddef"
-    },
-    {
-      "path": "Shaders/scene_vs_model.hlsl",
-      "size": 1023,
-      "hash": "4fbb1daa2834cdcb"
-    },
-    {
-      "path": "Shaders/fullscreen_vs.hlsl",
-      "size": 424,
-      "hash": "7d0f173e919fabd1"
-    },
-    {
-      "path": "Shaders/debug_ps.hlsl",
-      "size": 206,
-      "hash": "574387d13a1a46ea"
-    },
-    {
-      "path": "Shaders/debug_vs.hlsl",
-      "size": 349,
-      "hash": "5c022d8ee34c08a4"
+      "size": 77782,
+      "hash": "6764062de0c17964"
     },
     {
       "path": "Animations/.gitkeep",
@@ -149,27 +19,3087 @@
     {
       "path": "Animations/Fox_Run.ozz",
       "size": 6019,
-      "hash": "806b45b25bebb9ec"
+      "hash": "080573a1a7f0f500"
     },
     {
       "path": "Animations/Fox_Survey.ozz",
       "size": 17213,
-      "hash": "7b23a65d65b10acb"
+      "hash": "c2de973ba8ad2e2e"
     },
     {
-      "path": "Shaders/common/lighting.hlsl",
-      "size": 628,
-      "hash": "060bd1f252768cf5"
+      "path": "Animations/VikingRealm_Characters_Take 001.ozz",
+      "size": 7953,
+      "hash": "08d29167e3d9f44c"
     },
     {
-      "path": "Shaders/common/vertex_input.hlsl",
-      "size": 421,
-      "hash": "5b59f9b921bef283"
+      "path": "Meshes/fox1.dzmesh",
+      "size": 145324,
+      "hash": "4e687a673b6b3ae7"
+    },
+    {
+      "path": "Models/.gitkeep",
+      "size": 0,
+      "hash": "e3b0c44298fc1c14"
+    },
+    {
+      "path": "Models/Fox.bin",
+      "size": 119904,
+      "hash": "c7d0d8de28a84d5b"
+    },
+    {
+      "path": "Models/Fox.glb",
+      "size": 270316,
+      "hash": "6bdaf43fe30b1282"
+    },
+    {
+      "path": "Models/Fox.gltf",
+      "size": 33751,
+      "hash": "014b5fed0ff9ed38"
+    },
+    {
+      "path": "Models/Fox_Run.ozz",
+      "size": 6019,
+      "hash": "080573a1a7f0f500"
+    },
+    {
+      "path": "Models/Fox_skeleton.ozz",
+      "size": 1388,
+      "hash": "7ff18be77f2d9f3c"
+    },
+    {
+      "path": "Models/Fox_Survey.ozz",
+      "size": 17213,
+      "hash": "c2de973ba8ad2e2e"
+    },
+    {
+      "path": "Models/Texture.png",
+      "size": 26764,
+      "hash": "61c8b109ee7f8bf2"
+    },
+    {
+      "path": "Models/VikingRealm_Characters.glb",
+      "size": 12622276,
+      "hash": "e013019b82c5148b"
+    },
+    {
+      "path": "Models/VikingRealm_Characters_skeleton.ozz",
+      "size": 2547,
+      "hash": "945aaf19fd39ddd4"
+    },
+    {
+      "path": "Models/VikingRealm_Characters_Take 001.ozz",
+      "size": 7953,
+      "hash": "08d29167e3d9f44c"
+    },
+    {
+      "path": "Shaders/.gitkeep",
+      "size": 0,
+      "hash": "e3b0c44298fc1c14"
+    },
+    {
+      "path": "Shaders/composite_ps.hlsl",
+      "size": 692,
+      "hash": "455da6d697eb4c7c"
+    },
+    {
+      "path": "Shaders/debug_ps.hlsl",
+      "size": 218,
+      "hash": "2f46c018a1ba0eca"
+    },
+    {
+      "path": "Shaders/debug_vs.hlsl",
+      "size": 366,
+      "hash": "0a2740b1b0538ddd"
+    },
+    {
+      "path": "Shaders/example_pbr.hlsl",
+      "size": 3144,
+      "hash": "4e74d78b02db9951"
+    },
+    {
+      "path": "Shaders/fullscreen_vs.hlsl",
+      "size": 439,
+      "hash": "6f3a022b9b3be1d8"
+    },
+    {
+      "path": "Shaders/geometry_ps.hlsl",
+      "size": 444,
+      "hash": "b2333d36ab312496"
+    },
+    {
+      "path": "Shaders/geometry_vs.hlsl",
+      "size": 419,
+      "hash": "fb89f9d4cd307e36"
+    },
+    {
+      "path": "Shaders/scene_ps.hlsl",
+      "size": 6445,
+      "hash": "99561d65dcaa63ee"
+    },
+    {
+      "path": "Shaders/scene_vs_model.hlsl",
+      "size": 1063,
+      "hash": "1e3261cd1be7608a"
+    },
+    {
+      "path": "Shaders/scene_vs_skinned.hlsl",
+      "size": 1988,
+      "hash": "7164c66b6342280a"
+    },
+    {
+      "path": "Shaders/shadow_vs_model.hlsl",
+      "size": 717,
+      "hash": "8b862775d5182a0a"
+    },
+    {
+      "path": "Shaders/shadow_vs_skinned.hlsl",
+      "size": 1553,
+      "hash": "925b7cb1b4d24ef6"
+    },
+    {
+      "path": "Skeletons/Fox_skeleton.ozz",
+      "size": 1388,
+      "hash": "7ff18be77f2d9f3c"
+    },
+    {
+      "path": "Skeletons/VikingRealm_Characters_skeleton.ozz",
+      "size": 2547,
+      "hash": "945aaf19fd39ddd4"
+    },
+    {
+      "path": "Textures/.gitkeep",
+      "size": 0,
+      "hash": "e3b0c44298fc1c14"
+    },
+    {
+      "path": "Textures/Fox_Texture.dztex",
+      "size": 4194436,
+      "hash": "cc746c250dd5ad0b"
+    },
+    {
+      "path": "Textures/Texture.png",
+      "size": 26764,
+      "hash": "61c8b109ee7f8bf2"
+    },
+    {
+      "path": "Textures/VikingRealm_Characters_Take 001.ozz",
+      "size": 7953,
+      "hash": "888ea4a0bc21c2f0"
+    },
+    {
+      "path": "Textures/VikingRealm_Texture_01_A_PolygonVikingRealm_Texture_01_A.dztex",
+      "size": 67108996,
+      "hash": "55609cdec9fbb8db"
     },
     {
       "path": "Shaders/common/constants.hlsl",
-      "size": 1670,
-      "hash": "6fda2bf0c76608bc"
+      "size": 1734,
+      "hash": "7c6edd3c1a649e0b"
+    },
+    {
+      "path": "Shaders/common/lighting.hlsl",
+      "size": 663,
+      "hash": "f5b2fa0bb704fa17"
+    },
+    {
+      "path": "Shaders/common/vertex_input.hlsl",
+      "size": 439,
+      "hash": "4aa42bd7b4fa00e9"
+    },
+    {
+      "path": "Shaders/lygia/math.hlsl",
+      "size": 1706,
+      "hash": "a2b97d54709c1db1"
+    },
+    {
+      "path": "Shaders/lygia/sample.hlsl",
+      "size": 1024,
+      "hash": "1a07771d78473f2c"
+    },
+    {
+      "path": "Shaders/lygia/sampler.hlsl",
+      "size": 1384,
+      "hash": "36e48ae7ae5917cc"
+    },
+    {
+      "path": "Shaders/lygia/sdf.hlsl",
+      "size": 1296,
+      "hash": "b04d86661fc256e1"
+    },
+    {
+      "path": "Shaders/lygia/version.hlsl",
+      "size": 516,
+      "hash": "0cdcb05f7f880dab"
+    },
+    {
+      "path": "Shaders/lygia/animation/easing.hlsl",
+      "size": 413,
+      "hash": "cd7d9f9cd05e5b11"
+    },
+    {
+      "path": "Shaders/lygia/animation/spriteLoop.hlsl",
+      "size": 892,
+      "hash": "a9387f60d3921258"
+    },
+    {
+      "path": "Shaders/lygia/color/blend.hlsl",
+      "size": 891,
+      "hash": "ec9319ea8c9a892f"
+    },
+    {
+      "path": "Shaders/lygia/color/brightnessContrast.hlsl",
+      "size": 1061,
+      "hash": "9d9bea006ae7fb78"
+    },
+    {
+      "path": "Shaders/lygia/color/brightnessMatrix.hlsl",
+      "size": 804,
+      "hash": "e4b24e010aaf4878"
+    },
+    {
+      "path": "Shaders/lygia/color/composite.hlsl",
+      "size": 356,
+      "hash": "fdcca4a712c7490b"
+    },
+    {
+      "path": "Shaders/lygia/color/contrast.hlsl",
+      "size": 754,
+      "hash": "1c5837ef238fcf51"
+    },
+    {
+      "path": "Shaders/lygia/color/contrastMatrix.hlsl",
+      "size": 832,
+      "hash": "4592d8966b8f7274"
+    },
+    {
+      "path": "Shaders/lygia/color/daltonize.hlsl",
+      "size": 6381,
+      "hash": "35063facc1c5fbec"
+    },
+    {
+      "path": "Shaders/lygia/color/desaturate.hlsl",
+      "size": 715,
+      "hash": "6ebd52bd7c12dcde"
+    },
+    {
+      "path": "Shaders/lygia/color/distance.hlsl",
+      "size": 2497,
+      "hash": "4959ad86ed6f8036"
+    },
+    {
+      "path": "Shaders/lygia/color/dither.hlsl",
+      "size": 1891,
+      "hash": "32d578601bd9e601"
+    },
+    {
+      "path": "Shaders/lygia/color/exposure.hlsl",
+      "size": 716,
+      "hash": "556510b9ab3ab27c"
+    },
+    {
+      "path": "Shaders/lygia/color/hueShift.hlsl",
+      "size": 907,
+      "hash": "bc382ab2718684b7"
+    },
+    {
+      "path": "Shaders/lygia/color/hueShiftRYB.hlsl",
+      "size": 997,
+      "hash": "71089c19c123885d"
+    },
+    {
+      "path": "Shaders/lygia/color/layer.hlsl",
+      "size": 1171,
+      "hash": "a5ca8e3d6dd839c4"
+    },
+    {
+      "path": "Shaders/lygia/color/levels.hlsl",
+      "size": 1851,
+      "hash": "8aaed4b7f301ed05"
+    },
+    {
+      "path": "Shaders/lygia/color/luma.hlsl",
+      "size": 480,
+      "hash": "e2492b19b4144441"
+    },
+    {
+      "path": "Shaders/lygia/color/luminance.hlsl",
+      "size": 615,
+      "hash": "735a6084cf31194f"
+    },
+    {
+      "path": "Shaders/lygia/color/lut.hlsl",
+      "size": 2955,
+      "hash": "353412d582e43066"
+    },
+    {
+      "path": "Shaders/lygia/color/mixOklab.hlsl",
+      "size": 1549,
+      "hash": "ac64395e446d531e"
+    },
+    {
+      "path": "Shaders/lygia/color/mixRYB.hlsl",
+      "size": 1927,
+      "hash": "be08e5d534f8f59a"
+    },
+    {
+      "path": "Shaders/lygia/color/mixSpectral.hlsl",
+      "size": 10681,
+      "hash": "4e52683a46c0e50e"
+    },
+    {
+      "path": "Shaders/lygia/color/palette.hlsl",
+      "size": 628,
+      "hash": "6a771567b62cd247"
+    },
+    {
+      "path": "Shaders/lygia/color/saturationMatrix.hlsl",
+      "size": 1079,
+      "hash": "3a8c87b80bb7fd9d"
+    },
+    {
+      "path": "Shaders/lygia/color/space.hlsl",
+      "size": 595,
+      "hash": "ecc6cf7aeb1ff8db"
+    },
+    {
+      "path": "Shaders/lygia/color/tonemap.hlsl",
+      "size": 1893,
+      "hash": "4050c5200e31196d"
+    },
+    {
+      "path": "Shaders/lygia/color/vibrance.hlsl",
+      "size": 1023,
+      "hash": "6b4c6389f11e4f17"
+    },
+    {
+      "path": "Shaders/lygia/color/whiteBalance.hlsl",
+      "size": 3300,
+      "hash": "4ea0f9b05a332fd3"
+    },
+    {
+      "path": "Shaders/lygia/distort/barrel.hlsl",
+      "size": 2806,
+      "hash": "0f71596c6e6293a0"
+    },
+    {
+      "path": "Shaders/lygia/distort/chromaAB.hlsl",
+      "size": 2626,
+      "hash": "17466543b4051053"
+    },
+    {
+      "path": "Shaders/lygia/distort/grain.hlsl",
+      "size": 2511,
+      "hash": "9b57b6cdb8615ac2"
+    },
+    {
+      "path": "Shaders/lygia/distort/stretch.hlsl",
+      "size": 2297,
+      "hash": "8e04240b304615eb"
+    },
+    {
+      "path": "Shaders/lygia/draw/axis.hlsl",
+      "size": 1303,
+      "hash": "e5d0368fb88a1325"
+    },
+    {
+      "path": "Shaders/lygia/draw/bridge.hlsl",
+      "size": 1053,
+      "hash": "09d80f75cac4ddee"
+    },
+    {
+      "path": "Shaders/lygia/draw/circle.hlsl",
+      "size": 708,
+      "hash": "48d4a3856b7b43f7"
+    },
+    {
+      "path": "Shaders/lygia/draw/colorPicker.hlsl",
+      "size": 2439,
+      "hash": "11b12d9e5d866193"
+    },
+    {
+      "path": "Shaders/lygia/draw/digits.hlsl",
+      "size": 6673,
+      "hash": "abef9b045d049aa5"
+    },
+    {
+      "path": "Shaders/lygia/draw/fill.hlsl",
+      "size": 697,
+      "hash": "db1f91cc9387b6e9"
+    },
+    {
+      "path": "Shaders/lygia/draw/flip.hlsl",
+      "size": 502,
+      "hash": "7b9336a395dcd5e8"
+    },
+    {
+      "path": "Shaders/lygia/draw/hex.hlsl",
+      "size": 685,
+      "hash": "48c6fa4ff129efa2"
+    },
+    {
+      "path": "Shaders/lygia/draw/line.hlsl",
+      "size": 663,
+      "hash": "72843d4f576a0910"
+    },
+    {
+      "path": "Shaders/lygia/draw/matrix.hlsl",
+      "size": 1620,
+      "hash": "38444c00b67fb530"
+    },
+    {
+      "path": "Shaders/lygia/draw/point.hlsl",
+      "size": 2217,
+      "hash": "d87204d9573769df"
+    },
+    {
+      "path": "Shaders/lygia/draw/rect.hlsl",
+      "size": 708,
+      "hash": "a53e117349325bbf"
+    },
+    {
+      "path": "Shaders/lygia/draw/stroke.hlsl",
+      "size": 900,
+      "hash": "096d89406dff5c75"
+    },
+    {
+      "path": "Shaders/lygia/draw/tri.hlsl",
+      "size": 686,
+      "hash": "0817d4da36f96c6a"
+    },
+    {
+      "path": "Shaders/lygia/filter/bilateral.hlsl",
+      "size": 2861,
+      "hash": "43805c7e58025157"
+    },
+    {
+      "path": "Shaders/lygia/filter/boxBlur.hlsl",
+      "size": 2071,
+      "hash": "fcf8025c5164c01a"
+    },
+    {
+      "path": "Shaders/lygia/filter/edge.hlsl",
+      "size": 1335,
+      "hash": "6f7e6dcd337249f5"
+    },
+    {
+      "path": "Shaders/lygia/filter/gaussianBlur.hlsl",
+      "size": 2402,
+      "hash": "0cde3f39bac93a62"
+    },
+    {
+      "path": "Shaders/lygia/filter/kuwahara.hlsl",
+      "size": 3947,
+      "hash": "13fd84d727c001a8"
+    },
+    {
+      "path": "Shaders/lygia/filter/laplacian.hlsl",
+      "size": 6975,
+      "hash": "1c2b947d960f734b"
+    },
+    {
+      "path": "Shaders/lygia/filter/mean.hlsl",
+      "size": 1295,
+      "hash": "f9668241b26028c7"
+    },
+    {
+      "path": "Shaders/lygia/filter/median.hlsl",
+      "size": 2660,
+      "hash": "cbb44fb066572976"
+    },
+    {
+      "path": "Shaders/lygia/filter/noiseBlur.hlsl",
+      "size": 3191,
+      "hash": "258519ddff3bf0c5"
+    },
+    {
+      "path": "Shaders/lygia/filter/radialBlur.hlsl",
+      "size": 1820,
+      "hash": "be65a2ddd86fd7b3"
+    },
+    {
+      "path": "Shaders/lygia/filter/sharpen.hlsl",
+      "size": 1503,
+      "hash": "d28590e56b9b799f"
+    },
+    {
+      "path": "Shaders/lygia/generative/cnoise.hlsl",
+      "size": 10261,
+      "hash": "2f1a83bbac7eac4e"
+    },
+    {
+      "path": "Shaders/lygia/generative/curl.hlsl",
+      "size": 2036,
+      "hash": "dfe16ea1eb07340a"
+    },
+    {
+      "path": "Shaders/lygia/generative/fbm.hlsl",
+      "size": 2215,
+      "hash": "4de03902c97cadfe"
+    },
+    {
+      "path": "Shaders/lygia/generative/gerstnerWave.hlsl",
+      "size": 2275,
+      "hash": "be1f13aefd24e748"
+    },
+    {
+      "path": "Shaders/lygia/generative/noised.hlsl",
+      "size": 3302,
+      "hash": "4e4a8584b6fc3f84"
+    },
+    {
+      "path": "Shaders/lygia/generative/pnoise.hlsl",
+      "size": 10522,
+      "hash": "a9f88620923ce08b"
+    },
+    {
+      "path": "Shaders/lygia/generative/psrdnoise.hlsl",
+      "size": 23951,
+      "hash": "b3f5ace666e8cfe3"
+    },
+    {
+      "path": "Shaders/lygia/generative/random.hlsl",
+      "size": 3987,
+      "hash": "ba78942482ca031a"
+    },
+    {
+      "path": "Shaders/lygia/generative/snoise.hlsl",
+      "size": 7905,
+      "hash": "d4caa5e862e43816"
+    },
+    {
+      "path": "Shaders/lygia/generative/srandom.hlsl",
+      "size": 820,
+      "hash": "f0188d0e5d04d879"
+    },
+    {
+      "path": "Shaders/lygia/generative/voronoi.hlsl",
+      "size": 1387,
+      "hash": "df8bbb373fd98561"
+    },
+    {
+      "path": "Shaders/lygia/generative/voronoise.hlsl",
+      "size": 1576,
+      "hash": "ec8ff2ca997532f6"
+    },
+    {
+      "path": "Shaders/lygia/generative/worley.hlsl",
+      "size": 2969,
+      "hash": "736516e750301691"
+    },
+    {
+      "path": "Shaders/lygia/geometry/aabb.hlsl",
+      "size": 180,
+      "hash": "dc1890c68a7b5d11"
+    },
+    {
+      "path": "Shaders/lygia/geometry/triangle.hlsl",
+      "size": 322,
+      "hash": "cec201a1d5808cac"
+    },
+    {
+      "path": "Shaders/lygia/lighting/atmosphere.hlsl",
+      "size": 6545,
+      "hash": "5960d5f3fea82a07"
+    },
+    {
+      "path": "Shaders/lygia/lighting/blackbody.hlsl",
+      "size": 550,
+      "hash": "d30ec06995fda597"
+    },
+    {
+      "path": "Shaders/lygia/lighting/camera.hlsl",
+      "size": 498,
+      "hash": "adb504d6cd7cbacc"
+    },
+    {
+      "path": "Shaders/lygia/lighting/debugCube.hlsl",
+      "size": 561,
+      "hash": "0ca07677599cb7b1"
+    },
+    {
+      "path": "Shaders/lygia/lighting/diffuse.hlsl",
+      "size": 1005,
+      "hash": "9718c33c6fba262b"
+    },
+    {
+      "path": "Shaders/lygia/lighting/envMap.hlsl",
+      "size": 2335,
+      "hash": "b7a505086a1538d8"
+    },
+    {
+      "path": "Shaders/lygia/lighting/exposure.hlsl",
+      "size": 475,
+      "hash": "470bdec4a50d36a4"
+    },
+    {
+      "path": "Shaders/lygia/lighting/fakeCube.hlsl",
+      "size": 839,
+      "hash": "ad06d980c56aacc5"
+    },
+    {
+      "path": "Shaders/lygia/lighting/fresnel.hlsl",
+      "size": 1383,
+      "hash": "45d7b51cdb34bef3"
+    },
+    {
+      "path": "Shaders/lygia/lighting/fresnelReflection.hlsl",
+      "size": 4563,
+      "hash": "bca0a32e20593767"
+    },
+    {
+      "path": "Shaders/lygia/lighting/gooch.hlsl",
+      "size": 3967,
+      "hash": "254f2d916722e3cb"
+    },
+    {
+      "path": "Shaders/lygia/lighting/ior.hlsl",
+      "size": 1235,
+      "hash": "04dfc2f8d678a2a9"
+    },
+    {
+      "path": "Shaders/lygia/lighting/iridescence.hlsl",
+      "size": 1654,
+      "hash": "3e25faf076ffb237"
+    },
+    {
+      "path": "Shaders/lygia/lighting/material.hlsl",
+      "size": 2086,
+      "hash": "332725a3887a6419"
+    },
+    {
+      "path": "Shaders/lygia/lighting/medium.hlsl",
+      "size": 272,
+      "hash": "42b1bc3df0caf8c1"
+    },
+    {
+      "path": "Shaders/lygia/lighting/pbr.hlsl",
+      "size": 2742,
+      "hash": "3cb7a5f36f6678e3"
+    },
+    {
+      "path": "Shaders/lygia/lighting/pbrClearCoat.hlsl",
+      "size": 6264,
+      "hash": "56c7afac4869c71c"
+    },
+    {
+      "path": "Shaders/lygia/lighting/pbrGlass.hlsl",
+      "size": 3806,
+      "hash": "64e7e7eac473d8a9"
+    },
+    {
+      "path": "Shaders/lygia/lighting/pbrLittle.hlsl",
+      "size": 3624,
+      "hash": "42365753db11bc4c"
+    },
+    {
+      "path": "Shaders/lygia/lighting/ray.hlsl",
+      "size": 414,
+      "hash": "d5c55699ef3011cf"
+    },
+    {
+      "path": "Shaders/lygia/lighting/raymarch.hlsl",
+      "size": 5518,
+      "hash": "cb4a1521d2d040c0"
+    },
+    {
+      "path": "Shaders/lygia/lighting/reflection.hlsl",
+      "size": 1721,
+      "hash": "7935ba91fb89c7bc"
+    },
+    {
+      "path": "Shaders/lygia/lighting/shadow.hlsl",
+      "size": 954,
+      "hash": "e821731018090132"
+    },
+    {
+      "path": "Shaders/lygia/lighting/specular.hlsl",
+      "size": 1260,
+      "hash": "37ad88dc5576ac91"
+    },
+    {
+      "path": "Shaders/lygia/lighting/sphereMap.hlsl",
+      "size": 995,
+      "hash": "c88c897ffd9576ad"
+    },
+    {
+      "path": "Shaders/lygia/lighting/sphericalHarmonics.hlsl",
+      "size": 1753,
+      "hash": "c280765aa81dbe04"
+    },
+    {
+      "path": "Shaders/lygia/lighting/toMetallic.hlsl",
+      "size": 1550,
+      "hash": "a79ea6a0ef6deb96"
+    },
+    {
+      "path": "Shaders/lygia/lighting/toShininess.hlsl",
+      "size": 692,
+      "hash": "eb26fe2474805eda"
+    },
+    {
+      "path": "Shaders/lygia/lighting/transparent.hlsl",
+      "size": 4122,
+      "hash": "6262ca9c38409210"
+    },
+    {
+      "path": "Shaders/lygia/lighting/wavelength.hlsl",
+      "size": 500,
+      "hash": "f83bb0123347ed18"
+    },
+    {
+      "path": "Shaders/lygia/math/aafloor.hlsl",
+      "size": 837,
+      "hash": "868b156f174b38f3"
+    },
+    {
+      "path": "Shaders/lygia/math/aafract.hlsl",
+      "size": 827,
+      "hash": "f5acff25049c3781"
+    },
+    {
+      "path": "Shaders/lygia/math/aamirror.hlsl",
+      "size": 500,
+      "hash": "5a10d3d76bf1c6e0"
+    },
+    {
+      "path": "Shaders/lygia/math/aastep.hlsl",
+      "size": 751,
+      "hash": "d1e89ab90ecc6447"
+    },
+    {
+      "path": "Shaders/lygia/math/adaptiveThreshold.hlsl",
+      "size": 674,
+      "hash": "c6d1ef387736ee3e"
+    },
+    {
+      "path": "Shaders/lygia/math/bump.hlsl",
+      "size": 716,
+      "hash": "a5e6a210e6489797"
+    },
+    {
+      "path": "Shaders/lygia/math/const.hlsl",
+      "size": 1427,
+      "hash": "df430f2ada264acb"
+    },
+    {
+      "path": "Shaders/lygia/math/cubic.hlsl",
+      "size": 1725,
+      "hash": "c46989ab114b116f"
+    },
+    {
+      "path": "Shaders/lygia/math/cubicMix.hlsl",
+      "size": 984,
+      "hash": "440440a2f40f8c44"
+    },
+    {
+      "path": "Shaders/lygia/math/decimate.hlsl",
+      "size": 926,
+      "hash": "e6f51b74d67393b3"
+    },
+    {
+      "path": "Shaders/lygia/math/dist.hlsl",
+      "size": 1921,
+      "hash": "e99569af7028f4d5"
+    },
+    {
+      "path": "Shaders/lygia/math/fcos.hlsl",
+      "size": 382,
+      "hash": "cef9f7177905ce2b"
+    },
+    {
+      "path": "Shaders/lygia/math/fract.hlsl",
+      "size": 547,
+      "hash": "797f881694c214ad"
+    },
+    {
+      "path": "Shaders/lygia/math/gain.hlsl",
+      "size": 487,
+      "hash": "11976283f1eed914"
+    },
+    {
+      "path": "Shaders/lygia/math/gaussian.hlsl",
+      "size": 928,
+      "hash": "981431dd5aaf7d1d"
+    },
+    {
+      "path": "Shaders/lygia/math/grad4.hlsl",
+      "size": 597,
+      "hash": "7b72ec0ebb2c0871"
+    },
+    {
+      "path": "Shaders/lygia/math/greaterThan.hlsl",
+      "size": 475,
+      "hash": "efc2bd03d3f5ddc1"
+    },
+    {
+      "path": "Shaders/lygia/math/hammersley.hlsl",
+      "size": 1043,
+      "hash": "515885d1d830407d"
+    },
+    {
+      "path": "Shaders/lygia/math/highPass.hlsl",
+      "size": 507,
+      "hash": "987278f13ef8d756"
+    },
+    {
+      "path": "Shaders/lygia/math/inside.hlsl",
+      "size": 1199,
+      "hash": "b00b21a9e0bf5688"
+    },
+    {
+      "path": "Shaders/lygia/math/invCubic.hlsl",
+      "size": 566,
+      "hash": "6139cf2966dfd110"
+    },
+    {
+      "path": "Shaders/lygia/math/invQuartic.hlsl",
+      "size": 562,
+      "hash": "bc19c9c2236b3c48"
+    },
+    {
+      "path": "Shaders/lygia/math/lengthSq.hlsl",
+      "size": 579,
+      "hash": "70e6bd59df064b4c"
+    },
+    {
+      "path": "Shaders/lygia/math/map.hlsl",
+      "size": 1692,
+      "hash": "cb5fc5cdc4d3fcfd"
+    },
+    {
+      "path": "Shaders/lygia/math/mirror.hlsl",
+      "size": 629,
+      "hash": "216ed140267c6b1c"
+    },
+    {
+      "path": "Shaders/lygia/math/mix.hlsl",
+      "size": 2434,
+      "hash": "4d05f5a8387c5c1b"
+    },
+    {
+      "path": "Shaders/lygia/math/mmax.hlsl",
+      "size": 934,
+      "hash": "e635a42526bfd213"
+    },
+    {
+      "path": "Shaders/lygia/math/mmin.hlsl",
+      "size": 933,
+      "hash": "774da95bebf18eeb"
+    },
+    {
+      "path": "Shaders/lygia/math/mod.hlsl",
+      "size": 817,
+      "hash": "6dd1bbf1431d11de"
+    },
+    {
+      "path": "Shaders/lygia/math/mod2.hlsl",
+      "size": 582,
+      "hash": "cb17010d10cd60e9"
+    },
+    {
+      "path": "Shaders/lygia/math/mod289.hlsl",
+      "size": 505,
+      "hash": "ceb50214f90cc2a9"
+    },
+    {
+      "path": "Shaders/lygia/math/nyquist.hlsl",
+      "size": 754,
+      "hash": "47e552ffcf12e34f"
+    },
+    {
+      "path": "Shaders/lygia/math/pack.hlsl",
+      "size": 903,
+      "hash": "443688e7c7cf0446"
+    },
+    {
+      "path": "Shaders/lygia/math/parabola.hlsl",
+      "size": 452,
+      "hash": "e4490167a47c1537"
+    },
+    {
+      "path": "Shaders/lygia/math/permute.hlsl",
+      "size": 519,
+      "hash": "bbb024651d03c9a2"
+    },
+    {
+      "path": "Shaders/lygia/math/pow2.hlsl",
+      "size": 597,
+      "hash": "20681d7294b593fd"
+    },
+    {
+      "path": "Shaders/lygia/math/pow3.hlsl",
+      "size": 612,
+      "hash": "0f855d753dd8b854"
+    },
+    {
+      "path": "Shaders/lygia/math/pow5.hlsl",
+      "size": 745,
+      "hash": "70ea2a805df4a0e6"
+    },
+    {
+      "path": "Shaders/lygia/math/pow7.hlsl",
+      "size": 676,
+      "hash": "1eb401fcd816e218"
+    },
+    {
+      "path": "Shaders/lygia/math/powFast.hlsl",
+      "size": 503,
+      "hash": "52b93a018f819141"
+    },
+    {
+      "path": "Shaders/lygia/math/quartic.hlsl",
+      "size": 500,
+      "hash": "080bc9dfa0dc79de"
+    },
+    {
+      "path": "Shaders/lygia/math/quat.hlsl",
+      "size": 2296,
+      "hash": "cfabfff57b7069f5"
+    },
+    {
+      "path": "Shaders/lygia/math/quintic.hlsl",
+      "size": 557,
+      "hash": "a01d1fec980386e4"
+    },
+    {
+      "path": "Shaders/lygia/math/rotate2d.hlsl",
+      "size": 538,
+      "hash": "eb9f947b62c52057"
+    },
+    {
+      "path": "Shaders/lygia/math/rotate3d.hlsl",
+      "size": 980,
+      "hash": "08aa1e47fa04161b"
+    },
+    {
+      "path": "Shaders/lygia/math/rotate3dX.hlsl",
+      "size": 627,
+      "hash": "3e669d54157e8202"
+    },
+    {
+      "path": "Shaders/lygia/math/rotate3dY.hlsl",
+      "size": 622,
+      "hash": "c850dfd292b9c628"
+    },
+    {
+      "path": "Shaders/lygia/math/rotate3dZ.hlsl",
+      "size": 622,
+      "hash": "0bb172145e5a6472"
+    },
+    {
+      "path": "Shaders/lygia/math/rotate4d.hlsl",
+      "size": 1144,
+      "hash": "f538d4cc7349eb4d"
+    },
+    {
+      "path": "Shaders/lygia/math/rotate4dX.hlsl",
+      "size": 672,
+      "hash": "6ff03736d4e28590"
+    },
+    {
+      "path": "Shaders/lygia/math/rotate4dY.hlsl",
+      "size": 666,
+      "hash": "d3f2e0b0811f4837"
+    },
+    {
+      "path": "Shaders/lygia/math/rotate4dZ.hlsl",
+      "size": 666,
+      "hash": "cc1b551ec48921b8"
+    },
+    {
+      "path": "Shaders/lygia/math/saturateMediump.hlsl",
+      "size": 777,
+      "hash": "4fb67fdc5d68039b"
+    },
+    {
+      "path": "Shaders/lygia/math/scale2d.hlsl",
+      "size": 656,
+      "hash": "a5e3043ea557109f"
+    },
+    {
+      "path": "Shaders/lygia/math/scale3d.hlsl",
+      "size": 903,
+      "hash": "ff8a5013ab77a049"
+    },
+    {
+      "path": "Shaders/lygia/math/scale4d.hlsl",
+      "size": 1454,
+      "hash": "b99f4779fa8bf433"
+    },
+    {
+      "path": "Shaders/lygia/math/select.hlsl",
+      "size": 907,
+      "hash": "8d1d5dc5d6ad3ed1"
+    },
+    {
+      "path": "Shaders/lygia/math/smootherstep.hlsl",
+      "size": 1038,
+      "hash": "2cad806e650528af"
+    },
+    {
+      "path": "Shaders/lygia/math/sum.hlsl",
+      "size": 583,
+      "hash": "9cdedcd48d6f0ee2"
+    },
+    {
+      "path": "Shaders/lygia/math/taylorInvSqrt.hlsl",
+      "size": 594,
+      "hash": "70871af3f04a8219"
+    },
+    {
+      "path": "Shaders/lygia/math/toMat4.hlsl",
+      "size": 609,
+      "hash": "cf6ef85aac320437"
+    },
+    {
+      "path": "Shaders/lygia/math/translate4d.hlsl",
+      "size": 890,
+      "hash": "716cd990ff7c4ce1"
+    },
+    {
+      "path": "Shaders/lygia/math/unpack.hlsl",
+      "size": 2301,
+      "hash": "652699a9463ce388"
+    },
+    {
+      "path": "Shaders/lygia/math/within.hlsl",
+      "size": 1163,
+      "hash": "bbf4b9abb1c0758c"
+    },
+    {
+      "path": "Shaders/lygia/morphological/alphaFill.hlsl",
+      "size": 1342,
+      "hash": "64a395776ac76820"
+    },
+    {
+      "path": "Shaders/lygia/morphological/dilation.hlsl",
+      "size": 1370,
+      "hash": "c375380f7425720a"
+    },
+    {
+      "path": "Shaders/lygia/morphological/erosion.hlsl",
+      "size": 1358,
+      "hash": "08daf2aa3a88682d"
+    },
+    {
+      "path": "Shaders/lygia/sample/2DCube.hlsl",
+      "size": 2220,
+      "hash": "9af8164e304a0420"
+    },
+    {
+      "path": "Shaders/lygia/sample/3DSdf.hlsl",
+      "size": 1432,
+      "hash": "a5707a0a5cce3eec"
+    },
+    {
+      "path": "Shaders/lygia/sample/bicubic.hlsl",
+      "size": 1703,
+      "hash": "e25a21c01f3d11ae"
+    },
+    {
+      "path": "Shaders/lygia/sample/bracketing.hlsl",
+      "size": 2197,
+      "hash": "48379950d6cf4c4d"
+    },
+    {
+      "path": "Shaders/lygia/sample/bumpMap.hlsl",
+      "size": 843,
+      "hash": "c456eb3f83b838dc"
+    },
+    {
+      "path": "Shaders/lygia/sample/clamp2edge.hlsl",
+      "size": 875,
+      "hash": "9aac294f283d9e19"
+    },
+    {
+      "path": "Shaders/lygia/sample/derivative.hlsl",
+      "size": 2040,
+      "hash": "e41f72db4676dac1"
+    },
+    {
+      "path": "Shaders/lygia/sample/dof.hlsl",
+      "size": 4246,
+      "hash": "cbd1d582652fdcbc"
+    },
+    {
+      "path": "Shaders/lygia/sample/equirect.hlsl",
+      "size": 1874,
+      "hash": "4ec869ef43efb02a"
+    },
+    {
+      "path": "Shaders/lygia/sample/flow.hlsl",
+      "size": 1243,
+      "hash": "649a8292a4941f56"
+    },
+    {
+      "path": "Shaders/lygia/sample/fxaa.hlsl",
+      "size": 3133,
+      "hash": "5aa59936d3bd1a68"
+    },
+    {
+      "path": "Shaders/lygia/sample/heatmap.hlsl",
+      "size": 973,
+      "hash": "65a17245ea3a9be1"
+    },
+    {
+      "path": "Shaders/lygia/sample/hue.hlsl",
+      "size": 781,
+      "hash": "5782183e977de882"
+    },
+    {
+      "path": "Shaders/lygia/sample/mirror.hlsl",
+      "size": 644,
+      "hash": "4ec69d0f7c8ba715"
+    },
+    {
+      "path": "Shaders/lygia/sample/nearest.hlsl",
+      "size": 701,
+      "hash": "549069fdf912ac46"
+    },
+    {
+      "path": "Shaders/lygia/sample/normalFromHeightMap.hlsl",
+      "size": 1132,
+      "hash": "d1f81d638b2e4c8b"
+    },
+    {
+      "path": "Shaders/lygia/sample/normalMap.hlsl",
+      "size": 711,
+      "hash": "0cdeb9befde5a300"
+    },
+    {
+      "path": "Shaders/lygia/sample/opticalFlow.hlsl",
+      "size": 1258,
+      "hash": "2ebdc0b5fbfeb529"
+    },
+    {
+      "path": "Shaders/lygia/sample/quilt.hlsl",
+      "size": 2211,
+      "hash": "536e0bd35cd32f09"
+    },
+    {
+      "path": "Shaders/lygia/sample/repeat.hlsl",
+      "size": 610,
+      "hash": "082bc2febf5b8939"
+    },
+    {
+      "path": "Shaders/lygia/sample/shadow.hlsl",
+      "size": 1261,
+      "hash": "54b75f7bb08a6936"
+    },
+    {
+      "path": "Shaders/lygia/sample/shadowLerp.hlsl",
+      "size": 1181,
+      "hash": "e2ae8228a9332210"
+    },
+    {
+      "path": "Shaders/lygia/sample/shadowPCF.hlsl",
+      "size": 1102,
+      "hash": "3aee89843b518ebf"
+    },
+    {
+      "path": "Shaders/lygia/sample/smooth.hlsl",
+      "size": 870,
+      "hash": "31a25fce4c4e638b"
+    },
+    {
+      "path": "Shaders/lygia/sample/sprite.hlsl",
+      "size": 1004,
+      "hash": "886de4f11dad4e59"
+    },
+    {
+      "path": "Shaders/lygia/sample/triplanar.hlsl",
+      "size": 1764,
+      "hash": "8737e05bbdeab432"
+    },
+    {
+      "path": "Shaders/lygia/sample/untile.hlsl",
+      "size": 1992,
+      "hash": "fd1823af3122a1aa"
+    },
+    {
+      "path": "Shaders/lygia/sample/viewPosition.hlsl",
+      "size": 1780,
+      "hash": "b2d42d0627579d3b"
+    },
+    {
+      "path": "Shaders/lygia/sample/yuv.hlsl",
+      "size": 892,
+      "hash": "c26c9da71e081de7"
+    },
+    {
+      "path": "Shaders/lygia/sample/zero.hlsl",
+      "size": 727,
+      "hash": "639eaeaca038142b"
+    },
+    {
+      "path": "Shaders/lygia/sdf/boxFrameSDF.hlsl",
+      "size": 578,
+      "hash": "14cfd961d839d2e0"
+    },
+    {
+      "path": "Shaders/lygia/sdf/boxSDF.hlsl",
+      "size": 451,
+      "hash": "9b9243dae9a67194"
+    },
+    {
+      "path": "Shaders/lygia/sdf/capsuleSDF.hlsl",
+      "size": 405,
+      "hash": "294faa87ace408a5"
+    },
+    {
+      "path": "Shaders/lygia/sdf/circleSDF.hlsl",
+      "size": 797,
+      "hash": "dabc45cb61922753"
+    },
+    {
+      "path": "Shaders/lygia/sdf/coneSDF.hlsl",
+      "size": 1227,
+      "hash": "83b9daedc3e3cb5a"
+    },
+    {
+      "path": "Shaders/lygia/sdf/crossSDF.hlsl",
+      "size": 598,
+      "hash": "70e39aeaae03304c"
+    },
+    {
+      "path": "Shaders/lygia/sdf/cubeSDF.hlsl",
+      "size": 258,
+      "hash": "36fe4d40e3d86a8f"
+    },
+    {
+      "path": "Shaders/lygia/sdf/cylinderSDF.hlsl",
+      "size": 1198,
+      "hash": "c46689ca0635a6f1"
+    },
+    {
+      "path": "Shaders/lygia/sdf/dodecahedronSDF.hlsl",
+      "size": 759,
+      "hash": "022f81d08d046a25"
+    },
+    {
+      "path": "Shaders/lygia/sdf/ellipsoidSDF.hlsl",
+      "size": 363,
+      "hash": "643b67f5f9393b5c"
+    },
+    {
+      "path": "Shaders/lygia/sdf/flowerSDF.hlsl",
+      "size": 694,
+      "hash": "6d67b55f97181da0"
+    },
+    {
+      "path": "Shaders/lygia/sdf/gearSDF.hlsl",
+      "size": 1111,
+      "hash": "5c4c132d7e20f037"
+    },
+    {
+      "path": "Shaders/lygia/sdf/heartSDF.hlsl",
+      "size": 684,
+      "hash": "74a415ce6fe50522"
+    },
+    {
+      "path": "Shaders/lygia/sdf/hexPrismSDF.hlsl",
+      "size": 426,
+      "hash": "45a081e8c998073a"
+    },
+    {
+      "path": "Shaders/lygia/sdf/hexSDF.hlsl",
+      "size": 599,
+      "hash": "7592432bbaacac1f"
+    },
+    {
+      "path": "Shaders/lygia/sdf/icosahedronSDF.hlsl",
+      "size": 678,
+      "hash": "5ba2a499c1ffc75e"
+    },
+    {
+      "path": "Shaders/lygia/sdf/juliaSDF.hlsl",
+      "size": 1036,
+      "hash": "04b8df9a3713b131"
+    },
+    {
+      "path": "Shaders/lygia/sdf/kochSDF.hlsl",
+      "size": 893,
+      "hash": "fe59e79818859971"
+    },
+    {
+      "path": "Shaders/lygia/sdf/lineSDF.hlsl",
+      "size": 386,
+      "hash": "7a687a9406faf2d6"
+    },
+    {
+      "path": "Shaders/lygia/sdf/linkSDF.hlsl",
+      "size": 375,
+      "hash": "6427e4145e9bea26"
+    },
+    {
+      "path": "Shaders/lygia/sdf/mandelbulbSDF.hlsl",
+      "size": 1399,
+      "hash": "f9c0791cfeef2163"
+    },
+    {
+      "path": "Shaders/lygia/sdf/octahedronSDF.hlsl",
+      "size": 972,
+      "hash": "d63a2020f3bfc4a4"
+    },
+    {
+      "path": "Shaders/lygia/sdf/octogonPrismSDF.hlsl",
+      "size": 822,
+      "hash": "e00f15b4c848b500"
+    },
+    {
+      "path": "Shaders/lygia/sdf/opElongate.hlsl",
+      "size": 518,
+      "hash": "43511d571e70e829"
+    },
+    {
+      "path": "Shaders/lygia/sdf/opExtrude.hlsl",
+      "size": 392,
+      "hash": "dd439be4ed0ca67a"
+    },
+    {
+      "path": "Shaders/lygia/sdf/opIntersection.hlsl",
+      "size": 653,
+      "hash": "c3cedfd751092361"
+    },
+    {
+      "path": "Shaders/lygia/sdf/opOnion.hlsl",
+      "size": 258,
+      "hash": "6cbcd56cff7256d7"
+    },
+    {
+      "path": "Shaders/lygia/sdf/opRepeat.hlsl",
+      "size": 662,
+      "hash": "fd756d852ef79249"
+    },
+    {
+      "path": "Shaders/lygia/sdf/opRevolve.hlsl",
+      "size": 304,
+      "hash": "a17d6be8565ef55b"
+    },
+    {
+      "path": "Shaders/lygia/sdf/opRound.hlsl",
+      "size": 240,
+      "hash": "8eae5a98ae795071"
+    },
+    {
+      "path": "Shaders/lygia/sdf/opSubtraction.hlsl",
+      "size": 461,
+      "hash": "911927eca759542a"
+    },
+    {
+      "path": "Shaders/lygia/sdf/opUnion.hlsl",
+      "size": 837,
+      "hash": "beedde827609cbd6"
+    },
+    {
+      "path": "Shaders/lygia/sdf/planeSDF.hlsl",
+      "size": 400,
+      "hash": "70c37a104d229d71"
+    },
+    {
+      "path": "Shaders/lygia/sdf/polySDF.hlsl",
+      "size": 745,
+      "hash": "ee184f236199d3d2"
+    },
+    {
+      "path": "Shaders/lygia/sdf/pyramidSDF.hlsl",
+      "size": 839,
+      "hash": "bdf3c81805ae459e"
+    },
+    {
+      "path": "Shaders/lygia/sdf/raysSDF.hlsl",
+      "size": 618,
+      "hash": "8488ae971746bb4b"
+    },
+    {
+      "path": "Shaders/lygia/sdf/rectSDF.hlsl",
+      "size": 1077,
+      "hash": "6ace7940c250177f"
+    },
+    {
+      "path": "Shaders/lygia/sdf/rhombSDF.hlsl",
+      "size": 634,
+      "hash": "aad9c5fc829b9266"
+    },
+    {
+      "path": "Shaders/lygia/sdf/sphereSDF.hlsl",
+      "size": 312,
+      "hash": "45c2873b334ca47e"
+    },
+    {
+      "path": "Shaders/lygia/sdf/spiralSDF.hlsl",
+      "size": 635,
+      "hash": "5850f8d998a09280"
+    },
+    {
+      "path": "Shaders/lygia/sdf/starSDF.hlsl",
+      "size": 985,
+      "hash": "58d0e9c89f82d217"
+    },
+    {
+      "path": "Shaders/lygia/sdf/superShapeSDF.hlsl",
+      "size": 1652,
+      "hash": "9cab16a02da00e3b"
+    },
+    {
+      "path": "Shaders/lygia/sdf/tetrahedronSDF.hlsl",
+      "size": 461,
+      "hash": "fe8879afdb62cfdb"
+    },
+    {
+      "path": "Shaders/lygia/sdf/torusSDF.hlsl",
+      "size": 532,
+      "hash": "d98f0ffafa550aed"
+    },
+    {
+      "path": "Shaders/lygia/sdf/triPrismSDF.hlsl",
+      "size": 2452,
+      "hash": "5c39a243647bfa5b"
+    },
+    {
+      "path": "Shaders/lygia/sdf/triSDF.hlsl",
+      "size": 594,
+      "hash": "6489fd8ba8906753"
+    },
+    {
+      "path": "Shaders/lygia/sdf/vesicaSDF.hlsl",
+      "size": 679,
+      "hash": "173c7c2c5e4cf205"
+    },
+    {
+      "path": "Shaders/lygia/space/aspect.hlsl",
+      "size": 659,
+      "hash": "3fa9bc840b7ab5b4"
+    },
+    {
+      "path": "Shaders/lygia/space/bracketing.hlsl",
+      "size": 2202,
+      "hash": "acae82108b319a31"
+    },
+    {
+      "path": "Shaders/lygia/space/brickTile.hlsl",
+      "size": 858,
+      "hash": "4b6a63a760600130"
+    },
+    {
+      "path": "Shaders/lygia/space/cart2polar.hlsl",
+      "size": 539,
+      "hash": "56e30c71936e3f4d"
+    },
+    {
+      "path": "Shaders/lygia/space/center.hlsl",
+      "size": 769,
+      "hash": "68191ea0562f21c5"
+    },
+    {
+      "path": "Shaders/lygia/space/checkerTile.hlsl",
+      "size": 882,
+      "hash": "d5429a6d02eba484"
+    },
+    {
+      "path": "Shaders/lygia/space/depth2viewZ.hlsl",
+      "size": 1210,
+      "hash": "509c75b4176f763e"
+    },
+    {
+      "path": "Shaders/lygia/space/displace.hlsl",
+      "size": 2107,
+      "hash": "0c3129823a8a1fcf"
+    },
+    {
+      "path": "Shaders/lygia/space/equirect2xyz.hlsl",
+      "size": 733,
+      "hash": "dcd12a06b622e541"
+    },
+    {
+      "path": "Shaders/lygia/space/eulerView.hlsl",
+      "size": 823,
+      "hash": "99a02e2034249200"
+    },
+    {
+      "path": "Shaders/lygia/space/fisheye2xyz.hlsl",
+      "size": 771,
+      "hash": "03d8e8a1cb615d88"
+    },
+    {
+      "path": "Shaders/lygia/space/flipY.hlsl",
+      "size": 618,
+      "hash": "5629d0ecd6643551"
+    },
+    {
+      "path": "Shaders/lygia/space/hexTile.hlsl",
+      "size": 852,
+      "hash": "09fce9e2efb7eb62"
+    },
+    {
+      "path": "Shaders/lygia/space/kaleidoscope.hlsl",
+      "size": 1346,
+      "hash": "822dafa1b924f5c5"
+    },
+    {
+      "path": "Shaders/lygia/space/linearizeDepth.hlsl",
+      "size": 839,
+      "hash": "ada0ff5b2239dea0"
+    },
+    {
+      "path": "Shaders/lygia/space/lookAt.hlsl",
+      "size": 1580,
+      "hash": "c14d81cc9645ec57"
+    },
+    {
+      "path": "Shaders/lygia/space/lookAtView.hlsl",
+      "size": 807,
+      "hash": "68f6ae674b9bbe5c"
+    },
+    {
+      "path": "Shaders/lygia/space/mirrorTile.hlsl",
+      "size": 1740,
+      "hash": "a6fbd57014f5899e"
+    },
+    {
+      "path": "Shaders/lygia/space/nearest.hlsl",
+      "size": 604,
+      "hash": "41b81ebe32937591"
+    },
+    {
+      "path": "Shaders/lygia/space/parallaxMapping.hlsl",
+      "size": 8387,
+      "hash": "c166af2e9edc96d8"
+    },
+    {
+      "path": "Shaders/lygia/space/polar2cart.hlsl",
+      "size": 560,
+      "hash": "0a0d57e70874b282"
+    },
+    {
+      "path": "Shaders/lygia/space/ratio.hlsl",
+      "size": 820,
+      "hash": "66b9f5fa5a85585f"
+    },
+    {
+      "path": "Shaders/lygia/space/rotate.hlsl",
+      "size": 1955,
+      "hash": "4d94ed14c8a4f209"
+    },
+    {
+      "path": "Shaders/lygia/space/rotateX.hlsl",
+      "size": 856,
+      "hash": "18492b8f644d4b37"
+    },
+    {
+      "path": "Shaders/lygia/space/rotateY.hlsl",
+      "size": 851,
+      "hash": "50ffbcdbd7cb91cb"
+    },
+    {
+      "path": "Shaders/lygia/space/rotateZ.hlsl",
+      "size": 857,
+      "hash": "54edc535bbc850b0"
+    },
+    {
+      "path": "Shaders/lygia/space/scale.hlsl",
+      "size": 1767,
+      "hash": "0b2947323ef55605"
+    },
+    {
+      "path": "Shaders/lygia/space/screen2viewPosition.hlsl",
+      "size": 1416,
+      "hash": "f991cd55091d580e"
+    },
+    {
+      "path": "Shaders/lygia/space/sprite.hlsl",
+      "size": 653,
+      "hash": "d00128783d967135"
+    },
+    {
+      "path": "Shaders/lygia/space/sqTile.hlsl",
+      "size": 613,
+      "hash": "7052ba95ee708266"
+    },
+    {
+      "path": "Shaders/lygia/space/tbn.hlsl",
+      "size": 534,
+      "hash": "d6624ab340c19aa6"
+    },
+    {
+      "path": "Shaders/lygia/space/translate.hlsl",
+      "size": 560,
+      "hash": "42cbca7430bfad5b"
+    },
+    {
+      "path": "Shaders/lygia/space/triTile.hlsl",
+      "size": 707,
+      "hash": "5df94d1d8d9e66f9"
+    },
+    {
+      "path": "Shaders/lygia/space/uncenter.hlsl",
+      "size": 717,
+      "hash": "6b022cc36fc2a1de"
+    },
+    {
+      "path": "Shaders/lygia/space/unratio.hlsl",
+      "size": 530,
+      "hash": "cdc40e8aa21af19e"
+    },
+    {
+      "path": "Shaders/lygia/space/view2screenPosition.hlsl",
+      "size": 817,
+      "hash": "72a08cdf8fbe2b66"
+    },
+    {
+      "path": "Shaders/lygia/space/viewZ2depth.hlsl",
+      "size": 1177,
+      "hash": "60c53676844ab391"
+    },
+    {
+      "path": "Shaders/lygia/space/windmillTile.hlsl",
+      "size": 1218,
+      "hash": "368212e9b9c6bb67"
+    },
+    {
+      "path": "Shaders/lygia/space/xyz2equirect.hlsl",
+      "size": 565,
+      "hash": "77d65ca84fb22789"
+    },
+    {
+      "path": "Shaders/lygia/animation/easing/back.hlsl",
+      "size": 710,
+      "hash": "69e6cb577382655f"
+    },
+    {
+      "path": "Shaders/lygia/animation/easing/bounce.hlsl",
+      "size": 1103,
+      "hash": "ac6e4ae1c0c0bf63"
+    },
+    {
+      "path": "Shaders/lygia/animation/easing/circular.hlsl",
+      "size": 672,
+      "hash": "79b3b996f488ba5d"
+    },
+    {
+      "path": "Shaders/lygia/animation/easing/cubic.hlsl",
+      "size": 609,
+      "hash": "cd4934b6316a2ed9"
+    },
+    {
+      "path": "Shaders/lygia/animation/easing/elastic.hlsl",
+      "size": 847,
+      "hash": "0d883cca9276567e"
+    },
+    {
+      "path": "Shaders/lygia/animation/easing/exponential.hlsl",
+      "size": 783,
+      "hash": "ac89423840ad6cf8"
+    },
+    {
+      "path": "Shaders/lygia/animation/easing/linear.hlsl",
+      "size": 364,
+      "hash": "bd4bb546585507ef"
+    },
+    {
+      "path": "Shaders/lygia/animation/easing/quadratic.hlsl",
+      "size": 604,
+      "hash": "4c1f34b6f12204d2"
+    },
+    {
+      "path": "Shaders/lygia/animation/easing/quartic.hlsl",
+      "size": 623,
+      "hash": "5089af25bf7e38d6"
+    },
+    {
+      "path": "Shaders/lygia/animation/easing/quintic.hlsl",
+      "size": 624,
+      "hash": "34ef4efda32fde70"
+    },
+    {
+      "path": "Shaders/lygia/animation/easing/sine.hlsl",
+      "size": 577,
+      "hash": "45cb1bae10c310dc"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/add.hlsl",
+      "size": 719,
+      "hash": "03969d6fbd42ad83"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/average.hlsl",
+      "size": 731,
+      "hash": "2388d4a9e69da1c3"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/color.hlsl",
+      "size": 786,
+      "hash": "840311b42d82e1fd"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/colorBurn.hlsl",
+      "size": 922,
+      "hash": "ed13b71f2ed32742"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/colorDodge.hlsl",
+      "size": 927,
+      "hash": "fb5e9be98569297a"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/darken.hlsl",
+      "size": 844,
+      "hash": "12ca1bed5ae906e0"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/difference.hlsl",
+      "size": 750,
+      "hash": "a955c43ecbd85073"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/exclusion.hlsl",
+      "size": 776,
+      "hash": "b2e456e653db3305"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/glow.hlsl",
+      "size": 749,
+      "hash": "d25edd87edc62e6f"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/hardLight.hlsl",
+      "size": 789,
+      "hash": "9503846843e5c5c5"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/hardMix.hlsl",
+      "size": 914,
+      "hash": "40f01b5764e3aa26"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/hue.hlsl",
+      "size": 771,
+      "hash": "64eb57818e8fd9e3"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/lighten.hlsl",
+      "size": 856,
+      "hash": "062b44367027fbf2"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/linearBurn.hlsl",
+      "size": 906,
+      "hash": "3f66d9095e30eba9"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/linearDodge.hlsl",
+      "size": 878,
+      "hash": "0bd9088e9649c01f"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/linearLight.hlsl",
+      "size": 1016,
+      "hash": "3d91e6831e78e519"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/luminosity.hlsl",
+      "size": 820,
+      "hash": "94a5435010c81556"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/multiply.hlsl",
+      "size": 725,
+      "hash": "26ad4354ef1093c2"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/negation.hlsl",
+      "size": 790,
+      "hash": "480946d61e0c22dd"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/overlay.hlsl",
+      "size": 908,
+      "hash": "4b754b45f2ce8d83"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/phoenix.hlsl",
+      "size": 792,
+      "hash": "08aff1bd46a32c20"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/pinLight.hlsl",
+      "size": 993,
+      "hash": "2e94abcf8c365900"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/reflect.hlsl",
+      "size": 898,
+      "hash": "3f8a48e4ccd7b511"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/saturation.hlsl",
+      "size": 820,
+      "hash": "cfc3e5eefa238417"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/screen.hlsl",
+      "size": 801,
+      "hash": "8c530cf173eac8f2"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/softLight.hlsl",
+      "size": 1297,
+      "hash": "4729033b19ce80e7"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/subtract.hlsl",
+      "size": 790,
+      "hash": "8d469ccd77fe23dc"
+    },
+    {
+      "path": "Shaders/lygia/color/blend/vividLight.hlsl",
+      "size": 1021,
+      "hash": "62e578dcb919a2ef"
+    },
+    {
+      "path": "Shaders/lygia/color/composite/compositeXor.hlsl",
+      "size": 963,
+      "hash": "5320c00b2b93bfa2"
+    },
+    {
+      "path": "Shaders/lygia/color/composite/destinationAtop.hlsl",
+      "size": 1042,
+      "hash": "fb7b027f6179ba5b"
+    },
+    {
+      "path": "Shaders/lygia/color/composite/destinationIn.hlsl",
+      "size": 976,
+      "hash": "ad888269a98840c3"
+    },
+    {
+      "path": "Shaders/lygia/color/composite/destinationOut.hlsl",
+      "size": 1000,
+      "hash": "7edb8f2a2aa3e392"
+    },
+    {
+      "path": "Shaders/lygia/color/composite/destinationOver.hlsl",
+      "size": 1022,
+      "hash": "423f5e9932c4bfd7"
+    },
+    {
+      "path": "Shaders/lygia/color/composite/sourceAtop.hlsl",
+      "size": 1004,
+      "hash": "4d9186ab19572815"
+    },
+    {
+      "path": "Shaders/lygia/color/composite/sourceIn.hlsl",
+      "size": 938,
+      "hash": "988c5740af0f841a"
+    },
+    {
+      "path": "Shaders/lygia/color/composite/sourceOut.hlsl",
+      "size": 961,
+      "hash": "a474c0af017ee837"
+    },
+    {
+      "path": "Shaders/lygia/color/composite/sourceOver.hlsl",
+      "size": 1018,
+      "hash": "ecf8c4f3e7569baf"
+    },
+    {
+      "path": "Shaders/lygia/color/dither/blueNoise.hlsl",
+      "size": 2999,
+      "hash": "3bcabbbaf7f468e1"
+    },
+    {
+      "path": "Shaders/lygia/color/dither/interleavedGradientNoise.hlsl",
+      "size": 1781,
+      "hash": "a6259fae8d71bd82"
+    },
+    {
+      "path": "Shaders/lygia/color/dither/shift.hlsl",
+      "size": 2793,
+      "hash": "fafc7bc0941334e2"
+    },
+    {
+      "path": "Shaders/lygia/color/dither/triangleNoise.hlsl",
+      "size": 2477,
+      "hash": "795f4b3d06959ef4"
+    },
+    {
+      "path": "Shaders/lygia/color/dither/vlachos.hlsl",
+      "size": 1556,
+      "hash": "e47f48829383b7da"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/addSourceOver.hlsl",
+      "size": 1020,
+      "hash": "3a58b5b583564fd3"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/averageSourceOver.hlsl",
+      "size": 1040,
+      "hash": "86ac00cdac8e78c9"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/colorBurnSourceOver.hlsl",
+      "size": 1063,
+      "hash": "428ed576361ef93f"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/colorDodgeSourceOver.hlsl",
+      "size": 1069,
+      "hash": "e7edc985462a1894"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/colorSourceOver.hlsl",
+      "size": 1031,
+      "hash": "e0d8163974d590df"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/darkenSourceOver.hlsl",
+      "size": 1037,
+      "hash": "55410bc273e238e7"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/differenceSourceOver.hlsl",
+      "size": 1066,
+      "hash": "d0908a9b69b14c9e"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/exclusionSourceOver.hlsl",
+      "size": 1059,
+      "hash": "1a9232b578ead855"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/glowSourceOver.hlsl",
+      "size": 994,
+      "hash": "91173569600584d6"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/hardLightSourceOver.hlsl",
+      "size": 1063,
+      "hash": "74823863bc7c462c"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/hardMixSourceOver.hlsl",
+      "size": 1049,
+      "hash": "40704c24fe016b62"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/hueSourceOver.hlsl",
+      "size": 1021,
+      "hash": "d0b39ff60752088f"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/lightenSourceOver.hlsl",
+      "size": 1045,
+      "hash": "2f5ec2690d1bcdfe"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/linearBurnSourceOver.hlsl",
+      "size": 1069,
+      "hash": "79f509595c8bfef6"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/linearDodgeSourceOver.hlsl",
+      "size": 1076,
+      "hash": "2be1971590756048"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/linearLightSourceOver.hlsl",
+      "size": 1076,
+      "hash": "b203853443a305f3"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/luminositySourceOver.hlsl",
+      "size": 1065,
+      "hash": "26c88626494a54af"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/multiplySourceOver.hlsl",
+      "size": 1049,
+      "hash": "f8b6a1598bdf04a9"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/negationSourceOver.hlsl",
+      "size": 1051,
+      "hash": "16e7d8c328bb9d58"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/overlaySourceOver.hlsl",
+      "size": 1044,
+      "hash": "6725d3ba55f6d79d"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/phoenixSourceOver.hlsl",
+      "size": 1044,
+      "hash": "de3692bddc506b56"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/pinLightSourceOver.hlsl",
+      "size": 1055,
+      "hash": "b279c805a9c2f291"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/reflectSourceOver.hlsl",
+      "size": 1044,
+      "hash": "6d67e6d4a9edd688"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/saturationSourceOver.hlsl",
+      "size": 1065,
+      "hash": "b05cb658d64bcdf1"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/screenSourceOver.hlsl",
+      "size": 1037,
+      "hash": "25414c2f943d7249"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/softLightSourceOver.hlsl",
+      "size": 1062,
+      "hash": "7fc3c49fcc24ed62"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/subtractSourceOver.hlsl",
+      "size": 1051,
+      "hash": "77eb54db307feda8"
+    },
+    {
+      "path": "Shaders/lygia/color/layer/vividLightSourceOver.hlsl",
+      "size": 1069,
+      "hash": "7c1ecaf83a5ae06b"
+    },
+    {
+      "path": "Shaders/lygia/color/levels/gamma.hlsl",
+      "size": 1037,
+      "hash": "ea9848214abde44b"
+    },
+    {
+      "path": "Shaders/lygia/color/levels/inputRange.hlsl",
+      "size": 1307,
+      "hash": "cb2cdb20c1214c58"
+    },
+    {
+      "path": "Shaders/lygia/color/levels/outputRange.hlsl",
+      "size": 1258,
+      "hash": "a57569a8662ccc78"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/fire.hlsl",
+      "size": 473,
+      "hash": "ab655c393cf5af0d"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/flexoki.hlsl",
+      "size": 11339,
+      "hash": "596c4f72ff9f9625"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/heatmap.hlsl",
+      "size": 498,
+      "hash": "6c5d4794814336b4"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/hue.hlsl",
+      "size": 669,
+      "hash": "b139d2e5f2333be3"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/macbeth.hlsl",
+      "size": 20453,
+      "hash": "2c1a0f14ca794219"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/pigments.hlsl",
+      "size": 2051,
+      "hash": "2e5317a9de1fdece"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/ridgway.hlsl",
+      "size": 206891,
+      "hash": "b0206d7d5c2f5223"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/spectral.hlsl",
+      "size": 1764,
+      "hash": "7d920a28e4b5be4e"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/spyder.hlsl",
+      "size": 14691,
+      "hash": "f7048c3b7764e55f"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/wada.hlsl",
+      "size": 110,
+      "hash": "ca5ce047c2cd099d"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/water.hlsl",
+      "size": 512,
+      "hash": "0c9b4b14bee2238d"
+    },
+    {
+      "path": "Shaders/lygia/color/space/cmyk2rgb.hlsl",
+      "size": 539,
+      "hash": "4bb6129fe733bab1"
+    },
+    {
+      "path": "Shaders/lygia/color/space/gamma2linear.hlsl",
+      "size": 959,
+      "hash": "0fb288ed7a45ee1e"
+    },
+    {
+      "path": "Shaders/lygia/color/space/hcy2rgb.hlsl",
+      "size": 851,
+      "hash": "b627b23db52d7fa4"
+    },
+    {
+      "path": "Shaders/lygia/color/space/hsl2rgb.hlsl",
+      "size": 703,
+      "hash": "49a2d259fdbda1a7"
+    },
+    {
+      "path": "Shaders/lygia/color/space/hsv2rgb.hlsl",
+      "size": 381,
+      "hash": "2238473d556b5a0c"
+    },
+    {
+      "path": "Shaders/lygia/color/space/hsv2ryb.hlsl",
+      "size": 1180,
+      "hash": "9f19194443e407a3"
+    },
+    {
+      "path": "Shaders/lygia/color/space/hue2rgb.hlsl",
+      "size": 619,
+      "hash": "8266c604ee3a216b"
+    },
+    {
+      "path": "Shaders/lygia/color/space/k2rgb.hlsl",
+      "size": 2199,
+      "hash": "0e356598a6342d9a"
+    },
+    {
+      "path": "Shaders/lygia/color/space/lab2lch.hlsl",
+      "size": 735,
+      "hash": "f36d7dff4e5fb6cc"
+    },
+    {
+      "path": "Shaders/lygia/color/space/lab2rgb.hlsl",
+      "size": 613,
+      "hash": "b43a6b1635666314"
+    },
+    {
+      "path": "Shaders/lygia/color/space/lab2srgb.hlsl",
+      "size": 911,
+      "hash": "c89d15abdd306cc0"
+    },
+    {
+      "path": "Shaders/lygia/color/space/lab2xyz.hlsl",
+      "size": 1142,
+      "hash": "f140ca6403fcf3ed"
+    },
+    {
+      "path": "Shaders/lygia/color/space/lch2lab.hlsl",
+      "size": 742,
+      "hash": "b2076af539d2160e"
+    },
+    {
+      "path": "Shaders/lygia/color/space/lch2rgb.hlsl",
+      "size": 698,
+      "hash": "da80557200c9cab5"
+    },
+    {
+      "path": "Shaders/lygia/color/space/linear2gamma.hlsl",
+      "size": 982,
+      "hash": "fa209efe0108cf3b"
+    },
+    {
+      "path": "Shaders/lygia/color/space/lms2rgb.hlsl",
+      "size": 1321,
+      "hash": "eb61b7ec58ff6b56"
+    },
+    {
+      "path": "Shaders/lygia/color/space/oklab2rgb.hlsl",
+      "size": 959,
+      "hash": "755af20b98de5c25"
+    },
+    {
+      "path": "Shaders/lygia/color/space/oklab2srgb.hlsl",
+      "size": 535,
+      "hash": "94e85e1d9d5a147b"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2cmyk.hlsl",
+      "size": 635,
+      "hash": "10375d7988e050ab"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2hcv.hlsl",
+      "size": 958,
+      "hash": "e28a12cb1697e56c"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2hcy.hlsl",
+      "size": 1013,
+      "hash": "1648ec08c76b6ca9"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2heat.hlsl",
+      "size": 599,
+      "hash": "e116c364f17b8cce"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2hsl.hlsl",
+      "size": 824,
+      "hash": "673e6eb194230369"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2hsv.hlsl",
+      "size": 747,
+      "hash": "802a1dae2a24a031"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2hue.hlsl",
+      "size": 749,
+      "hash": "76666271b0428fb2"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2lab.hlsl",
+      "size": 628,
+      "hash": "69066f04c2f9d7b4"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2lch.hlsl",
+      "size": 636,
+      "hash": "03f1724090fd6408"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2lms.hlsl",
+      "size": 1253,
+      "hash": "80aee0a6528a81b0"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2luma.hlsl",
+      "size": 657,
+      "hash": "4636517e0d41fd31"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2oklab.hlsl",
+      "size": 1024,
+      "hash": "d41b583464957e6c"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2ryb.hlsl",
+      "size": 2718,
+      "hash": "18150665c628ab34"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2srgb.hlsl",
+      "size": 1044,
+      "hash": "436e6425e891f8d0"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2xyY.hlsl",
+      "size": 624,
+      "hash": "b1cc37dc60e92ce9"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2xyz.hlsl",
+      "size": 1065,
+      "hash": "534aa73644797610"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2YCbCr.hlsl",
+      "size": 783,
+      "hash": "f2521e809e1d2757"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2yiq.hlsl",
+      "size": 879,
+      "hash": "3a05c1accc8a2fdb"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2YPbPr.hlsl",
+      "size": 1040,
+      "hash": "1e8803ddb039d151"
+    },
+    {
+      "path": "Shaders/lygia/color/space/rgb2yuv.hlsl",
+      "size": 918,
+      "hash": "bff651430e68eb06"
+    },
+    {
+      "path": "Shaders/lygia/color/space/ryb2rgb.hlsl",
+      "size": 2487,
+      "hash": "ac17c66bc6c09995"
+    },
+    {
+      "path": "Shaders/lygia/color/space/srgb2lab.hlsl",
+      "size": 635,
+      "hash": "2dabe65e0434a261"
+    },
+    {
+      "path": "Shaders/lygia/color/space/srgb2lch.hlsl",
+      "size": 636,
+      "hash": "6cfa5daeb272de51"
+    },
+    {
+      "path": "Shaders/lygia/color/space/srgb2luma.hlsl",
+      "size": 639,
+      "hash": "337b223bd80013f0"
+    },
+    {
+      "path": "Shaders/lygia/color/space/srgb2oklab.hlsl",
+      "size": 532,
+      "hash": "b0ff14e5001c3e86"
+    },
+    {
+      "path": "Shaders/lygia/color/space/srgb2rgb.hlsl",
+      "size": 1045,
+      "hash": "ba3452bcb0a3e7e3"
+    },
+    {
+      "path": "Shaders/lygia/color/space/srgb2xyz.hlsl",
+      "size": 620,
+      "hash": "6048d0cfa953453f"
+    },
+    {
+      "path": "Shaders/lygia/color/space/w2rgb.hlsl",
+      "size": 2055,
+      "hash": "83584158ff2c47b1"
+    },
+    {
+      "path": "Shaders/lygia/color/space/xyY2rgb.hlsl",
+      "size": 619,
+      "hash": "1daaf55ea18956b3"
+    },
+    {
+      "path": "Shaders/lygia/color/space/xyY2srgb.hlsl",
+      "size": 630,
+      "hash": "e88d23e3f7e4ded3"
+    },
+    {
+      "path": "Shaders/lygia/color/space/xyY2xyz.hlsl",
+      "size": 677,
+      "hash": "ca1196e76e2c79bc"
+    },
+    {
+      "path": "Shaders/lygia/color/space/xyz2lab.hlsl",
+      "size": 840,
+      "hash": "d751d8c915d32679"
+    },
+    {
+      "path": "Shaders/lygia/color/space/xyz2rgb.hlsl",
+      "size": 1042,
+      "hash": "0f40a1506c3e2f44"
+    },
+    {
+      "path": "Shaders/lygia/color/space/xyz2srgb.hlsl",
+      "size": 706,
+      "hash": "5add90f8028471ec"
+    },
+    {
+      "path": "Shaders/lygia/color/space/xyz2xyY.hlsl",
+      "size": 699,
+      "hash": "69f714969994fb91"
+    },
+    {
+      "path": "Shaders/lygia/color/space/YCbCr2rgb.hlsl",
+      "size": 797,
+      "hash": "1ed7784c936abdd6"
+    },
+    {
+      "path": "Shaders/lygia/color/space/yiq2rgb.hlsl",
+      "size": 864,
+      "hash": "e028a788daf34d1c"
+    },
+    {
+      "path": "Shaders/lygia/color/space/YPbPr2rgb.hlsl",
+      "size": 985,
+      "hash": "a6386b524b6bd2cf"
+    },
+    {
+      "path": "Shaders/lygia/color/space/yuv2rgb.hlsl",
+      "size": 922,
+      "hash": "269621fb95ad6f17"
+    },
+    {
+      "path": "Shaders/lygia/color/tonemap/aces.hlsl",
+      "size": 572,
+      "hash": "08000cc427262c4f"
+    },
+    {
+      "path": "Shaders/lygia/color/tonemap/debug.hlsl",
+      "size": 2574,
+      "hash": "e2830ba4bbc2aa09"
+    },
+    {
+      "path": "Shaders/lygia/color/tonemap/filmic.hlsl",
+      "size": 670,
+      "hash": "dbedc95ff8fc34c9"
+    },
+    {
+      "path": "Shaders/lygia/color/tonemap/linear.hlsl",
+      "size": 310,
+      "hash": "dc886587b2029d5e"
+    },
+    {
+      "path": "Shaders/lygia/color/tonemap/reinhard.hlsl",
+      "size": 551,
+      "hash": "6db9659a65df2297"
+    },
+    {
+      "path": "Shaders/lygia/color/tonemap/reinhardJodie.hlsl",
+      "size": 655,
+      "hash": "57f8a7620324b98e"
+    },
+    {
+      "path": "Shaders/lygia/color/tonemap/uncharted.hlsl",
+      "size": 844,
+      "hash": "e6e605299be9b276"
+    },
+    {
+      "path": "Shaders/lygia/color/tonemap/uncharted2.hlsl",
+      "size": 679,
+      "hash": "9d96d007ef47f571"
+    },
+    {
+      "path": "Shaders/lygia/color/tonemap/unreal.hlsl",
+      "size": 547,
+      "hash": "9f782ad7ad6be94d"
+    },
+    {
+      "path": "Shaders/lygia/filter/boxBlur/1D.hlsl",
+      "size": 1830,
+      "hash": "3df57ba957c664de"
+    },
+    {
+      "path": "Shaders/lygia/filter/boxBlur/2D.hlsl",
+      "size": 2181,
+      "hash": "7aceaa7a12975491"
+    },
+    {
+      "path": "Shaders/lygia/filter/boxBlur/2D_fast9.hlsl",
+      "size": 2143,
+      "hash": "c9658de67c8d5e0e"
+    },
+    {
+      "path": "Shaders/lygia/filter/edge/prewitt.hlsl",
+      "size": 1953,
+      "hash": "444ddfafe3623141"
+    },
+    {
+      "path": "Shaders/lygia/filter/edge/sobel.hlsl",
+      "size": 1923,
+      "hash": "d5e95aba67e0b1df"
+    },
+    {
+      "path": "Shaders/lygia/filter/edge/sobelDirectional.hlsl",
+      "size": 2320,
+      "hash": "95c151793e56c6b3"
+    },
+    {
+      "path": "Shaders/lygia/filter/gaussianBlur/1D.hlsl",
+      "size": 2023,
+      "hash": "db5d21fb40d22cc0"
+    },
+    {
+      "path": "Shaders/lygia/filter/gaussianBlur/1D_fast13.hlsl",
+      "size": 2014,
+      "hash": "639d7044547faf31"
+    },
+    {
+      "path": "Shaders/lygia/filter/gaussianBlur/1D_fast5.hlsl",
+      "size": 1465,
+      "hash": "1dd6e9e9abfcb99c"
+    },
+    {
+      "path": "Shaders/lygia/filter/gaussianBlur/1D_fast9.hlsl",
+      "size": 1657,
+      "hash": "87486f00bb176658"
+    },
+    {
+      "path": "Shaders/lygia/filter/gaussianBlur/2D.hlsl",
+      "size": 2472,
+      "hash": "d7aef4f45cf276fe"
+    },
+    {
+      "path": "Shaders/lygia/filter/median/2D_fast3.hlsl",
+      "size": 2808,
+      "hash": "768f576cb68c40d9"
+    },
+    {
+      "path": "Shaders/lygia/filter/median/2D_fast5.hlsl",
+      "size": 3359,
+      "hash": "a4dcaa56ed418bb0"
+    },
+    {
+      "path": "Shaders/lygia/filter/sharpen/adaptive.hlsl",
+      "size": 12643,
+      "hash": "55b2ae530c8dc2c4"
+    },
+    {
+      "path": "Shaders/lygia/filter/sharpen/contrastAdaptive.hlsl",
+      "size": 3697,
+      "hash": "9ee61406b90a6583"
+    },
+    {
+      "path": "Shaders/lygia/filter/sharpen/fast.hlsl",
+      "size": 2656,
+      "hash": "a3f91c75e6576250"
+    },
+    {
+      "path": "Shaders/lygia/geometry/aabb/aabb.hlsl",
+      "size": 468,
+      "hash": "f97f6bc1d836d333"
+    },
+    {
+      "path": "Shaders/lygia/geometry/aabb/centroid.hlsl",
+      "size": 502,
+      "hash": "b59990cbd5f7ff7d"
+    },
+    {
+      "path": "Shaders/lygia/geometry/aabb/contain.hlsl",
+      "size": 724,
+      "hash": "1a106d26826fa86c"
+    },
+    {
+      "path": "Shaders/lygia/geometry/aabb/diagonal.hlsl",
+      "size": 523,
+      "hash": "6d9dd7c87a788ed8"
+    },
+    {
+      "path": "Shaders/lygia/geometry/aabb/expand.hlsl",
+      "size": 812,
+      "hash": "1ccc97d477f5d10d"
+    },
+    {
+      "path": "Shaders/lygia/geometry/aabb/intersect.hlsl",
+      "size": 1246,
+      "hash": "63998d8aea35c755"
+    },
+    {
+      "path": "Shaders/lygia/geometry/aabb/square.hlsl",
+      "size": 719,
+      "hash": "2fefdc3c15b4bd69"
+    },
+    {
+      "path": "Shaders/lygia/geometry/triangle/area.hlsl",
+      "size": 545,
+      "hash": "ed7110ed2efc8e95"
+    },
+    {
+      "path": "Shaders/lygia/geometry/triangle/barycentric.hlsl",
+      "size": 1541,
+      "hash": "1364907fafe3ba3e"
+    },
+    {
+      "path": "Shaders/lygia/geometry/triangle/centroid.hlsl",
+      "size": 556,
+      "hash": "0b152e1d4d68c75a"
+    },
+    {
+      "path": "Shaders/lygia/geometry/triangle/closestPoint.hlsl",
+      "size": 2395,
+      "hash": "51c5b15be0e813f5"
+    },
+    {
+      "path": "Shaders/lygia/geometry/triangle/contain.hlsl",
+      "size": 1104,
+      "hash": "1460234c706f9758"
+    },
+    {
+      "path": "Shaders/lygia/geometry/triangle/distanceSq.hlsl",
+      "size": 1301,
+      "hash": "60b2ba59e2d97d98"
+    },
+    {
+      "path": "Shaders/lygia/geometry/triangle/intersect.hlsl",
+      "size": 1169,
+      "hash": "3d6f6b63ec8cf538"
+    },
+    {
+      "path": "Shaders/lygia/geometry/triangle/normal.hlsl",
+      "size": 555,
+      "hash": "f760b9c5174e05b1"
+    },
+    {
+      "path": "Shaders/lygia/geometry/triangle/signedDistance.hlsl",
+      "size": 723,
+      "hash": "0978802d91421d5c"
+    },
+    {
+      "path": "Shaders/lygia/geometry/triangle/triangle.hlsl",
+      "size": 442,
+      "hash": "a510b06d3b3692d2"
+    },
+    {
+      "path": "Shaders/lygia/lighting/common/ashikhmin.hlsl",
+      "size": 497,
+      "hash": "82fb4783f09f89e5"
+    },
+    {
+      "path": "Shaders/lygia/lighting/common/beckmann.hlsl",
+      "size": 395,
+      "hash": "ca48b43054910294"
+    },
+    {
+      "path": "Shaders/lygia/lighting/common/charlie.hlsl",
+      "size": 428,
+      "hash": "e324348ab6f09974"
+    },
+    {
+      "path": "Shaders/lygia/lighting/common/clampNoV.hlsl",
+      "size": 265,
+      "hash": "9cf66a160ccb5d93"
+    },
+    {
+      "path": "Shaders/lygia/lighting/common/envBRDFApprox.hlsl",
+      "size": 866,
+      "hash": "496198641a4fe0c7"
+    },
+    {
+      "path": "Shaders/lygia/lighting/common/ggx.hlsl",
+      "size": 1823,
+      "hash": "1d3df323703073b6"
+    },
+    {
+      "path": "Shaders/lygia/lighting/common/gtaoMultiBounce.hlsl",
+      "size": 782,
+      "hash": "200c99f0ebe92bb2"
+    },
+    {
+      "path": "Shaders/lygia/lighting/common/henyeyGreenstein.hlsl",
+      "size": 957,
+      "hash": "d0175f20b2d6f421"
+    },
+    {
+      "path": "Shaders/lygia/lighting/common/kelemen.hlsl",
+      "size": 278,
+      "hash": "e5bd3f8507e9fa2b"
+    },
+    {
+      "path": "Shaders/lygia/lighting/common/perceptual2linearRoughness.hlsl",
+      "size": 782,
+      "hash": "909e34cc1bef7551"
+    },
+    {
+      "path": "Shaders/lygia/lighting/common/preFilteredImportanceSampling.hlsl",
+      "size": 343,
+      "hash": "c3a891fc70bcb874"
+    },
+    {
+      "path": "Shaders/lygia/lighting/common/rayleigh.hlsl",
+      "size": 184,
+      "hash": "0c784053804f6055"
+    },
+    {
+      "path": "Shaders/lygia/lighting/common/schlick.hlsl",
+      "size": 493,
+      "hash": "84eb7702d77afef5"
+    },
+    {
+      "path": "Shaders/lygia/lighting/common/smithGGXCorrelated.hlsl",
+      "size": 1049,
+      "hash": "3c292d4137b9cff8"
+    },
+    {
+      "path": "Shaders/lygia/lighting/common/specularAO.hlsl",
+      "size": 679,
+      "hash": "11c4d6b44686794a"
+    },
+    {
+      "path": "Shaders/lygia/lighting/diffuse/burley.hlsl",
+      "size": 1201,
+      "hash": "8455b5b86ba27e23"
+    },
+    {
+      "path": "Shaders/lygia/lighting/diffuse/lambert.hlsl",
+      "size": 1029,
+      "hash": "d326885f04c6c704"
+    },
+    {
+      "path": "Shaders/lygia/lighting/diffuse/orenNayar.hlsl",
+      "size": 1336,
+      "hash": "bd14cae84ec5647a"
+    },
+    {
+      "path": "Shaders/lygia/lighting/ior/2eta.hlsl",
+      "size": 639,
+      "hash": "860fee4ab19834c0"
+    },
+    {
+      "path": "Shaders/lygia/lighting/ior/2f0.hlsl",
+      "size": 795,
+      "hash": "964c13c6e0d61de6"
+    },
+    {
+      "path": "Shaders/lygia/lighting/ior/reflectance2f0.hlsl",
+      "size": 426,
+      "hash": "1f36b0913322c5bc"
+    },
+    {
+      "path": "Shaders/lygia/lighting/light/attenuation.hlsl",
+      "size": 790,
+      "hash": "9ae363906a15ad91"
+    },
+    {
+      "path": "Shaders/lygia/lighting/light/directional.hlsl",
+      "size": 492,
+      "hash": "1ce5c60589ff9df0"
+    },
+    {
+      "path": "Shaders/lygia/lighting/light/directionalEvaluate.hlsl",
+      "size": 2328,
+      "hash": "827a4993366fe169"
+    },
+    {
+      "path": "Shaders/lygia/lighting/light/falloff.hlsl",
+      "size": 557,
+      "hash": "92c555c5ba8f4fd7"
+    },
+    {
+      "path": "Shaders/lygia/lighting/light/iblEvaluate.hlsl",
+      "size": 2261,
+      "hash": "82ef3b2411fb1bab"
+    },
+    {
+      "path": "Shaders/lygia/lighting/light/new.hlsl",
+      "size": 1944,
+      "hash": "5368266d45415868"
+    },
+    {
+      "path": "Shaders/lygia/lighting/light/point.hlsl",
+      "size": 489,
+      "hash": "39bcbeff515f52cc"
+    },
+    {
+      "path": "Shaders/lygia/lighting/light/pointEvaluate.hlsl",
+      "size": 2571,
+      "hash": "980068d6f883141c"
+    },
+    {
+      "path": "Shaders/lygia/lighting/light/resolve.hlsl",
+      "size": 489,
+      "hash": "f83867b6ce3e82e3"
+    },
+    {
+      "path": "Shaders/lygia/lighting/light/spot.hlsl",
+      "size": 2598,
+      "hash": "1f090884103a39f2"
+    },
+    {
+      "path": "Shaders/lygia/lighting/material/add.hlsl",
+      "size": 1497,
+      "hash": "f7bed82e3233a43f"
+    },
+    {
+      "path": "Shaders/lygia/lighting/material/albedo.hlsl",
+      "size": 1945,
+      "hash": "929f9d5ed9ef2f00"
+    },
+    {
+      "path": "Shaders/lygia/lighting/material/emissive.hlsl",
+      "size": 1395,
+      "hash": "32df17e327100ef0"
+    },
+    {
+      "path": "Shaders/lygia/lighting/material/metallic.hlsl",
+      "size": 2357,
+      "hash": "912c9ce118b143f3"
+    },
+    {
+      "path": "Shaders/lygia/lighting/material/multiply.hlsl",
+      "size": 1324,
+      "hash": "a290fe7c440b4245"
+    },
+    {
+      "path": "Shaders/lygia/lighting/material/new.hlsl",
+      "size": 4412,
+      "hash": "49b09619c77e4028"
+    },
+    {
+      "path": "Shaders/lygia/lighting/material/normal.hlsl",
+      "size": 1940,
+      "hash": "5ede035077e1df16"
+    },
+    {
+      "path": "Shaders/lygia/lighting/material/occlusion.hlsl",
+      "size": 1580,
+      "hash": "9adb06923201edc2"
+    },
+    {
+      "path": "Shaders/lygia/lighting/material/roughness.hlsl",
+      "size": 2199,
+      "hash": "05b2b88fe5da898b"
+    },
+    {
+      "path": "Shaders/lygia/lighting/material/shininess.hlsl",
+      "size": 999,
+      "hash": "0fe6e09b1c9fa759"
+    },
+    {
+      "path": "Shaders/lygia/lighting/material/specular.hlsl",
+      "size": 1334,
+      "hash": "6caa5faec27fd8e8"
+    },
+    {
+      "path": "Shaders/lygia/lighting/material/zero.hlsl",
+      "size": 1896,
+      "hash": "828b79df9e66c425"
+    },
+    {
+      "path": "Shaders/lygia/lighting/medium/new.hlsl",
+      "size": 889,
+      "hash": "ab09d00d4b36060f"
+    },
+    {
+      "path": "Shaders/lygia/lighting/raymarch/ao.hlsl",
+      "size": 1199,
+      "hash": "30548607162c4cef"
+    },
+    {
+      "path": "Shaders/lygia/lighting/raymarch/cast.hlsl",
+      "size": 1225,
+      "hash": "36af4b216eb8c4d3"
+    },
+    {
+      "path": "Shaders/lygia/lighting/raymarch/fog.hlsl",
+      "size": 2162,
+      "hash": "68f91c8a6f08899d"
+    },
+    {
+      "path": "Shaders/lygia/lighting/raymarch/glass.hlsl",
+      "size": 10447,
+      "hash": "bd247e2f3cc0c514"
+    },
+    {
+      "path": "Shaders/lygia/lighting/raymarch/map.hlsl",
+      "size": 516,
+      "hash": "19c70d98bcbc45d3"
+    },
+    {
+      "path": "Shaders/lygia/lighting/raymarch/normal.hlsl",
+      "size": 1265,
+      "hash": "2656559ac1121562"
+    },
+    {
+      "path": "Shaders/lygia/lighting/raymarch/render.hlsl",
+      "size": 2196,
+      "hash": "506f15cd33693fa0"
+    },
+    {
+      "path": "Shaders/lygia/lighting/raymarch/shading.hlsl",
+      "size": 2642,
+      "hash": "549eef813e00ce85"
+    },
+    {
+      "path": "Shaders/lygia/lighting/raymarch/softShadow.hlsl",
+      "size": 1614,
+      "hash": "b914f44c8effcf54"
+    },
+    {
+      "path": "Shaders/lygia/lighting/raymarch/volume.hlsl",
+      "size": 5327,
+      "hash": "0c2bb6fc40267467"
+    },
+    {
+      "path": "Shaders/lygia/lighting/shadingData/new.hlsl",
+      "size": 1903,
+      "hash": "304e2400251dc532"
+    },
+    {
+      "path": "Shaders/lygia/lighting/shadingData/shadingData.hlsl",
+      "size": 602,
+      "hash": "cfbf6c12444dcf74"
+    },
+    {
+      "path": "Shaders/lygia/lighting/specular/beckmann.hlsl",
+      "size": 226,
+      "hash": "434b508b1bb59069"
+    },
+    {
+      "path": "Shaders/lygia/lighting/specular/blinnPhong.hlsl",
+      "size": 813,
+      "hash": "575a7c8634936698"
+    },
+    {
+      "path": "Shaders/lygia/lighting/specular/cookTorrance.hlsl",
+      "size": 976,
+      "hash": "e06426af90460de8"
+    },
+    {
+      "path": "Shaders/lygia/lighting/specular/gaussian.hlsl",
+      "size": 414,
+      "hash": "82975a60cfc4c8bd"
+    },
+    {
+      "path": "Shaders/lygia/lighting/specular/importanceSampling.hlsl",
+      "size": 2609,
+      "hash": "7b0e143e19db5316"
+    },
+    {
+      "path": "Shaders/lygia/lighting/specular/phong.hlsl",
+      "size": 941,
+      "hash": "211e9cb2eccdf666"
+    },
+    {
+      "path": "Shaders/lygia/lighting/specular/ward.hlsl",
+      "size": 856,
+      "hash": "8cae64defe5a5361"
+    },
+    {
+      "path": "Shaders/lygia/math/quat/2mat3.hlsl",
+      "size": 1008,
+      "hash": "9841bc87e907b332"
+    },
+    {
+      "path": "Shaders/lygia/math/quat/2mat4.hlsl",
+      "size": 563,
+      "hash": "ddd716ba1791f10b"
+    },
+    {
+      "path": "Shaders/lygia/math/quat/add.hlsl",
+      "size": 502,
+      "hash": "119725a18155d0d5"
+    },
+    {
+      "path": "Shaders/lygia/math/quat/conj.hlsl",
+      "size": 492,
+      "hash": "77b2428a0eddbc79"
+    },
+    {
+      "path": "Shaders/lygia/math/quat/div.hlsl",
+      "size": 497,
+      "hash": "c8cb3214ded41cdf"
+    },
+    {
+      "path": "Shaders/lygia/math/quat/identity.hlsl",
+      "size": 451,
+      "hash": "92f4a423e90dfc9c"
+    },
+    {
+      "path": "Shaders/lygia/math/quat/inverse.hlsl",
+      "size": 559,
+      "hash": "6c92281df1e46edf"
+    },
+    {
+      "path": "Shaders/lygia/math/quat/length.hlsl",
+      "size": 504,
+      "hash": "f85e80739cf0360f"
+    },
+    {
+      "path": "Shaders/lygia/math/quat/lengthSq.hlsl",
+      "size": 525,
+      "hash": "ec699e507e8f2a7a"
+    },
+    {
+      "path": "Shaders/lygia/math/quat/lerp.hlsl",
+      "size": 1884,
+      "hash": "b9aa607a568cdac3"
+    },
+    {
+      "path": "Shaders/lygia/math/quat/mul.hlsl",
+      "size": 727,
+      "hash": "baa844222cd1b9eb"
+    },
+    {
+      "path": "Shaders/lygia/math/quat/neg.hlsl",
+      "size": 473,
+      "hash": "8b87f9f8e33688a1"
+    },
+    {
+      "path": "Shaders/lygia/math/quat/norm.hlsl",
+      "size": 513,
+      "hash": "88aa7d44fe7756fe"
+    },
+    {
+      "path": "Shaders/lygia/math/quat/sub.hlsl",
+      "size": 506,
+      "hash": "8b909acea14f3809"
+    },
+    {
+      "path": "Shaders/lygia/math/quat/type.hlsl",
+      "size": 348,
+      "hash": "cf39747985de57f8"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/pigments/gamblin_oil.hlsl",
+      "size": 9234,
+      "hash": "323294ee3dd47d61"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/pigments/golden_acrylic.hlsl",
+      "size": 7400,
+      "hash": "a0042abdb3957879"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/pigments/liquitex_acrylic.hlsl",
+      "size": 5170,
+      "hash": "1b56d4e7555f8744"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/pigments/rembrandt_oil.hlsl",
+      "size": 8252,
+      "hash": "3854f883a2679b9e"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/pigments/winsor_acrylic.hlsl",
+      "size": 13226,
+      "hash": "1315cb5bf830db6e"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/pigments/winsor_gouache.hlsl",
+      "size": 10201,
+      "hash": "39d2d6313a9255bd"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/pigments/winsor_oil.hlsl",
+      "size": 14520,
+      "hash": "80a11c882fa30f1c"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/spectral/gems.hlsl",
+      "size": 673,
+      "hash": "18a565fccad9dc78"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/spectral/geoffrey.hlsl",
+      "size": 291,
+      "hash": "8abd683e4873e44f"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/spectral/soft.hlsl",
+      "size": 732,
+      "hash": "fb7d60cbc82d5cf6"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/spectral/zucconi.hlsl",
+      "size": 1118,
+      "hash": "59511e3843da2d9a"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/spectral/zucconi6.hlsl",
+      "size": 1260,
+      "hash": "aff4a708e32d14f7"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/wada/dyad.hlsl",
+      "size": 4144,
+      "hash": "2140e02b22809da1"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/wada/tetrad.hlsl",
+      "size": 4148,
+      "hash": "213410a93377767c"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/wada/triad.hlsl",
+      "size": 4184,
+      "hash": "75a93a104668858f"
+    },
+    {
+      "path": "Shaders/lygia/color/palette/wada/value.hlsl",
+      "size": 69826,
+      "hash": "a3de37e25345b08a"
     }
   ]
 }

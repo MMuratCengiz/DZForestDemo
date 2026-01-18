@@ -167,7 +167,7 @@ public class BlitPass : IDisposable
         var bindGroup = _bindGroups[frameIndex];
         bindGroup.BeginUpdate();
         bindGroup.SrvTexture(0, sourceTexture);
-        bindGroup.SrvTexture(1, GraphicsContext.EmptyTexture.Texture);
+        bindGroup.SrvTexture(1, ColorTexture.Empty.Texture);
         bindGroup.Sampler(0, _linearSampler);
         bindGroup.EndUpdate();
 

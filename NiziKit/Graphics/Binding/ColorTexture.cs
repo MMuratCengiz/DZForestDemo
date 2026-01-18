@@ -1,14 +1,32 @@
-using System.Runtime.InteropServices;
 using DenOfIz;
+using NiziKit.Core;
 
 namespace NiziKit.Graphics.Binding;
 
 public sealed class ColorTexture : IDisposable
 {
+    private static readonly Lazy<ColorTexture> _empty = new(() =>
+    {
+        var texture = new ColorTexture(0, 0, 0, 0, "EmptyTexture");
+        Disposer.Register(texture);
+        return texture;
+    });
+
+    private static readonly Lazy<ColorTexture> _missing = new(() =>
+    {
+        var texture = new ColorTexture(255, 0, 255, 255, "MissingTexture");
+        Disposer.Register(texture);
+        return texture;
+    });
+
+    public static ColorTexture Empty => _empty.Value;
+    public static ColorTexture Missing => _missing.Value;
+
     public Texture Texture { get; }
 
-    public ColorTexture(LogicalDevice device, byte r, byte g, byte b, byte a, string debugName)
+    public ColorTexture(byte r, byte g, byte b, byte a, string debugName)
     {
+        var device = GraphicsContext.Device;
         Texture = device.CreateTexture(new TextureDesc
         {
             Width = 1,
@@ -20,11 +38,7 @@ public sealed class ColorTexture : IDisposable
             Usage = (uint)(TextureUsageFlagBits.CopyDst | TextureUsageFlagBits.TextureBinding),
             DebugName = StringView.Create(debugName)
         });
-        UploadPixelData(device, [r, g, b, a], debugName);
-    }
 
-    private void UploadPixelData(LogicalDevice device, byte[] pixelData, string debugName)
-    {
         using var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
         {
             Device = device,
@@ -33,7 +47,7 @@ public sealed class ColorTexture : IDisposable
         batchCopy.Begin();
         batchCopy.CopyDataToTexture(new CopyDataToTextureDesc
         {
-            Data = ByteArrayView.Create(pixelData),
+            Data = ByteArrayView.Create([r, g, b, a]),
             DstTexture = Texture,
             AutoAlign = true,
             Width = 1,
@@ -42,6 +56,8 @@ public sealed class ColorTexture : IDisposable
             ArrayLayer = 0
         });
         batchCopy.Submit(null);
+
+        GraphicsContext.ResourceTracking.TrackTexture(Texture, QueueType.Graphics);
     }
 
     public void Dispose()

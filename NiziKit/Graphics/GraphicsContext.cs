@@ -31,9 +31,6 @@ public sealed class GraphicsContext : IDisposable
     public static BindGroupLayoutStore BindGroupLayoutStore => Instance._bindGroupLayoutStore;
     public static RootSignatureStore RootSignatureStore => Instance._rootSignatureStore;
 
-    public static ColorTexture EmptyTexture => Instance._emptyTexture;
-    public static ColorTexture MissingTexture => Instance._missingTexture;
-
     public static void Resize(uint width, uint height) => Instance._Resize(width, height);
     public static void BeginFrame() => Instance._BeginFrame();
     public static void WaitIdle() => Instance._WaitIdle();
@@ -56,9 +53,6 @@ public sealed class GraphicsContext : IDisposable
     private readonly UniformBufferArena _uniformBufferArena;
     private readonly BindGroupLayoutStore _bindGroupLayoutStore;
     private readonly RootSignatureStore _rootSignatureStore;
-
-    private readonly ColorTexture _emptyTexture;
-    private readonly ColorTexture _missingTexture;
 
     public GraphicsContext(Window window, GraphicsDesc? desc = null)
     {
@@ -103,12 +97,7 @@ public sealed class GraphicsContext : IDisposable
         _uniformBufferArena = new UniformBufferArena(_logicalDevice);
         _bindGroupLayoutStore = new BindGroupLayoutStore(_logicalDevice);
         _rootSignatureStore = new RootSignatureStore(_logicalDevice, _bindGroupLayoutStore);
-        _emptyTexture = new ColorTexture(_logicalDevice, 0, 0, 0, 0, "EmptyTexture");
-        _missingTexture = new ColorTexture(_logicalDevice, 255, 0, 255, 255, "MissingTexture");
         _instance = this;
-
-        _resourceTracking.TrackTexture(_emptyTexture.Texture, QueueType.Graphics);
-        _resourceTracking.TrackTexture(_missingTexture.Texture, QueueType.Graphics);
     }
 
     private void _Resize(uint width, uint height)
@@ -144,9 +133,8 @@ public sealed class GraphicsContext : IDisposable
     public void Dispose()
     {
         _WaitIdle();
+        Core.Disposer.DisposeAll();
         _resourceTracking.Dispose();
-        _emptyTexture.Dispose();
-        _missingTexture.Dispose();
         _uniformBufferArena.Dispose();
         _rootSignatureStore.Dispose();
         _bindGroupLayoutStore.Dispose();

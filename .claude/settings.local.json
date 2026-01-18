@@ -63,7 +63,8 @@
       "Bash(Get-ChildItem -Path \"$env:USERPROFILE\\\\.nuget\\\\packages\\\\denofizgraphics\" -Recurse -Include \"*.xml\")",
       "Bash(Select-Object -First 1)",
       "Bash(Get-Item)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(xxd:*)"
     ]
   }
 }

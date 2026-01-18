@@ -27,6 +27,7 @@ public class Fox : GameObject
     {
         _useLayerBlending = useLayerBlending;
         LocalPosition = position ?? new Vector3(0f, 0f, 0f);
+        LocalScale = new Vector3(0.01f);
         LocalRotation = Quaternion.CreateFromAxisAngle(Vector3.UnitX, (float)Math.PI / 2);
 
         var material = Assets.RegisterMaterial(new FoxMaterial());

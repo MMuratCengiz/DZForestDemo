@@ -50,13 +50,6 @@ public abstract class Scene(string name = "Scene") : IDisposable
         RegisterObjectByType(obj);
     }
 
-    public T Add<T>(IPrefab<T> prefab) where T : GameObject
-    {
-        var obj = prefab.Instantiate();
-        Add(obj);
-        return (T)obj;
-    }
-
     public void Destroy(GameObject obj)
     {
         World.OnGameObjectDestroyed(obj);

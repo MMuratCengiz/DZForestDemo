@@ -37,10 +37,10 @@ public class MaterialBinding : ShaderBinding<Material>
 
         var bg = BindGroups[0];
         bg.BeginUpdate();
-        bg.SrvTexture(GpuMaterialLayout.Albedo.Binding, target.Albedo?.GpuTexture ?? GraphicsContext.MissingTexture.Texture);
-        bg.SrvTexture(GpuMaterialLayout.Normal.Binding, target.Normal?.GpuTexture ?? GraphicsContext.MissingTexture.Texture);
-        bg.SrvTexture(GpuMaterialLayout.Roughness.Binding, target.Roughness?.GpuTexture ?? GraphicsContext.MissingTexture.Texture);
-        bg.SrvTexture(GpuMaterialLayout.Metallic.Binding, target.Metallic?.GpuTexture ?? GraphicsContext.MissingTexture.Texture);
+        bg.SrvTexture(GpuMaterialLayout.Albedo.Binding, target.Albedo?.GpuTexture ?? ColorTexture.Missing.Texture);
+        bg.SrvTexture(GpuMaterialLayout.Normal.Binding, target.Normal?.GpuTexture ?? ColorTexture.Missing.Texture);
+        bg.SrvTexture(GpuMaterialLayout.Roughness.Binding, target.Roughness?.GpuTexture ?? ColorTexture.Missing.Texture);
+        bg.SrvTexture(GpuMaterialLayout.Metallic.Binding, target.Metallic?.GpuTexture ?? ColorTexture.Missing.Texture);
         bg.Sampler(GpuMaterialLayout.TextureSampler.Binding, _sampler);
         bg.CbvWithDesc(new BindBufferDesc
         {

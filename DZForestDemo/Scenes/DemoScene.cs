@@ -3,7 +3,6 @@ using DZForestDemo.GameObjects;
 using NiziKit.Assets;
 using NiziKit.Components;
 using NiziKit.Core;
-using NiziKit.Graphics;
 using NiziKit.Graphics.Binding;
 using NiziKit.Light;
 using NiziKit.Physics;
@@ -19,7 +18,7 @@ public class DemoScene() : Scene("Demo Scene")
         public ColorMaterial(string name, byte r, byte g, byte b)
         {
             Name = name;
-            _colorTexture = new ColorTexture(GraphicsContext.Device, r, g, b, 255, name);
+            _colorTexture = new ColorTexture(r, g, b, 255, name);
             Albedo = new Texture2d
             {
                 Name = name,

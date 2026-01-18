@@ -14,6 +14,10 @@ struct PSInput
 float4 PSMain(PSInput input) : SV_TARGET
 {
     float4 albedo = AlbedoTexture.Sample(TextureSampler, input.TexCoord);
+    if (albedo.a < 0.01)
+    {
+        // albedo = float4(1.0, 0.0, 1.0, 1.0);
+    }
 
     float3 N = normalize(input.WorldNormal);
     float3 L = normalize(float3(0.5, 1.0, 0.3));

@@ -1,5 +1,6 @@
 using DenOfIz;
 using NiziKit.Assets;
+using NiziKit.Graphics.Binding;
 using NiziKit.Graphics.Resources;
 
 namespace NiziKit.Graphics.Renderer.Common;
@@ -181,7 +182,7 @@ public class AlphaBlitPass : IDisposable
         var bindGroup = _bindGroups[frameIndex];
         bindGroup.BeginUpdate();
         bindGroup.SrvTexture(0, sourceTexture);
-        bindGroup.SrvTexture(1, GraphicsContext.EmptyTexture.Texture);
+        bindGroup.SrvTexture(1, ColorTexture.Empty.Texture);
         bindGroup.Sampler(0, _linearSampler);
         bindGroup.EndUpdate();
 
