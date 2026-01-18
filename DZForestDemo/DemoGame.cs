@@ -27,13 +27,11 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 
     protected override void Update(float dt)
     {
-        World.AnimationWorld.Update(dt);
         _renderer.Render();
     }
 
     protected override void FixedUpdate(float fixedDt)
     {
-        World.PhysicsWorld?.Step(fixedDt);
     }
 
     protected override void OnEvent(ref Event ev)

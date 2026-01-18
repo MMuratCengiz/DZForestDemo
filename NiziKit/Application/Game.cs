@@ -102,12 +102,12 @@ public class Game : IDisposable
         var fixedSteps = _fixedTimestep.Accumulate(Time.UnscaledDeltaTime);
         for (var i = 0; i < fixedSteps; i++)
         {
+            World.PhysicsWorld?.Step((float)_fixedTimestep.FixedDeltaTime);
             FixedUpdate((float)_fixedTimestep.FixedDeltaTime);
         }
 
-        // Update camera before user code
         World.CurrentScene?.MainCamera?.Update(Time.DeltaTime);
-
+        World.AnimationWorld.Update(Time.DeltaTime);
         Update(Time.DeltaTime);
     }
 
