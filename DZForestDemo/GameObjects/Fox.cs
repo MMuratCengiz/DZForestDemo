@@ -4,6 +4,7 @@ using NiziKit.Assets;
 using NiziKit.Components;
 using NiziKit.Core;
 using NiziKit.Graphics;
+using NiziKit.GLTF;
 
 namespace DZForestDemo.GameObjects;
 
@@ -27,18 +28,17 @@ public class Fox : GameObject
     {
         _useLayerBlending = useLayerBlending;
         LocalPosition = position ?? new Vector3(0f, 0f, 0f);
-        LocalScale = new Vector3(0.01f);
         LocalRotation = Quaternion.CreateFromAxisAngle(Vector3.UnitX, (float)Math.PI / 2);
 
         var material = Assets.RegisterMaterial(new FoxMaterial());
-        var model = Assets.LoadModel("Fox.glb");
+        var gltf = GltfModel.Load("Fox.glb");
         var materialComponent = AddComponent<MaterialComponent>();
         materialComponent.Material = material;
-        AddComponent<MeshComponent>().Mesh = model.Meshes[0];
+        AddComponent<MeshComponent>().Mesh = gltf.Meshes[0];
 
-        var skeleton = Assets.LoadSkeleton("Fox_skeleton.ozz");
-        var runAnimation = Assets.LoadAnimation("Fox_Run.ozz", skeleton);
-        var surveyAnimation = Assets.LoadAnimation("Fox_Survey.ozz", skeleton);
+        var skeleton = gltf.GetSkeleton();
+        var runAnimation = skeleton.GetAnimation("Run");
+        var surveyAnimation = skeleton.GetAnimation("Survey");
 
         var controller = useLayerBlending
             ? CreateLayerBlendController(runAnimation, surveyAnimation)

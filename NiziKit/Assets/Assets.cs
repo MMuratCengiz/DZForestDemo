@@ -16,7 +16,6 @@ public sealed class Assets : IDisposable
     private readonly Dictionary<string, Model> _modelCache = new();
     private readonly Dictionary<string, Texture2d> _textureCache = new();
     private readonly Dictionary<string, Skeleton> _skeletonCache = new();
-    private readonly Dictionary<string, Animation> _animationCache = new();
     private readonly Dictionary<string, Mesh> _meshCache = new();
     private readonly Dictionary<string, Material> _materialCache = new();
     private readonly ShaderStore _shaderStore = new();
@@ -46,8 +45,8 @@ public sealed class Assets : IDisposable
     public static Task<Model> LoadModelAsync(string path, CancellationToken ct = default) => Instance._LoadModelAsync(path, ct);
     public static Texture2d LoadTexture(string path) => Instance._LoadTexture(path);
     public static Task<Texture2d> LoadTextureAsync(string path, CancellationToken ct = default) => Instance._LoadTextureAsync(path, ct);
-    public static Skeleton LoadSkeleton(string path) => Instance._LoadSkeleton(path);
-    public static Animation LoadAnimation(string path, Skeleton skeleton) => Instance._LoadAnimation(path, skeleton);
+    public static Skeleton LoadSkeleton(string modelPath) => Instance._LoadSkeleton(modelPath);
+    public static Task<Skeleton> LoadSkeletonAsync(string modelPath, CancellationToken ct = default) => Instance._LoadSkeletonAsync(modelPath, ct);
     public static void RegisterShader(string name, GpuShader shader) => Instance._RegisterShader(name, shader);
     public static GpuShader? GetShader(string name) => Instance._GetShader(name);
     public static GpuShader? GetShader(string name, IReadOnlyDictionary<string, string?>? variants) => Instance._GetShader(name, variants);
@@ -241,31 +240,28 @@ public sealed class Assets : IDisposable
         return texture;
     }
 
-    private Skeleton _LoadSkeleton(string path)
+    private Skeleton _LoadSkeleton(string modelPath)
     {
-        var resolvedPath = AssetPaths.ResolveSkeleton(path);
-        if (_skeletonCache.TryGetValue(resolvedPath, out var cached))
+        if (_skeletonCache.TryGetValue(modelPath, out var cached))
         {
             return cached;
         }
 
-        var skeleton = Skeleton.Load(resolvedPath);
-        _skeletonCache[resolvedPath] = skeleton;
+        var skeleton = Skeleton.Load(modelPath);
+        _skeletonCache[modelPath] = skeleton;
         return skeleton;
     }
 
-    private Animation _LoadAnimation(string path, Skeleton skeleton)
+    private async Task<Skeleton> _LoadSkeletonAsync(string modelPath, CancellationToken ct = default)
     {
-        var resolvedPath = AssetPaths.ResolveAnimation(path);
-        var cacheKey = $"{resolvedPath}:{skeleton.Name}";
-        if (_animationCache.TryGetValue(cacheKey, out var cached))
+        if (_skeletonCache.TryGetValue(modelPath, out var cached))
         {
             return cached;
         }
 
-        var animation = Animation.Load(resolvedPath, skeleton);
-        _animationCache[cacheKey] = animation;
-        return animation;
+        var skeleton = await Skeleton.LoadAsync(modelPath, ct);
+        _skeletonCache[modelPath] = skeleton;
+        return skeleton;
     }
 
     private void _RegisterShader(string name, GpuShader shader)
@@ -397,13 +393,6 @@ public sealed class Assets : IDisposable
         }
 
         _skeletonCache.Clear();
-
-        foreach (var animation in _animationCache.Values)
-        {
-            animation.Dispose();
-        }
-
-        _animationCache.Clear();
 
         foreach (var mesh in _meshCache.Values)
         {

@@ -1,4 +1,5 @@
 using System.Numerics;
+using DenOfIz;
 using NiziKit.Assets;
 using NiziKit.ContentPipeline;
 
@@ -9,7 +10,7 @@ public sealed class GltfLoadOptions
     public bool ConvertToLeftHanded { get; set; } = true;
 }
 
-public sealed class GltfModel
+public sealed class GltfModel : IDisposable
 {
     public string Name { get; set; } = string.Empty;
     public string SourcePath { get; set; } = string.Empty;
@@ -23,6 +24,9 @@ public sealed class GltfModel
     public List<GltfImageData> Images { get; private set; } = [];
     public List<Skeleton> Skeletons { get; private set; } = [];
     public List<Assets.Animation> Animations { get; private set; } = [];
+
+    private byte[]? _rawBytes;
+    private Skeleton? _ozzSkeleton;
 
     public static GltfModel Load(string path, GltfLoadOptions? options = null)
     {
@@ -73,11 +77,44 @@ public sealed class GltfModel
             Name = Path.GetFileNameWithoutExtension(name),
             SourcePath = name,
             Document = document,
-            Options = options
+            Options = options,
+            _rawBytes = bytes
         };
 
         model.ExtractAll();
         return model;
+    }
+
+    public bool HasSkeleton => Document.Root.Skins is { Count: > 0 };
+
+    public Skeleton GetSkeleton()
+    {
+        if (_ozzSkeleton != null)
+        {
+            return _ozzSkeleton;
+        }
+
+        if (_rawBytes == null)
+        {
+            throw new InvalidOperationException("Model bytes not available for skeleton extraction");
+        }
+
+        _ozzSkeleton = Skeleton.LoadFromBytes(_rawBytes, SourcePath);
+
+        // Copy inverse bind matrices from glTF skeleton data if available
+        if (Skeletons.Count > 0)
+        {
+            _ozzSkeleton.CopyInverseBindMatricesFrom(Skeletons[0]);
+        }
+
+        return _ozzSkeleton;
+    }
+
+    public void Dispose()
+    {
+        _ozzSkeleton?.Dispose();
+        _ozzSkeleton = null;
+        _rawBytes = null;
     }
 
     private void ExtractAll()

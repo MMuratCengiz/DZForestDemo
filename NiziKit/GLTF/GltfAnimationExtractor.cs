@@ -193,11 +193,6 @@ public static class GltfAnimationExtractor
             });
         }
 
-        return new Assets.Animation
-        {
-            Name = data.Name,
-            Duration = data.Duration,
-            Channels = channels
-        };
+        return new Assets.Animation(data.Name, data.Duration, channels);
     }
 }

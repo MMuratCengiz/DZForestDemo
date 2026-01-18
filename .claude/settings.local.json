@@ -64,7 +64,9 @@
       "Bash(Select-Object -First 1)",
       "Bash(Get-Item)",
       "Bash(xargs:*)",
-      "Bash(xxd:*)"
+      "Bash(xxd:*)",
+      "Bash(dotnet tool run ilspy:*)",
+      "Bash(dotnet:*)"
     ]
   }
 }

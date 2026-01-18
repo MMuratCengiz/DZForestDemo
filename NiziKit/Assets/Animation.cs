@@ -28,42 +28,39 @@ public class AnimationChannel
 
 public class Animation : IDisposable
 {
-    public string Name { get; set; } = string.Empty;
-    public float Duration { get; set; }
+    public string Name { get; }
+    public float Duration { get; }
     public List<AnimationChannel> Channels { get; set; } = [];
-    public OzzContext OzzContext { get; set; }
-    private Skeleton? _skeleton;
+    public OzzContext OzzContext { get; private set; }
 
-    public static Animation Load(string path, Skeleton skeleton)
+    private readonly Skeleton? _skeleton;
+    private BinaryContainer? _animationData;
+
+    internal Animation(string name, float duration, OzzContext context, BinaryContainer? animationData, Skeleton skeleton)
     {
-        var resolvedPath = AssetPaths.ResolveAnimation(path);
-        var context = skeleton.OzzSkeleton.NewContext();
+        Name = name;
+        Duration = duration;
+        OzzContext = context;
+        _animationData = animationData;
+        _skeleton = skeleton;
+    }
 
-        if (!skeleton.OzzSkeleton.LoadAnimation(StringView.Create(resolvedPath), context))
-        {
-            skeleton.OzzSkeleton.DestroyContext(context);
-            throw new InvalidOperationException($"Failed to load animation: {path}");
-        }
-
-        var duration = OzzAnimation.GetAnimationDuration(context);
-
-        return new Animation
-        {
-            Name = Path.GetFileNameWithoutExtension(path),
-            Duration = duration,
-            OzzContext = context,
-            _skeleton = skeleton
-        };
+    internal Animation(string name, float duration, List<AnimationChannel> channels)
+    {
+        Name = name;
+        Duration = duration;
+        Channels = channels;
     }
 
     public void Dispose()
     {
-        if ((ulong)OzzContext != 0 && _skeleton?.OzzSkeleton.IsValid() == true)
+        if ((ulong)OzzContext != 0 && _skeleton?.OzzSkeleton?.IsValid() == true)
         {
             _skeleton.OzzSkeleton.DestroyContext(OzzContext);
         }
 
+        _animationData?.Dispose();
         OzzContext = default;
-        _skeleton = null;
+        _animationData = null;
     }
 }
