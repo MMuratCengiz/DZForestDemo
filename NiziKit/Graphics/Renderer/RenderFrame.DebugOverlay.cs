@@ -30,7 +30,7 @@ public partial class RenderFrame
 {
     private FrameDebugRenderer? _debugRenderer;
     private CycledTexture? _debugRenderTarget;
-    private AlphaBlitPass? _debugBlitPass;
+    private BlitPass? _debugBlitPass;
     private PinnedArray<RenderingAttachmentDesc>? _debugRtAttachment;
 
     public bool DebugOverlayEnabled
@@ -60,7 +60,7 @@ public partial class RenderFrame
             Enabled = config.Enabled
         });
 
-        _debugBlitPass = new AlphaBlitPass();
+        _debugBlitPass = new BlitPass();
         _debugRtAttachment = new PinnedArray<RenderingAttachmentDesc>(1);
     }
 

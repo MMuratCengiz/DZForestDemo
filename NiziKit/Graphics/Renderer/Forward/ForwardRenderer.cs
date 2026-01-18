@@ -21,13 +21,14 @@ public class ForwardRenderer : IRenderer
     private float _fpsAccumulator;
     private float _lastFpsPrintTime;
 
-    private UiBuildCallback? _uiBuildCallback;
+    private readonly UiBuildCallback? _uiBuildCallback;
     
-    public ForwardRenderer()
+    public ForwardRenderer(UiBuildCallback? uiBuildCallback = null)
     {
         _renderFrame = new RenderFrame();
         _renderFrame.EnableDebugOverlay(DebugOverlayConfig.Default);
         _renderFrame.EnableUi(UiContextDesc.Default);
+        _uiBuildCallback = uiBuildCallback;
 
         _viewData = new ViewData();
         _width = GraphicsContext.Width;

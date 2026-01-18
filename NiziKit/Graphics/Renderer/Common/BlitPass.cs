@@ -66,29 +66,38 @@ public class BlitPass : IDisposable
     public void Execute(CommandList commandList, CycledTexture source, CycledTexture dest)
     {
         var frameIndex = GraphicsContext.FrameIndex;
-        var sourceTexture = source[frameIndex];
-        var destTexture = dest[frameIndex];
+        Execute(commandList, source[frameIndex], dest[frameIndex], dest.Format, dest.Width, dest.Height);
+    }
 
-        var pipeline = GetOrCreatePipeline(dest.Format);
+    public void Execute(CommandList commandList, Texture source, CycledTexture dest)
+    {
+        var frameIndex = GraphicsContext.FrameIndex;
+        Execute(commandList, source, dest[frameIndex], dest.Format, dest.Width, dest.Height);
+    }
+
+    private void Execute(CommandList commandList, Texture source, Texture dest, Format destFormat, uint width, uint height)
+    {
+        var frameIndex = GraphicsContext.FrameIndex;
+        var pipeline = GetOrCreatePipeline(destFormat);
 
         GraphicsContext.ResourceTracking.TransitionTexture(
             commandList,
-            sourceTexture,
+            source,
             (uint)ResourceUsageFlagBits.ShaderResource,
             QueueType.Graphics);
 
         GraphicsContext.ResourceTracking.TransitionTexture(
             commandList,
-            destTexture,
+            dest,
             (uint)ResourceUsageFlagBits.RenderTarget,
             QueueType.Graphics);
 
-        UpdateBindGroup(frameIndex, sourceTexture);
+        UpdateBindGroup(frameIndex, source);
 
         _rtAttachment[0] = new RenderingAttachmentDesc
         {
-            Resource = destTexture,
-            LoadOp = LoadOp.DontCare,
+            Resource = dest,
+            LoadOp = LoadOp.Load,
             StoreOp = StoreOp.Store
         };
 
@@ -99,8 +108,8 @@ public class BlitPass : IDisposable
         };
 
         commandList.BeginRendering(renderingDesc);
-        commandList.BindViewport(0, 0, dest.Width, dest.Height);
-        commandList.BindScissorRect(0, 0, dest.Width, dest.Height);
+        commandList.BindViewport(0, 0, width, height);
+        commandList.BindScissorRect(0, 0, width, height);
         commandList.BindPipeline(pipeline);
         commandList.BindGroup(_bindGroups[frameIndex]);
         commandList.Draw(3, 1, 0, 0);
@@ -118,7 +127,13 @@ public class BlitPass : IDisposable
 
             var blendDesc = new BlendDesc
             {
-                Enable = false,
+                Enable = true,
+                SrcBlend = Blend.SrcAlpha,
+                DstBlend = Blend.InvSrcAlpha,
+                BlendOp = BlendOp.Add,
+                SrcBlendAlpha = Blend.One,
+                DstBlendAlpha = Blend.InvSrcAlpha,
+                BlendOpAlpha = BlendOp.Add,
                 RenderTargetWriteMask = 0x0F
             };
 
