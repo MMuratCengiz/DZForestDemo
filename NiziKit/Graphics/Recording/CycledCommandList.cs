@@ -9,8 +9,10 @@ public class CycledCommandList : IDisposable
     
     public CycledCommandList(QueueType queueType)
     {
-        var poolDesc = new CommandListPoolDesc();
-        poolDesc.NumCommandLists = GraphicsContext.NumFrames;
+        var poolDesc = new CommandListPoolDesc
+        {
+            NumCommandLists = GraphicsContext.NumFrames
+        };
         switch (queueType)
         {
             case QueueType.Graphics:

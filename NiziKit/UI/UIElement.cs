@@ -394,7 +394,7 @@ public ref struct UiElement
     }
 }
 
-public ref struct UiElementScope
+public readonly ref struct UiElementScope
 {
     private readonly UiContext _context;
 

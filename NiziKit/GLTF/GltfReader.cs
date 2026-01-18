@@ -130,12 +130,12 @@ public static class GltfReader
                     }
                     else
                     {
-                        buffers.Add(Array.Empty<byte>());
+                        buffers.Add([]);
                     }
                 }
                 else
                 {
-                    buffers.Add(Array.Empty<byte>());
+                    buffers.Add([]);
                 }
             }
         }
@@ -167,7 +167,7 @@ public static class GltfReader
         var commaIndex = uri.IndexOf(',');
         if (commaIndex < 0)
         {
-            return Array.Empty<byte>();
+            return [];
         }
 
         var header = uri.AsSpan(0, commaIndex);

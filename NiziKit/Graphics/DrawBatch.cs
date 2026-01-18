@@ -3,17 +3,12 @@ using NiziKit.Assets;
 
 namespace NiziKit.Graphics;
 
-public class DrawBatch
+public class DrawBatch(Mesh mesh)
 {
-    public Mesh Mesh { get; }
+    public Mesh Mesh { get; } = mesh;
     public List<RenderObject> Objects { get; } = new(32);
 
     public int Count => Objects.Count;
-
-    public DrawBatch(Mesh mesh)
-    {
-        Mesh = mesh;
-    }
 
     public void Add(RenderObject obj)
     {

@@ -6,7 +6,7 @@ using NiziKit.GLTF.Data;
 
 namespace NiziKit.GLTF;
 
-public ref struct GltfAccessorReader
+public readonly ref struct GltfAccessorReader
 {
     private readonly ReadOnlySpan<byte> _data;
     private readonly GltfAccessor _accessor;

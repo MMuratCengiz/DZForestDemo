@@ -193,7 +193,7 @@ public static class GltfMaterialExtractor
         var commaIndex = uri.IndexOf(',');
         if (commaIndex < 0)
         {
-            return Array.Empty<byte>();
+            return [];
         }
 
         var data = uri.AsSpan(commaIndex + 1);

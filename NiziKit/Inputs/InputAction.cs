@@ -4,7 +4,7 @@ namespace NiziKit.Inputs;
 
 public class InputAction
 {
-    private readonly List<InputBinding> _bindings = new();
+    private readonly List<InputBinding> _bindings = [];
     private readonly InputContext _context;
 
     private bool _wasPressed;

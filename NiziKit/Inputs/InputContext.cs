@@ -6,8 +6,8 @@ namespace NiziKit.Inputs;
 public class InputContext
 {
     private readonly Dictionary<string, InputAction> _actions = new();
-    private readonly HashSet<KeyCode> _pressedKeys = new();
-    private readonly HashSet<MouseButton> _pressedMouseButtons = new();
+    private readonly HashSet<KeyCode> _pressedKeys = [];
+    private readonly HashSet<MouseButton> _pressedMouseButtons = [];
     private readonly Dictionary<int, HashSet<ControllerButton>> _pressedControllerButtons = new();
     private readonly Dictionary<int, Dictionary<ControllerAxis, float>> _controllerAxisValues = new();
 
@@ -178,7 +178,7 @@ public class InputContext
     {
         if (!_pressedControllerButtons.TryGetValue(controllerId, out var buttons))
         {
-            buttons = new HashSet<ControllerButton>();
+            buttons = [];
             _pressedControllerButtons[controllerId] = buttons;
         }
 
