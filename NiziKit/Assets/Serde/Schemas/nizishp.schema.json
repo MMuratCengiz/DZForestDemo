@@ -148,6 +148,7 @@
         "intersectionShaderIndex": { "type": "integer", "default": -1 },
         "anyHitShaderIndex": { "type": "integer", "default": -1 },
         "closestHitShaderIndex": { "type": "integer", "default": -1 },
+        "localRootSignatureIndex": { "type": "integer", "default": -1 },
         "type": {
           "type": "string",
           "enum": ["triangles", "aabbs"],

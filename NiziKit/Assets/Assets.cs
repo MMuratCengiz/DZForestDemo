@@ -518,7 +518,8 @@ public sealed class Assets : IDisposable
                 {
                     HitGroups = shaderJson.ToHitGroupDescArray()
                 };
-                shader = GpuShader.RayTracing(program, rtPipelineDesc, ownsProgram: false);
+                var explicitIndices = shaderJson.GetExplicitLocalRootSignatureIndices();
+                shader = GpuShader.RayTracing(program, rtPipelineDesc, ownsProgram: false, explicitIndices);
                 break;
 
             case PipelineType.Mesh:
@@ -572,7 +573,8 @@ public sealed class Assets : IDisposable
                 {
                     HitGroups = shaderJson.ToHitGroupDescArray()
                 };
-                shader = GpuShader.RayTracing(program, rtPipelineDesc, ownsProgram: false);
+                var explicitIndicesAsync = shaderJson.GetExplicitLocalRootSignatureIndices();
+                shader = GpuShader.RayTracing(program, rtPipelineDesc, ownsProgram: false, explicitIndicesAsync);
                 break;
 
             case PipelineType.Mesh:

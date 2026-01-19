@@ -13,7 +13,8 @@ public class GpuShader : IDisposable
     private readonly bool _ownsProgram;
 
     private GpuShader(ShaderProgram program, GraphicsPipelineDesc? graphicsDesc,
-        RayTracingPipelineDesc? rayTracingPipelineDesc, BindPoint? explicitBindPoint = null, bool ownsProgram = true)
+        RayTracingPipelineDesc? rayTracingPipelineDesc, BindPoint? explicitBindPoint = null,
+        bool ownsProgram = true, int[]? explicitLocalRootSigIndices = null)
     {
         ShaderProgram = program;
         _ownsProgram = ownsProgram;
@@ -44,7 +45,7 @@ public class GpuShader : IDisposable
             if (LocalRootSignatures.Length > 0)
             {
                 rayTracingPipelineDesc = AssignLocalRootSignaturesToHitGroups(
-                    rayTracingPipelineDesc.Value, LocalRootSignatures);
+                    rayTracingPipelineDesc.Value, LocalRootSignatures, explicitLocalRootSigIndices);
             }
         }
 
@@ -80,26 +81,42 @@ public class GpuShader : IDisposable
     }
 
     private static RayTracingPipelineDesc AssignLocalRootSignaturesToHitGroups(
-        RayTracingPipelineDesc rtDesc, LocalRootSignature[] localRootSigs)
+        RayTracingPipelineDesc rtDesc, LocalRootSignature[] localRootSigs, int[]? explicitIndices = null)
     {
         var hitGroups = rtDesc.HitGroups.ToArray();
         if (hitGroups.Length == 0)
         {
-            return rtDesc;
+            return new RayTracingPipelineDesc
+            {
+                HitGroups = rtDesc.HitGroups,
+                LocalRootSignatures = LocalRootSignatureArray.Create(localRootSigs)
+            };
         }
 
         var updatedHitGroups = new HitGroupDesc[hitGroups.Length];
-        for (uint i = 0; i < hitGroups.Length; i++)
+        for (var i = 0; i < hitGroups.Length; i++)
         {
             var hg = hitGroups[i];
 
-            var shaderIndex = hg.ClosestHitShaderIndex >= 0 ? hg.ClosestHitShaderIndex :
-                              hg.AnyHitShaderIndex >= 0 ? hg.AnyHitShaderIndex :
-                              hg.IntersectionShaderIndex >= 0 ? hg.IntersectionShaderIndex : -1;
+            var explicitIndex = explicitIndices != null && i < explicitIndices.Length
+                ? explicitIndices[i]
+                : -1;
 
-            if (shaderIndex >= 0 && shaderIndex < localRootSigs.Length)
+            int sigIndex;
+            if (explicitIndex >= 0)
             {
-                hg.LocalRootSignature = localRootSigs[shaderIndex];
+                sigIndex = explicitIndex;
+            }
+            else
+            {
+                sigIndex = hg.ClosestHitShaderIndex >= 0 ? hg.ClosestHitShaderIndex :
+                           hg.AnyHitShaderIndex >= 0 ? hg.AnyHitShaderIndex :
+                           hg.IntersectionShaderIndex >= 0 ? hg.IntersectionShaderIndex : -1;
+            }
+
+            if (sigIndex >= 0 && sigIndex < localRootSigs.Length)
+            {
+                hg.LocalRootSignature = localRootSigs[sigIndex];
             }
 
             updatedHitGroups[i] = hg;
@@ -137,9 +154,10 @@ public class GpuShader : IDisposable
         return new GpuShader(program, graphicsDesc, null, BindPoint.Graphics, ownsProgram);
     }
 
-    public static GpuShader RayTracing(ShaderProgram program, RayTracingPipelineDesc rayTracingPipelineDesc, bool ownsProgram = true)
+    public static GpuShader RayTracing(ShaderProgram program, RayTracingPipelineDesc rayTracingPipelineDesc,
+        bool ownsProgram = true, int[]? explicitLocalRootSigIndices = null)
     {
-        return new GpuShader(program, null, rayTracingPipelineDesc, BindPoint.Raytracing, ownsProgram);
+        return new GpuShader(program, null, rayTracingPipelineDesc, BindPoint.Raytracing, ownsProgram, explicitLocalRootSigIndices);
     }
 
     public static GpuShader Mesh(ShaderProgram program, GraphicsPipelineDesc graphicsDesc, bool ownsProgram = true)

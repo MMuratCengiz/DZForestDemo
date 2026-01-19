@@ -588,6 +588,20 @@ public sealed class ShaderProgramJson
         return HitGroupDescArray.Create(hitGroups);
     }
 
+    public int[]? GetExplicitLocalRootSignatureIndices()
+    {
+        if (RayTracingPipeline == null || RayTracingPipeline.HitGroups.Count == 0)
+        {
+            return null;
+        }
+
+        var indices = RayTracingPipeline.HitGroups
+            .Select(hg => hg.LocalRootSignatureIndex)
+            .ToArray();
+
+        return indices.Any(i => i >= 0) ? indices : null;
+    }
+
     #endregion
 
     #region Static Conversion Helpers
