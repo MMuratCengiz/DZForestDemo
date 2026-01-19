@@ -20,9 +20,9 @@ public class Snake : GameObject
     private bool _isGameOver;
     private int _score;
 
-    public float BaseMoveInterval { get; set; } = 0.15f;
-    public float MinMoveInterval { get; set; } = 0.05f;
-    public float SpeedIncreasePerFood { get; set; } = 0.005f;
+    public float BaseMoveInterval { get; set; } = 0.05f;
+    public float MinMoveInterval { get; set; } = 0.00005f;
+    public float SpeedIncreasePerFood { get; set; } = 0.0005f;
     public float SegmentSize { get; set; } = 1f;
     public int ArenaSize { get; set; } = 15;
 

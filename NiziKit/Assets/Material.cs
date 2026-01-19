@@ -13,8 +13,6 @@ public abstract class Material : IDisposable
     public GpuShader? GpuShader { get; set; }
     public IReadOnlyDictionary<string, string?>? Variants { get; set; }
 
-    protected static GraphicsContext Context => GraphicsContext.Instance;
-
     public virtual void Dispose()
     {
     }
