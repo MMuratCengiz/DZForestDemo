@@ -70,7 +70,9 @@
       "Bash(git submodule status:*)",
       "Bash(git submodule:*)",
       "Bash(git rm:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(ln:*)",
+      "Bash(readlink:*)"
     ]
   }
 }

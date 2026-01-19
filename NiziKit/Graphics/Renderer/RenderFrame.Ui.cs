@@ -60,7 +60,7 @@ public partial class RenderFrame
 
         _uiContext.UpdateScroll(Time.DeltaTime);
         var frame = _uiContext.BeginFrame();
-        using (frame.Root("__UiRoot").Open())
+        using (frame.Root("__UiRoot").Vertical().Gap(0).Open())
         {
             buildCallback(frame);
         }

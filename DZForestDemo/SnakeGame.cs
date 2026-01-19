@@ -94,7 +94,12 @@ public sealed class SnakeGame(GameDesc? desc = null) : Game(desc)
         // Overlay - grows to fill remaining space and centers content
         if (snake?.IsPaused == true)
         {
-            using (ui.Panel("PauseContainer").Grow().CenterChildren().Open())
+            using (ui.Panel("PauseContainer")
+                .Width(UiSizing.Percent(100))
+                .Height(UiSizing.Grow())
+                .CenterChildren()
+                .Background(255, 0, 0, 50) // Debug: should fill full width
+                .Open())
             {
                 using (ui.Panel("PauseOverlay")
                     .Fit()
@@ -113,7 +118,12 @@ public sealed class SnakeGame(GameDesc? desc = null) : Game(desc)
         }
         else if (snake?.IsGameOver == true)
         {
-            using (ui.Panel("GameOverContainer").Grow().CenterChildren().Open())
+            using (ui.Panel("GameOverContainer")
+                .Width(UiSizing.Percent(100))
+                .Height(UiSizing.Grow())
+                .CenterChildren()
+                .Background(0, 255, 0, 50) // Debug: should fill full width
+                .Open())
             {
                 using (ui.Panel("GameOverOverlay")
                     .Fit()
