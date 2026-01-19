@@ -5,7 +5,9 @@ using NiziKit.Animation;
 using NiziKit.Application;
 using NiziKit.Core;
 using NiziKit.Graphics.Renderer.Forward;
+using NiziKit.Inputs;
 using NiziKit.Physics;
+using NiziKit.UI;
 
 namespace DZForestDemo;
 
@@ -22,12 +24,10 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
     private const float MouseGravityForce = 2f;
     private const float MouseGravityRadius = 15f;
     private bool _mouseGravityEnabled;
-    private float _mouseX;
-    private float _mouseY;
 
     protected override void Load(Game game)
     {
-        _renderer = new ForwardRenderer();
+        _renderer = new ForwardRenderer(RenderUi);
         _demoScene = new DemoScene();
         World.LoadScene(_demoScene);
 
@@ -40,9 +40,88 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
         Console.WriteLine("  Esc = Quit");
     }
 
+    private static void RenderUi(UiFrame ui)
+    {
+        var uiTextStyle = new UiTextStyle
+        {
+            Color = new UiColor(255, 255, 255),
+            FontSize = 24
+        };
+        ui.Text("Hi!", uiTextStyle);
+    }
+
     protected override void Update(float dt)
     {
+        HandleInput();
         _renderer.Render();
+    }
+
+    private void HandleInput()
+    {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Quit();
+        }
+
+        if (Input.GetMouseButtonDown(MouseButton.Left))
+        {
+            var mousePos = Input.MousePosition;
+            HandleExplosionClick(mousePos.X, mousePos.Y);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Space))
+        {
+            _demoScene?.AddRandomShape();
+        }
+
+        if (Input.GetKeyDown(KeyCode.G))
+        {
+            _mouseGravityEnabled = !_mouseGravityEnabled;
+            Console.WriteLine($"Mouse gravity: {(_mouseGravityEnabled ? "ON" : "OFF")}");
+        }
+
+        if (Input.GetKeyDown(KeyCode.S))
+        {
+            _demoScene?.Fox?.TriggerSurvey();
+        }
+
+        if (Input.GetKeyDown(KeyCode.Z))
+        {
+            _demoScene?.Fox?.CrossFadeToSurvey(TransitionCurve.Linear);
+            Console.WriteLine("CrossFade to Survey (Linear)");
+        }
+
+        if (Input.GetKeyDown(KeyCode.X))
+        {
+            _demoScene?.Fox?.CrossFadeToSurvey(TransitionCurve.EaseIn);
+            Console.WriteLine("CrossFade to Survey (EaseIn)");
+        }
+
+        if (Input.GetKeyDown(KeyCode.C))
+        {
+            _demoScene?.Fox?.CrossFadeToSurvey(TransitionCurve.EaseOut);
+            Console.WriteLine("CrossFade to Survey (EaseOut)");
+        }
+
+        if (Input.GetKeyDown(KeyCode.V))
+        {
+            _demoScene?.Fox?.CrossFadeToRun();
+            Console.WriteLine("CrossFade to Run");
+        }
+
+        if (Input.GetKeyDown(KeyCode.Up))
+        {
+            _layerWeight = Math.Min(1f, _layerWeight + 0.1f);
+            _demoScene?.LayerBlendFox?.SetOverlayWeight(_layerWeight);
+            Console.WriteLine($"Layer weight: {_layerWeight:F1}");
+        }
+
+        if (Input.GetKeyDown(KeyCode.Down))
+        {
+            _layerWeight = Math.Max(0f, _layerWeight - 0.1f);
+            _demoScene?.LayerBlendFox?.SetOverlayWeight(_layerWeight);
+            Console.WriteLine($"Layer weight: {_layerWeight:F1}");
+        }
     }
 
     protected override void FixedUpdate(float fixedDt)
@@ -50,68 +129,6 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
         if (_mouseGravityEnabled)
         {
             ApplyMouseGravity();
-        }
-    }
-
-    protected override void OnEvent(ref Event ev)
-    {
-        if (ev.Type == EventType.MouseMotion)
-        {
-            _mouseX = ev.MouseMotion.X;
-            _mouseY = ev.MouseMotion.Y;
-            return;
-        }
-
-        if (ev.Type == EventType.MouseButtonDown && ev.MouseButton.Button == MouseButton.Left)
-        {
-            HandleExplosionClick(ev.MouseButton.X, ev.MouseButton.Y);
-            return;
-        }
-
-        if (ev.Type == EventType.KeyDown)
-        {
-            switch (ev.Key.KeyCode)
-            {
-                case KeyCode.Space:
-                    _demoScene?.AddRandomShape();
-                    break;
-                case KeyCode.G:
-                    _mouseGravityEnabled = !_mouseGravityEnabled;
-                    Console.WriteLine($"Mouse gravity: {(_mouseGravityEnabled ? "ON" : "OFF")}");
-                    break;
-                case KeyCode.S:
-                    _demoScene?.Fox?.TriggerSurvey();
-                    break;
-                case KeyCode.Z:
-                    _demoScene?.Fox?.CrossFadeToSurvey(TransitionCurve.Linear);
-                    Console.WriteLine("CrossFade to Survey (Linear)");
-                    break;
-                case KeyCode.X:
-                    _demoScene?.Fox?.CrossFadeToSurvey(TransitionCurve.EaseIn);
-                    Console.WriteLine("CrossFade to Survey (EaseIn)");
-                    break;
-                case KeyCode.C:
-                    _demoScene?.Fox?.CrossFadeToSurvey(TransitionCurve.EaseOut);
-                    Console.WriteLine("CrossFade to Survey (EaseOut)");
-                    break;
-                case KeyCode.V:
-                    _demoScene?.Fox?.CrossFadeToRun();
-                    Console.WriteLine("CrossFade to Run");
-                    break;
-                case KeyCode.Up:
-                    _layerWeight = Math.Min(1f, _layerWeight + 0.1f);
-                    _demoScene?.LayerBlendFox?.SetOverlayWeight(_layerWeight);
-                    Console.WriteLine($"Layer weight: {_layerWeight:F1}");
-                    break;
-                case KeyCode.Down:
-                    _layerWeight = Math.Max(0f, _layerWeight - 0.1f);
-                    _demoScene?.LayerBlendFox?.SetOverlayWeight(_layerWeight);
-                    Console.WriteLine($"Layer weight: {_layerWeight:F1}");
-                    break;
-                case KeyCode.Escape:
-                    Quit();
-                    break;
-            }
         }
     }
 
@@ -146,7 +163,8 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
             return;
         }
 
-        var ray = camera.ScreenPointToRay(_mouseX, _mouseY, Window.Width, Window.Height);
+        var mousePos = Input.MousePosition;
+        var ray = camera.ScreenPointToRay(mousePos.X, mousePos.Y, Window.Width, Window.Height);
 
         Vector3 gravityPoint;
         if (World.PhysicsWorld!.Raycast(ray, 100f, out var hit))

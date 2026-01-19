@@ -1,7 +1,7 @@
 using DenOfIz;
 using BinaryWriter = DenOfIz.BinaryWriter;
 
-namespace NiziKit.Offline;
+namespace NiziKit.Build;
 
 public class ShaderExporter(string output)
 {

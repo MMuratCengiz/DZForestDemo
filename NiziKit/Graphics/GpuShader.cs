@@ -10,10 +10,13 @@ public class GpuShader : IDisposable
     public RootSignature RootSignature { get; private set; }
     public InputLayout InputLayout { get; private set; }
 
+    private readonly bool _ownsProgram;
+
     private GpuShader(ShaderProgram program, GraphicsPipelineDesc? graphicsDesc,
-        RayTracingPipelineDesc? rayTracingPipelineDesc)
+        RayTracingPipelineDesc? rayTracingPipelineDesc, bool ownsProgram = true)
     {
         ShaderProgram = program;
+        _ownsProgram = ownsProgram;
         var reflection = program.Reflect();
 
         var store = GraphicsContext.BindGroupLayoutStore;
@@ -54,19 +57,19 @@ public class GpuShader : IDisposable
         Pipeline = GraphicsContext.Device.CreatePipeline(pipelineDesc);
     }
 
-    public static GpuShader Compute(ShaderProgram program)
+    public static GpuShader Compute(ShaderProgram program, bool ownsProgram = true)
     {
-        return new GpuShader(program, null, null);
+        return new GpuShader(program, null, null, ownsProgram);
     }
 
-    public static GpuShader Graphics(ShaderProgram program, GraphicsPipelineDesc graphicsDesc)
+    public static GpuShader Graphics(ShaderProgram program, GraphicsPipelineDesc graphicsDesc, bool ownsProgram = true)
     {
-        return new GpuShader(program, graphicsDesc, null);
+        return new GpuShader(program, graphicsDesc, null, ownsProgram);
     }
 
-    public static GpuShader RayTracing(ShaderProgram program, RayTracingPipelineDesc rayTracingPipelineDesc)
+    public static GpuShader RayTracing(ShaderProgram program, RayTracingPipelineDesc rayTracingPipelineDesc, bool ownsProgram = true)
     {
-        return new GpuShader(program, null, rayTracingPipelineDesc);
+        return new GpuShader(program, null, rayTracingPipelineDesc, ownsProgram);
     }
 
     public void Dispose()
@@ -74,6 +77,9 @@ public class GpuShader : IDisposable
         Pipeline.Dispose();
         RootSignature.Dispose();
         InputLayout.Dispose();
-        ShaderProgram.Dispose();
+        if (_ownsProgram)
+        {
+            ShaderProgram.Dispose();
+        }
     }
 }

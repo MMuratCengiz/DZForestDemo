@@ -6,12 +6,150 @@ public abstract class Scene(string name = "Scene") : IDisposable
     protected World World => World.Instance;
 
     private readonly List<GameObject> _rootObjects = [];
+    private readonly List<GameObject> _pendingDestroy = [];
+    private readonly List<GameObject> _pendingAdd = [];
+    private bool _isIterating;
     public IReadOnlyList<GameObject> RootObjects => _rootObjects;
     private readonly Dictionary<Type, List<GameObject>> _objectsByType = new();
 
     public CameraObject? MainCamera { get; set; }
 
     public abstract void Load();
+
+    public virtual void Update(float deltaTime)
+    {
+    }
+
+    internal void ProcessGameObjectLifecycle()
+    {
+        foreach (var obj in _rootObjects)
+        {
+            ProcessInitializeRecursive(obj);
+        }
+        foreach (var obj in _rootObjects)
+        {
+            ProcessBeginRecursive(obj);
+        }
+    }
+
+    internal void UpdateGameObjects()
+    {
+        _isIterating = true;
+        foreach (var obj in _rootObjects)
+        {
+            if (!obj.IsDestroying)
+            {
+                UpdateGameObjectRecursive(obj);
+            }
+        }
+        _isIterating = false;
+        ProcessPendingChanges();
+    }
+
+    private void ProcessPendingChanges()
+    {
+        foreach (var obj in _pendingAdd)
+        {
+            obj.Scene = this;
+            World.OnGameObjectCreated(obj);
+            _rootObjects.Add(obj);
+            RegisterObjectByType(obj);
+        }
+        _pendingAdd.Clear();
+
+        foreach (var obj in _pendingDestroy)
+        {
+            World.OnGameObjectDestroyed(obj);
+            _rootObjects.Remove(obj);
+            UnregisterObjectByType(obj);
+        }
+        _pendingDestroy.Clear();
+    }
+
+    internal void PostUpdateGameObjects()
+    {
+        foreach (var obj in _rootObjects)
+        {
+            PostUpdateGameObjectRecursive(obj);
+        }
+    }
+
+    internal void PhysicsUpdateGameObjects()
+    {
+        foreach (var obj in _rootObjects)
+        {
+            PhysicsUpdateGameObjectRecursive(obj);
+        }
+    }
+
+    private static void ProcessInitializeRecursive(GameObject obj)
+    {
+        if (!obj.HasInitialized)
+        {
+            obj.HasInitialized = true;
+            obj.Initialize();
+        }
+        foreach (var child in obj.Children)
+        {
+            ProcessInitializeRecursive(child);
+        }
+    }
+
+    private static void ProcessBeginRecursive(GameObject obj)
+    {
+        if (!obj.IsActive)
+        {
+            return;
+        }
+        if (!obj.HasBegun)
+        {
+            obj.HasBegun = true;
+            obj.Begin();
+        }
+        foreach (var child in obj.Children)
+        {
+            ProcessBeginRecursive(child);
+        }
+    }
+
+    private static void UpdateGameObjectRecursive(GameObject obj)
+    {
+        if (!obj.IsActive)
+        {
+            return;
+        }
+        obj.Update();
+        foreach (var child in obj.Children)
+        {
+            UpdateGameObjectRecursive(child);
+        }
+    }
+
+    private static void PostUpdateGameObjectRecursive(GameObject obj)
+    {
+        if (!obj.IsActive)
+        {
+            return;
+        }
+        obj.PostUpdate();
+        foreach (var child in obj.Children)
+        {
+            PostUpdateGameObjectRecursive(child);
+        }
+    }
+
+    private static void PhysicsUpdateGameObjectRecursive(GameObject obj)
+    {
+        if (!obj.IsActive)
+        {
+            return;
+        }
+        obj.PhysicsUpdate();
+        foreach (var child in obj.Children)
+        {
+            PhysicsUpdateGameObjectRecursive(child);
+        }
+    }
 
     public virtual void Dispose()
     {
@@ -45,6 +183,12 @@ public abstract class Scene(string name = "Scene") : IDisposable
 
     public void Add(GameObject obj)
     {
+        if (_isIterating)
+        {
+            _pendingAdd.Add(obj);
+            return;
+        }
+        obj.Scene = this;
         World.OnGameObjectCreated(obj);
         _rootObjects.Add(obj);
         RegisterObjectByType(obj);
@@ -52,6 +196,12 @@ public abstract class Scene(string name = "Scene") : IDisposable
 
     public void Destroy(GameObject obj)
     {
+        obj.IsDestroying = true;
+        if (_isIterating)
+        {
+            _pendingDestroy.Add(obj);
+            return;
+        }
         World.OnGameObjectDestroyed(obj);
         _rootObjects.Remove(obj);
         UnregisterObjectByType(obj);

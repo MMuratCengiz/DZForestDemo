@@ -34,4 +34,8 @@
       <None Include="build\NiziKit.targets" Pack="true" PackagePath="build\" />
     </ItemGroup>
 
+    <Target Name="CompileBuiltInShaders" BeforeTargets="BeforeBuild">
+      <Exec Command="dotnet run --project $(MSBuildThisFileDirectory)..\NiziKit.Build\NiziKit.Build.csproj" />
+    </Target>
+
 </Project>

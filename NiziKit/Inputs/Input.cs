@@ -58,8 +58,22 @@ public sealed class Input
         get => Player1.MouseDelta;
     }
 
+    public static bool GetKey(KeyCode key) => Player1.IsKeyPressed(key);
+
+    public static bool GetKeyDown(KeyCode key) => Player1.IsKeyDown(key);
+
+    public static bool GetKeyUp(KeyCode key) => Player1.IsKeyUp(key);
+
+    public static bool GetMouseButton(MouseButton button) => Player1.IsMouseButtonPressed(button);
+
+    public static bool GetMouseButtonDown(MouseButton button) => Player1.IsMouseButtonDown(button);
+
+    public static bool GetMouseButtonUp(MouseButton button) => Player1.IsMouseButtonUp(button);
+
+    [Obsolete("Use GetKey instead")]
     public static bool IsKeyPressed(KeyCode key) => Player1.IsKeyPressed(key);
 
+    [Obsolete("Use GetMouseButton instead")]
     public static bool IsMouseButtonPressed(MouseButton button) => Player1.IsMouseButtonPressed(button);
 
     public Input()

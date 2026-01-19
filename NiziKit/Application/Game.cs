@@ -101,16 +101,22 @@ public class Game : IDisposable
             return;
         }
 
+        World.CurrentScene?.ProcessGameObjectLifecycle();
+
         var fixedSteps = _fixedTimestep.Accumulate(Time.UnscaledDeltaTime);
         for (var i = 0; i < fixedSteps; i++)
         {
             World.PhysicsWorld?.Step((float)_fixedTimestep.FixedDeltaTime);
+            World.CurrentScene?.PhysicsUpdateGameObjects();
             FixedUpdate((float)_fixedTimestep.FixedDeltaTime);
         }
 
-        World.CurrentScene?.MainCamera?.Update(Time.DeltaTime);
+        World.CurrentScene?.UpdateGameObjects();
         World.AnimationWorld.Update(Time.DeltaTime);
         Update(Time.DeltaTime);
+
+        World.CurrentScene?.MainCamera?.Update(Time.DeltaTime);
+        World.CurrentScene?.PostUpdateGameObjects();
     }
 
     private void ProcessEvents()

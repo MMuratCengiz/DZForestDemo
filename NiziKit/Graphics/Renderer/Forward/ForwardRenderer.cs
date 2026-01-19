@@ -17,10 +17,6 @@ public class ForwardRenderer : IRenderer
     private uint _width;
     private uint _height;
 
-    private int _frameCount;
-    private float _fpsAccumulator;
-    private float _lastFpsPrintTime;
-
     private readonly UiBuildCallback? _uiBuildCallback;
     
     public ForwardRenderer(UiBuildCallback? uiBuildCallback = null)
@@ -50,18 +46,7 @@ public class ForwardRenderer : IRenderer
         {
             return;
         }
-
-        _frameCount++;
-        _fpsAccumulator += Time.DeltaTime;
-        if (Time.TotalTime - _lastFpsPrintTime >= 1.0f)
-        {
-            var fps = _frameCount / _fpsAccumulator;
-            Console.WriteLine($"ForwardRenderer2 FPS: {fps:F1}");
-            _frameCount = 0;
-            _fpsAccumulator = 0;
-            _lastFpsPrintTime = Time.TotalTime;
-        }
-
+        
         _viewData.Scene = scene;
         _viewData.DeltaTime = Time.DeltaTime;
         _viewData.TotalTime = Time.TotalTime;
@@ -124,6 +109,7 @@ public class ForwardRenderer : IRenderer
         _width = width;
         _height = height;
         CreateRenderTargets();
+        _renderFrame.SetUiViewportSize(width, height);
     }
 
     public void Dispose()

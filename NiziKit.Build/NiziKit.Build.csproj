@@ -12,16 +12,4 @@
         <PackageReference Include="DenOfIzGraphics" Version="0.6.6-alpha" />
     </ItemGroup>
 
-    <ItemGroup>
-        <ProjectReference Include="..\NiziKit\NiziKit.csproj" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ClCompile Include="Shaders\Bindings\Material.hlsl" />
-      <ClCompile Include="Shaders\Bindings\View.hlsl" />
-      <ClCompile Include="Shaders\Bindings\Draw.hlsl" />
-      <ClCompile Include="Shaders\Scene\Scene.PS.hlsl" />
-      <ClCompile Include="Shaders\Scene\Scene.VS.hlsl" />
-    </ItemGroup>
-
 </Project>

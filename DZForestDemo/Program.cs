@@ -8,22 +8,24 @@ internal static class Program
 {
     private static void Main(string[] args)
     {
-        Game.Run<DemoGame>(new GameDesc
+        var runSnake = args.Length > 0 && args[0] == "--snake";
+        if (runSnake)
         {
-            Title = "DenOfIz Scene Demo - Press F1/F2 to switch scenes",
-            Width = 1920,
-            Height = 1080,
-            Graphics = new GraphicsDesc
+            Game.Run<SnakeGame>(new GameDesc
             {
-                NumFrames = 3,
-                BackBufferFormat = Format.B8G8R8A8Unorm,
-                DepthBufferFormat = Format.D32Float,
-                ApiPreference = new APIPreference
-                {
-                    Windows = APIPreferenceWindows.Directx12,
-                    OSX = APIPreferenceOSX.Metal
-                }
-            }
-        });
+                Title = "Snake 3D - WASD to move, R to restart",
+                Width = 2560,
+                Height = 1440
+            });
+        }
+        else
+        {
+            Game.Run<DemoGame>(new GameDesc
+            {
+                Title = "DenOfIz Scene Demo - Press F1/F2 to switch scenes",
+                Width = 1920,
+                Height = 1080
+            });
+        }
     }
 }

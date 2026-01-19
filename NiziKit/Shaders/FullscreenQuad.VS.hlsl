@@ -1,5 +1,3 @@
-// Fullscreen triangle vertex shader - generates a fullscreen quad from vertex ID
-
 struct VSOutput
 {
     float4 Position : SV_POSITION;

@@ -13,8 +13,12 @@ public class GameObject(string name = "GameObject")
     public bool IsActive { get; set; } = true;
 
     public GameObject? Parent { get; private set; }
+    public Scene? Scene { get; internal set; }
 
     internal bool IsInWorld { get; set; }
+    internal bool HasInitialized { get; set; }
+    internal bool HasBegun { get; set; }
+    internal bool IsDestroying { get; set; }
 
     private readonly List<GameObject> _children = [];
     public IReadOnlyList<GameObject> Children => _children;
@@ -73,15 +77,23 @@ public class GameObject(string name = "GameObject")
 
     public Vector3 WorldPosition => WorldMatrix.Translation;
 
-    public virtual void Load()
+    public virtual void Initialize()
     {
     }
 
-    public virtual void FixedUpdate()
+    public virtual void Begin()
+    {
+    }
+
+    public virtual void PhysicsUpdate()
     {
     }
 
     public virtual void Update()
+    {
+    }
+
+    public virtual void PostUpdate()
     {
     }
 

@@ -60,7 +60,10 @@ public partial class RenderFrame
 
         _uiContext.UpdateScroll(Time.DeltaTime);
         var frame = _uiContext.BeginFrame();
-        buildCallback(frame);
+        using (frame.Root("__UiRoot").Open())
+        {
+            buildCallback(frame);
+        }
         var (texture, semaphore) = frame.End((uint)_currentFrame, Time.DeltaTime);
 
         if (_externalSemaphoreCount < _externalSemaphores.Length)

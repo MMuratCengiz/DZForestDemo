@@ -19,6 +19,7 @@ public sealed class Assets : IDisposable
     private readonly Dictionary<string, Mesh> _meshCache = new();
     private readonly Dictionary<string, Material> _materialCache = new();
     private readonly ShaderStore _shaderStore = new();
+    private ShaderBuilder? _shaderBuilder;
 
     private readonly List<Mesh> _meshList = [];
     private readonly List<Texture2d> _textureList = [];
@@ -50,6 +51,15 @@ public sealed class Assets : IDisposable
     public static void RegisterShader(string name, GpuShader shader) => Instance._RegisterShader(name, shader);
     public static GpuShader? GetShader(string name) => Instance._GetShader(name);
     public static GpuShader? GetShader(string name, IReadOnlyDictionary<string, string?>? variants) => Instance._GetShader(name, variants);
+    public static ShaderProgram? GetShaderProgram(string name) => Instance._GetShaderProgram(name);
+    public static void RegisterShaderProgram(string name, ShaderProgram program) => Instance._RegisterShaderProgram(name, program);
+    public static ShaderProgram LoadShaderProgram(string vertexPath, string pixelPath, Dictionary<string, string?>? defines = null) => Instance._LoadShaderProgram(vertexPath, pixelPath, defines);
+    public static Task<ShaderProgram> LoadShaderProgramAsync(string vertexPath, string pixelPath, Dictionary<string, string?>? defines = null, CancellationToken ct = default) => Instance._LoadShaderProgramAsync(vertexPath, pixelPath, defines, ct);
+    public static ShaderProgram LoadComputeProgram(string computePath, Dictionary<string, string?>? defines = null) => Instance._LoadComputeProgram(computePath, defines);
+    public static Task<ShaderProgram> LoadComputeProgramAsync(string computePath, Dictionary<string, string?>? defines = null, CancellationToken ct = default) => Instance._LoadComputeProgramAsync(computePath, defines, ct);
+    public static GpuShader LoadShader(string vertexPath, string pixelPath, GraphicsPipelineDesc pipelineDesc, Dictionary<string, string?>? defines = null) => Instance._LoadShader(vertexPath, pixelPath, pipelineDesc, defines);
+    public static async Task<GpuShader> LoadShaderAsync(string vertexPath, string pixelPath, GraphicsPipelineDesc pipelineDesc, Dictionary<string, string?>? defines = null, CancellationToken ct = default) => GpuShader.Graphics(await Instance._LoadShaderProgramAsync(vertexPath, pixelPath, defines, ct), pipelineDesc, ownsProgram: false);
+    public static void ClearShaderCache() => Instance._shaderStore.ClearDiskCache();
     public static Material RegisterMaterial(Material material) => Instance._RegisterMaterial(material);
     public static Material? GetMaterial(string name) => Instance._GetMaterial(name);
     public static Mesh CreateBox(float width, float height, float depth) => Instance._CreateBox(width, height, depth);
@@ -279,6 +289,136 @@ public sealed class Assets : IDisposable
         return _shaderStore.Get(name, variants);
     }
 
+    private ShaderProgram? _GetShaderProgram(string name)
+    {
+        return _shaderStore.GetProgram(name);
+    }
+
+    private void _RegisterShaderProgram(string name, ShaderProgram program)
+    {
+        _shaderStore.RegisterProgram(name, program);
+    }
+
+    private ShaderProgram _LoadShaderProgram(string vertexPath, string pixelPath, Dictionary<string, string?>? defines)
+    {
+        var vsFullPath = ContentPipeline.Content.ResolvePath(vertexPath);
+        var psFullPath = ContentPipeline.Content.ResolvePath(pixelPath);
+
+        var cacheKey = _shaderStore.ComputeCacheKey([vsFullPath, psFullPath], defines);
+
+        var cached = _shaderStore.GetProgram(cacheKey);
+        if (cached != null)
+        {
+            return cached;
+        }
+
+        var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
+        if (diskCached != null)
+        {
+            _shaderStore.RegisterProgram(cacheKey, diskCached);
+            return diskCached;
+        }
+
+        _shaderBuilder ??= new ShaderBuilder();
+        var program = _shaderBuilder.CompileGraphics(vsFullPath, psFullPath, defines: defines);
+
+        _shaderStore.SaveToDisk(cacheKey, program);
+        _shaderStore.RegisterProgram(cacheKey, program);
+
+        return program;
+    }
+
+    private ShaderProgram _LoadComputeProgram(string computePath, Dictionary<string, string?>? defines)
+    {
+        var csFullPath = ContentPipeline.Content.ResolvePath(computePath);
+
+        var cacheKey = _shaderStore.ComputeCacheKey([csFullPath], defines);
+
+        var cached = _shaderStore.GetProgram(cacheKey);
+        if (cached != null)
+        {
+            return cached;
+        }
+
+        var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
+        if (diskCached != null)
+        {
+            _shaderStore.RegisterProgram(cacheKey, diskCached);
+            return diskCached;
+        }
+
+        _shaderBuilder ??= new ShaderBuilder();
+        var program = _shaderBuilder.CompileCompute(csFullPath, defines: defines);
+
+        _shaderStore.SaveToDisk(cacheKey, program);
+        _shaderStore.RegisterProgram(cacheKey, program);
+
+        return program;
+    }
+
+    private GpuShader _LoadShader(string vertexPath, string pixelPath, GraphicsPipelineDesc pipelineDesc, Dictionary<string, string?>? defines)
+    {
+        var program = _LoadShaderProgram(vertexPath, pixelPath, defines);
+        return GpuShader.Graphics(program, pipelineDesc, ownsProgram: false);
+    }
+
+    private async Task<ShaderProgram> _LoadShaderProgramAsync(string vertexPath, string pixelPath, Dictionary<string, string?>? defines, CancellationToken ct)
+    {
+        var vsFullPath = ContentPipeline.Content.ResolvePath(vertexPath);
+        var psFullPath = ContentPipeline.Content.ResolvePath(pixelPath);
+
+        var cacheKey = _shaderStore.ComputeCacheKey([vsFullPath, psFullPath], defines);
+
+        var cached = _shaderStore.GetProgram(cacheKey);
+        if (cached != null)
+        {
+            return cached;
+        }
+
+        var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
+        if (diskCached != null)
+        {
+            _shaderStore.RegisterProgram(cacheKey, diskCached);
+            return diskCached;
+        }
+
+        _shaderBuilder ??= new ShaderBuilder();
+        var program = await _shaderBuilder.CompileGraphicsAsync(vsFullPath, psFullPath, defines: defines, ct: ct);
+
+        _shaderStore.SaveToDisk(cacheKey, program);
+        _shaderStore.RegisterProgram(cacheKey, program);
+
+        return program;
+    }
+
+    private async Task<ShaderProgram> _LoadComputeProgramAsync(string computePath, Dictionary<string, string?>? defines, CancellationToken ct)
+    {
+        var csFullPath = ContentPipeline.Content.ResolvePath(computePath);
+
+        var cacheKey = _shaderStore.ComputeCacheKey([csFullPath], defines);
+
+        var cached = _shaderStore.GetProgram(cacheKey);
+        if (cached != null)
+        {
+            return cached;
+        }
+
+        var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
+        if (diskCached != null)
+        {
+            _shaderStore.RegisterProgram(cacheKey, diskCached);
+            return diskCached;
+        }
+
+        _shaderBuilder ??= new ShaderBuilder();
+        var program = await _shaderBuilder.CompileComputeAsync(csFullPath, defines: defines, ct: ct);
+
+        _shaderStore.SaveToDisk(cacheKey, program);
+        _shaderStore.RegisterProgram(cacheKey, program);
+
+        return program;
+    }
+
     private Material _RegisterMaterial(Material material)
     {
         if (!_materialCache.TryAdd(material.Name, material))
@@ -408,6 +548,7 @@ public sealed class Assets : IDisposable
 
         _materialCache.Clear();
 
+        _shaderBuilder?.Dispose();
         _shaderStore.Dispose();
         _vertexPool.Dispose();
         _indexPool.Dispose();

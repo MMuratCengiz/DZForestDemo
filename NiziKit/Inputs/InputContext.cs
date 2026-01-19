@@ -7,7 +7,11 @@ public class InputContext
 {
     private readonly Dictionary<string, InputAction> _actions = new();
     private readonly HashSet<KeyCode> _pressedKeys = [];
+    private readonly HashSet<KeyCode> _keysDownThisFrame = [];
+    private readonly HashSet<KeyCode> _keysUpThisFrame = [];
     private readonly HashSet<MouseButton> _pressedMouseButtons = [];
+    private readonly HashSet<MouseButton> _mouseButtonsDownThisFrame = [];
+    private readonly HashSet<MouseButton> _mouseButtonsUpThisFrame = [];
     private readonly Dictionary<int, HashSet<ControllerButton>> _pressedControllerButtons = new();
     private readonly Dictionary<int, Dictionary<ControllerAxis, float>> _controllerAxisValues = new();
 
@@ -43,7 +47,15 @@ public class InputContext
 
     public bool IsKeyPressed(KeyCode key) => _pressedKeys.Contains(key);
 
+    public bool IsKeyDown(KeyCode key) => _keysDownThisFrame.Contains(key);
+
+    public bool IsKeyUp(KeyCode key) => _keysUpThisFrame.Contains(key);
+
     public bool IsMouseButtonPressed(MouseButton button) => _pressedMouseButtons.Contains(button);
+
+    public bool IsMouseButtonDown(MouseButton button) => _mouseButtonsDownThisFrame.Contains(button);
+
+    public bool IsMouseButtonUp(MouseButton button) => _mouseButtonsUpThisFrame.Contains(button);
 
     public bool IsControllerButtonPressed(ControllerButton button, int controllerId = -1)
     {
@@ -126,6 +138,10 @@ public class InputContext
 
     internal void ResetFrameState()
     {
+        _keysDownThisFrame.Clear();
+        _keysUpThisFrame.Clear();
+        _mouseButtonsDownThisFrame.Clear();
+        _mouseButtonsUpThisFrame.Clear();
         MouseDelta = Vector2.Zero;
         MouseScrollDelta = 0f;
 
@@ -145,22 +161,34 @@ public class InputContext
 
     internal void OnKeyDown(KeyCode key)
     {
-        _pressedKeys.Add(key);
+        if (_pressedKeys.Add(key))
+        {
+            _keysDownThisFrame.Add(key);
+        }
     }
 
     internal void OnKeyUp(KeyCode key)
     {
-        _pressedKeys.Remove(key);
+        if (_pressedKeys.Remove(key))
+        {
+            _keysUpThisFrame.Add(key);
+        }
     }
 
     internal void OnMouseButtonDown(MouseButton button)
     {
-        _pressedMouseButtons.Add(button);
+        if (_pressedMouseButtons.Add(button))
+        {
+            _mouseButtonsDownThisFrame.Add(button);
+        }
     }
 
     internal void OnMouseButtonUp(MouseButton button)
     {
-        _pressedMouseButtons.Remove(button);
+        if (_pressedMouseButtons.Remove(button))
+        {
+            _mouseButtonsUpThisFrame.Add(button);
+        }
     }
 
     internal void OnMouseMove(float x, float y, float deltaX, float deltaY)
