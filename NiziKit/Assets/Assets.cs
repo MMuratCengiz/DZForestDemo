@@ -532,7 +532,7 @@ public sealed class Assets : IDisposable
             skeleton.Dispose();
         }
 
-        _skeletonCache.Clear();
+        _skeletonCache.Clear(); 
 
         foreach (var mesh in _meshCache.Values)
         {
@@ -548,7 +548,6 @@ public sealed class Assets : IDisposable
 
         _materialCache.Clear();
 
-        _shaderBuilder?.Dispose();
         _shaderStore.Dispose();
         _vertexPool.Dispose();
         _indexPool.Dispose();
