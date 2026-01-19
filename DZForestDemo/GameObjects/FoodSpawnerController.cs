@@ -3,11 +3,14 @@ using DZForestDemo.Scenes;
 using NiziKit.Assets;
 using NiziKit.Components;
 using NiziKit.Core;
+using NiziKit.Physics;
 
 namespace DZForestDemo.GameObjects;
 
-public class FoodSpawner() : GameObject("FoodSpawner")
+public class FoodSpawnerController : IComponent
 {
+    public GameObject? Owner { get; set; }
+
     private readonly Random _random = new();
 
     public Mesh? FoodMesh { get; set; }
@@ -19,15 +22,16 @@ public class FoodSpawner() : GameObject("FoodSpawner")
     [JsonProperty("foodSize")]
     public float FoodSize { get; set; } = 0.8f;
 
-    public override void Begin()
+    private Scene? Scene => Owner?.Scene;
+
+    public void Begin()
     {
-        // Create default mesh and material if not set
         EnsureAssetsCreated();
 
-        var snake = World.FindObjectOfType<Snake>();
-        if (snake != null)
+        var snakeController = Scene?.FindComponent<SnakeController>();
+        if (snakeController != null)
         {
-            snake.OnAteFood += _ => SpawnFood();
+            snakeController.OnAteFood += _ => SpawnFood();
         }
         SpawnFood();
     }
@@ -58,18 +62,24 @@ public class FoodSpawner() : GameObject("FoodSpawner")
             return;
         }
 
-        var existingFoods = Scene.GetObjectsOfType<Food>();
-        foreach (var food in existingFoods)
+        foreach (var foodComp in Scene.FindComponents<Food>())
         {
-            Scene.Destroy(food);
+            if (foodComp.Owner != null)
+            {
+                Scene.Destroy(foodComp.Owner);
+            }
         }
 
         var x = _random.Next(-ArenaSize + 1, ArenaSize);
         var z = _random.Next(-ArenaSize + 1, ArenaSize);
         var position = new Vector3(x, 0, z);
 
-        var newFood = new Food { LocalPosition = position };
-        newFood.SetMeshAndMaterial(FoodMesh, FoodMaterial);
-        Scene.Add(newFood);
+        var go = new GameObject("Food") { LocalPosition = position };
+        go.AddComponent(new Food());
+        go.AddComponent(new MeshComponent { Mesh = FoodMesh });
+        go.AddComponent(new MaterialComponent { Material = FoodMaterial });
+        go.AddComponent(RigidbodyComponent.Kinematic(PhysicsShape.Sphere(FoodSize)));
+
+        Scene.Add(go);
     }
 }

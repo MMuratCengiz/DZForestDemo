@@ -1,6 +1,5 @@
 using System.Numerics;
 using NiziKit.Components;
-using NiziKit.Physics;
 
 namespace NiziKit.Core;
 
@@ -77,38 +76,6 @@ public class GameObject(string name = "GameObject")
     }
 
     public Vector3 WorldPosition => WorldMatrix.Translation;
-
-    public virtual void Initialize()
-    {
-    }
-
-    public virtual void Begin()
-    {
-    }
-
-    public virtual void PhysicsUpdate()
-    {
-    }
-
-    public virtual void Update()
-    {
-    }
-
-    public virtual void PostUpdate()
-    {
-    }
-
-    public virtual void OnCollisionEnter(in Collision collision)
-    {
-    }
-
-    public virtual void OnCollisionStay(in Collision collision)
-    {
-    }
-
-    public virtual void OnCollisionExit(in Collision collision)
-    {
-    }
 
     public GameObject CreateChild(string name = "SceneObject")
     {

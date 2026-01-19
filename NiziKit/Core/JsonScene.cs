@@ -229,16 +229,7 @@ public class JsonScene : Scene, IAssetResolver
 
     private GameObject CreateGameObject(GameObjectJson data)
     {
-        GameObject obj;
-
-        if (!string.IsNullOrEmpty(data.Type) && data.Type != "GameObject")
-        {
-            obj = GameObjectRegistry.Create(data.Type, data.Properties);
-        }
-        else
-        {
-            obj = new GameObject();
-        }
+        var obj = new GameObject();
 
         if (!string.IsNullOrEmpty(data.Name))
         {

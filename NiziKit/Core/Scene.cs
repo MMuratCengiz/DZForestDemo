@@ -1,3 +1,5 @@
+using NiziKit.Components;
+
 namespace NiziKit.Core;
 
 public abstract class Scene(string name = "Scene") : IDisposable
@@ -86,7 +88,10 @@ public abstract class Scene(string name = "Scene") : IDisposable
         if (!obj.HasInitialized)
         {
             obj.HasInitialized = true;
-            obj.Initialize();
+            foreach (var component in obj.Components)
+            {
+                component.Initialize();
+            }
         }
         foreach (var child in obj.Children)
         {
@@ -103,7 +108,10 @@ public abstract class Scene(string name = "Scene") : IDisposable
         if (!obj.HasBegun)
         {
             obj.HasBegun = true;
-            obj.Begin();
+            foreach (var component in obj.Components)
+            {
+                component.Begin();
+            }
         }
         foreach (var child in obj.Children)
         {
@@ -117,7 +125,10 @@ public abstract class Scene(string name = "Scene") : IDisposable
         {
             return;
         }
-        obj.Update();
+        foreach (var component in obj.Components)
+        {
+            component.Update();
+        }
         foreach (var child in obj.Children)
         {
             UpdateGameObjectRecursive(child);
@@ -130,7 +141,10 @@ public abstract class Scene(string name = "Scene") : IDisposable
         {
             return;
         }
-        obj.PostUpdate();
+        foreach (var component in obj.Components)
+        {
+            component.PostUpdate();
+        }
         foreach (var child in obj.Children)
         {
             PostUpdateGameObjectRecursive(child);
@@ -143,7 +157,10 @@ public abstract class Scene(string name = "Scene") : IDisposable
         {
             return;
         }
-        obj.PhysicsUpdate();
+        foreach (var component in obj.Components)
+        {
+            component.PhysicsUpdate();
+        }
         foreach (var child in obj.Children)
         {
             PhysicsUpdateGameObjectRecursive(child);
@@ -263,6 +280,66 @@ public abstract class Scene(string name = "Scene") : IDisposable
             if (obj is T typed && predicate(typed))
             {
                 yield return typed;
+            }
+        }
+    }
+
+    public T? FindComponent<T>() where T : class, IComponent
+    {
+        foreach (var obj in _rootObjects)
+        {
+            var component = FindComponentRecursive<T>(obj);
+            if (component != null)
+            {
+                return component;
+            }
+        }
+        return null;
+    }
+
+    public IEnumerable<T> FindComponents<T>() where T : class, IComponent
+    {
+        foreach (var obj in _rootObjects)
+        {
+            foreach (var component in FindComponentsRecursive<T>(obj))
+            {
+                yield return component;
+            }
+        }
+    }
+
+    private static T? FindComponentRecursive<T>(GameObject obj) where T : class, IComponent
+    {
+        var component = obj.GetComponent<T>();
+        if (component != null)
+        {
+            return component;
+        }
+
+        foreach (var child in obj.Children)
+        {
+            var found = FindComponentRecursive<T>(child);
+            if (found != null)
+            {
+                return found;
+            }
+        }
+        return null;
+    }
+
+    private static IEnumerable<T> FindComponentsRecursive<T>(GameObject obj) where T : class, IComponent
+    {
+        var component = obj.GetComponent<T>();
+        if (component != null)
+        {
+            yield return component;
+        }
+
+        foreach (var child in obj.Children)
+        {
+            foreach (var found in FindComponentsRecursive<T>(child))
+            {
+                yield return found;
             }
         }
     }

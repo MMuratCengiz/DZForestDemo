@@ -53,7 +53,7 @@ public sealed class SnakeGame(GameDesc? desc = null) : Game(desc)
 
     private void RenderUi(UiFrame ui)
     {
-        var snake = World.FindObjectOfType<Snake>();
+        var snake = World.CurrentScene?.FindComponent<SnakeController>();
 
         var titleStyle = new UiTextStyle
         {

@@ -106,20 +106,16 @@
       ]
     },
     {
-      "type": "DZForestDemo.GameObjects.Snake",
       "name": "Snake",
-      "properties": {
-        "segmentSize": 1.0,
-        "arenaSize": 15
-      }
+      "components": [
+        { "type": "DZForestDemo.GameObjects.SnakeController", "segmentSize": 1.0, "arenaSize": 15 }
+      ]
     },
     {
-      "type": "DZForestDemo.GameObjects.FoodSpawner",
       "name": "FoodSpawner",
-      "properties": {
-        "arenaSize": 15,
-        "foodSize": 0.8
-      }
+      "components": [
+        { "type": "DZForestDemo.GameObjects.FoodSpawnerController", "arenaSize": 15, "foodSize": 0.8 }
+      ]
     }
   ]
 }

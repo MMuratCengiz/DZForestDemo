@@ -6,11 +6,14 @@ using NiziKit.Assets;
 using NiziKit.Components;
 using NiziKit.Core;
 using NiziKit.Inputs;
+using NiziKit.Physics;
 
 namespace DZForestDemo.GameObjects;
 
-public class Snake() : GameObject("Snake")
+public class SnakeController : IComponent
 {
+    public GameObject? Owner { get; set; }
+
     private readonly List<SnakeSegment> _segments = [];
     private readonly Queue<Vector3> _inputQueue = new();
     private const int MaxQueuedInputs = 2;
@@ -46,16 +49,20 @@ public class Snake() : GameObject("Snake")
     public bool IsPaused => _isPaused;
     public int Score => _score;
 
-    public override void Begin()
+    private Scene? Scene => Owner?.Scene;
+
+    public void Begin()
     {
-        // Create default meshes and materials if not set
+        if (Owner == null)
+        {
+            return;
+        }
+
         EnsureAssetsCreated();
 
-        var head = new SnakeSegment("Head", true);
-        head.SetMeshAndMaterial(HeadMesh!, HeadMaterial!);
-        head.SetPositionImmediate(Vector3.Zero);
-        AddChild(head);
-        _segments.Add(head);
+        var headSegment = CreateSegment("Head", true, HeadMesh!, HeadMaterial!);
+        headSegment.SetPositionImmediate(Vector3.Zero);
+        _segments.Add(headSegment);
 
         for (var i = 1; i <= 3; i++)
         {
@@ -98,21 +105,33 @@ public class Snake() : GameObject("Snake")
         }
     }
 
+    private SnakeSegment CreateSegment(string name, bool isHead, Mesh mesh, Material material)
+    {
+        var go = new GameObject(name);
+
+        var segment = new SnakeSegment { IsHead = isHead };
+        go.AddComponent(segment);
+        go.AddComponent(new MeshComponent { Mesh = mesh });
+        go.AddComponent(new MaterialComponent { Material = material });
+        go.AddComponent(RigidbodyComponent.Kinematic(PhysicsShape.Cube(1f)));
+
+        Owner?.AddChild(go);
+        return segment;
+    }
+
     private void AddBodySegment(Vector3 position)
     {
-        if (BodyMesh == null || BodyMaterial == null)
+        if (Owner == null || BodyMesh == null || BodyMaterial == null)
         {
             return;
         }
 
-        var segment = new SnakeSegment($"Body_{_segments.Count}", false);
-        segment.SetMeshAndMaterial(BodyMesh, BodyMaterial);
+        var segment = CreateSegment($"Body_{_segments.Count}", false, BodyMesh, BodyMaterial);
         segment.SetPositionImmediate(position);
-        AddChild(segment);
         _segments.Add(segment);
     }
 
-    public override void Update()
+    public void Update()
     {
         HandleInput();
 
@@ -142,14 +161,18 @@ public class Snake() : GameObject("Snake")
             return;
         }
 
-        var headPos = _segments[0].LocalPosition;
-        var foods = Scene.GetObjectsOfType<Food>();
-        foreach (var food in foods)
+        var headPos = _segments[0].Owner?.LocalPosition ?? Vector3.Zero;
+        foreach (var foodComp in Scene.FindComponents<Food>())
         {
-            if (Vector3.Distance(headPos, food.LocalPosition) < SegmentSize)
+            if (foodComp.Owner == null)
+            {
+                continue;
+            }
+
+            if (Vector3.Distance(headPos, foodComp.Owner.LocalPosition) < SegmentSize)
             {
                 EatFood();
-                OnAteFood?.Invoke(food.LocalPosition);
+                OnAteFood?.Invoke(foodComp.Owner.LocalPosition);
                 break;
             }
         }
@@ -206,7 +229,6 @@ public class Snake() : GameObject("Snake")
         }
 
         _isPaused = !_isPaused;
-        Console.WriteLine(_isPaused ? "PAUSED" : "RESUMED");
     }
 
     private void Move()
@@ -217,7 +239,8 @@ public class Snake() : GameObject("Snake")
         }
 
         var head = _segments[0];
-        var newHeadPos = head.LocalPosition + _direction * SegmentSize;
+        var headPos = head.Owner?.LocalPosition ?? Vector3.Zero;
+        var newHeadPos = headPos + _direction * SegmentSize;
 
         if (MathF.Abs(newHeadPos.X) >= ArenaSize || MathF.Abs(newHeadPos.Z) >= ArenaSize)
         {
@@ -227,7 +250,8 @@ public class Snake() : GameObject("Snake")
 
         for (var i = 2; i < _segments.Count; i++)
         {
-            if (Vector3.Distance(newHeadPos, _segments[i].LocalPosition) < SegmentSize * 0.5f)
+            var segPos = _segments[i].Owner?.LocalPosition ?? Vector3.Zero;
+            if (Vector3.Distance(newHeadPos, segPos) < SegmentSize * 0.5f)
             {
                 GameOver("Hit yourself!");
                 return;
@@ -236,7 +260,8 @@ public class Snake() : GameObject("Snake")
 
         for (var i = _segments.Count - 1; i > 0; i--)
         {
-            _segments[i].SetTargetPosition(_segments[i - 1].LocalPosition);
+            var prevPos = _segments[i - 1].Owner?.LocalPosition ?? Vector3.Zero;
+            _segments[i].SetTargetPosition(prevPos);
         }
 
         head.SetTargetPosition(newHeadPos);
@@ -245,18 +270,13 @@ public class Snake() : GameObject("Snake")
     private void EatFood()
     {
         _score++;
-        Console.WriteLine($"Score: {_score}");
-
-        var tailPos = _segments[^1].LocalPosition;
+        var tailPos = _segments[^1].Owner?.LocalPosition ?? Vector3.Zero;
         AddBodySegment(tailPos);
     }
 
     private void GameOver(string reason)
     {
         _isGameOver = true;
-        Console.WriteLine($"GAME OVER! {reason}");
-        Console.WriteLine($"Final Score: {_score}");
-        Console.WriteLine("Press R to restart");
         OnGameOver?.Invoke(reason);
     }
 }

@@ -1,56 +1,60 @@
 using System.Numerics;
 using NiziKit.Application.Timing;
-using NiziKit.Assets;
 using NiziKit.Components;
 using NiziKit.Core;
-using NiziKit.Physics;
 
 namespace DZForestDemo.GameObjects;
 
-public class SnakeSegment(string name, bool isHead = false) : GameObject(name)
+public class SnakeSegment : IComponent
 {
-    public bool IsHead { get; } = isHead;
+    public GameObject? Owner { get; set; }
+
+    public bool IsHead { get; set; }
+    public float MoveSpeed { get; set; } = 8f;
 
     private Vector3 _targetPosition;
     private Vector3 _previousPosition;
     private float _lerpProgress = 1f;
 
-    public float MoveSpeed { get; set; } = 8f;
-
-    public void SetMeshAndMaterial(Mesh mesh, Material material)
-    {
-        AddComponent(new MeshComponent { Mesh = mesh });
-        AddComponent(new MaterialComponent { Material = material });
-        AddComponent(RigidbodyComponent.Kinematic(PhysicsShape.Cube(1f)));
-    }
-
     public void SetTargetPosition(Vector3 target)
     {
-        _previousPosition = LocalPosition;
+        if (Owner == null)
+        {
+            return;
+        }
+
+        _previousPosition = Owner.LocalPosition;
         _targetPosition = target;
         _lerpProgress = 0f;
     }
 
     public void SetPositionImmediate(Vector3 position)
     {
+        if (Owner == null)
+        {
+            return;
+        }
+
         _previousPosition = position;
         _targetPosition = position;
         _lerpProgress = 1f;
-        LocalPosition = position;
+        Owner.LocalPosition = position;
     }
 
-    public override void Update()
+    public void Update()
     {
-        if (_lerpProgress < 1f)
+        if (Owner == null || _lerpProgress >= 1f)
         {
-            _lerpProgress += Time.DeltaTime * MoveSpeed;
-            if (_lerpProgress > 1f)
-            {
-                _lerpProgress = 1f;
-            }
-
-            var t = _lerpProgress * _lerpProgress * (3f - 2f * _lerpProgress); // SmoothStep
-            LocalPosition = Vector3.Lerp(_previousPosition, _targetPosition, t);
+            return;
         }
+
+        _lerpProgress += Time.DeltaTime * MoveSpeed;
+        if (_lerpProgress > 1f)
+        {
+            _lerpProgress = 1f;
+        }
+
+        var t = _lerpProgress * _lerpProgress * (3f - 2f * _lerpProgress);
+        Owner.LocalPosition = Vector3.Lerp(_previousPosition, _targetPosition, t);
     }
 }

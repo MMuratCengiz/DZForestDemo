@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using NiziKit.Components;
+using NiziKit.Core;
 
 namespace NiziKit.Physics;
 
@@ -82,13 +83,13 @@ public sealed partial class PhysicsWorld
 
             if (wasActive)
             {
-                goA.OnCollisionStay(in collisionA);
-                goB.OnCollisionStay(in collisionB);
+                NotifyCollisionStay(goA, in collisionA);
+                NotifyCollisionStay(goB, in collisionB);
             }
             else
             {
-                goA.OnCollisionEnter(in collisionA);
-                goB.OnCollisionEnter(in collisionB);
+                NotifyCollisionEnter(goA, in collisionA);
+                NotifyCollisionEnter(goB, in collisionB);
             }
         }
 
@@ -126,8 +127,8 @@ public sealed partial class PhysicsWorld
                 ContactCount = 0
             };
 
-            goA.OnCollisionExit(in collisionA);
-            goB.OnCollisionExit(in collisionB);
+            NotifyCollisionExit(goA, in collisionA);
+            NotifyCollisionExit(goB, in collisionB);
         }
     }
 
@@ -159,6 +160,30 @@ public sealed partial class PhysicsWorld
                     Depth = depth
                 };
             }
+        }
+    }
+
+    private static void NotifyCollisionEnter(GameObject go, in Collision collision)
+    {
+        foreach (var component in go.Components)
+        {
+            component.OnCollisionEnter(in collision);
+        }
+    }
+
+    private static void NotifyCollisionStay(GameObject go, in Collision collision)
+    {
+        foreach (var component in go.Components)
+        {
+            component.OnCollisionStay(in collision);
+        }
+    }
+
+    private static void NotifyCollisionExit(GameObject go, in Collision collision)
+    {
+        foreach (var component in go.Components)
+        {
+            component.OnCollisionExit(in collision);
         }
     }
 }
