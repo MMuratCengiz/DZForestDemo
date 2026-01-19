@@ -12,6 +12,7 @@ public sealed class AssetPack : IDisposable
     public string Version { get; private set; } = "1.0.0";
 
     private readonly Dictionary<string, Texture2d> _textures = new();
+    private readonly Dictionary<string, Graphics.GpuShader> _shaders = new();
     private readonly Dictionary<string, Material> _materials = new();
     private readonly Dictionary<string, Model> _models = new();
 
@@ -20,6 +21,7 @@ public sealed class AssetPack : IDisposable
     private bool _disposed;
 
     public IReadOnlyDictionary<string, Texture2d> Textures => _textures;
+    public IReadOnlyDictionary<string, Graphics.GpuShader> Shaders => _shaders;
     public IReadOnlyDictionary<string, Material> Materials => _materials;
     public IReadOnlyDictionary<string, Model> Models => _models;
 
@@ -46,6 +48,15 @@ public sealed class AssetPack : IDisposable
         return texture;
     }
 
+    public Graphics.GpuShader GetShader(string key)
+    {
+        if (!_shaders.TryGetValue(key, out var shader))
+        {
+            throw new KeyNotFoundException($"Shader '{key}' not found in asset pack '{Name}'");
+        }
+        return shader;
+    }
+
     public Material GetMaterial(string key)
     {
         if (!_materials.TryGetValue(key, out var material))
@@ -65,6 +76,7 @@ public sealed class AssetPack : IDisposable
     }
 
     public bool TryGetTexture(string key, out Texture2d? texture) => _textures.TryGetValue(key, out texture);
+    public bool TryGetShader(string key, out Graphics.GpuShader? shader) => _shaders.TryGetValue(key, out shader);
     public bool TryGetMaterial(string key, out Material? material) => _materials.TryGetValue(key, out material);
     public bool TryGetModel(string key, out Model? model) => _models.TryGetValue(key, out model);
 
@@ -123,6 +135,7 @@ public sealed class AssetPack : IDisposable
         Version = definition.Version;
 
         LoadTextures(definition.Textures);
+        LoadShaders(definition.Shaders);
         LoadMaterials(definition.Materials);
         LoadModels(definition.Models);
     }
@@ -133,6 +146,7 @@ public sealed class AssetPack : IDisposable
         Version = definition.Version;
 
         await LoadTexturesAsync(definition.Textures, ct);
+        await LoadShadersAsync(definition.Shaders, ct);
         await LoadMaterialsAsync(definition.Materials, ct);
         await LoadModelsAsync(definition.Models, ct);
     }
@@ -159,6 +173,31 @@ public sealed class AssetPack : IDisposable
         foreach (var (key, texture) in await Task.WhenAll(tasks))
         {
             _textures[key] = texture;
+        }
+    }
+
+    private void LoadShaders(Dictionary<string, string> shaderDefs)
+    {
+        foreach (var (key, relativePath) in shaderDefs)
+        {
+            var fullPath = ResolvePath(relativePath);
+            var shader = Assets.Assets.LoadShaderFromJson(fullPath);
+            _shaders[key] = shader;
+        }
+    }
+
+    private async Task LoadShadersAsync(Dictionary<string, string> shaderDefs, CancellationToken ct)
+    {
+        var tasks = shaderDefs.Select(async kvp =>
+        {
+            var fullPath = ResolvePath(kvp.Value);
+            var shader = await Assets.Assets.LoadShaderFromJsonAsync(fullPath, ct);
+            return (kvp.Key, shader);
+        });
+
+        foreach (var (key, shader) in await Task.WhenAll(tasks))
+        {
+            _shaders[key] = shader;
         }
     }
 
@@ -231,6 +270,7 @@ public sealed class AssetPack : IDisposable
         _disposed = true;
 
         _textures.Clear();
+        _shaders.Clear();
         _materials.Clear();
         _models.Clear();
 

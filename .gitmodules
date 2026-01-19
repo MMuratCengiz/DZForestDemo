@@ -1,3 +1,6 @@
 [submodule "NiziKit/Shaders/lygia"]
 	path = NiziKit/Shaders/lygia
 	url = https://github.com/patriciogonzalezvivo/lygia.git
+[submodule "DZForestDemo/Assets_Source/NiziKit_SyntyAssets"]
+	path = DZForestDemo/Assets_Source/NiziKit_SyntyAssets
+	url = https://github.com/MMuratCengiz/NiziKit_SyntyAssets

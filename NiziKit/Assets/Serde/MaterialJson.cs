@@ -32,6 +32,12 @@ public sealed class MaterialJson
     [JsonPropertyName("textures")]
     public TexturesJson Textures { get; set; } = new();
 
+    [JsonPropertyName("parameters")]
+    public Dictionary<string, JsonElement>? Parameters { get; set; }
+
+    [JsonPropertyName("color")]
+    public float[]? Color { get; set; }
+
     public static MaterialJson FromJson(string json)
         => JsonSerializer.Deserialize<MaterialJson>(json, NiziJsonSerializationOptions.Default)
            ?? throw new InvalidOperationException("Failed to deserialize material JSON");

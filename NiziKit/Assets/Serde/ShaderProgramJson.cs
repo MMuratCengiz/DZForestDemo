@@ -86,6 +86,9 @@ public sealed class HitGroupDescJson
     [JsonPropertyName("closestHitShaderIndex")]
     public int ClosestHitShaderIndex { get; set; } = -1;
 
+    [JsonPropertyName("localRootSignatureIndex")]
+    public int LocalRootSignatureIndex { get; set; } = -1;
+
     [JsonPropertyName("type")]
     public HitGroupType Type { get; set; } = HitGroupType.Triangles;
 }
@@ -375,7 +378,9 @@ public sealed class ShaderProgramJson
     public PipelineType DetectPipelineType()
     {
         if (Type.HasValue)
+        {
             return Type.Value;
+        }
 
         foreach (var stage in Stages)
         {
@@ -404,7 +409,9 @@ public sealed class ShaderProgramJson
     public Dictionary<string, string?>? GetDefines()
     {
         if (Defines == null || Defines.Count == 0)
+        {
             return null;
+        }
 
         return Defines.ToDictionary(kv => kv.Key, kv => (string?)kv.Value);
     }
@@ -413,7 +420,9 @@ public sealed class ShaderProgramJson
     {
         var globalDefines = GetDefines();
         if (stage.Defines == null || stage.Defines.Count == 0)
+        {
             return globalDefines;
+        }
 
         var merged = globalDefines ?? new Dictionary<string, string?>();
         foreach (var (key, value) in stage.Defines)
@@ -563,7 +572,9 @@ public sealed class ShaderProgramJson
     public HitGroupDescArray ToHitGroupDescArray()
     {
         if (RayTracingPipeline == null || RayTracingPipeline.HitGroups.Count == 0)
+        {
             return HitGroupDescArray.Create([]);
+        }
 
         var hitGroups = RayTracingPipeline.HitGroups.Select(hg => new HitGroupDesc
         {
@@ -603,7 +614,9 @@ public sealed class ShaderProgramJson
     private static DepthTest ConvertDepthTest(DepthTestJson? json)
     {
         if (json == null)
+        {
             return new DepthTest { Enable = true, CompareOp = CompareOp.Less, Write = true };
+        }
 
         return new DepthTest
         {
@@ -616,7 +629,9 @@ public sealed class ShaderProgramJson
     private static StencilTest ConvertStencilTest(StencilTestJson? json)
     {
         if (json == null)
+        {
             return new StencilTest { Enable = false };
+        }
 
         return new StencilTest
         {
@@ -631,6 +646,7 @@ public sealed class ShaderProgramJson
     private static StencilFace ConvertStencilFace(StencilFaceJson? json)
     {
         if (json == null)
+        {
             return new StencilFace
             {
                 CompareOp = CompareOp.Always,
@@ -638,6 +654,7 @@ public sealed class ShaderProgramJson
                 PassOp = StencilOp.Keep,
                 DepthFailOp = StencilOp.Keep
             };
+        }
 
         return new StencilFace
         {
@@ -651,7 +668,9 @@ public sealed class ShaderProgramJson
     private static BlendDesc ConvertBlendDesc(BlendJson? json)
     {
         if (json == null)
+        {
             return new BlendDesc { Enable = false, RenderTargetWriteMask = 15 };
+        }
 
         return new BlendDesc
         {
@@ -669,7 +688,9 @@ public sealed class ShaderProgramJson
     private static RasterizationDesc ConvertRasterization(RasterizationJson? json)
     {
         if (json == null)
+        {
             return new RasterizationDesc();
+        }
 
         return new RasterizationDesc
         {
@@ -683,7 +704,9 @@ public sealed class ShaderProgramJson
     public static BindlessDesc ConvertBindlessDesc(BindlessDescJson? json)
     {
         if (json == null || json.BindlessArrays.Count == 0)
+        {
             return new BindlessDesc();
+        }
 
         var slots = json.BindlessArrays.Select(slot => new BindlessSlot
         {
@@ -702,7 +725,9 @@ public sealed class ShaderProgramJson
     public static RayTracingShaderDesc ConvertRayTracingShaderDesc(RayTracingShaderDescJson? json)
     {
         if (json == null)
+        {
             return new RayTracingShaderDesc { HitGroupType = HitGroupType.Triangles };
+        }
 
         var desc = new RayTracingShaderDesc
         {

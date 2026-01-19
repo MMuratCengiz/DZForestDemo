@@ -1,4 +1,5 @@
 using NiziKit.Assets;
+using NiziKit.Graphics;
 
 namespace NiziKit.AssetPacks;
 
@@ -32,6 +33,9 @@ public static class AssetPacks
 
     public static Texture2d GetTexture(string packName, string assetName)
         => Get(packName).GetTexture(assetName);
+
+    public static GpuShader GetShader(string packName, string assetName)
+        => Get(packName).GetShader(assetName);
 
     public static Material GetMaterial(string packName, string assetName)
         => Get(packName).GetMaterial(assetName);

@@ -8,6 +8,7 @@ public class GpuShader : IDisposable
     public ShaderProgram ShaderProgram { get; private set; }
     public RootSignature RootSignature { get; private set; }
     public InputLayout InputLayout { get; private set; }
+    public LocalRootSignature[] LocalRootSignatures { get; private set; } = [];
 
     private readonly bool _ownsProgram;
 
@@ -36,6 +37,17 @@ public class GpuShader : IDisposable
 
         var bindPoint = explicitBindPoint ?? DetermineBindPoint(graphicsDesc, rayTracingPipelineDesc);
 
+        if (bindPoint == BindPoint.Raytracing && rayTracingPipelineDesc != null)
+        {
+            LocalRootSignatures = CreateLocalRootSignatures(reflection);
+
+            if (LocalRootSignatures.Length > 0)
+            {
+                rayTracingPipelineDesc = AssignLocalRootSignaturesToHitGroups(
+                    rayTracingPipelineDesc.Value, LocalRootSignatures);
+            }
+        }
+
         var pipelineDesc = new PipelineDesc
         {
             BindPoint = bindPoint,
@@ -49,12 +61,69 @@ public class GpuShader : IDisposable
         Pipeline = GraphicsContext.Device.CreatePipeline(pipelineDesc);
     }
 
+    private static LocalRootSignature[] CreateLocalRootSignatures(ShaderReflectDesc reflection)
+    {
+        var localRootSigDescs = reflection.LocalRootSignatures.ToArray();
+        if (localRootSigDescs.Length == 0)
+        {
+            return [];
+        }
+
+        var signatures = new LocalRootSignature[localRootSigDescs.Length];
+        for (uint i = 0; i < localRootSigDescs.Length; i++)
+        {
+            var desc = localRootSigDescs[i];
+            signatures[i] = GraphicsContext.Device.CreateLocalRootSignature(desc);
+        }
+
+        return signatures;
+    }
+
+    private static RayTracingPipelineDesc AssignLocalRootSignaturesToHitGroups(
+        RayTracingPipelineDesc rtDesc, LocalRootSignature[] localRootSigs)
+    {
+        var hitGroups = rtDesc.HitGroups.ToArray();
+        if (hitGroups.Length == 0)
+        {
+            return rtDesc;
+        }
+
+        var updatedHitGroups = new HitGroupDesc[hitGroups.Length];
+        for (uint i = 0; i < hitGroups.Length; i++)
+        {
+            var hg = hitGroups[i];
+
+            var shaderIndex = hg.ClosestHitShaderIndex >= 0 ? hg.ClosestHitShaderIndex :
+                              hg.AnyHitShaderIndex >= 0 ? hg.AnyHitShaderIndex :
+                              hg.IntersectionShaderIndex >= 0 ? hg.IntersectionShaderIndex : -1;
+
+            if (shaderIndex >= 0 && shaderIndex < localRootSigs.Length)
+            {
+                hg.LocalRootSignature = localRootSigs[shaderIndex];
+            }
+
+            updatedHitGroups[i] = hg;
+        }
+
+        return new RayTracingPipelineDesc
+        {
+            HitGroups = HitGroupDescArray.Create(updatedHitGroups),
+            LocalRootSignatures = LocalRootSignatureArray.Create(localRootSigs)
+        };
+    }
+
     private static BindPoint DetermineBindPoint(GraphicsPipelineDesc? graphicsDesc, RayTracingPipelineDesc? rayTracingPipelineDesc)
     {
         if (rayTracingPipelineDesc != null)
+        {
             return BindPoint.Raytracing;
+        }
+
         if (graphicsDesc != null)
+        {
             return BindPoint.Graphics;
+        }
+
         return BindPoint.Compute;
     }
 
@@ -83,6 +152,12 @@ public class GpuShader : IDisposable
         Pipeline.Dispose();
         RootSignature.Dispose();
         InputLayout.Dispose();
+
+        foreach (var localRootSig in LocalRootSignatures)
+        {
+            localRootSig.Dispose();
+        }
+
         if (_ownsProgram)
         {
             ShaderProgram.Dispose();

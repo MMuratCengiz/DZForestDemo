@@ -1,8 +1,6 @@
 using DenOfIz;
 using DZForestDemo.GameObjects;
-using DZForestDemo.Scenes;
 using NiziKit.Application;
-using NiziKit.Assets;
 using NiziKit.Core;
 using NiziKit.Graphics.Renderer.Forward;
 using NiziKit.Inputs;
@@ -16,8 +14,6 @@ public sealed class SnakeGame(GameDesc? desc = null) : Game(desc)
 
     protected override void Load(Game game)
     {
-        RegisterGameObjects();
-
         _renderer = new ForwardRenderer(RenderUi);
         World.LoadScene("Scenes/SnakeScene.niziscene.json");
 
@@ -53,84 +49,6 @@ public sealed class SnakeGame(GameDesc? desc = null) : Game(desc)
     protected override void OnShutdown()
     {
         _renderer?.Dispose();
-    }
-
-    private static void RegisterGameObjects()
-    {
-        GameObjectRegistry.Register("Snake", props =>
-        {
-            var snake = new Snake();
-
-            var segmentSize = 1f;
-            var arenaSize = 15;
-
-            if (props.HasValue)
-            {
-                if (props.Value.TryGetProperty("segmentSize", out var segmentSizeProp))
-                {
-                    segmentSize = segmentSizeProp.GetSingle();
-                }
-
-                if (props.Value.TryGetProperty("arenaSize", out var arenaSizeProp))
-                {
-                    arenaSize = arenaSizeProp.GetInt32();
-                }
-            }
-
-            snake.SegmentSize = segmentSize;
-            snake.ArenaSize = arenaSize;
-
-            var cubeMesh = Assets.CreateBox(segmentSize, segmentSize, segmentSize);
-            var headMaterial = GetOrCreateMaterial("SnakeHead", () => new AnimatedSnakeMaterial("SnakeHead", 50, 200, 50));
-            var bodyMaterial = GetOrCreateMaterial("SnakeBody", () => new AnimatedSnakeMaterial("SnakeBody", 30, 150, 30));
-
-            snake.HeadMesh = cubeMesh;
-            snake.HeadMaterial = headMaterial;
-            snake.BodyMesh = cubeMesh;
-            snake.BodyMaterial = bodyMaterial;
-
-            return snake;
-        });
-
-        GameObjectRegistry.Register("FoodSpawner", props =>
-        {
-            var spawner = new FoodSpawner();
-
-            var arenaSize = 15;
-            var foodSize = 0.8f;
-
-            if (props.HasValue)
-            {
-                if (props.Value.TryGetProperty("arenaSize", out var arenaSizeProp))
-                {
-                    arenaSize = arenaSizeProp.GetInt32();
-                }
-
-                if (props.Value.TryGetProperty("foodSize", out var foodSizeProp))
-                {
-                    foodSize = foodSizeProp.GetSingle();
-                }
-            }
-
-            spawner.ArenaSize = arenaSize;
-            spawner.FoodMesh = Assets.CreateSphere(foodSize);
-            spawner.FoodMaterial = GetOrCreateMaterial("Food", () => new GlowingFoodMaterial("Food", 255, 100, 50));
-
-            return spawner;
-        });
-    }
-
-    private static Material GetOrCreateMaterial(string name, Func<Material> factory)
-    {
-        var existing = Assets.GetMaterial(name);
-        if (existing != null)
-        {
-            return existing;
-        }
-
-        var material = factory();
-        Assets.RegisterMaterial(material);
-        return material;
     }
 
     private void RenderUi(UiFrame ui)

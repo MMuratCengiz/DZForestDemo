@@ -1,15 +1,17 @@
 using System.Numerics;
+using System.Text.Json;
 using NiziKit.Assets;
 using NiziKit.Assets.Serde;
 using NiziKit.AssetPacks;
 using NiziKit.Components;
 using NiziKit.ContentPipeline;
+using NiziKit.Graphics;
 using NiziKit.Light;
 using NiziKit.Physics;
 
 namespace NiziKit.Core;
 
-public class JsonScene : Scene
+public class JsonScene : Scene, IAssetResolver
 {
     private readonly string _jsonPath;
     private readonly List<AssetPack> _loadedPacks = new();
@@ -290,32 +292,40 @@ public class JsonScene : Scene
 
     private void AddComponent(GameObject obj, ComponentJson data)
     {
+        // First try to use the ComponentRegistry for registered component types
+        if (ComponentRegistry.TryCreate(data.Type, data.Properties, this, out var component) && component != null)
+        {
+            obj.AddComponent(component);
+            return;
+        }
+
+        // Fallback to built-in component handling for backward compatibility
         switch (data.Type.ToLowerInvariant())
         {
             case "mesh":
                 var meshComp = obj.AddComponent<MeshComponent>();
-                meshComp.Mesh = ResolveMesh(data);
+                meshComp.Mesh = ResolveMeshFromProperties(data.Properties);
                 break;
 
             case "material":
                 var matComp = obj.AddComponent<MaterialComponent>();
-                if (!string.IsNullOrEmpty(data.Material))
+                var materialRef = data.Properties?.GetStringOrDefault("material");
+                if (!string.IsNullOrEmpty(materialRef))
                 {
-                    matComp.Material = ResolveMaterial(data.Material);
+                    matComp.Material = ResolveMaterial(materialRef);
                 }
-
                 break;
 
             case "rigidbody":
-                var shape = ParsePhysicsShape(data);
-                var bodyType = data.BodyType ?? Assets.Serde.BodyType.Static;
-                var mass = data.Mass ?? 1f;
+                var shape = ParsePhysicsShape(data.Properties);
+                var bodyType = data.Properties.GetEnumOrDefault("bodyType", BodyType.Static);
+                var mass = data.Properties.GetSingleOrDefault("mass", 1f);
 
                 var rb = bodyType switch
                 {
-                    Assets.Serde.BodyType.Dynamic => RigidbodyComponent.Dynamic(shape, mass),
-                    Assets.Serde.BodyType.Static => RigidbodyComponent.Static(shape),
-                    Assets.Serde.BodyType.Kinematic => RigidbodyComponent.Kinematic(shape),
+                    BodyType.Dynamic => RigidbodyComponent.Dynamic(shape, mass),
+                    BodyType.Static => RigidbodyComponent.Static(shape),
+                    BodyType.Kinematic => RigidbodyComponent.Kinematic(shape),
                     _ => RigidbodyComponent.Static(shape)
                 };
                 obj.AddComponent(rb);
@@ -323,14 +333,100 @@ public class JsonScene : Scene
         }
     }
 
-    private Mesh ResolveMesh(ComponentJson data)
+    #region IAssetResolver Implementation
+
+    public Mesh? ResolveMesh(string reference, IReadOnlyDictionary<string, object>? parameters = null)
     {
-        if (string.IsNullOrEmpty(data.Mesh))
+        if (string.IsNullOrEmpty(reference))
         {
-            throw new InvalidOperationException("Mesh component requires 'mesh' property");
+            return null;
         }
 
-        var meshRef = data.Mesh;
+        if (reference.StartsWith("geometry:"))
+        {
+            var geoType = reference.Substring(9).ToLowerInvariant();
+            return CreateGeometry(geoType, parameters);
+        }
+
+        if (reference.StartsWith("file:"))
+        {
+            var path = reference.Substring(5);
+            var model = Assets.Assets.LoadModel(path);
+            return model.Meshes[0];
+        }
+
+        return ResolvePackAsset(reference, (packName, assetName) =>
+        {
+            var model = AssetPacks.AssetPacks.GetModel(packName, assetName);
+            return model.Meshes[0];
+        });
+    }
+
+    public Material? ResolveMaterial(string reference)
+    {
+        if (string.IsNullOrEmpty(reference))
+        {
+            return null;
+        }
+
+        if (reference.StartsWith("builtin:"))
+        {
+            return Assets.Assets.GetMaterial(reference.Substring(8));
+        }
+
+        if (reference.StartsWith("file:"))
+        {
+            return Assets.Assets.LoadMaterial(reference.Substring(5));
+        }
+
+        return ResolvePackAsset(reference, AssetPacks.AssetPacks.GetMaterial);
+    }
+
+    public Texture2d? ResolveTexture(string reference)
+    {
+        if (string.IsNullOrEmpty(reference))
+        {
+            return null;
+        }
+
+        if (reference.StartsWith("file:"))
+        {
+            return Assets.Assets.LoadTexture(reference.Substring(5));
+        }
+
+        return ResolvePackAsset(reference, AssetPacks.AssetPacks.GetTexture);
+    }
+
+    public GpuShader? ResolveShader(string reference)
+    {
+        if (string.IsNullOrEmpty(reference))
+        {
+            return null;
+        }
+
+        if (reference.StartsWith("builtin:") || reference.StartsWith("Builtin/"))
+        {
+            var name = reference.StartsWith("builtin:") ? reference.Substring(8) : reference;
+            return Assets.Assets.GetShader(name);
+        }
+
+        if (reference.StartsWith("file:"))
+        {
+            return Assets.Assets.LoadShaderFromJson(reference.Substring(5));
+        }
+
+        return ResolvePackAsset(reference, AssetPacks.AssetPacks.GetShader);
+    }
+
+    #endregion
+
+    private Mesh? ResolveMeshFromProperties(IReadOnlyDictionary<string, JsonElement>? properties)
+    {
+        var meshRef = properties.GetStringOrDefault("mesh");
+        if (string.IsNullOrEmpty(meshRef))
+        {
+            return null;
+        }
 
         if (meshRef.StartsWith("geometry:"))
         {
@@ -338,27 +434,27 @@ public class JsonScene : Scene
             return geoType switch
             {
                 "box" => Assets.Assets.CreateBox(
-                    data.Width ?? 1f,
-                    data.Height ?? 1f,
-                    data.Depth ?? 1f),
+                    properties.GetSingleOrDefault("width", 1f),
+                    properties.GetSingleOrDefault("height", 1f),
+                    properties.GetSingleOrDefault("depth", 1f)),
                 "sphere" => Assets.Assets.CreateSphere(
-                    data.Diameter ?? 1f,
-                    data.Tessellation ?? 16),
+                    properties.GetSingleOrDefault("diameter", 1f),
+                    properties.GetUInt32OrDefault("tessellation", 16)),
                 "cylinder" => Assets.Assets.CreateCylinder(
-                    data.Diameter ?? 1f,
-                    data.Height ?? 1f,
-                    data.Tessellation ?? 16),
+                    properties.GetSingleOrDefault("diameter", 1f),
+                    properties.GetSingleOrDefault("height", 1f),
+                    properties.GetUInt32OrDefault("tessellation", 16)),
                 "cone" => Assets.Assets.CreateCone(
-                    data.Diameter ?? 1f,
-                    data.Height ?? 1f,
-                    data.Tessellation ?? 16),
+                    properties.GetSingleOrDefault("diameter", 1f),
+                    properties.GetSingleOrDefault("height", 1f),
+                    properties.GetUInt32OrDefault("tessellation", 16)),
                 "quad" => Assets.Assets.CreateQuad(
-                    data.Width ?? 1f,
-                    data.Height ?? 1f),
+                    properties.GetSingleOrDefault("width", 1f),
+                    properties.GetSingleOrDefault("height", 1f)),
                 "torus" => Assets.Assets.CreateTorus(
-                    data.Diameter ?? 1f,
-                    data.Width ?? 0.3f,
-                    data.Tessellation ?? 16),
+                    properties.GetSingleOrDefault("diameter", 1f),
+                    properties.GetSingleOrDefault("width", 0.3f),
+                    properties.GetUInt32OrDefault("tessellation", 16)),
                 _ => throw new NotSupportedException($"Unknown geometry type: {geoType}")
             };
         }
@@ -377,19 +473,40 @@ public class JsonScene : Scene
         });
     }
 
-    private Material? ResolveMaterial(string reference)
+    private static Mesh CreateGeometry(string geoType, IReadOnlyDictionary<string, object>? parameters)
     {
-        if (reference.StartsWith("builtin:"))
+        var width = GetParam(parameters, "width", 1f);
+        var height = GetParam(parameters, "height", 1f);
+        var depth = GetParam(parameters, "depth", 1f);
+        var diameter = GetParam(parameters, "diameter", 1f);
+        var tessellation = (uint)GetParam(parameters, "tessellation", 16);
+
+        return geoType switch
         {
-            return Assets.Assets.GetMaterial(reference.Substring(8));
+            "box" => Assets.Assets.CreateBox(width, height, depth),
+            "sphere" => Assets.Assets.CreateSphere(diameter, tessellation),
+            "cylinder" => Assets.Assets.CreateCylinder(diameter, height, tessellation),
+            "cone" => Assets.Assets.CreateCone(diameter, height, tessellation),
+            "quad" => Assets.Assets.CreateQuad(width, height),
+            "torus" => Assets.Assets.CreateTorus(diameter, width, tessellation),
+            _ => throw new NotSupportedException($"Unknown geometry type: {geoType}")
+        };
+    }
+
+    private static float GetParam(IReadOnlyDictionary<string, object>? parameters, string key, float defaultValue)
+    {
+        if (parameters == null || !parameters.TryGetValue(key, out var value))
+        {
+            return defaultValue;
         }
 
-        if (reference.StartsWith("file:"))
+        return value switch
         {
-            return Assets.Assets.LoadMaterial(reference.Substring(5));
-        }
-
-        return ResolvePackAsset(reference, AssetPacks.AssetPacks.GetMaterial);
+            float f => f,
+            double d => (float)d,
+            int i => i,
+            _ => defaultValue
+        };
     }
 
     private static T ResolvePackAsset<T>(string reference, Func<string, string, T> resolver)
@@ -404,20 +521,36 @@ public class JsonScene : Scene
         throw new InvalidOperationException($"Invalid asset reference: {reference}. Expected format: 'packName:assetName'");
     }
 
-    private static PhysicsShape ParsePhysicsShape(ComponentJson data)
+    private static PhysicsShape ParsePhysicsShape(IReadOnlyDictionary<string, JsonElement>? properties)
     {
-        var shapeType = data.Shape ?? Assets.Serde.ShapeType.Box;
+        var shapeType = properties.GetEnumOrDefault("shape", ShapeType.Box);
 
         return shapeType switch
         {
-            Assets.Serde.ShapeType.Box => data.Size != null
-                ? PhysicsShape.Box(data.Size[0], data.Size[1], data.Size[2])
-                : PhysicsShape.Box(data.Width ?? 1f, data.Height ?? 1f, data.Depth ?? 1f),
-            Assets.Serde.ShapeType.Sphere => PhysicsShape.Sphere(data.Diameter ?? 1f),
-            Assets.Serde.ShapeType.Capsule => PhysicsShape.Capsule(data.Radius ?? 0.5f, data.Length ?? 1f),
-            Assets.Serde.ShapeType.Cylinder => PhysicsShape.Cylinder(data.Diameter ?? 1f, data.Height ?? 1f),
+            ShapeType.Box => CreateBoxShape(properties),
+            ShapeType.Sphere => PhysicsShape.Sphere(properties.GetSingleOrDefault("diameter", 1f)),
+            ShapeType.Capsule => PhysicsShape.Capsule(
+                properties.GetSingleOrDefault("radius", 0.5f),
+                properties.GetSingleOrDefault("length", 1f)),
+            ShapeType.Cylinder => PhysicsShape.Cylinder(
+                properties.GetSingleOrDefault("diameter", 1f),
+                properties.GetSingleOrDefault("height", 1f)),
             _ => PhysicsShape.Box(1f, 1f, 1f)
         };
+    }
+
+    private static PhysicsShape CreateBoxShape(IReadOnlyDictionary<string, JsonElement>? properties)
+    {
+        var sizeArr = properties.GetFloatArrayOrDefault("size");
+        if (sizeArr != null && sizeArr.Length >= 3)
+        {
+            return PhysicsShape.Box(sizeArr[0], sizeArr[1], sizeArr[2]);
+        }
+
+        return PhysicsShape.Box(
+            properties.GetSingleOrDefault("width", 1f),
+            properties.GetSingleOrDefault("height", 1f),
+            properties.GetSingleOrDefault("depth", 1f));
     }
 
     private static Vector3 ParseVector3(float[] arr)

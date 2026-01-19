@@ -3,7 +3,7 @@ using NiziKit.Physics;
 
 namespace NiziKit.Components;
 
-[NiziComponent]
+[NiziComponent(GenerateFactory = false)]
 public partial class RigidbodyComponent
 {
     public partial PhysicsShape Shape { get; set; }

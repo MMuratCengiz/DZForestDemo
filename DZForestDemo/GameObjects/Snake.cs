@@ -1,7 +1,9 @@
 using System.Numerics;
 using DenOfIz;
+using DZForestDemo.Scenes;
 using NiziKit.Application.Timing;
 using NiziKit.Assets;
+using NiziKit.Components;
 using NiziKit.Core;
 using NiziKit.Inputs;
 
@@ -23,7 +25,11 @@ public class Snake() : GameObject("Snake")
     public float BaseMoveInterval { get; set; } = 0.05f;
     public float MinMoveInterval { get; set; } = 0.00005f;
     public float SpeedIncreasePerFood { get; set; } = 0.0005f;
+
+    [JsonProperty("segmentSize")]
     public float SegmentSize { get; set; } = 1f;
+
+    [JsonProperty("arenaSize")]
     public int ArenaSize { get; set; } = 15;
 
     private float CurrentMoveInterval => MathF.Max(MinMoveInterval, BaseMoveInterval - _score * SpeedIncreasePerFood);
@@ -42,13 +48,11 @@ public class Snake() : GameObject("Snake")
 
     public override void Begin()
     {
-        if (HeadMesh == null || HeadMaterial == null || BodyMesh == null || BodyMaterial == null)
-        {
-            throw new InvalidOperationException("Snake meshes and materials must be set before Begin");
-        }
+        // Create default meshes and materials if not set
+        EnsureAssetsCreated();
 
         var head = new SnakeSegment("Head", true);
-        head.SetMeshAndMaterial(HeadMesh, HeadMaterial);
+        head.SetMeshAndMaterial(HeadMesh!, HeadMaterial!);
         head.SetPositionImmediate(Vector3.Zero);
         AddChild(head);
         _segments.Add(head);
@@ -56,6 +60,41 @@ public class Snake() : GameObject("Snake")
         for (var i = 1; i <= 3; i++)
         {
             AddBodySegment(new Vector3(-i * SegmentSize, 0, 0));
+        }
+    }
+
+    private void EnsureAssetsCreated()
+    {
+        var cubeMesh = Assets.CreateBox(SegmentSize, SegmentSize, SegmentSize);
+        HeadMesh ??= cubeMesh;
+        BodyMesh ??= cubeMesh;
+
+        if (HeadMaterial == null)
+        {
+            var existing = Assets.GetMaterial("SnakeHead");
+            if (existing != null)
+            {
+                HeadMaterial = existing;
+            }
+            else
+            {
+                HeadMaterial = new AnimatedSnakeMaterial("SnakeHead", 50, 200, 50);
+                Assets.RegisterMaterial(HeadMaterial);
+            }
+        }
+
+        if (BodyMaterial == null)
+        {
+            var existing = Assets.GetMaterial("SnakeBody");
+            if (existing != null)
+            {
+                BodyMaterial = existing;
+            }
+            else
+            {
+                BodyMaterial = new AnimatedSnakeMaterial("SnakeBody", 30, 150, 30);
+                Assets.RegisterMaterial(BodyMaterial);
+            }
         }
     }
 

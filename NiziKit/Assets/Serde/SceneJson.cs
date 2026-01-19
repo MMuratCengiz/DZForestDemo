@@ -111,44 +111,8 @@ public sealed class ComponentJson
     [JsonPropertyName("type")]
     public string Type { get; set; } = string.Empty;
 
-    [JsonPropertyName("mesh")]
-    public string? Mesh { get; set; }
-
-    [JsonPropertyName("width")]
-    public float? Width { get; set; }
-
-    [JsonPropertyName("height")]
-    public float? Height { get; set; }
-
-    [JsonPropertyName("depth")]
-    public float? Depth { get; set; }
-
-    [JsonPropertyName("diameter")]
-    public float? Diameter { get; set; }
-
-    [JsonPropertyName("tessellation")]
-    public uint? Tessellation { get; set; }
-
-    [JsonPropertyName("material")]
-    public string? Material { get; set; }
-
-    [JsonPropertyName("bodyType")]
-    public BodyType? BodyType { get; set; }
-
-    [JsonPropertyName("shape")]
-    public ShapeType? Shape { get; set; }
-
-    [JsonPropertyName("size")]
-    public float[]? Size { get; set; }
-
-    [JsonPropertyName("mass")]
-    public float? Mass { get; set; }
-
-    [JsonPropertyName("radius")]
-    public float? Radius { get; set; }
-
-    [JsonPropertyName("length")]
-    public float? Length { get; set; }
+    [JsonExtensionData]
+    public Dictionary<string, JsonElement>? Properties { get; set; }
 }
 
 public sealed class GameObjectJson

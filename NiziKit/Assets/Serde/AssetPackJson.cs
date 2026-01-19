@@ -14,6 +14,9 @@ public sealed class AssetPackJson
     [JsonPropertyName("textures")]
     public Dictionary<string, string> Textures { get; set; } = new();
 
+    [JsonPropertyName("shaders")]
+    public Dictionary<string, string> Shaders { get; set; } = new();
+
     [JsonPropertyName("materials")]
     public Dictionary<string, string> Materials { get; set; } = new();
 
