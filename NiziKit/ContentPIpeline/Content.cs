@@ -1,6 +1,5 @@
 using System.Reflection;
 using DenOfIz;
-using NiziKit.Assets;
 using NiziKit.Graphics;
 
 namespace NiziKit.ContentPipeline;
@@ -148,6 +147,18 @@ public static class Content
         CancellationToken ct = default)
         => Assets.Assets.LoadShaderAsync(vertexPath, pixelPath, pipelineDesc, defines, ct);
 
+    public static Assets.Material LoadMaterial(string path)
+        => Assets.Assets.LoadMaterial(path);
+
+    public static Task<Assets.Material> LoadMaterialAsync(string path, CancellationToken ct = default)
+        => Assets.Assets.LoadMaterialAsync(path, ct);
+
+    public static GpuShader LoadShaderFromJson(string path)
+        => Assets.Assets.LoadShaderFromJson(path);
+
+    public static Task<GpuShader> LoadShaderFromJsonAsync(string path, CancellationToken ct = default)
+        => Assets.Assets.LoadShaderFromJsonAsync(path, ct);
+
     private static void EnsureInitialized()
     {
         if (_provider != null)
@@ -204,5 +215,12 @@ public static class Content
         return Path.Combine(Directory.GetCurrentDirectory(), "Assets");
     }
 
-    private static string NormalizePath(string path) => path.Replace('\\', '/').TrimStart('/');
+    private static string NormalizePath(string path)
+    {
+        if (Path.IsPathRooted(path))
+        {
+            return path;
+        }
+        return path.Replace('\\', '/').TrimStart('/');
+    }
 }

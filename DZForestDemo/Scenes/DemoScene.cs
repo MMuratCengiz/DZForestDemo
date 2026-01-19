@@ -36,16 +36,11 @@ public class DemoScene() : Scene("Demo Scene")
         }
     }
 
-    private readonly Random _random = new();
-
     private Mesh _cubeMesh = null!;
     private Mesh _platformMesh = null!;
     private Mesh _sphereMesh = null!;
     private Material _cubeMaterial = null!;
     private Material _platformMaterial = null!;
-
-    public Fox? Fox { get; private set; }
-    public Fox? LayerBlendFox { get; private set; }
 
     public override void Load()
     {
@@ -53,6 +48,7 @@ public class DemoScene() : Scene("Demo Scene")
         CreateCamera();
         CreateLights();
         CreateGameObjects();
+        CreateShapeSpawner();
     }
 
     private void LoadAssets()
@@ -115,8 +111,7 @@ public class DemoScene() : Scene("Demo Scene")
     private void CreateGameObjects()
     {
         CreatePlatform();
-        SpawnFox();
-        SpawnInitialCubes();
+        SpawnFoxes();
     }
 
     private void CreatePlatform()
@@ -129,68 +124,21 @@ public class DemoScene() : Scene("Demo Scene")
         platform.AddComponent(RigidbodyComponent.Static(PhysicsShape.Box(new Vector3(20f, 1f, 20f))));
     }
 
-    private void SpawnFox()
+    private void SpawnFoxes()
     {
-        Fox = new Fox(new Vector3(-3f, 0f, 0f));
-        Add(Fox);
+        var fox1 = new Fox(new Vector3(-3f, 0f, 0f));
+        Add(fox1);
 
-        LayerBlendFox = new Fox(new Vector3(3f, 0f, 0f), useLayerBlending: true);
-        Add(LayerBlendFox);
+        var fox2 = new Fox(new Vector3(3f, 0f, 0f), useLayerBlending: true);
+        Add(fox2);
     }
 
-    private void SpawnInitialCubes()
+    private void CreateShapeSpawner()
     {
-        for (var i = 0; i < 20; i++)
-        {
-            var position = new Vector3(
-                (_random.NextSingle() - 0.5f) * 8f,
-                5f + i * 1.5f,
-                (_random.NextSingle() - 0.5f) * 8f
-            );
-            SpawnDynamicCube(position);
-        }
-    }
-
-    public void AddRandomShape()
-    {
-        var position = new Vector3(
-            (_random.NextSingle() - 0.5f) * 6f,
-            10f + _random.NextSingle() * 5f,
-            (_random.NextSingle() - 0.5f) * 6f
-        );
-
-        if (_random.NextSingle() > 0.5f)
-        {
-            SpawnDynamicCube(position);
-        }
-        else
-        {
-            SpawnDynamicSphere(position);
-        }
-    }
-
-    private void SpawnDynamicCube(Vector3 position)
-    {
-        var cube = CreateObject("Cube");
-        cube.LocalPosition = position;
-        cube.LocalRotation = Quaternion.CreateFromYawPitchRoll(
-            _random.NextSingle() * MathF.PI * 2,
-            _random.NextSingle() * MathF.PI * 2,
-            _random.NextSingle() * MathF.PI * 2
-        );
-
-        cube.AddComponent(new MeshComponent { Mesh = _cubeMesh });
-        cube.AddComponent(new MaterialComponent { Material = _cubeMaterial });
-        cube.AddComponent(RigidbodyComponent.Dynamic(PhysicsShape.Box(Vector3.One), 1f));
-    }
-
-    private void SpawnDynamicSphere(Vector3 position)
-    {
-        var sphere = CreateObject("Sphere");
-        sphere.LocalPosition = position;
-
-        sphere.AddComponent(new MeshComponent { Mesh = _sphereMesh });
-        sphere.AddComponent(new MaterialComponent { Material = _cubeMaterial });
-        sphere.AddComponent(RigidbodyComponent.Dynamic(PhysicsShape.Sphere(1f), 1f));
+        var spawner = CreateObject<ShapeSpawner>();
+        spawner.CubeMesh = _cubeMesh;
+        spawner.SphereMesh = _sphereMesh;
+        spawner.Material = _cubeMaterial;
+        spawner.SpawnInitialCubes(20);
     }
 }

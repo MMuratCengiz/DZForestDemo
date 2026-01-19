@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../NiziKit/Assets/Serde/Schemas/nizipack.schema.json",
+  "name": "test-pack",
+  "version": "1.0.0",
+  "textures": {},
+  "materials": {},
+  "models": {}
+}

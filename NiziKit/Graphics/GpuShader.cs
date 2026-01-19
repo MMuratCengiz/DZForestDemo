@@ -1,5 +1,4 @@
 using DenOfIz;
-using NiziKit.Graphics.RootSignatures;
 
 namespace NiziKit.Graphics;
 

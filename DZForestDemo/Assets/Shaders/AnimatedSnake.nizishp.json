@@ -1,0 +1,30 @@
+{
+  "$schema": "../../../NiziKit/Assets/Serde/Schemas/nizishp.schema.json",
+  "name": "Shaders/AnimatedSnake",
+  "stages": [
+    {
+      "stage": "vertex",
+      "path": "Default/Default.VS.hlsl",
+      "entryPoint": "VSMain"
+    },
+    {
+      "stage": "pixel",
+      "path": "AnimatedSnake.PS.hlsl",
+      "entryPoint": "PSMain"
+    }
+  ],
+  "pipeline": {
+    "primitiveTopology": "triangle",
+    "cullMode": "backFace",
+    "fillMode": "solid",
+    "depthTest": {
+      "enable": true,
+      "compareOp": "less",
+      "write": true
+    },
+    "blend": {
+      "enable": false,
+      "renderTargetWriteMask": 15
+    }
+  }
+}

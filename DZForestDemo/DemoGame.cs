@@ -1,12 +1,12 @@
 using System.Numerics;
 using DenOfIz;
+using DZForestDemo.GameObjects;
 using DZForestDemo.Scenes;
 using NiziKit.Animation;
 using NiziKit.Application;
 using NiziKit.Core;
 using NiziKit.Graphics.Renderer.Forward;
 using NiziKit.Inputs;
-using NiziKit.Physics;
 using NiziKit.UI;
 
 namespace DZForestDemo;
@@ -14,7 +14,6 @@ namespace DZForestDemo;
 public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 {
     private ForwardRenderer _renderer = null!;
-    private DemoScene? _demoScene;
     private float _layerWeight;
 
     private const float ExplosionForce = 10f;
@@ -28,8 +27,7 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
     protected override void Load(Game game)
     {
         _renderer = new ForwardRenderer(RenderUi);
-        _demoScene = new DemoScene();
-        World.LoadScene(_demoScene);
+        World.LoadScene(new DemoScene());
 
         Console.WriteLine("Controls:");
         Console.WriteLine("  Left Click = Explosion at cursor");
@@ -71,7 +69,7 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            _demoScene?.AddRandomShape();
+            World.FindObjectOfType<ShapeSpawner>()?.SpawnRandomShape();
         }
 
         if (Input.GetKeyDown(KeyCode.G))
@@ -80,46 +78,50 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
             Console.WriteLine($"Mouse gravity: {(_mouseGravityEnabled ? "ON" : "OFF")}");
         }
 
+        var foxes = World.FindObjectsOfType<Fox>();
+        var fox = foxes.Count > 0 ? foxes[0] : null;
+        var layerBlendFox = foxes.Count > 1 ? foxes[1] : null;
+
         if (Input.GetKeyDown(KeyCode.S))
         {
-            _demoScene?.Fox?.TriggerSurvey();
+            fox?.TriggerSurvey();
         }
 
         if (Input.GetKeyDown(KeyCode.Z))
         {
-            _demoScene?.Fox?.CrossFadeToSurvey(TransitionCurve.Linear);
+            fox?.CrossFadeToSurvey(TransitionCurve.Linear);
             Console.WriteLine("CrossFade to Survey (Linear)");
         }
 
         if (Input.GetKeyDown(KeyCode.X))
         {
-            _demoScene?.Fox?.CrossFadeToSurvey(TransitionCurve.EaseIn);
+            fox?.CrossFadeToSurvey(TransitionCurve.EaseIn);
             Console.WriteLine("CrossFade to Survey (EaseIn)");
         }
 
         if (Input.GetKeyDown(KeyCode.C))
         {
-            _demoScene?.Fox?.CrossFadeToSurvey(TransitionCurve.EaseOut);
+            fox?.CrossFadeToSurvey(TransitionCurve.EaseOut);
             Console.WriteLine("CrossFade to Survey (EaseOut)");
         }
 
         if (Input.GetKeyDown(KeyCode.V))
         {
-            _demoScene?.Fox?.CrossFadeToRun();
+            fox?.CrossFadeToRun();
             Console.WriteLine("CrossFade to Run");
         }
 
         if (Input.GetKeyDown(KeyCode.Up))
         {
             _layerWeight = Math.Min(1f, _layerWeight + 0.1f);
-            _demoScene?.LayerBlendFox?.SetOverlayWeight(_layerWeight);
+            layerBlendFox?.SetOverlayWeight(_layerWeight);
             Console.WriteLine($"Layer weight: {_layerWeight:F1}");
         }
 
         if (Input.GetKeyDown(KeyCode.Down))
         {
             _layerWeight = Math.Max(0f, _layerWeight - 0.1f);
-            _demoScene?.LayerBlendFox?.SetOverlayWeight(_layerWeight);
+            layerBlendFox?.SetOverlayWeight(_layerWeight);
             Console.WriteLine($"Layer weight: {_layerWeight:F1}");
         }
     }

@@ -1,6 +1,3 @@
-using System.Numerics;
-using System.Runtime.InteropServices;
-
 namespace NiziKit.Assets;
 
 public enum VertexAttributeType : byte

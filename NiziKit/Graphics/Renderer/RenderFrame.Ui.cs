@@ -6,7 +6,6 @@ using NiziKit.Graphics.Renderer.Common;
 using NiziKit.Graphics.Resources;
 using NiziKit.UI;
 using Semaphore = DenOfIz.Semaphore;
-using GraphicsContext = NiziKit.Graphics.GraphicsContext;
 
 namespace NiziKit.Graphics.Renderer;
 

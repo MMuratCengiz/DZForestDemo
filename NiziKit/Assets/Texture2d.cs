@@ -20,14 +20,26 @@ public class Texture2d : IAsset
 
     public void Load(string path)
     {
-        var bytes = Content.ReadBytes($"Textures/{path}");
+        var texturePath = NormalizeTexturePath(path);
+        var bytes = Content.ReadBytes(texturePath);
         LoadFromBytes(GetTextureExtension(path), bytes, path);
     }
 
     public async Task LoadAsync(string path, CancellationToken ct = default)
     {
-        var bytes = await Content.ReadBytesAsync($"Textures/{path}", ct);
+        var texturePath = NormalizeTexturePath(path);
+        var bytes = await Content.ReadBytesAsync(texturePath, ct);
         LoadFromBytes(GetTextureExtension(path), bytes, path);
+    }
+
+    private static string NormalizeTexturePath(string path)
+    {
+        if (Path.IsPathRooted(path))
+        {
+            return path;
+        }
+
+        return $"Textures/{path}";
     }
 
     private static TextureExtension GetTextureExtension(string path)

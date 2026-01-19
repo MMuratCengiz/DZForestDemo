@@ -1,0 +1,125 @@
+{
+  "$schema": "../../NiziKit/Assets/Serde/Schemas/niziscene.schema.json",
+  "name": "Snake Scene",
+  "assetPacks": [],
+  "camera": {
+    "name": "Main Camera",
+    "position": [0, 30, -25],
+    "fieldOfView": 0.785398,
+    "nearPlane": 0.1,
+    "farPlane": 1000,
+    "controller": {
+      "lookAt": [0, 0, 0]
+    }
+  },
+  "lights": [
+    {
+      "type": "directional",
+      "name": "Sun",
+      "direction": [0.3, -0.8, 0.4],
+      "color": [1.0, 0.95, 0.9],
+      "intensity": 0.7,
+      "castsShadows": true
+    },
+    {
+      "type": "point",
+      "name": "CornerLight_0",
+      "position": [-15, 8, -15],
+      "color": [0.4, 0.6, 1.0],
+      "intensity": 1.5,
+      "range": 25
+    },
+    {
+      "type": "point",
+      "name": "CornerLight_1",
+      "position": [15, 8, -15],
+      "color": [1.0, 0.5, 0.3],
+      "intensity": 1.5,
+      "range": 25
+    },
+    {
+      "type": "point",
+      "name": "CornerLight_2",
+      "position": [-15, 8, 15],
+      "color": [0.5, 1.0, 0.5],
+      "intensity": 1.5,
+      "range": 25
+    },
+    {
+      "type": "point",
+      "name": "CornerLight_3",
+      "position": [15, 8, 15],
+      "color": [1.0, 0.3, 0.6],
+      "intensity": 1.5,
+      "range": 25
+    }
+  ],
+  "objects": [
+    {
+      "name": "Floor",
+      "position": [0, -1, 0],
+      "scale": [32, 0.5, 32],
+      "components": [
+        { "type": "mesh", "mesh": "geometry:box", "width": 1, "height": 1, "depth": 1 },
+        { "type": "material", "material": "file:Materials/Snake/Floor.nizimat.json" },
+        { "type": "rigidbody", "bodyType": "static", "shape": "box", "size": [32, 0.5, 32] }
+      ]
+    },
+    {
+      "name": "WallNorth",
+      "position": [0, 0, -16],
+      "scale": [32, 2, 1],
+      "components": [
+        { "type": "mesh", "mesh": "geometry:box", "width": 1, "height": 1, "depth": 1 },
+        { "type": "material", "material": "file:Materials/Snake/Wall.nizimat.json" },
+        { "type": "rigidbody", "bodyType": "static", "shape": "box", "size": [32, 2, 1] }
+      ]
+    },
+    {
+      "name": "WallSouth",
+      "position": [0, 0, 16],
+      "scale": [32, 2, 1],
+      "components": [
+        { "type": "mesh", "mesh": "geometry:box", "width": 1, "height": 1, "depth": 1 },
+        { "type": "material", "material": "file:Materials/Snake/Wall.nizimat.json" },
+        { "type": "rigidbody", "bodyType": "static", "shape": "box", "size": [32, 2, 1] }
+      ]
+    },
+    {
+      "name": "WallWest",
+      "position": [-16, 0, 0],
+      "scale": [1, 2, 32],
+      "components": [
+        { "type": "mesh", "mesh": "geometry:box", "width": 1, "height": 1, "depth": 1 },
+        { "type": "material", "material": "file:Materials/Snake/Wall.nizimat.json" },
+        { "type": "rigidbody", "bodyType": "static", "shape": "box", "size": [1, 2, 32] }
+      ]
+    },
+    {
+      "name": "WallEast",
+      "position": [16, 0, 0],
+      "scale": [1, 2, 32],
+      "components": [
+        { "type": "mesh", "mesh": "geometry:box", "width": 1, "height": 1, "depth": 1 },
+        { "type": "material", "material": "file:Materials/Snake/Wall.nizimat.json" },
+        { "type": "rigidbody", "bodyType": "static", "shape": "box", "size": [1, 2, 32] }
+      ]
+    },
+    {
+      "type": "Snake",
+      "name": "Snake",
+      "properties": {
+        "segmentSize": 1.0,
+        "arenaSize": 15
+      }
+    },
+    {
+      "type": "FoodSpawner",
+      "name": "FoodSpawner",
+      "properties": {
+        "arenaSize": 15,
+        "foodSize": 0.8
+      }
+    }
+  ]
+}

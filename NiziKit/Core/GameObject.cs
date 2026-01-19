@@ -10,6 +10,7 @@ public class GameObject(string name = "GameObject")
 
     public int Id { get; } = _nextId++;
     public string Name { get; set; } = name;
+    public string? Tag { get; set; }
     public bool IsActive { get; set; } = true;
 
     public GameObject? Parent { get; private set; }

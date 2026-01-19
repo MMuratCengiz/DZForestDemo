@@ -1,0 +1,8 @@
+{
+  "$schema": "../../../NiziKit/Assets/Serde/Schemas/nizimat.schema.json",
+  "name": "Wall",
+  "shader": "Builtin/Shaders/Default",
+  "textures": {
+    "albedo": "../../Textures/Snake/Wall.png"
+  }
+}

@@ -16,12 +16,9 @@ public abstract class Scene(string name = "Scene") : IDisposable
 
     public abstract void Load();
 
-    public virtual void Update(float deltaTime)
-    {
-    }
-
     internal void ProcessGameObjectLifecycle()
     {
+        _isIterating = true;
         foreach (var obj in _rootObjects)
         {
             ProcessInitializeRecursive(obj);
@@ -30,6 +27,8 @@ public abstract class Scene(string name = "Scene") : IDisposable
         {
             ProcessBeginRecursive(obj);
         }
+        _isIterating = false;
+        ProcessPendingChanges();
     }
 
     internal void UpdateGameObjects()

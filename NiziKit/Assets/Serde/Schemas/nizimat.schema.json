@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nizikit.dev/schemas/nizimat.schema.json",
+  "title": "NiziKit Material",
+  "description": "Schema for NiziKit material definition files (.nizimat.json)",
+  "type": "object",
+  "required": ["name", "shader"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique name identifier for the material"
+    },
+    "shader": {
+      "type": "string",
+      "description": "Relative path to the shader program JSON file (.nizishp.json)"
+    },
+    "variants": {
+      "type": "object",
+      "description": "Shader variant defines to select specific shader permutations",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "textures": {
+      "$ref": "#/$defs/textures"
+    }
+  },
+  "$defs": {
+    "textures": {
+      "type": "object",
+      "description": "Texture bindings for the material",
+      "properties": {
+        "albedo": {
+          "type": "string",
+          "description": "Relative path to the albedo/diffuse texture"
+        },
+        "normal": {
+          "type": "string",
+          "description": "Relative path to the normal map texture"
+        },
+        "metallic": {
+          "type": "string",
+          "description": "Relative path to the metallic texture"
+        },
+        "roughness": {
+          "type": "string",
+          "description": "Relative path to the roughness texture"
+        }
+      }
+    }
+  }
+}

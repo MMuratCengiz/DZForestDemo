@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using DenOfIz;
+using NiziKit.Assets.Serde;
 using NiziKit.Assets.Store;
 using NiziKit.Graphics;
 
@@ -62,6 +63,10 @@ public sealed class Assets : IDisposable
     public static void ClearShaderCache() => Instance._shaderStore.ClearDiskCache();
     public static Material RegisterMaterial(Material material) => Instance._RegisterMaterial(material);
     public static Material? GetMaterial(string name) => Instance._GetMaterial(name);
+    public static Material LoadMaterial(string path) => Instance._LoadMaterial(path);
+    public static Task<Material> LoadMaterialAsync(string path, CancellationToken ct = default) => Instance._LoadMaterialAsync(path, ct);
+    public static GpuShader LoadShaderFromJson(string path) => Instance._LoadShaderFromJson(path);
+    public static Task<GpuShader> LoadShaderFromJsonAsync(string path, CancellationToken ct = default) => Instance._LoadShaderFromJsonAsync(path, ct);
     public static Mesh CreateBox(float width, float height, float depth) => Instance._CreateBox(width, height, depth);
     public static Mesh CreateSphere(float diameter, uint tessellation = 16) => Instance._CreateSphere(diameter, tessellation);
     public static Mesh CreateQuad(float width, float height) => Instance._CreateQuad(width, height);
@@ -301,8 +306,8 @@ public sealed class Assets : IDisposable
 
     private ShaderProgram _LoadShaderProgram(string vertexPath, string pixelPath, Dictionary<string, string?>? defines)
     {
-        var vsFullPath = ContentPipeline.Content.ResolvePath(vertexPath);
-        var psFullPath = ContentPipeline.Content.ResolvePath(pixelPath);
+        var vsFullPath = Path.IsPathRooted(vertexPath) ? vertexPath : ContentPipeline.Content.ResolvePath(vertexPath);
+        var psFullPath = Path.IsPathRooted(pixelPath) ? pixelPath : ContentPipeline.Content.ResolvePath(pixelPath);
 
         var cacheKey = _shaderStore.ComputeCacheKey([vsFullPath, psFullPath], defines);
 
@@ -330,7 +335,7 @@ public sealed class Assets : IDisposable
 
     private ShaderProgram _LoadComputeProgram(string computePath, Dictionary<string, string?>? defines)
     {
-        var csFullPath = ContentPipeline.Content.ResolvePath(computePath);
+        var csFullPath = Path.IsPathRooted(computePath) ? computePath : ContentPipeline.Content.ResolvePath(computePath);
 
         var cacheKey = _shaderStore.ComputeCacheKey([csFullPath], defines);
 
@@ -364,8 +369,8 @@ public sealed class Assets : IDisposable
 
     private async Task<ShaderProgram> _LoadShaderProgramAsync(string vertexPath, string pixelPath, Dictionary<string, string?>? defines, CancellationToken ct)
     {
-        var vsFullPath = ContentPipeline.Content.ResolvePath(vertexPath);
-        var psFullPath = ContentPipeline.Content.ResolvePath(pixelPath);
+        var vsFullPath = Path.IsPathRooted(vertexPath) ? vertexPath : ContentPipeline.Content.ResolvePath(vertexPath);
+        var psFullPath = Path.IsPathRooted(pixelPath) ? pixelPath : ContentPipeline.Content.ResolvePath(pixelPath);
 
         var cacheKey = _shaderStore.ComputeCacheKey([vsFullPath, psFullPath], defines);
 
@@ -393,7 +398,7 @@ public sealed class Assets : IDisposable
 
     private async Task<ShaderProgram> _LoadComputeProgramAsync(string computePath, Dictionary<string, string?>? defines, CancellationToken ct)
     {
-        var csFullPath = ContentPipeline.Content.ResolvePath(computePath);
+        var csFullPath = Path.IsPathRooted(computePath) ? computePath : ContentPipeline.Content.ResolvePath(computePath);
 
         var cacheKey = _shaderStore.ComputeCacheKey([csFullPath], defines);
 
@@ -433,6 +438,147 @@ public sealed class Assets : IDisposable
     private Material? _GetMaterial(string name)
     {
         return _materialCache.GetValueOrDefault(name);
+    }
+
+    private Material _LoadMaterial(string path)
+    {
+        var fullPath = ContentPipeline.Content.ResolvePath(path);
+
+        if (_materialCache.TryGetValue(fullPath, out var cached))
+        {
+            return cached;
+        }
+
+        var json = ContentPipeline.Content.ReadText(path);
+        var materialJson = MaterialJson.FromJson(json);
+
+        var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;
+        var material = new JsonMaterial(materialJson, basePath);
+
+        material.EnsureShaderLoaded();
+        material.EnsureTexturesLoaded();
+
+        _materialCache[fullPath] = material;
+        _materialList.Add(material);
+
+        return material;
+    }
+
+    private async Task<Material> _LoadMaterialAsync(string path, CancellationToken ct = default)
+    {
+        var fullPath = ContentPipeline.Content.ResolvePath(path);
+
+        if (_materialCache.TryGetValue(fullPath, out var cached))
+        {
+            return cached;
+        }
+
+        var json = await ContentPipeline.Content.ReadTextAsync(path, ct);
+        var materialJson = MaterialJson.FromJson(json);
+
+        var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;
+        var material = new JsonMaterial(materialJson, basePath);
+
+        await material.LoadAllAsync(ct);
+
+        _materialCache[fullPath] = material;
+        _materialList.Add(material);
+
+        return material;
+    }
+
+    private GpuShader _LoadShaderFromJson(string path)
+    {
+        var fullPath = ContentPipeline.Content.ResolvePath(path);
+
+        var existingShader = _shaderStore[fullPath];
+        if (existingShader != null)
+        {
+            return existingShader;
+        }
+
+        var json = ContentPipeline.Content.ReadText(path);
+        var shaderJson = ShaderProgramJson.FromJson(json);
+
+        var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;
+        var (vertexPath, pixelPath, computePath) = shaderJson.GetStagePaths();
+        var defines = shaderJson.GetDefines();
+
+        ShaderProgram program;
+        if (!string.IsNullOrEmpty(computePath))
+        {
+            var csPath = Path.IsPathRooted(computePath) ? computePath : Path.Combine(basePath, computePath);
+            program = _LoadComputeProgram(csPath, defines);
+            var computeShader = GpuShader.Compute(program, ownsProgram: false);
+            _shaderStore.Register(fullPath, computeShader);
+            return computeShader;
+        }
+
+        if (string.IsNullOrEmpty(vertexPath) || string.IsNullOrEmpty(pixelPath))
+        {
+            throw new InvalidOperationException($"Shader JSON at '{path}' must specify either vertex+pixel stages or a compute stage");
+        }
+
+        var vsPath = Path.IsPathRooted(vertexPath) ? vertexPath : Path.Combine(basePath, vertexPath);
+        var psPath = Path.IsPathRooted(pixelPath) ? pixelPath : Path.Combine(basePath, pixelPath);
+
+        program = _LoadShaderProgram(vsPath, psPath, defines);
+
+        var pipelineDesc = shaderJson.ToGraphicsPipelineDesc(
+            GraphicsContext.BackBufferFormat,
+            GraphicsContext.DepthBufferFormat);
+
+        var shader = GpuShader.Graphics(program, pipelineDesc, ownsProgram: false);
+        _shaderStore.Register(fullPath, shader);
+
+        return shader;
+    }
+
+    private async Task<GpuShader> _LoadShaderFromJsonAsync(string path, CancellationToken ct = default)
+    {
+        var fullPath = ContentPipeline.Content.ResolvePath(path);
+
+        var existingShader = _shaderStore[fullPath];
+        if (existingShader != null)
+        {
+            return existingShader;
+        }
+
+        var json = await ContentPipeline.Content.ReadTextAsync(path, ct);
+        var shaderJson = ShaderProgramJson.FromJson(json);
+
+        var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;
+        var (vertexPath, pixelPath, computePath) = shaderJson.GetStagePaths();
+        var defines = shaderJson.GetDefines();
+
+        ShaderProgram program;
+        if (!string.IsNullOrEmpty(computePath))
+        {
+            var csPath = Path.IsPathRooted(computePath) ? computePath : Path.Combine(basePath, computePath);
+            program = await _LoadComputeProgramAsync(csPath, defines, ct);
+            var computeShader = GpuShader.Compute(program, ownsProgram: false);
+            _shaderStore.Register(fullPath, computeShader);
+            return computeShader;
+        }
+
+        if (string.IsNullOrEmpty(vertexPath) || string.IsNullOrEmpty(pixelPath))
+        {
+            throw new InvalidOperationException($"Shader JSON at '{path}' must specify either vertex+pixel stages or a compute stage");
+        }
+
+        var vsPath = Path.IsPathRooted(vertexPath) ? vertexPath : Path.Combine(basePath, vertexPath);
+        var psPath = Path.IsPathRooted(pixelPath) ? pixelPath : Path.Combine(basePath, pixelPath);
+
+        program = await _LoadShaderProgramAsync(vsPath, psPath, defines, ct);
+
+        var pipelineDesc = shaderJson.ToGraphicsPipelineDesc(
+            GraphicsContext.BackBufferFormat,
+            GraphicsContext.DepthBufferFormat);
+
+        var shader = GpuShader.Graphics(program, pipelineDesc, ownsProgram: false);
+        _shaderStore.Register(fullPath, shader);
+
+        return shader;
     }
 
     private Mesh _CreateBox(float width, float height, float depth)

@@ -1,11 +1,9 @@
 using System.Numerics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using BepuPhysics;
 using BepuPhysics.Collidables;
 using BepuPhysics.CollisionDetection;
 using BepuPhysics.Constraints;
-using BepuPhysics.Trees;
 using BepuUtilities;
 using BepuUtilities.Memory;
 using NiziKit.Components;
@@ -13,7 +11,7 @@ using NiziKit.Core;
 
 namespace NiziKit.Physics;
 
-public sealed class PhysicsWorld : IWorldEventListener, IDisposable
+public sealed partial class PhysicsWorld : IWorldEventListener, IDisposable
 {
     private const int MaxCollisionEvents = 1024;
     private const int MaxTrackedContacts = 2048;
@@ -26,6 +24,10 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
     private readonly Dictionary<int, GameObject> _trackedObjects = new();
     private readonly Dictionary<BodyHandle, int> _bodyToId = new();
     private readonly Dictionary<StaticHandle, int> _staticToId = new();
+    private readonly Dictionary<int, List<ConstraintHandle>> _constraintsByOwner = new();
+    private readonly List<ConstraintHandle> _allConstraints = new();
+    private readonly HashSet<(BodyHandle, BodyHandle)> _ignoredCollisionPairs = new();
+    private readonly Dictionary<int, (GameObject Go, WheelColliderComponent Wheel)> _wheelColliders = new();
 
     private readonly CollisionPair[] _activeContactsBuffer = new CollisionPair[MaxTrackedContacts];
     private readonly CollisionPair[] _previousContactsBuffer = new CollisionPair[MaxTrackedContacts];
@@ -37,6 +39,9 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
     private readonly Lock _collisionLock = new();
 
     public Vector3 Gravity { get; set; }
+
+    internal Simulation Simulation => _simulation;
+    internal BufferPool BufferPool => _bufferPool;
 
     public PhysicsWorld(Vector3? gravity = null, int threadCount = -1)
     {
@@ -57,436 +62,79 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
             new SolveDescription(8, 1));
     }
 
-    internal int GetIdFromCollidablePublic(CollidableReference collidable)
-    {
-        return GetIdFromCollidable(collidable);
-    }
-
     public void Step(float dt)
     {
+        UpdateWheelColliders(dt);
         SwapContactBuffers();
         _simulation.Timestep(dt, _threadDispatcher);
         SyncToGameObjects();
         ProcessCollisionCallbacks();
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void SwapContactBuffers()
+    private void SyncToGameObjects()
     {
-        Array.Copy(_activeContactsBuffer, _previousContactsBuffer, _activeContactCount);
-        _previousContactCount = _activeContactCount;
-        _activeContactCount = 0;
-    }
-
-    private void ProcessCollisionCallbacks()
-    {
-        int eventCount;
-        Span<CollisionEventData> events = stackalloc CollisionEventData[MaxCollisionEvents];
-
-        lock (_collisionLock)
+        foreach (var (id, go) in _trackedObjects)
         {
-            eventCount = _pendingEventCount;
-            for (var i = 0; i < eventCount; i++)
+            var rigidbody = go.GetComponent<RigidbodyComponent>();
+            if (rigidbody == null)
             {
-                events[i] = _pendingCollisionEvents[i];
+                continue;
             }
-            _pendingEventCount = 0;
-        }
 
-        for (var i = 0; i < eventCount; i++)
-        {
-            ref var evt = ref events[i];
-            var idA = evt.IdA;
-            var idB = evt.IdB;
-            var key = idA < idB ? new CollisionPair(idA, idB) : new CollisionPair(idB, idA);
-
-            if (!ContainsContact(_activeContactsBuffer, _activeContactCount, key))
+            if (rigidbody.BodyType == PhysicsBodyType.Kinematic)
             {
-                if (_activeContactCount < MaxTrackedContacts)
+                SetPose(id, go.LocalPosition, go.LocalRotation);
+            }
+            else if (rigidbody.BodyType == PhysicsBodyType.Dynamic)
+            {
+                var pose = GetPose(id);
+                if (pose.HasValue)
                 {
-                    _activeContactsBuffer[_activeContactCount++] = key;
+                    go.LocalPosition = pose.Value.Position;
+                    go.LocalRotation = pose.Value.Rotation;
                 }
             }
         }
+    }
 
-        for (var i = 0; i < _activeContactCount; i++)
+    public void Dispose()
+    {
+        _simulation.Dispose();
+        _threadDispatcher.Dispose();
+        _bufferPool.Clear();
+    }
+
+    public void SceneReset()
+    {
+        foreach (var (id, entry) in _wheelColliders.ToArray())
         {
-            var key = _activeContactsBuffer[i];
+            UnregisterWheelCollider(entry.Go, entry.Wheel);
+        }
+        _wheelColliders.Clear();
+        _ignoredCollisionPairs.Clear();
 
-            if (!_trackedObjects.TryGetValue(key.IdA, out var goA) ||
-                !_trackedObjects.TryGetValue(key.IdB, out var goB))
+        foreach (var handle in _allConstraints.ToArray())
+        {
+            if (_simulation.Solver.ConstraintExists(handle))
             {
-                continue;
-            }
-
-            var rbA = goA.GetComponent<RigidbodyComponent>();
-            var rbB = goB.GetComponent<RigidbodyComponent>();
-
-            var velA = rbA != null ? GetVelocity(key.IdA) : Vector3.Zero;
-            var velB = rbB != null ? GetVelocity(key.IdB) : Vector3.Zero;
-            var relativeVelocity = velA - velB;
-
-            var wasActive = ContainsContact(_previousContactsBuffer, _previousContactCount, key);
-
-            var collisionA = new Collision
-            {
-                Other = goB,
-                Rigidbody = rbB,
-                RelativeVelocity = relativeVelocity,
-                ContactCount = 0
-            };
-
-            var collisionB = new Collision
-            {
-                Other = goA,
-                Rigidbody = rbA,
-                RelativeVelocity = -relativeVelocity,
-                ContactCount = 0
-            };
-
-            if (wasActive)
-            {
-                goA.OnCollisionStay(in collisionA);
-                goB.OnCollisionStay(in collisionB);
-            }
-            else
-            {
-                goA.OnCollisionEnter(in collisionA);
-                goB.OnCollisionEnter(in collisionB);
+                _simulation.Solver.Remove(handle);
             }
         }
+        _allConstraints.Clear();
+        _constraintsByOwner.Clear();
 
-        for (var i = 0; i < _previousContactCount; i++)
+        foreach (var id in _bodyHandles.Keys.ToArray())
         {
-            var key = _previousContactsBuffer[i];
-
-            if (ContainsContact(_activeContactsBuffer, _activeContactCount, key))
-            {
-                continue;
-            }
-
-            if (!_trackedObjects.TryGetValue(key.IdA, out var goA) ||
-                !_trackedObjects.TryGetValue(key.IdB, out var goB))
-            {
-                continue;
-            }
-
-            var rbA = goA.GetComponent<RigidbodyComponent>();
-            var rbB = goB.GetComponent<RigidbodyComponent>();
-
-            var collisionA = new Collision
-            {
-                Other = goB,
-                Rigidbody = rbB,
-                RelativeVelocity = Vector3.Zero,
-                ContactCount = 0
-            };
-
-            var collisionB = new Collision
-            {
-                Other = goA,
-                Rigidbody = rbA,
-                RelativeVelocity = Vector3.Zero,
-                ContactCount = 0
-            };
-
-            goA.OnCollisionExit(in collisionA);
-            goB.OnCollisionExit(in collisionB);
+            RemoveBody(id);
         }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static bool ContainsContact(CollisionPair[] buffer, int count, CollisionPair key)
-    {
-        for (var i = 0; i < count; i++)
+        foreach (var id in _staticHandles.Keys.ToArray())
         {
-            if (buffer[i].IdA == key.IdA && buffer[i].IdB == key.IdB)
-            {
-                return true;
-            }
+            RemoveBody(id);
         }
-        return false;
-    }
-
-    internal void RecordContact(int idA, int idB, Vector3 contactPoint, Vector3 normal, float depth)
-    {
-        lock (_collisionLock)
-        {
-            if (_pendingEventCount < MaxCollisionEvents)
-            {
-                _pendingCollisionEvents[_pendingEventCount++] = new CollisionEventData
-                {
-                    IdA = idA,
-                    IdB = idB,
-                    ContactPoint = contactPoint,
-                    Normal = normal,
-                    Depth = depth
-                };
-            }
-        }
-    }
-
-    public BodyHandle CreateBody(int id, Vector3 position, Quaternion rotation, PhysicsBodyDesc desc)
-    {
-        var handle = _simulation.Bodies.Add(CreateBodyDescription(position, rotation, desc));
-        _bodyHandles[id] = handle;
-        _bodyToId[handle] = id;
-        return handle;
-    }
-
-    public StaticHandle CreateStaticBody(int id, Vector3 position, Quaternion rotation, PhysicsShape shape)
-    {
-        var shapeIndex = shape.AddToSimulation(_simulation);
-        var handle = _simulation.Statics.Add(new StaticDescription(
-            new RigidPose(position, rotation), shapeIndex));
-        _staticHandles[id] = handle;
-        _staticToId[handle] = id;
-        return handle;
-    }
-
-    public void RemoveBody(int id)
-    {
-        if (_bodyHandles.TryGetValue(id, out var bodyHandle))
-        {
-            _simulation.Bodies.Remove(bodyHandle);
-            _bodyHandles.Remove(id);
-            _bodyToId.Remove(bodyHandle);
-        }
-
-        if (_staticHandles.TryGetValue(id, out var staticHandle))
-        {
-            _simulation.Statics.Remove(staticHandle);
-            _staticHandles.Remove(id);
-            _staticToId.Remove(staticHandle);
-        }
-    }
-
-    public (Vector3 Position, Quaternion Rotation)? GetPose(int id)
-    {
-        if (_bodyHandles.TryGetValue(id, out var handle))
-        {
-            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
-            return (bodyRef.Pose.Position, bodyRef.Pose.Orientation);
-        }
-        return null;
-    }
-
-    public void SetPose(int id, Vector3 position, Quaternion rotation)
-    {
-        if (_bodyHandles.TryGetValue(id, out var handle))
-        {
-            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
-            bodyRef.Pose.Position = position;
-            bodyRef.Pose.Orientation = rotation;
-        }
-    }
-
-    public void ApplyImpulse(int id, Vector3 impulse)
-    {
-        if (_bodyHandles.TryGetValue(id, out var handle))
-        {
-            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
-            bodyRef.ApplyLinearImpulse(impulse);
-        }
-    }
-
-    public void ApplyImpulse(int id, Vector3 impulse, Vector3 worldPoint)
-    {
-        if (_bodyHandles.TryGetValue(id, out var handle))
-        {
-            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
-            var offset = worldPoint - bodyRef.Pose.Position;
-            bodyRef.ApplyImpulse(impulse, offset);
-        }
-    }
-
-    public void ApplyAngularImpulse(int id, Vector3 angularImpulse)
-    {
-        if (_bodyHandles.TryGetValue(id, out var handle))
-        {
-            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
-            bodyRef.ApplyAngularImpulse(angularImpulse);
-        }
-    }
-
-    public Vector3 GetVelocity(int id)
-    {
-        if (_bodyHandles.TryGetValue(id, out var handle))
-        {
-            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
-            return bodyRef.Velocity.Linear;
-        }
-        return Vector3.Zero;
-    }
-
-    public void SetVelocity(int id, Vector3 velocity)
-    {
-        if (_bodyHandles.TryGetValue(id, out var handle))
-        {
-            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
-            bodyRef.Velocity.Linear = velocity;
-        }
-    }
-
-    public Vector3 GetAngularVelocity(int id)
-    {
-        if (_bodyHandles.TryGetValue(id, out var handle))
-        {
-            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
-            return bodyRef.Velocity.Angular;
-        }
-        return Vector3.Zero;
-    }
-
-    public void SetAngularVelocity(int id, Vector3 angularVelocity)
-    {
-        if (_bodyHandles.TryGetValue(id, out var handle))
-        {
-            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
-            bodyRef.Velocity.Angular = angularVelocity;
-        }
-    }
-
-    public void Awake(int id)
-    {
-        if (_bodyHandles.TryGetValue(id, out var handle))
-        {
-            _simulation.Awakener.AwakenBody(handle);
-        }
-    }
-
-    public bool Raycast(Ray ray, float maxDistance, out RaycastHit hit)
-    {
-        hit = default;
-        var handler = new RayHitHandler(this);
-        _simulation.RayCast(ray.Origin, ray.Direction, maxDistance, ref handler);
-
-        if (handler.HasHit)
-        {
-            hit = handler.Hit;
-            return true;
-        }
-        return false;
-    }
-
-    public void AddAttractorForce(Vector3 position, float force, float radius, float falloffPower = 1f)
-    {
-        var radiusSq = radius * radius;
-
-        foreach (var (id, handle) in _bodyHandles)
-        {
-            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
-            var bodyPos = bodyRef.Pose.Position;
-            var diff = position - bodyPos;
-            var distSq = diff.LengthSquared();
-
-            if (distSq > radiusSq || distSq < 0.0001f)
-            {
-                continue;
-            }
-
-            var dist = MathF.Sqrt(distSq);
-            var falloff = MathF.Pow(1f - (dist / radius), falloffPower);
-            var direction = diff / dist;
-
-            var impulse = direction * force * falloff;
-            _simulation.Awakener.AwakenBody(handle);
-            bodyRef.ApplyLinearImpulse(impulse);
-        }
-    }
-
-    public void AddExplosionForce(Vector3 position, float force, float radius, float upwardsModifier = 0f)
-    {
-        var radiusSq = radius * radius;
-
-        foreach (var (id, handle) in _bodyHandles)
-        {
-            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
-            var bodyPos = bodyRef.Pose.Position;
-            var diff = bodyPos - position;
-            var distSq = diff.LengthSquared();
-
-            if (distSq > radiusSq || distSq < 0.0001f)
-            {
-                continue;
-            }
-
-            var dist = MathF.Sqrt(distSq);
-            var falloff = 1f - (dist / radius);
-            var direction = diff / dist;
-
-            if (upwardsModifier != 0f)
-            {
-                direction.Y += upwardsModifier;
-                direction = Vector3.Normalize(direction);
-            }
-
-            var impulse = direction * force * falloff;
-            _simulation.Awakener.AwakenBody(handle);
-            bodyRef.ApplyLinearImpulse(impulse);
-        }
-    }
-
-    public IEnumerable<int> OverlapSphere(Vector3 position, float radius)
-    {
-        var radiusSq = radius * radius;
-        foreach (var (id, _) in _trackedObjects)
-        {
-            var pose = GetPose(id);
-            if (!pose.HasValue)
-            {
-                continue;
-            }
-
-            var distSq = (pose.Value.Position - position).LengthSquared();
-            if (distSq <= radiusSq)
-            {
-                yield return id;
-            }
-        }
-    }
-
-    private int GetIdFromCollidable(CollidableReference collidable)
-    {
-        if (collidable.Mobility == CollidableMobility.Static)
-        {
-            var staticHandle = collidable.StaticHandle;
-            return _staticToId.TryGetValue(staticHandle, out var id) ? id : -1;
-        }
-        else
-        {
-            var bodyHandle = collidable.BodyHandle;
-            return _bodyToId.TryGetValue(bodyHandle, out var id) ? id : -1;
-        }
-    }
-
-    private struct RayHitHandler(PhysicsWorld world) : IRayHitHandler
-    {
-        public bool HasHit;
-        public RaycastHit Hit;
-        private float _closestT = float.MaxValue;
-
-        public bool AllowTest(CollidableReference collidable) => true;
-
-        public bool AllowTest(CollidableReference collidable, int childIndex) => true;
-
-        public void OnRayHit(in RayData ray, ref float maximumT, float t, in Vector3 normal, CollidableReference collidable, int childIndex)
-        {
-            if (t < _closestT)
-            {
-                _closestT = t;
-                maximumT = t;
-                HasHit = true;
-                Hit = new RaycastHit
-                {
-                    Point = ray.Origin + ray.Direction * t,
-                    Normal = normal,
-                    Distance = t,
-                    GameObjectId = world.GetIdFromCollidable(collidable),
-                    IsStatic = collidable.Mobility == CollidableMobility.Static
-                };
-            }
-        }
+        _trackedObjects.Clear();
+        _activeContactCount = 0;
+        _previousContactCount = 0;
+        _pendingEventCount = 0;
     }
 
     private BodyDescription CreateBodyDescription(Vector3 position, Quaternion rotation, PhysicsBodyDesc desc)
@@ -504,133 +152,6 @@ public sealed class PhysicsWorld : IWorldEventListener, IDisposable
                 inertia,
                 new CollidableDescription(shapeIndex, desc.SpeculativeMargin),
                 new BodyActivityDescription(desc.SleepThreshold));
-    }
-
-    public void Dispose()
-    {
-        _simulation.Dispose();
-        _threadDispatcher.Dispose();
-        _bufferPool.Clear();
-    }
-
-    public void SceneReset()
-    {
-        foreach (var id in _bodyHandles.Keys.ToArray())
-        {
-            RemoveBody(id);
-        }
-        foreach (var id in _staticHandles.Keys.ToArray())
-        {
-            RemoveBody(id);
-        }
-        _trackedObjects.Clear();
-        _activeContactCount = 0;
-        _previousContactCount = 0;
-        _pendingEventCount = 0;
-    }
-
-    public void GameObjectCreated(GameObject go)
-    {
-        TryRegister(go);
-    }
-
-    public void GameObjectDestroyed(GameObject go)
-    {
-        Unregister(go);
-    }
-
-    public void ComponentAdded(GameObject go, IComponent component)
-    {
-        if (component is RigidbodyComponent)
-        {
-            TryRegister(go);
-        }
-    }
-
-    public void ComponentRemoved(GameObject go, IComponent component)
-    {
-        if (component is RigidbodyComponent)
-        {
-            Unregister(go);
-        }
-    }
-
-    public void ComponentChanged(GameObject go, IComponent component)
-    {
-        if (component is RigidbodyComponent)
-        {
-            Unregister(go);
-            TryRegister(go);
-        }
-    }
-
-    private void TryRegister(GameObject go)
-    {
-        if (_trackedObjects.ContainsKey(go.Id))
-        {
-            return;
-        }
-
-        var rigidbody = go.GetComponent<RigidbodyComponent>();
-        if (rigidbody == null)
-        {
-            return;
-        }
-
-        if (rigidbody.BodyType == PhysicsBodyType.Static)
-        {
-            var handle = CreateStaticBody(go.Id, go.LocalPosition, go.LocalRotation, rigidbody.Shape);
-            rigidbody.StaticHandle = handle;
-        }
-        else
-        {
-            var handle = CreateBody(go.Id, go.LocalPosition, go.LocalRotation, rigidbody.ToBodyDesc());
-            rigidbody.BodyHandle = handle;
-        }
-
-        _trackedObjects[go.Id] = go;
-    }
-
-    private void Unregister(GameObject go)
-    {
-        if (!_trackedObjects.Remove(go.Id))
-        {
-            return;
-        }
-
-        var rigidbody = go.GetComponent<RigidbodyComponent>();
-        if (rigidbody != null)
-        {
-            rigidbody.BodyHandle = null;
-            rigidbody.StaticHandle = null;
-        }
-
-        RemoveBody(go.Id);
-    }
-
-    private void SyncToGameObjects()
-    {
-        foreach (var (id, go) in _trackedObjects)
-        {
-            var rigidbody = go.GetComponent<RigidbodyComponent>();
-            if (rigidbody == null)
-            {
-                continue;
-            }
-            if (rigidbody.BodyType == PhysicsBodyType.Kinematic)
-            {
-                SetPose(id, go.LocalPosition, go.LocalRotation);
-            }
-            else if (rigidbody.BodyType == PhysicsBodyType.Dynamic)
-            {
-                var pose = GetPose(id);
-                if (pose.HasValue)
-                {
-                    go.LocalPosition = pose.Value.Position;
-                    go.LocalRotation = pose.Value.Rotation;
-                }
-            }
-        }
     }
 }
 
@@ -656,7 +177,22 @@ internal readonly struct NarrowPhaseCallbacks(PhysicsWorld physicsWorld) : INarr
     public void Initialize(Simulation simulation) { }
 
     public bool AllowContactGeneration(int workerIndex, CollidableReference a, CollidableReference b, ref float speculativeMargin)
-        => a.Mobility == CollidableMobility.Dynamic || b.Mobility == CollidableMobility.Dynamic;
+    {
+        if (a.Mobility != CollidableMobility.Dynamic && b.Mobility != CollidableMobility.Dynamic)
+        {
+            return false;
+        }
+
+        if (a.Mobility == CollidableMobility.Dynamic && b.Mobility == CollidableMobility.Dynamic)
+        {
+            if (physicsWorld.ShouldIgnoreCollision(a.BodyHandle, b.BodyHandle))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     public bool AllowContactGeneration(int workerIndex, CollidablePair pair, int childIndexA, int childIndexB)
         => true;

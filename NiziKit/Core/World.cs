@@ -19,6 +19,71 @@ public class World : IDisposable
 
     public static void LoadScene(Scene scene) => Instance._LoadScene(scene);
 
+    public static void LoadScene(string scenePath)
+    {
+        if (scenePath.EndsWith(".niziscene.json", StringComparison.OrdinalIgnoreCase) ||
+            scenePath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        {
+            LoadScene(new JsonScene(scenePath));
+        }
+        else
+        {
+            throw new ArgumentException($"Unsupported scene format: {scenePath}. Expected .niziscene.json");
+        }
+    }
+
+    public static T? FindObjectOfType<T>() where T : GameObject
+    {
+        return CurrentScene?.GetObjectsOfType<T>().FirstOrDefault();
+    }
+
+    public static IReadOnlyList<T> FindObjectsOfType<T>() where T : GameObject
+    {
+        return CurrentScene?.GetObjectsOfType<T>() ?? [];
+    }
+
+    public static GameObject? FindObjectWithTag(string tag)
+    {
+        if (CurrentScene == null) return null;
+        foreach (var obj in CurrentScene.RootObjects)
+        {
+            var found = FindObjectWithTagRecursive(obj, tag);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    public static List<GameObject> FindObjectsWithTag(string tag)
+    {
+        var results = new List<GameObject>();
+        if (CurrentScene == null) return results;
+        foreach (var obj in CurrentScene.RootObjects)
+        {
+            FindObjectsWithTagRecursive(obj, tag, results);
+        }
+        return results;
+    }
+
+    private static GameObject? FindObjectWithTagRecursive(GameObject obj, string tag)
+    {
+        if (obj.Tag == tag) return obj;
+        foreach (var child in obj.Children)
+        {
+            var found = FindObjectWithTagRecursive(child, tag);
+            if (found != null) return found;
+        }
+        return null;
+    }
+
+    private static void FindObjectsWithTagRecursive(GameObject obj, string tag, List<GameObject> results)
+    {
+        if (obj.Tag == tag) results.Add(obj);
+        foreach (var child in obj.Children)
+        {
+            FindObjectsWithTagRecursive(child, tag, results);
+        }
+    }
+
     internal static void OnGameObjectCreated(GameObject go) => Instance._OnGameObjectCreated(go);
     internal static void OnGameObjectDestroyed(GameObject go) => Instance._OnGameObjectDestroyed(go);
     internal static void OnComponentAdded(GameObject go, IComponent component) => Instance._OnComponentAdded(go, component);

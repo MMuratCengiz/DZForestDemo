@@ -73,7 +73,9 @@
       "Bash(git add:*)",
       "Bash(ln:*)",
       "Bash(readlink:*)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "WebFetch(domain:docs.unity3d.com)",
+      "Bash(/opt/homebrew/bin/magick:*)"
     ]
   }
 }

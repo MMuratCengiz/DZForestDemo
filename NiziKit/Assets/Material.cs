@@ -1,4 +1,3 @@
-using DenOfIz;
 using NiziKit.Graphics;
 
 namespace NiziKit.Assets;

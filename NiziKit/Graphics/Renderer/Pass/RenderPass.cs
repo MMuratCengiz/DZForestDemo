@@ -1,5 +1,4 @@
 using DenOfIz;
-using NiziKit.Assets;
 using NiziKit.Graphics.Binding;
 
 namespace NiziKit.Graphics.Renderer.Pass;

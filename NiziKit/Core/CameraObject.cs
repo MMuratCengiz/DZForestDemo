@@ -35,7 +35,19 @@ public class CameraObject(string name) : GameObject(name)
         }
     }
 
-    public Vector3 Forward => Controller!.Forward;
+    public Vector3 Forward
+    {
+        get
+        {
+            // TODO should cameras with no controllers be allowed?
+            if (Controller != null)
+            {
+                return Controller.Forward;
+            }
+            var forward = Vector3.Transform(Vector3.UnitZ, LocalRotation);
+            return Vector3.Normalize(forward);
+        }
+    }
 
     public Vector3 Right
     {

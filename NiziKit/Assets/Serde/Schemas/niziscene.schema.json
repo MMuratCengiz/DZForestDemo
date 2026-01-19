@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nizikit.dev/schemas/niziscene.schema.json",
+  "title": "NiziKit Scene",
+  "description": "Schema for NiziKit scene definition files (.niziscene.json)",
+  "type": "object",
+  "required": ["name"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Display name of the scene"
+    },
+    "assetPacks": {
+      "type": "array",
+      "description": "Asset packs to load for this scene",
+      "items": {
+        "type": "string"
+      }
+    },
+    "camera": {
+      "$ref": "#/$defs/camera"
+    },
+    "lights": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/light"
+      }
+    },
+    "objects": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/gameObject"
+      }
+    }
+  },
+  "$defs": {
+    "camera": {
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "position": { "$ref": "#/$defs/vector3" },
+        "rotation": { "$ref": "#/$defs/vector3" },
+        "fieldOfView": { "type": "number" },
+        "nearPlane": { "type": "number" },
+        "farPlane": { "type": "number" },
+        "controller": {
+          "type": "object",
+          "properties": {
+            "lookAt": { "$ref": "#/$defs/vector3" },
+            "moveSpeed": { "type": "number" },
+            "lookSensitivity": { "type": "number" }
+          }
+        }
+      }
+    },
+    "light": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["directional", "point", "spot"]
+        },
+        "name": { "type": "string" },
+        "position": { "$ref": "#/$defs/vector3" },
+        "direction": { "$ref": "#/$defs/vector3" },
+        "color": { "$ref": "#/$defs/vector3" },
+        "intensity": { "type": "number" },
+        "range": { "type": "number" },
+        "castsShadows": { "type": "boolean" },
+        "innerAngle": { "type": "number" },
+        "outerAngle": { "type": "number" }
+      }
+    },
+    "gameObject": {
+      "type": "object",
+      "properties": {
+        "type": { "type": "string" },
+        "name": { "type": "string" },
+        "tag": { "type": "string" },
+        "active": { "type": "boolean" },
+        "position": { "$ref": "#/$defs/vector3" },
+        "rotation": { "$ref": "#/$defs/vector3" },
+        "scale": { "$ref": "#/$defs/vector3" },
+        "components": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/component" }
+        },
+        "children": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/gameObject" }
+        },
+        "properties": { "type": "object" }
+      }
+    },
+    "component": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["mesh", "material", "rigidbody"]
+        },
+        "mesh": { "type": "string" },
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "depth": { "type": "number" },
+        "diameter": { "type": "number" },
+        "tessellation": { "type": "integer" },
+        "material": { "type": "string" },
+        "bodyType": {
+          "type": "string",
+          "enum": ["static", "dynamic", "kinematic"]
+        },
+        "shape": {
+          "type": "string",
+          "enum": ["box", "sphere", "capsule", "cylinder"]
+        },
+        "size": { "$ref": "#/$defs/vector3" },
+        "mass": { "type": "number" },
+        "radius": { "type": "number" },
+        "length": { "type": "number" }
+      }
+    },
+    "vector3": {
+      "type": "array",
+      "items": { "type": "number" },
+      "minItems": 3,
+      "maxItems": 3
+    }
+  }
+}

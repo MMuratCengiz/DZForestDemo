@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://nizikit.dev/schemas/nizishp.schema.json",
+  "title": "NiziKit Shader Program",
+  "description": "Schema for NiziKit shader program definition files (.nizishp.json)",
+  "type": "object",
+  "required": ["name", "stages"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique name identifier for the shader program"
+    },
+    "stages": {
+      "type": "array",
+      "description": "List of shader stages that make up this program",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/shaderStage"
+      }
+    },
+    "defines": {
+      "type": "object",
+      "description": "Preprocessor defines to pass to the shader compiler",
+      "additionalProperties": {
+        "type": "string"
+      }
+    },
+    "pipeline": {
+      "$ref": "#/$defs/graphicsPipeline"
+    }
+  },
+  "$defs": {
+    "shaderStage": {
+      "type": "object",
+      "required": ["stage", "path"],
+      "properties": {
+        "stage": {
+          "type": "string",
+          "enum": ["vertex", "pixel", "compute"],
+          "description": "The shader stage type"
+        },
+        "path": {
+          "type": "string",
+          "description": "Relative path to the HLSL source file"
+        },
+        "entryPoint": {
+          "type": "string",
+          "default": "main",
+          "description": "Entry point function name in the shader"
+        }
+      }
+    },
+    "graphicsPipeline": {
+      "type": "object",
+      "description": "Graphics pipeline state configuration",
+      "properties": {
+        "primitiveTopology": {
+          "type": "string",
+          "enum": ["triangle", "line", "point"],
+          "default": "triangle",
+          "description": "Primitive topology for rendering"
+        },
+        "cullMode": {
+          "type": "string",
+          "enum": ["none", "frontFace", "backFace"],
+          "default": "backFace",
+          "description": "Face culling mode"
+        },
+        "fillMode": {
+          "type": "string",
+          "enum": ["solid", "wireframe"],
+          "default": "solid",
+          "description": "Polygon fill mode"
+        },
+        "depthTest": {
+          "$ref": "#/$defs/depthTest"
+        },
+        "stencilTest": {
+          "$ref": "#/$defs/stencilTest"
+        },
+        "blend": {
+          "$ref": "#/$defs/blend"
+        },
+        "rasterization": {
+          "$ref": "#/$defs/rasterization"
+        }
+      }
+    },
+    "depthTest": {
+      "type": "object",
+      "description": "Depth test configuration",
+      "properties": {
+        "enable": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable depth testing"
+        },
+        "compareOp": {
+          "type": "string",
+          "enum": ["never", "less", "equal", "lessOrEqual", "greater", "notEqual", "greaterOrEqual", "always"],
+          "default": "less",
+          "description": "Depth comparison operation"
+        },
+        "write": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable depth buffer writes"
+        }
+      }
+    },
+    "stencilTest": {
+      "type": "object",
+      "description": "Stencil test configuration",
+      "properties": {
+        "enable": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable stencil testing"
+        }
+      }
+    },
+    "blend": {
+      "type": "object",
+      "description": "Blend state configuration",
+      "properties": {
+        "enable": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable alpha blending"
+        },
+        "renderTargetWriteMask": {
+          "type": "integer",
+          "default": 15,
+          "minimum": 0,
+          "maximum": 15,
+          "description": "Bitmask for render target write channels (R=1, G=2, B=4, A=8)"
+        }
+      }
+    },
+    "rasterization": {
+      "type": "object",
+      "description": "Rasterization state configuration",
+      "properties": {
+        "depthBias": {
+          "type": "integer",
+          "default": 0,
+          "description": "Depth bias constant"
+        },
+        "depthBiasClamp": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Maximum depth bias"
+        },
+        "slopeScaledDepthBias": {
+          "type": "number",
+          "default": 0.0,
+          "description": "Slope-scaled depth bias"
+        },
+        "frontCounterClockwise": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use counter-clockwise winding for front faces"
+        }
+      }
+    }
+  }
+}

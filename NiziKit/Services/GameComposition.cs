@@ -1,10 +1,8 @@
 using DenOfIz;
 using NiziKit.Application.Timing;
-using NiziKit.Assets;
 using NiziKit.Core;
 using NiziKit.Graphics;
 using NiziKit.Graphics.Binding;
-using NiziKit.Graphics.Renderer.Forward;
 using NiziKit.Inputs;
 using Pure.DI;
 

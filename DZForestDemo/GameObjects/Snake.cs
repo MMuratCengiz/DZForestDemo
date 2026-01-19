@@ -7,7 +7,7 @@ using NiziKit.Inputs;
 
 namespace DZForestDemo.GameObjects;
 
-public class Snake : GameObject
+public class Snake() : GameObject("Snake")
 {
     private readonly List<SnakeSegment> _segments = [];
     private readonly Queue<Vector3> _inputQueue = new();
@@ -39,10 +39,6 @@ public class Snake : GameObject
     public bool IsGameOver => _isGameOver;
     public bool IsPaused => _isPaused;
     public int Score => _score;
-
-    public Snake() : base("Snake")
-    {
-    }
 
     public override void Begin()
     {
