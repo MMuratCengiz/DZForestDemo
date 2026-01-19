@@ -8,7 +8,6 @@ public class Model : IAsset
     public string SourcePath { get; set; } = string.Empty;
     public List<Mesh> Meshes { get; set; } = [];
     public Skeleton? Skeleton { get; set; }
-    public List<Animation> Animations { get; set; } = [];
     public List<Material> Materials { get; set; } = [];
 
     public void Load(string path)
@@ -35,12 +34,10 @@ public class Model : IAsset
         SourcePath = gltfModel.SourcePath;
         Meshes = gltfModel.Meshes;
 
-        if (gltfModel.Skeletons.Count > 0)
+        if (gltfModel.HasSkeleton)
         {
-            Skeleton = gltfModel.Skeletons[0];
+            Skeleton = gltfModel.GetSkeleton();
         }
-
-        Animations = gltfModel.Animations;
     }
 
     public void Dispose()
@@ -51,10 +48,5 @@ public class Model : IAsset
         }
 
         Skeleton?.Dispose();
-
-        foreach (var animation in Animations)
-        {
-            animation.Dispose();
-        }
     }
 }

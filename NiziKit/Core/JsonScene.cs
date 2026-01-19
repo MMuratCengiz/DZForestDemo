@@ -339,17 +339,11 @@ public class JsonScene : Scene, IAssetResolver
             return CreateGeometry(geoType, parameters);
         }
 
-        if (reference.StartsWith("file:"))
-        {
-            var path = reference.Substring(5);
-            var model = Assets.Assets.LoadModel(path);
-            return model.Meshes[0];
-        }
-
         return ResolvePackAsset(reference, (packName, assetName) =>
         {
-            var model = AssetPacks.AssetPacks.GetModel(packName, assetName);
-            return model.Meshes[0];
+            var (modelName, meshSelector) = ParseMeshSelector(assetName);
+            var model = AssetPacks.AssetPacks.GetModel(packName, modelName);
+            return GetMeshFromModel(model, meshSelector);
         });
     }
 
@@ -358,16 +352,6 @@ public class JsonScene : Scene, IAssetResolver
         if (string.IsNullOrEmpty(reference))
         {
             return null;
-        }
-
-        if (reference.StartsWith("builtin:"))
-        {
-            return Assets.Assets.GetMaterial(reference.Substring(8));
-        }
-
-        if (reference.StartsWith("file:"))
-        {
-            return Assets.Assets.LoadMaterial(reference.Substring(5));
         }
 
         return ResolvePackAsset(reference, AssetPacks.AssetPacks.GetMaterial);
@@ -380,11 +364,6 @@ public class JsonScene : Scene, IAssetResolver
             return null;
         }
 
-        if (reference.StartsWith("file:"))
-        {
-            return Assets.Assets.LoadTexture(reference.Substring(5));
-        }
-
         return ResolvePackAsset(reference, AssetPacks.AssetPacks.GetTexture);
     }
 
@@ -395,18 +374,37 @@ public class JsonScene : Scene, IAssetResolver
             return null;
         }
 
-        if (reference.StartsWith("builtin:") || reference.StartsWith("Builtin/"))
-        {
-            var name = reference.StartsWith("builtin:") ? reference.Substring(8) : reference;
-            return Assets.Assets.GetShader(name);
-        }
-
-        if (reference.StartsWith("file:"))
-        {
-            return Assets.Assets.LoadShaderFromJson(reference.Substring(5));
-        }
-
         return ResolvePackAsset(reference, AssetPacks.AssetPacks.GetShader);
+    }
+
+    public Skeleton? ResolveSkeleton(string reference)
+    {
+        if (string.IsNullOrEmpty(reference))
+        {
+            return null;
+        }
+
+        return ResolvePackAsset(reference, (packName, modelName) =>
+        {
+            var model = AssetPacks.AssetPacks.GetModel(packName, modelName);
+            return model.Skeleton ?? throw new InvalidOperationException($"Model '{modelName}' does not have a skeleton");
+        });
+    }
+
+    public Assets.Animation? ResolveAnimation(string reference)
+    {
+        if (string.IsNullOrEmpty(reference))
+        {
+            return null;
+        }
+
+        return ResolvePackAsset(reference, (packName, assetName) =>
+        {
+            var (modelName, animationSelector) = ParseMeshSelector(assetName);
+            var model = AssetPacks.AssetPacks.GetModel(packName, modelName);
+            var skeleton = model.Skeleton ?? throw new InvalidOperationException($"Model '{modelName}' does not have a skeleton");
+            return GetAnimationFromSkeleton(skeleton, animationSelector);
+        });
     }
 
     #endregion
@@ -450,17 +448,11 @@ public class JsonScene : Scene, IAssetResolver
             };
         }
 
-        if (meshRef.StartsWith("file:"))
-        {
-            var path = meshRef.Substring(5);
-            var model = Assets.Assets.LoadModel(path);
-            return model.Meshes[0];
-        }
-
         return ResolvePackAsset(meshRef, (packName, assetName) =>
         {
-            var model = AssetPacks.AssetPacks.GetModel(packName, assetName);
-            return model.Meshes[0];
+            var (modelName, meshSelector) = ParseMeshSelector(assetName);
+            var model = AssetPacks.AssetPacks.GetModel(packName, modelName);
+            return GetMeshFromModel(model, meshSelector);
         });
     }
 
@@ -498,6 +490,55 @@ public class JsonScene : Scene, IAssetResolver
             int i => i,
             _ => defaultValue
         };
+    }
+
+    private static (string modelName, string? meshSelector) ParseMeshSelector(string assetReference)
+    {
+        var slashIndex = assetReference.IndexOf('/');
+        if (slashIndex > 0)
+        {
+            return (assetReference.Substring(0, slashIndex), assetReference.Substring(slashIndex + 1));
+        }
+        return (assetReference, null);
+    }
+
+    private static Mesh GetMeshFromModel(Model model, string? meshSelector)
+    {
+        if (string.IsNullOrEmpty(meshSelector))
+        {
+            return model.Meshes[0];
+        }
+
+        if (int.TryParse(meshSelector, out var index))
+        {
+            if (index < 0 || index >= model.Meshes.Count)
+            {
+                throw new IndexOutOfRangeException($"Mesh index {index} is out of range. Model has {model.Meshes.Count} meshes.");
+            }
+            return model.Meshes[index];
+        }
+
+        var mesh = model.Meshes.FirstOrDefault(m => m.Name == meshSelector);
+        if (mesh == null)
+        {
+            throw new KeyNotFoundException($"Mesh '{meshSelector}' not found in model. Available meshes: {string.Join(", ", model.Meshes.Select(m => m.Name))}");
+        }
+        return mesh;
+    }
+
+    private static Assets.Animation GetAnimationFromSkeleton(Skeleton skeleton, string? animationSelector)
+    {
+        if (string.IsNullOrEmpty(animationSelector))
+        {
+            return skeleton.GetAnimation(0);
+        }
+
+        if (uint.TryParse(animationSelector, out var index))
+        {
+            return skeleton.GetAnimation(index);
+        }
+
+        return skeleton.GetAnimation(animationSelector);
     }
 
     private static T ResolvePackAsset<T>(string reference, Func<string, string, T> resolver)

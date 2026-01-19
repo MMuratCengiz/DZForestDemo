@@ -19,7 +19,7 @@ public class GlowingFoodMaterial : Material
             Height = 1,
             GpuTexture = _colorTexture.Texture
         };
-        GpuShader = Content.LoadShaderFromJson("Shaders/GlowingFood.nizishp.json");
+        GpuShader = Content.LoadShader("Shaders/GlowingFood.nizishp.json");
     }
 
     public override void Dispose()

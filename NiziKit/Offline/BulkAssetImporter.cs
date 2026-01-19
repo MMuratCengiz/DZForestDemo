@@ -31,7 +31,6 @@ public sealed class DirectoryImportResult
 public sealed class BulkAssetImporter : IDisposable
 {
     private readonly AssetExporter _assetExporter = new();
-    private readonly TextureExporter _textureExporter = new();
 
     private static readonly string[] ModelExtensions = [".fbx", ".gltf", ".glb", ".obj", ".dae", ".blend"];
     private static readonly string[] TextureExtensions = [".png", ".jpg", ".jpeg", ".tga", ".bmp"];
@@ -39,7 +38,6 @@ public sealed class BulkAssetImporter : IDisposable
     public void Dispose()
     {
         _assetExporter.Dispose();
-        _textureExporter.Dispose();
     }
 
     public DirectoryImportResult Import(DirectoryImportSettings settings)
@@ -172,7 +170,7 @@ public sealed class BulkAssetImporter : IDisposable
     {
         var relativePath = Path.GetRelativePath(settings.SourceDirectory, sourceFile);
         var relativeDir = Path.GetDirectoryName(relativePath) ?? "";
-        var assetName = Path.GetFileNameWithoutExtension(sourceFile);
+        var fileName = Path.GetFileName(sourceFile);
 
         var outputDir = settings.PreserveDirectoryStructure
             ? Path.Combine(settings.OutputDirectory, "Textures", relativeDir)
@@ -180,16 +178,17 @@ public sealed class BulkAssetImporter : IDisposable
 
         Directory.CreateDirectory(outputDir);
 
-        var exportSettings = new TextureExportSettings
+        // Copy texture as-is since Texture2d.Load supports PNG/JPG/TGA/BMP directly
+        // (TextureData.CreateFromData does not support .dztex format)
+        var outputPath = Path.Combine(outputDir, fileName);
+        try
         {
-            SourcePath = sourceFile,
-            OutputDirectory = outputDir,
-            AssetName = "", // Empty to use original filename
-            GenerateMips = settings.GenerateMips,
-            FlipY = false
-        };
-
-        using var exporter = new TextureExporter();
-        return exporter.Export(exportSettings);
+            File.Copy(sourceFile, outputPath, overwrite: true);
+            return TextureExportResult.Succeeded(outputPath);
+        }
+        catch (Exception ex)
+        {
+            return TextureExportResult.Failed(ex.Message);
+        }
     }
 }

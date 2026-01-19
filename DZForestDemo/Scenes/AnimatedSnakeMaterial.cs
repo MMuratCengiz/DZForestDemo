@@ -20,7 +20,7 @@ public class AnimatedSnakeMaterial : Material
             Height = 1,
             GpuTexture = _colorTexture.Texture
         };
-        GpuShader = Content.LoadShaderFromJson("Shaders/AnimatedSnake.nizishp.json");
+        GpuShader = Content.LoadShader("Shaders/AnimatedSnake.nizishp.json");
     }
 
     public override void Dispose()

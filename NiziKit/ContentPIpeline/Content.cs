@@ -132,31 +132,16 @@ public static class Content
         CancellationToken ct = default)
         => Assets.Assets.LoadComputeProgramAsync(computePath, defines, ct);
 
-    public static GpuShader LoadShader(
-        string vertexPath,
-        string pixelPath,
-        GraphicsPipelineDesc pipelineDesc,
-        Dictionary<string, string?>? defines = null)
-        => Assets.Assets.LoadShader(vertexPath, pixelPath, pipelineDesc, defines);
-
-    public static Task<GpuShader> LoadShaderAsync(
-        string vertexPath,
-        string pixelPath,
-        GraphicsPipelineDesc pipelineDesc,
-        Dictionary<string, string?>? defines = null,
-        CancellationToken ct = default)
-        => Assets.Assets.LoadShaderAsync(vertexPath, pixelPath, pipelineDesc, defines, ct);
-
     public static Assets.Material LoadMaterial(string path)
         => Assets.Assets.LoadMaterial(path);
 
     public static Task<Assets.Material> LoadMaterialAsync(string path, CancellationToken ct = default)
         => Assets.Assets.LoadMaterialAsync(path, ct);
 
-    public static GpuShader LoadShaderFromJson(string path)
+    public static GpuShader LoadShader(string path)
         => Assets.Assets.LoadShaderFromJson(path);
 
-    public static Task<GpuShader> LoadShaderFromJsonAsync(string path, CancellationToken ct = default)
+    public static Task<GpuShader> LoadShaderAsync(string path, CancellationToken ct = default)
         => Assets.Assets.LoadShaderFromJsonAsync(path, ct);
 
     private static void EnsureInitialized()
