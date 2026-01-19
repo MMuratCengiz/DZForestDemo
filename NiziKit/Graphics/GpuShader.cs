@@ -12,7 +12,7 @@ public class GpuShader : IDisposable
     private readonly bool _ownsProgram;
 
     private GpuShader(ShaderProgram program, GraphicsPipelineDesc? graphicsDesc,
-        RayTracingPipelineDesc? rayTracingPipelineDesc, bool ownsProgram = true)
+        RayTracingPipelineDesc? rayTracingPipelineDesc, BindPoint? explicitBindPoint = null, bool ownsProgram = true)
     {
         ShaderProgram = program;
         _ownsProgram = ownsProgram;
@@ -34,15 +34,8 @@ public class GpuShader : IDisposable
         RootSignature = GraphicsContext.Device.CreateRootSignature(rootSigDesc);
         InputLayout = GraphicsContext.Device.CreateInputLayout(reflection.InputLayout);
 
-        var bindPoint = BindPoint.Compute;
-        if (rayTracingPipelineDesc != null)
-        {
-            bindPoint = BindPoint.Raytracing;
-        }
-        if (graphicsDesc != null)
-        {
-            bindPoint = BindPoint.Graphics;
-        }
+        var bindPoint = explicitBindPoint ?? DetermineBindPoint(graphicsDesc, rayTracingPipelineDesc);
+
         var pipelineDesc = new PipelineDesc
         {
             BindPoint = bindPoint,
@@ -56,19 +49,33 @@ public class GpuShader : IDisposable
         Pipeline = GraphicsContext.Device.CreatePipeline(pipelineDesc);
     }
 
+    private static BindPoint DetermineBindPoint(GraphicsPipelineDesc? graphicsDesc, RayTracingPipelineDesc? rayTracingPipelineDesc)
+    {
+        if (rayTracingPipelineDesc != null)
+            return BindPoint.Raytracing;
+        if (graphicsDesc != null)
+            return BindPoint.Graphics;
+        return BindPoint.Compute;
+    }
+
     public static GpuShader Compute(ShaderProgram program, bool ownsProgram = true)
     {
-        return new GpuShader(program, null, null, ownsProgram);
+        return new GpuShader(program, null, null, BindPoint.Compute, ownsProgram);
     }
 
     public static GpuShader Graphics(ShaderProgram program, GraphicsPipelineDesc graphicsDesc, bool ownsProgram = true)
     {
-        return new GpuShader(program, graphicsDesc, null, ownsProgram);
+        return new GpuShader(program, graphicsDesc, null, BindPoint.Graphics, ownsProgram);
     }
 
     public static GpuShader RayTracing(ShaderProgram program, RayTracingPipelineDesc rayTracingPipelineDesc, bool ownsProgram = true)
     {
-        return new GpuShader(program, null, rayTracingPipelineDesc, ownsProgram);
+        return new GpuShader(program, null, rayTracingPipelineDesc, BindPoint.Raytracing, ownsProgram);
+    }
+
+    public static GpuShader Mesh(ShaderProgram program, GraphicsPipelineDesc graphicsDesc, bool ownsProgram = true)
+    {
+        return new GpuShader(program, graphicsDesc, null, BindPoint.Mesh, ownsProgram);
     }
 
     public void Dispose()

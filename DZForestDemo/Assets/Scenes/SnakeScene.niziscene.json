@@ -1,5 +1,5 @@
 {
-  "$schema": "../../NiziKit/Assets/Serde/Schemas/niziscene.schema.json",
+  "$schema": "../../../NiziKit/Assets/Serde/Schemas/niziscene.schema.json",
   "name": "Snake Scene",
   "assetPacks": [],
   "camera": {

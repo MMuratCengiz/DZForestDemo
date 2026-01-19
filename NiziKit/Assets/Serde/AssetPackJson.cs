@@ -21,12 +21,12 @@ public sealed class AssetPackJson
     public Dictionary<string, string> Models { get; set; } = new();
 
     public static AssetPackJson FromJson(string json)
-        => JsonSerializer.Deserialize<AssetPackJson>(json, AssetJsonDesc.Default)
+        => JsonSerializer.Deserialize<AssetPackJson>(json, NiziJsonSerializationOptions.Default)
            ?? throw new InvalidOperationException("Failed to deserialize asset pack JSON");
 
     public static async Task<AssetPackJson> FromJsonAsync(Stream stream, CancellationToken ct = default)
-        => await JsonSerializer.DeserializeAsync<AssetPackJson>(stream, AssetJsonDesc.Default, ct)
+        => await JsonSerializer.DeserializeAsync<AssetPackJson>(stream, NiziJsonSerializationOptions.Default, ct)
            ?? throw new InvalidOperationException("Failed to deserialize asset pack JSON");
 
-    public string ToJson() => JsonSerializer.Serialize(this, AssetJsonDesc.Default);
+    public string ToJson() => JsonSerializer.Serialize(this, NiziJsonSerializationOptions.Default);
 }

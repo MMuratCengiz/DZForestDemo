@@ -2,17 +2,18 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://nizikit.dev/schemas/nizishp.schema.json",
   "title": "NiziKit Shader Program",
-  "description": "Schema for NiziKit shader program definition files (.nizishp.json)",
   "type": "object",
   "required": ["name", "stages"],
   "properties": {
     "name": {
+      "type": "string"
+    },
+    "type": {
       "type": "string",
-      "description": "Unique name identifier for the shader program"
+      "enum": ["graphics", "compute", "rayTracing", "mesh"]
     },
     "stages": {
       "type": "array",
-      "description": "List of shader stages that make up this program",
       "minItems": 1,
       "items": {
         "$ref": "#/$defs/shaderStage"
@@ -20,13 +21,24 @@
     },
     "defines": {
       "type": "object",
-      "description": "Preprocessor defines to pass to the shader compiler",
       "additionalProperties": {
         "type": "string"
       }
     },
+    "rayTracing": {
+      "$ref": "#/$defs/shaderRayTracingDesc"
+    },
     "pipeline": {
       "$ref": "#/$defs/graphicsPipeline"
+    },
+    "computePipeline": {
+      "$ref": "#/$defs/computePipeline"
+    },
+    "rayTracingPipeline": {
+      "$ref": "#/$defs/rayTracingPipeline"
+    },
+    "meshPipeline": {
+      "$ref": "#/$defs/meshPipeline"
     }
   },
   "$defs": {
@@ -36,131 +48,305 @@
       "properties": {
         "stage": {
           "type": "string",
-          "enum": ["vertex", "pixel", "compute"],
-          "description": "The shader stage type"
+          "enum": ["vertex", "pixel", "geometry", "hull", "domain", "compute", "rayGen", "anyHit", "closestHit", "miss", "intersection", "callable", "task", "mesh"]
         },
         "path": {
-          "type": "string",
-          "description": "Relative path to the HLSL source file"
+          "type": "string"
         },
         "entryPoint": {
           "type": "string",
-          "default": "main",
-          "description": "Entry point function name in the shader"
+          "default": "main"
+        },
+        "defines": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "rayTracing": {
+          "$ref": "#/$defs/rayTracingShaderDesc"
+        },
+        "bindless": {
+          "$ref": "#/$defs/bindlessDesc"
+        },
+        "threadGroup": {
+          "$ref": "#/$defs/threadGroup"
+        }
+      }
+    },
+    "threadGroup": {
+      "type": "object",
+      "properties": {
+        "x": { "type": "integer", "default": 1, "minimum": 1 },
+        "y": { "type": "integer", "default": 1, "minimum": 1 },
+        "z": { "type": "integer", "default": 1, "minimum": 1 }
+      }
+    },
+    "bindlessDesc": {
+      "type": "object",
+      "properties": {
+        "bindlessArrays": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/bindlessSlot"
+          }
+        }
+      }
+    },
+    "bindlessSlot": {
+      "type": "object",
+      "properties": {
+        "descriptor": {
+          "type": "string",
+          "enum": ["none", "buffer", "rwBuffer", "texture", "rwTexture", "renderTarget", "depthStencil", "sampler", "uniformBuffer", "rootConstant", "indexBuffer", "vertexBuffer", "indirectBuffer", "textureCube", "accelerationStructure", "structuredBuffer", "rawBuffer"]
+        },
+        "binding": { "type": "integer", "minimum": 0 },
+        "registerSpace": { "type": "integer", "minimum": 0 },
+        "maxArraySize": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "rayTracingShaderDesc": {
+      "type": "object",
+      "properties": {
+        "hitGroupType": {
+          "type": "string",
+          "enum": ["triangles", "aabbs"],
+          "default": "triangles"
+        },
+        "localBindings": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/resourceBindingSlot"
+          }
+        }
+      }
+    },
+    "resourceBindingSlot": {
+      "type": "object",
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["constantBuffer", "shaderResource", "unorderedAccess", "sampler"]
+        },
+        "binding": { "type": "integer", "minimum": 0 },
+        "registerSpace": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "shaderRayTracingDesc": {
+      "type": "object",
+      "properties": {
+        "maxPayloadBytes": { "type": "integer", "default": 32, "minimum": 0 },
+        "maxAttributeBytes": { "type": "integer", "default": 8, "minimum": 0 },
+        "maxRecursionDepth": { "type": "integer", "default": 1, "minimum": 1 }
+      }
+    },
+    "hitGroupDesc": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "intersectionShaderIndex": { "type": "integer", "default": -1 },
+        "anyHitShaderIndex": { "type": "integer", "default": -1 },
+        "closestHitShaderIndex": { "type": "integer", "default": -1 },
+        "type": {
+          "type": "string",
+          "enum": ["triangles", "aabbs"],
+          "default": "triangles"
         }
       }
     },
     "graphicsPipeline": {
       "type": "object",
-      "description": "Graphics pipeline state configuration",
       "properties": {
         "primitiveTopology": {
           "type": "string",
-          "enum": ["triangle", "line", "point"],
-          "default": "triangle",
-          "description": "Primitive topology for rendering"
+          "enum": ["triangle", "line", "point", "patch"],
+          "default": "triangle"
         },
         "cullMode": {
           "type": "string",
           "enum": ["none", "frontFace", "backFace"],
-          "default": "backFace",
-          "description": "Face culling mode"
+          "default": "backFace"
         },
         "fillMode": {
           "type": "string",
           "enum": ["solid", "wireframe"],
-          "default": "solid",
-          "description": "Polygon fill mode"
+          "default": "solid"
         },
-        "depthTest": {
-          "$ref": "#/$defs/depthTest"
+        "depthTest": { "$ref": "#/$defs/depthTest" },
+        "stencilTest": { "$ref": "#/$defs/stencilTest" },
+        "blend": { "$ref": "#/$defs/blend" },
+        "renderTargets": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/renderTarget" }
         },
-        "stencilTest": {
-          "$ref": "#/$defs/stencilTest"
+        "rasterization": { "$ref": "#/$defs/rasterization" },
+        "alphaToCoverageEnable": { "type": "boolean", "default": false },
+        "independentBlendEnable": { "type": "boolean", "default": false },
+        "blendLogicOpEnable": { "type": "boolean", "default": false },
+        "blendLogicOp": {
+          "type": "string",
+          "enum": ["clear", "set", "copy", "copyInverted", "noOp", "invert", "and", "nand", "or", "nor", "xor", "equiv", "andReverse", "andInverted", "orReverse", "orInverted"],
+          "default": "noOp"
         },
-        "blend": {
-          "$ref": "#/$defs/blend"
+        "msaaSampleCount": {
+          "type": "string",
+          "enum": ["none", "x1", "x2", "x4", "x8", "x16", "x32", "x64"],
+          "default": "none"
         },
-        "rasterization": {
-          "$ref": "#/$defs/rasterization"
-        }
+        "depthStencilFormat": { "type": "string" }
+      }
+    },
+    "computePipeline": {
+      "type": "object",
+      "properties": {
+        "threadGroup": { "$ref": "#/$defs/threadGroup" }
+      }
+    },
+    "rayTracingPipeline": {
+      "type": "object",
+      "properties": {
+        "hitGroups": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/hitGroupDesc" }
+        },
+        "maxPayloadBytes": { "type": "integer", "default": 32, "minimum": 0 },
+        "maxAttributeBytes": { "type": "integer", "default": 8, "minimum": 0 },
+        "maxRecursionDepth": { "type": "integer", "default": 1, "minimum": 1 }
+      }
+    },
+    "meshPipeline": {
+      "type": "object",
+      "properties": {
+        "primitiveTopology": {
+          "type": "string",
+          "enum": ["triangle", "line", "point"],
+          "default": "triangle"
+        },
+        "cullMode": {
+          "type": "string",
+          "enum": ["none", "frontFace", "backFace"],
+          "default": "backFace"
+        },
+        "fillMode": {
+          "type": "string",
+          "enum": ["solid", "wireframe"],
+          "default": "solid"
+        },
+        "depthTest": { "$ref": "#/$defs/depthTest" },
+        "stencilTest": { "$ref": "#/$defs/stencilTest" },
+        "blend": { "$ref": "#/$defs/blend" },
+        "renderTargets": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/renderTarget" }
+        },
+        "rasterization": { "$ref": "#/$defs/rasterization" },
+        "msaaSampleCount": {
+          "type": "string",
+          "enum": ["none", "x1", "x2", "x4", "x8", "x16", "x32", "x64"],
+          "default": "none"
+        },
+        "depthStencilFormat": { "type": "string" }
       }
     },
     "depthTest": {
       "type": "object",
-      "description": "Depth test configuration",
       "properties": {
-        "enable": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable depth testing"
-        },
+        "enable": { "type": "boolean", "default": true },
         "compareOp": {
           "type": "string",
           "enum": ["never", "less", "equal", "lessOrEqual", "greater", "notEqual", "greaterOrEqual", "always"],
-          "default": "less",
-          "description": "Depth comparison operation"
+          "default": "less"
         },
-        "write": {
-          "type": "boolean",
-          "default": true,
-          "description": "Enable depth buffer writes"
-        }
+        "write": { "type": "boolean", "default": true }
       }
     },
     "stencilTest": {
       "type": "object",
-      "description": "Stencil test configuration",
       "properties": {
-        "enable": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable stencil testing"
+        "enable": { "type": "boolean", "default": false },
+        "writeMask": { "type": "integer", "default": 255, "minimum": 0, "maximum": 255 },
+        "readMask": { "type": "integer", "default": 255, "minimum": 0, "maximum": 255 },
+        "frontFace": { "$ref": "#/$defs/stencilFace" },
+        "backFace": { "$ref": "#/$defs/stencilFace" }
+      }
+    },
+    "stencilFace": {
+      "type": "object",
+      "properties": {
+        "compareOp": {
+          "type": "string",
+          "enum": ["never", "less", "equal", "lessOrEqual", "greater", "notEqual", "greaterOrEqual", "always"],
+          "default": "always"
+        },
+        "failOp": {
+          "type": "string",
+          "enum": ["keep", "zero", "replace", "incrementAndClamp", "decrementAndClamp", "invert", "incrementAndWrap", "decrementAndWrap"],
+          "default": "keep"
+        },
+        "passOp": {
+          "type": "string",
+          "enum": ["keep", "zero", "replace", "incrementAndClamp", "decrementAndClamp", "invert", "incrementAndWrap", "decrementAndWrap"],
+          "default": "keep"
+        },
+        "depthFailOp": {
+          "type": "string",
+          "enum": ["keep", "zero", "replace", "incrementAndClamp", "decrementAndClamp", "invert", "incrementAndWrap", "decrementAndWrap"],
+          "default": "keep"
         }
       }
     },
     "blend": {
       "type": "object",
-      "description": "Blend state configuration",
       "properties": {
-        "enable": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable alpha blending"
+        "enable": { "type": "boolean", "default": false },
+        "srcBlend": {
+          "type": "string",
+          "enum": ["zero", "one", "srcColor", "invSrcColor", "srcAlpha", "invSrcAlpha", "dstAlpha", "invDstAlpha", "dstColor", "invDstColor", "srcAlphaSaturate", "blendFactor", "invBlendFactor", "src1Color", "invSrc1Color", "src1Alpha", "invSrc1Alpha"],
+          "default": "srcAlpha"
         },
-        "renderTargetWriteMask": {
-          "type": "integer",
-          "default": 15,
-          "minimum": 0,
-          "maximum": 15,
-          "description": "Bitmask for render target write channels (R=1, G=2, B=4, A=8)"
-        }
+        "dstBlend": {
+          "type": "string",
+          "enum": ["zero", "one", "srcColor", "invSrcColor", "srcAlpha", "invSrcAlpha", "dstAlpha", "invDstAlpha", "dstColor", "invDstColor", "srcAlphaSaturate", "blendFactor", "invBlendFactor", "src1Color", "invSrc1Color", "src1Alpha", "invSrc1Alpha"],
+          "default": "invSrcAlpha"
+        },
+        "blendOp": {
+          "type": "string",
+          "enum": ["add", "subtract", "reverseSubtract", "min", "max"],
+          "default": "add"
+        },
+        "srcBlendAlpha": {
+          "type": "string",
+          "enum": ["zero", "one", "srcColor", "invSrcColor", "srcAlpha", "invSrcAlpha", "dstAlpha", "invDstAlpha", "dstColor", "invDstColor", "srcAlphaSaturate", "blendFactor", "invBlendFactor", "src1Color", "invSrc1Color", "src1Alpha", "invSrc1Alpha"],
+          "default": "one"
+        },
+        "dstBlendAlpha": {
+          "type": "string",
+          "enum": ["zero", "one", "srcColor", "invSrcColor", "srcAlpha", "invSrcAlpha", "dstAlpha", "invDstAlpha", "dstColor", "invDstColor", "srcAlphaSaturate", "blendFactor", "invBlendFactor", "src1Color", "invSrc1Color", "src1Alpha", "invSrc1Alpha"],
+          "default": "invSrcAlpha"
+        },
+        "blendOpAlpha": {
+          "type": "string",
+          "enum": ["add", "subtract", "reverseSubtract", "min", "max"],
+          "default": "add"
+        },
+        "renderTargetWriteMask": { "type": "integer", "default": 15, "minimum": 0, "maximum": 15 }
+      }
+    },
+    "renderTarget": {
+      "type": "object",
+      "properties": {
+        "format": { "type": "string" },
+        "blend": { "$ref": "#/$defs/blend" }
       }
     },
     "rasterization": {
       "type": "object",
-      "description": "Rasterization state configuration",
       "properties": {
-        "depthBias": {
-          "type": "integer",
-          "default": 0,
-          "description": "Depth bias constant"
-        },
-        "depthBiasClamp": {
-          "type": "number",
-          "default": 0.0,
-          "description": "Maximum depth bias"
-        },
-        "slopeScaledDepthBias": {
-          "type": "number",
-          "default": 0.0,
-          "description": "Slope-scaled depth bias"
-        },
-        "frontCounterClockwise": {
-          "type": "boolean",
-          "default": false,
-          "description": "Use counter-clockwise winding for front faces"
-        }
+        "depthBias": { "type": "integer", "default": 0 },
+        "depthBiasClamp": { "type": "number", "default": 0.0 },
+        "slopeScaledDepthBias": { "type": "number", "default": 0.0 },
+        "frontCounterClockwise": { "type": "boolean", "default": false }
       }
     }
   }

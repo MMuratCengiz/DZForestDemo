@@ -67,9 +67,14 @@ public sealed class SnakeGame(GameDesc? desc = null) : Game(desc)
             if (props.HasValue)
             {
                 if (props.Value.TryGetProperty("segmentSize", out var segmentSizeProp))
+                {
                     segmentSize = segmentSizeProp.GetSingle();
+                }
+
                 if (props.Value.TryGetProperty("arenaSize", out var arenaSizeProp))
+                {
                     arenaSize = arenaSizeProp.GetInt32();
+                }
             }
 
             snake.SegmentSize = segmentSize;
@@ -97,9 +102,14 @@ public sealed class SnakeGame(GameDesc? desc = null) : Game(desc)
             if (props.HasValue)
             {
                 if (props.Value.TryGetProperty("arenaSize", out var arenaSizeProp))
+                {
                     arenaSize = arenaSizeProp.GetInt32();
+                }
+
                 if (props.Value.TryGetProperty("foodSize", out var foodSizeProp))
+                {
                     foodSize = foodSizeProp.GetSingle();
+                }
             }
 
             spawner.ArenaSize = arenaSize;
@@ -113,7 +123,10 @@ public sealed class SnakeGame(GameDesc? desc = null) : Game(desc)
     private static Material GetOrCreateMaterial(string name, Func<Material> factory)
     {
         var existing = Assets.GetMaterial(name);
-        if (existing != null) return existing;
+        if (existing != null)
+        {
+            return existing;
+        }
 
         var material = factory();
         Assets.RegisterMaterial(material);

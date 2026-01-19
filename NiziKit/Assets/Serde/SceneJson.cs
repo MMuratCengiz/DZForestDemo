@@ -202,12 +202,12 @@ public sealed class SceneJson
     public List<GameObjectJson>? Objects { get; set; }
 
     public static SceneJson FromJson(string json)
-        => JsonSerializer.Deserialize<SceneJson>(json, AssetJsonDesc.Default)
+        => JsonSerializer.Deserialize<SceneJson>(json, NiziJsonSerializationOptions.Default)
            ?? throw new InvalidOperationException("Failed to deserialize scene JSON");
 
     public static async Task<SceneJson> FromJsonAsync(Stream stream, CancellationToken ct = default)
-        => await JsonSerializer.DeserializeAsync<SceneJson>(stream, AssetJsonDesc.Default, ct)
+        => await JsonSerializer.DeserializeAsync<SceneJson>(stream, NiziJsonSerializationOptions.Default, ct)
            ?? throw new InvalidOperationException("Failed to deserialize scene JSON");
 
-    public string ToJson() => JsonSerializer.Serialize(this, AssetJsonDesc.Default);
+    public string ToJson() => JsonSerializer.Serialize(this, NiziJsonSerializationOptions.Default);
 }

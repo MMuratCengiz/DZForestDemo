@@ -33,14 +33,14 @@ public sealed class MaterialJson
     public TexturesJson Textures { get; set; } = new();
 
     public static MaterialJson FromJson(string json)
-        => JsonSerializer.Deserialize<MaterialJson>(json, AssetJsonDesc.Default)
+        => JsonSerializer.Deserialize<MaterialJson>(json, NiziJsonSerializationOptions.Default)
            ?? throw new InvalidOperationException("Failed to deserialize material JSON");
 
     public static async Task<MaterialJson> FromJsonAsync(Stream stream, CancellationToken ct = default)
-        => await JsonSerializer.DeserializeAsync<MaterialJson>(stream, AssetJsonDesc.Default, ct)
+        => await JsonSerializer.DeserializeAsync<MaterialJson>(stream, NiziJsonSerializationOptions.Default, ct)
            ?? throw new InvalidOperationException("Failed to deserialize material JSON");
 
-    public string ToJson() => JsonSerializer.Serialize(this, AssetJsonDesc.Default);
+    public string ToJson() => JsonSerializer.Serialize(this, NiziJsonSerializationOptions.Default);
 
     public IReadOnlyDictionary<string, string?>? GetVariants()
     {

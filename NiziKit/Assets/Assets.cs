@@ -501,36 +501,43 @@ public sealed class Assets : IDisposable
         var shaderJson = ShaderProgramJson.FromJson(json);
 
         var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;
-        var (vertexPath, pixelPath, computePath) = shaderJson.GetStagePaths();
-        var defines = shaderJson.GetDefines();
+        var pipelineType = shaderJson.DetectPipelineType();
 
-        ShaderProgram program;
-        if (!string.IsNullOrEmpty(computePath))
+        _shaderBuilder ??= new ShaderBuilder();
+        var program = _shaderBuilder.CompileFromJson(shaderJson, basePath);
+
+        GpuShader shader;
+        switch (pipelineType)
         {
-            var csPath = Path.IsPathRooted(computePath) ? computePath : Path.Combine(basePath, computePath);
-            program = _LoadComputeProgram(csPath, defines);
-            var computeShader = GpuShader.Compute(program, ownsProgram: false);
-            _shaderStore.Register(fullPath, computeShader);
-            return computeShader;
+            case PipelineType.Compute:
+                shader = GpuShader.Compute(program, ownsProgram: false);
+                break;
+
+            case PipelineType.RayTracing:
+                var rtPipelineDesc = new RayTracingPipelineDesc
+                {
+                    HitGroups = shaderJson.ToHitGroupDescArray()
+                };
+                shader = GpuShader.RayTracing(program, rtPipelineDesc, ownsProgram: false);
+                break;
+
+            case PipelineType.Mesh:
+                var meshPipelineDesc = shaderJson.ToMeshPipelineDesc(
+                    GraphicsContext.BackBufferFormat,
+                    GraphicsContext.DepthBufferFormat);
+                shader = GpuShader.Mesh(program, meshPipelineDesc, ownsProgram: false);
+                break;
+
+            case PipelineType.Graphics:
+            default:
+                var graphicsPipelineDesc = shaderJson.ToGraphicsPipelineDesc(
+                    GraphicsContext.BackBufferFormat,
+                    GraphicsContext.DepthBufferFormat);
+                shader = GpuShader.Graphics(program, graphicsPipelineDesc, ownsProgram: false);
+                break;
         }
 
-        if (string.IsNullOrEmpty(vertexPath) || string.IsNullOrEmpty(pixelPath))
-        {
-            throw new InvalidOperationException($"Shader JSON at '{path}' must specify either vertex+pixel stages or a compute stage");
-        }
-
-        var vsPath = Path.IsPathRooted(vertexPath) ? vertexPath : Path.Combine(basePath, vertexPath);
-        var psPath = Path.IsPathRooted(pixelPath) ? pixelPath : Path.Combine(basePath, pixelPath);
-
-        program = _LoadShaderProgram(vsPath, psPath, defines);
-
-        var pipelineDesc = shaderJson.ToGraphicsPipelineDesc(
-            GraphicsContext.BackBufferFormat,
-            GraphicsContext.DepthBufferFormat);
-
-        var shader = GpuShader.Graphics(program, pipelineDesc, ownsProgram: false);
         _shaderStore.Register(fullPath, shader);
-
         return shader;
     }
 
@@ -548,36 +555,43 @@ public sealed class Assets : IDisposable
         var shaderJson = ShaderProgramJson.FromJson(json);
 
         var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;
-        var (vertexPath, pixelPath, computePath) = shaderJson.GetStagePaths();
-        var defines = shaderJson.GetDefines();
+        var pipelineType = shaderJson.DetectPipelineType();
 
-        ShaderProgram program;
-        if (!string.IsNullOrEmpty(computePath))
+        _shaderBuilder ??= new ShaderBuilder();
+        var program = await _shaderBuilder.CompileFromJsonAsync(shaderJson, basePath, ct);
+
+        GpuShader shader;
+        switch (pipelineType)
         {
-            var csPath = Path.IsPathRooted(computePath) ? computePath : Path.Combine(basePath, computePath);
-            program = await _LoadComputeProgramAsync(csPath, defines, ct);
-            var computeShader = GpuShader.Compute(program, ownsProgram: false);
-            _shaderStore.Register(fullPath, computeShader);
-            return computeShader;
+            case PipelineType.Compute:
+                shader = GpuShader.Compute(program, ownsProgram: false);
+                break;
+
+            case PipelineType.RayTracing:
+                var rtPipelineDesc = new RayTracingPipelineDesc
+                {
+                    HitGroups = shaderJson.ToHitGroupDescArray()
+                };
+                shader = GpuShader.RayTracing(program, rtPipelineDesc, ownsProgram: false);
+                break;
+
+            case PipelineType.Mesh:
+                var meshPipelineDesc = shaderJson.ToMeshPipelineDesc(
+                    GraphicsContext.BackBufferFormat,
+                    GraphicsContext.DepthBufferFormat);
+                shader = GpuShader.Mesh(program, meshPipelineDesc, ownsProgram: false);
+                break;
+
+            case PipelineType.Graphics:
+            default:
+                var graphicsPipelineDesc = shaderJson.ToGraphicsPipelineDesc(
+                    GraphicsContext.BackBufferFormat,
+                    GraphicsContext.DepthBufferFormat);
+                shader = GpuShader.Graphics(program, graphicsPipelineDesc, ownsProgram: false);
+                break;
         }
 
-        if (string.IsNullOrEmpty(vertexPath) || string.IsNullOrEmpty(pixelPath))
-        {
-            throw new InvalidOperationException($"Shader JSON at '{path}' must specify either vertex+pixel stages or a compute stage");
-        }
-
-        var vsPath = Path.IsPathRooted(vertexPath) ? vertexPath : Path.Combine(basePath, vertexPath);
-        var psPath = Path.IsPathRooted(pixelPath) ? pixelPath : Path.Combine(basePath, pixelPath);
-
-        program = await _LoadShaderProgramAsync(vsPath, psPath, defines, ct);
-
-        var pipelineDesc = shaderJson.ToGraphicsPipelineDesc(
-            GraphicsContext.BackBufferFormat,
-            GraphicsContext.DepthBufferFormat);
-
-        var shader = GpuShader.Graphics(program, pipelineDesc, ownsProgram: false);
         _shaderStore.Register(fullPath, shader);
-
         return shader;
     }
 

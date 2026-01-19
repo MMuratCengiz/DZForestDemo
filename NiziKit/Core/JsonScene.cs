@@ -34,7 +34,10 @@ public class JsonScene : Scene
 
     private void LoadAssetPacks(List<string>? packs)
     {
-        if (packs == null) return;
+        if (packs == null)
+        {
+            return;
+        }
 
         foreach (var packPath in packs)
         {
@@ -48,37 +51,56 @@ public class JsonScene : Scene
 
     private void LoadCamera(CameraJson? cameraData)
     {
-        if (cameraData == null) return;
+        if (cameraData == null)
+        {
+            return;
+        }
 
         var camera = CreateObject<CameraObject>(cameraData.Name ?? "Main Camera");
 
         if (cameraData.Position != null)
+        {
             camera.LocalPosition = ParseVector3(cameraData.Position);
+        }
 
         if (cameraData.Rotation != null)
+        {
             camera.LocalRotation = ParseRotation(cameraData.Rotation);
+        }
 
         if (cameraData.FieldOfView.HasValue)
+        {
             camera.FieldOfView = cameraData.FieldOfView.Value;
+        }
 
         if (cameraData.NearPlane.HasValue)
+        {
             camera.NearPlane = cameraData.NearPlane.Value;
+        }
 
         if (cameraData.FarPlane.HasValue)
+        {
             camera.FarPlane = cameraData.FarPlane.Value;
+        }
 
         if (cameraData.Controller != null)
         {
             var controller = camera.AddComponent<CameraController>();
 
             if (cameraData.Controller.MoveSpeed.HasValue)
+            {
                 controller.MoveSpeed = cameraData.Controller.MoveSpeed.Value;
+            }
 
             if (cameraData.Controller.LookSensitivity.HasValue)
+            {
                 controller.LookSensitivity = cameraData.Controller.LookSensitivity.Value;
+            }
 
             if (cameraData.Controller.LookAt != null)
+            {
                 controller.LookAt(ParseVector3(cameraData.Controller.LookAt));
+            }
         }
 
         MainCamera = camera;
@@ -86,7 +108,10 @@ public class JsonScene : Scene
 
     private void LoadLights(List<LightJson>? lights)
     {
-        if (lights == null) return;
+        if (lights == null)
+        {
+            return;
+        }
 
         foreach (var lightData in lights)
         {
@@ -110,10 +135,14 @@ public class JsonScene : Scene
         var light = CreateObject<DirectionalLight>(data.Name ?? "DirectionalLight");
 
         if (data.Direction != null)
+        {
             light.LookAt(Vector3.Normalize(ParseVector3(data.Direction)));
+        }
 
         if (data.Color != null)
+        {
             light.Color = ParseVector3(data.Color);
+        }
 
         light.Intensity = data.Intensity;
         light.CastsShadows = data.CastsShadows;
@@ -124,15 +153,21 @@ public class JsonScene : Scene
         var light = CreateObject<PointLight>(data.Name ?? "PointLight");
 
         if (data.Position != null)
+        {
             light.LocalPosition = ParseVector3(data.Position);
+        }
 
         if (data.Color != null)
+        {
             light.Color = ParseVector3(data.Color);
+        }
 
         light.Intensity = data.Intensity;
 
         if (data.Range.HasValue)
+        {
             light.Range = data.Range.Value;
+        }
 
         light.CastsShadows = data.CastsShadows;
     }
@@ -142,31 +177,46 @@ public class JsonScene : Scene
         var light = CreateObject<SpotLight>(data.Name ?? "SpotLight");
 
         if (data.Position != null)
+        {
             light.LocalPosition = ParseVector3(data.Position);
+        }
 
         if (data.Direction != null)
+        {
             light.LookAt(Vector3.Normalize(ParseVector3(data.Direction)));
+        }
 
         if (data.Color != null)
+        {
             light.Color = ParseVector3(data.Color);
+        }
 
         light.Intensity = data.Intensity;
 
         if (data.Range.HasValue)
+        {
             light.Range = data.Range.Value;
+        }
 
         if (data.InnerAngle.HasValue)
+        {
             light.InnerConeAngle = data.InnerAngle.Value;
+        }
 
         if (data.OuterAngle.HasValue)
+        {
             light.OuterConeAngle = data.OuterAngle.Value;
+        }
 
         light.CastsShadows = data.CastsShadows;
     }
 
     private void LoadObjects(List<GameObjectJson>? objects)
     {
-        if (objects == null) return;
+        if (objects == null)
+        {
+            return;
+        }
 
         foreach (var objData in objects)
         {
@@ -189,22 +239,34 @@ public class JsonScene : Scene
         }
 
         if (!string.IsNullOrEmpty(data.Name))
+        {
             obj.Name = data.Name;
+        }
 
         if (!string.IsNullOrEmpty(data.Tag))
+        {
             obj.Tag = data.Tag;
+        }
 
         if (data.Active.HasValue)
+        {
             obj.IsActive = data.Active.Value;
+        }
 
         if (data.Position != null)
+        {
             obj.LocalPosition = ParseVector3(data.Position);
+        }
 
         if (data.Rotation != null)
+        {
             obj.LocalRotation = ParseRotation(data.Rotation);
+        }
 
         if (data.Scale != null)
+        {
             obj.LocalScale = ParseVector3(data.Scale);
+        }
 
         if (data.Components != null)
         {
@@ -238,7 +300,10 @@ public class JsonScene : Scene
             case "material":
                 var matComp = obj.AddComponent<MaterialComponent>();
                 if (!string.IsNullOrEmpty(data.Material))
+                {
                     matComp.Material = ResolveMaterial(data.Material);
+                }
+
                 break;
 
             case "rigidbody":
@@ -261,7 +326,9 @@ public class JsonScene : Scene
     private Mesh ResolveMesh(ComponentJson data)
     {
         if (string.IsNullOrEmpty(data.Mesh))
+        {
             throw new InvalidOperationException("Mesh component requires 'mesh' property");
+        }
 
         var meshRef = data.Mesh;
 
@@ -356,7 +423,10 @@ public class JsonScene : Scene
     private static Vector3 ParseVector3(float[] arr)
     {
         if (arr.Length < 3)
+        {
             throw new ArgumentException("Vector3 array must have at least 3 elements");
+        }
+
         return new Vector3(arr[0], arr[1], arr[2]);
     }
 

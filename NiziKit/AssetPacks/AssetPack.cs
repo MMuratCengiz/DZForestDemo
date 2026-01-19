@@ -223,7 +223,11 @@ public sealed class AssetPack : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
 
         _textures.Clear();

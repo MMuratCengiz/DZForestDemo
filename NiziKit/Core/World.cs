@@ -44,11 +44,18 @@ public class World : IDisposable
 
     public static GameObject? FindObjectWithTag(string tag)
     {
-        if (CurrentScene == null) return null;
+        if (CurrentScene == null)
+        {
+            return null;
+        }
+
         foreach (var obj in CurrentScene.RootObjects)
         {
             var found = FindObjectWithTagRecursive(obj, tag);
-            if (found != null) return found;
+            if (found != null)
+            {
+                return found;
+            }
         }
         return null;
     }
@@ -56,7 +63,11 @@ public class World : IDisposable
     public static List<GameObject> FindObjectsWithTag(string tag)
     {
         var results = new List<GameObject>();
-        if (CurrentScene == null) return results;
+        if (CurrentScene == null)
+        {
+            return results;
+        }
+
         foreach (var obj in CurrentScene.RootObjects)
         {
             FindObjectsWithTagRecursive(obj, tag, results);
@@ -66,18 +77,29 @@ public class World : IDisposable
 
     private static GameObject? FindObjectWithTagRecursive(GameObject obj, string tag)
     {
-        if (obj.Tag == tag) return obj;
+        if (obj.Tag == tag)
+        {
+            return obj;
+        }
+
         foreach (var child in obj.Children)
         {
             var found = FindObjectWithTagRecursive(child, tag);
-            if (found != null) return found;
+            if (found != null)
+            {
+                return found;
+            }
         }
         return null;
     }
 
     private static void FindObjectsWithTagRecursive(GameObject obj, string tag, List<GameObject> results)
     {
-        if (obj.Tag == tag) results.Add(obj);
+        if (obj.Tag == tag)
+        {
+            results.Add(obj);
+        }
+
         foreach (var child in obj.Children)
         {
             FindObjectsWithTagRecursive(child, tag, results);
