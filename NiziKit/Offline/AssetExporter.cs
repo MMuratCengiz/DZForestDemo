@@ -53,7 +53,7 @@ public sealed class AssetExporter : IDisposable
         var ozzResult = ExportOzz(desc, gltfResult.OutputPath!);
         if (!ozzResult.Success)
         {
-            return AssetExportResult.Failed($"GLTF exported but Ozz export failed: {ozzResult.ErrorMessage}");
+            return gltfResult;
         }
 
         return AssetExportResult.Succeeded(
