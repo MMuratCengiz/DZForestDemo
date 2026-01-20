@@ -29,7 +29,7 @@ void ImportSyntyAssets(string sourceDirectory, string outputDirectory)
         ImportModels = true,
         ImportTextures = true,
         PreserveDirectoryStructure = true,
-        ModelScale = 1.0f,
+        ModelScale = 0.01f,
         GenerateMips = true,
         OnProgress = Log
     });

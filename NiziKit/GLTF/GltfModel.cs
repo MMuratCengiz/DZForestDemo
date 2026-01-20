@@ -29,7 +29,8 @@ public sealed class GltfModel : IDisposable
 
     public static GltfModel Load(string path, GltfLoadOptions? options = null)
     {
-        var bytes = Content.ReadBytes($"Models/{path}");
+        var contentPath = Path.IsPathRooted(path) ? path : $"Models/{path}";
+        var bytes = Content.ReadBytes(contentPath);
         return LoadFromBytes(bytes, path, options);
     }
 
@@ -40,7 +41,8 @@ public sealed class GltfModel : IDisposable
 
     public static async Task<GltfModel> LoadAsync(string path, GltfLoadOptions? options = null, CancellationToken ct = default)
     {
-        var bytes = await Content.ReadBytesAsync($"Models/{path}", ct);
+        var contentPath = Path.IsPathRooted(path) ? path : $"Models/{path}";
+        var bytes = await Content.ReadBytesAsync(contentPath, ct);
         return LoadFromBytes(bytes, path, options);
     }
 

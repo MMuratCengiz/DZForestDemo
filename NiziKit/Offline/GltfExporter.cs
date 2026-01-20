@@ -60,6 +60,9 @@ public sealed class GltfExportResult
 
 public sealed class GltfExporter : IDisposable
 {
+    private const uint AiProcessGlobalScale = 0x8000000;
+    private const string AiConfigGlobalScaleFactorKey = "GLOBAL_SCALE_FACTOR_KEY";
+
     private static readonly string[] SupportedExtensionsList =
     [
         ".fbx", ".gltf", ".glb", ".obj", ".dae", ".blend", ".3ds", ".ase", ".ifc", ".xgl",
@@ -155,7 +158,12 @@ public sealed class GltfExporter : IDisposable
                            PostProcessSteps.SortByPrimitiveType;
         }
 
-        var scene = _assimp.ImportFile(desc.SourceFilePath, (uint)importFlags);
+        var propertyStore = _assimp.CreatePropertyStore();
+        _assimp.SetImportPropertyFloat(propertyStore, AiConfigGlobalScaleFactorKey, desc.ScaleFactor);
+
+        var finalFlags = (uint)importFlags | AiProcessGlobalScale;
+        var scene = _assimp.ImportFileExWithProperties(desc.SourceFilePath, finalFlags, null, propertyStore);
+        _assimp.ReleasePropertyStore(propertyStore);
 
         if (scene == null || scene->MRootNode == null)
         {

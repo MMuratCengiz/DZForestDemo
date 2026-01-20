@@ -1,0 +1,36 @@
+﻿{
+  "$schema": "../../../NiziKit/Assets/Serde/Schemas/niziscene.schema.json",
+  "name": "default",
+  "assetPacks": ["Packs/Viking"],
+  "camera": {
+    "name": "Main Camera",
+    "position": [0, 30, -25],
+    "fieldOfView": 0.785398,
+    "nearPlane": 0.1,
+    "farPlane": 1000,
+    "controller": {
+      "lookAt": [0, 0, 0]
+    }
+  },
+  "lights": [
+    {
+      "type": "directional",
+      "name": "Sun",
+      "direction": [0.3, -0.8, 0.4],
+      "color": [1.0, 0.95, 0.9],
+      "intensity": 0.7,
+      "castsShadows": true
+    }
+  ],
+  "objects": [
+    {
+      "name": "Viking0",
+      "position": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "components": [
+        { "type": "mesh", "mesh": "viking:characters/0" },
+        { "type": "material", "material": "viking:VikingRealmAlt" }
+      ]
+    }
+  ]
+}

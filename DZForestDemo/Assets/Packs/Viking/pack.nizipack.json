@@ -1,0 +1,12 @@
+{
+  "name": "viking",
+  "version": "1.0.0",
+  "textures": {},
+  "shaders": {},
+  "materials": {
+    "VikingRealmAlt": "../../Materials/VikingScene.nizimat.json"
+  },
+  "models": {
+    "characters": "../../Synty/Models/VikingRealm/FBX/VikingRealm_Characters.glb"
+  }
+}
