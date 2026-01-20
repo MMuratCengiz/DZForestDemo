@@ -1,3 +1,5 @@
+using DenOfIz;
+
 namespace NiziKit.Assets;
 
 public enum VertexAttributeType : byte
@@ -45,6 +47,9 @@ public sealed class VertexFormat
     public bool HasAttribute(string semantic) =>
         Attributes.Any(a => a.Semantic == semantic);
 
+    public bool HasAttribute(string semantic, int semanticIndex) =>
+        Attributes.Any(a => a.Semantic == semantic && a.SemanticIndex == semanticIndex);
+
     public VertexAttribute? GetAttribute(string semantic)
     {
         foreach (var attr in Attributes)
@@ -57,8 +62,103 @@ public sealed class VertexFormat
         return null;
     }
 
+    public VertexAttribute? GetAttribute(string semantic, int semanticIndex)
+    {
+        foreach (var attr in Attributes)
+        {
+            if (attr.Semantic == semantic && attr.SemanticIndex == semanticIndex)
+            {
+                return attr;
+            }
+        }
+        return null;
+    }
+
+    public bool IsCompatibleWith(VertexFormat other)
+    {
+        foreach (var attr in other.Attributes)
+        {
+            if (!HasAttribute(attr.Semantic, attr.SemanticIndex))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
     public static VertexFormat Static { get; } = CreateStatic();
     public static VertexFormat Skinned { get; } = CreateSkinned();
+
+    private static readonly Dictionary<string, (VertexAttributeType Type, string Semantic, int Index)> GltfAttributeMapping = new()
+    {
+        ["POSITION"] = (VertexAttributeType.Float3, "POSITION", 0),
+        ["NORMAL"] = (VertexAttributeType.Float3, "NORMAL", 0),
+        ["TANGENT"] = (VertexAttributeType.Float4, "TANGENT", 0),
+        ["TEXCOORD_0"] = (VertexAttributeType.Float2, "TEXCOORD", 0),
+        ["TEXCOORD_1"] = (VertexAttributeType.Float2, "TEXCOORD", 1),
+        ["TEXCOORD_2"] = (VertexAttributeType.Float2, "TEXCOORD", 2),
+        ["TEXCOORD_3"] = (VertexAttributeType.Float2, "TEXCOORD", 3),
+        ["COLOR_0"] = (VertexAttributeType.Float4, "COLOR", 0),
+        ["JOINTS_0"] = (VertexAttributeType.UInt4, "BLENDINDICES", 0),
+        ["WEIGHTS_0"] = (VertexAttributeType.Float4, "BLENDWEIGHT", 0),
+    };
+
+    private static readonly string[] AttributeOrder =
+    [
+        "POSITION", "NORMAL", "TEXCOORD_0", "TANGENT",
+        "TEXCOORD_1", "TEXCOORD_2", "TEXCOORD_3",
+        "COLOR_0", "WEIGHTS_0", "JOINTS_0"
+    ];
+
+    public static VertexFormat FromGltfAttributes(IEnumerable<string> gltfAttributes, string name = "Dynamic")
+    {
+        var builder = Builder(name);
+        var attrSet = new HashSet<string>(gltfAttributes);
+
+        foreach (var gltfAttr in AttributeOrder)
+        {
+            if (attrSet.Contains(gltfAttr) && GltfAttributeMapping.TryGetValue(gltfAttr, out var mapping))
+            {
+                builder.Add(mapping.Semantic, mapping.Type, mapping.Index);
+            }
+        }
+
+        return builder.Build();
+    }
+
+    public static VertexFormat FromInputLayout(InputLayoutDesc inputLayoutDesc, string name = "Shader")
+    {
+        var builder = Builder(name);
+
+        var inputGroups = inputLayoutDesc.InputGroups.ToArray();
+        foreach (var group in inputGroups)
+        {
+            var elements = group.Elements.ToArray();
+            foreach (var element in elements)
+            {
+                var semantic = element.Semantic.ToString();
+                var semanticIndex = (int)element.SemanticIndex;
+                var attrType = MapFormatToAttributeType(element.Format);
+                builder.Add(semantic, attrType, semanticIndex);
+            }
+        }
+
+        return builder.Build();
+    }
+
+    private static VertexAttributeType MapFormatToAttributeType(Format format)
+    {
+        return format switch
+        {
+            Format.R32Float => VertexAttributeType.Float,
+            Format.R32G32Float => VertexAttributeType.Float2,
+            Format.R32G32B32Float => VertexAttributeType.Float3,
+            Format.R32G32B32A32Float => VertexAttributeType.Float4,
+            Format.R32G32B32A32Uint => VertexAttributeType.UInt4,
+            Format.R8G8B8A8Uint => VertexAttributeType.UByte4,
+            _ => VertexAttributeType.Float4
+        };
+    }
 
     private static VertexFormat CreateStatic()
     {

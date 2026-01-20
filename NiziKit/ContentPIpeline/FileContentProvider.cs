@@ -32,6 +32,11 @@ public sealed class FileContentProvider(string root) : IContentProvider
 
     private string ResolvePath(string path)
     {
+        if (Path.IsPathRooted(path))
+        {
+            return path;
+        }
+
         var normalized = path.Replace('\\', '/').TrimStart('/');
         return Path.Combine(_root, normalized);
     }

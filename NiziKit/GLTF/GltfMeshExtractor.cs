@@ -52,10 +52,10 @@ public static class GltfMeshExtractor
 
     private static Mesh ExtractMesh(GltfDocument document, GltfMesh gltfMesh, int meshIndex, bool isSkinned, bool convertToLeftHanded)
     {
-        var format = isSkinned ? VertexFormat.Skinned : VertexFormat.Static;
-        var allVertices = new List<byte>();
+        var attributeData = new Dictionary<string, List<byte>>();
         var allIndices = new List<uint>();
         var baseVertex = 0u;
+        var totalVertexCount = 0;
 
         foreach (var primitive in gltfMesh.Primitives)
         {
@@ -71,139 +71,254 @@ public static class GltfMeshExtractor
             }
 
             var vertexCount = posAccessor.Count;
+            totalVertexCount += vertexCount;
 
-            var hasNormal = primitive.Attributes.TryGetValue("NORMAL", out var normalAccIndex);
-            var hasTexCoord = primitive.Attributes.TryGetValue("TEXCOORD_0", out var texCoordAccIndex);
-            var hasTangent = primitive.Attributes.TryGetValue("TANGENT", out var tangentAccIndex);
-
-            var hasJoints = false;
-            var hasWeights = false;
-            int jointsAccIndex = 0, weightsAccIndex = 0;
-            if (isSkinned)
+            foreach (var (attrName, accessorIndex) in primitive.Attributes)
             {
-                hasJoints = primitive.Attributes.TryGetValue("JOINTS_0", out jointsAccIndex);
-                hasWeights = primitive.Attributes.TryGetValue("WEIGHTS_0", out weightsAccIndex);
+                if (!attributeData.ContainsKey(attrName))
+                {
+                    attributeData[attrName] = new List<byte>();
+                }
+
+                ExtractAttributeData(document, accessorIndex, attrName, vertexCount, convertToLeftHanded, attributeData[attrName]);
             }
 
-            var posData = document.GetAccessorData(positionAccessorIndex);
-            var posStride = document.GetAccessorStride(positionAccessorIndex);
-
-            var normalData = hasNormal ? document.GetAccessorData(normalAccIndex) : ReadOnlySpan<byte>.Empty;
-            var normalStride = hasNormal ? document.GetAccessorStride(normalAccIndex) : 0;
-
-            var texCoordData = hasTexCoord ? document.GetAccessorData(texCoordAccIndex) : ReadOnlySpan<byte>.Empty;
-            var texCoordStride = hasTexCoord ? document.GetAccessorStride(texCoordAccIndex) : 0;
-
-            var tangentData = hasTangent ? document.GetAccessorData(tangentAccIndex) : ReadOnlySpan<byte>.Empty;
-            var tangentStride = hasTangent ? document.GetAccessorStride(tangentAccIndex) : 0;
-
-            var jointsData = hasJoints ? document.GetAccessorData(jointsAccIndex) : ReadOnlySpan<byte>.Empty;
-            var jointsStride = hasJoints ? document.GetAccessorStride(jointsAccIndex) : 0;
-            var jointsAccessor = hasJoints ? document.Root.Accessors?[jointsAccIndex] : null;
-
-            var weightsData = hasWeights ? document.GetAccessorData(weightsAccIndex) : ReadOnlySpan<byte>.Empty;
-            var weightsStride = hasWeights ? document.GetAccessorStride(weightsAccIndex) : 0;
-
-            var vertexBytes = new byte[vertexCount * format.Stride];
-            var span = vertexBytes.AsSpan();
-
-            for (var i = 0; i < vertexCount; i++)
+            if (!primitive.Attributes.ContainsKey("NORMAL"))
             {
-                var offset = i * format.Stride;
-
-                var pos = ReadVector3(posData, i, posStride);
-                if (convertToLeftHanded)
+                if (!attributeData.ContainsKey("NORMAL"))
                 {
-                    pos.Z = -pos.Z;
+                    attributeData["NORMAL"] = new List<byte>();
                 }
-                MemoryMarshal.Write(span[offset..], in pos);
-
-                Vector3 normal;
-                if (hasNormal && !normalData.IsEmpty)
-                {
-                    normal = ReadVector3(normalData, i, normalStride);
-                }
-                else
-                {
-                    normal = Vector3.UnitY;
-                }
-                if (convertToLeftHanded)
-                {
-                    normal.Z = -normal.Z;
-                }
-                MemoryMarshal.Write(span[(offset + 12)..], in normal);
-
-                Vector2 uv;
-                if (hasTexCoord && !texCoordData.IsEmpty)
-                {
-                    uv = ReadVector2(texCoordData, i, texCoordStride);
-                }
-                else
-                {
-                    uv = Vector2.Zero;
-                }
-                MemoryMarshal.Write(span[(offset + 24)..], in uv);
-
-                Vector4 tangent;
-                if (hasTangent && !tangentData.IsEmpty)
-                {
-                    tangent = ReadVector4(tangentData, i, tangentStride);
-                }
-                else
-                {
-                    tangent = ComputeTangent(normal);
-                }
-                if (convertToLeftHanded)
-                {
-                    tangent.Z = -tangent.Z;
-                }
-                MemoryMarshal.Write(span[(offset + 32)..], in tangent);
-
-                if (isSkinned)
-                {
-                    Vector4 weight;
-                    if (hasWeights && !weightsData.IsEmpty)
-                    {
-                        weight = ReadVector4(weightsData, i, weightsStride);
-                        weight = NormalizeWeights(weight);
-                    }
-                    else
-                    {
-                        weight = new Vector4(1, 0, 0, 0);
-                    }
-                    MemoryMarshal.Write(span[(offset + 48)..], in weight);
-
-                    UInt4 jointData;
-                    if (hasJoints && !jointsData.IsEmpty && jointsAccessor != null)
-                    {
-                        jointData = ReadJoints(jointsData, i, jointsStride, jointsAccessor.ComponentType);
-                    }
-                    else
-                    {
-                        jointData = default;
-                    }
-                    MemoryMarshal.Write(span[(offset + 64)..], in jointData);
-                }
+                GenerateDefaultNormals(vertexCount, attributeData["NORMAL"]);
             }
 
-            allVertices.AddRange(vertexBytes);
+            if (!primitive.Attributes.ContainsKey("TANGENT"))
+            {
+                if (!attributeData.ContainsKey("TANGENT"))
+                {
+                    attributeData["TANGENT"] = new List<byte>();
+                }
+
+                var normalBytes = attributeData.GetValueOrDefault("NORMAL");
+                GenerateDefaultTangents(vertexCount, normalBytes, (int)(baseVertex * 12), attributeData["TANGENT"]);
+            }
 
             ExtractIndices(document, primitive, vertexCount, baseVertex, convertToLeftHanded, allIndices);
-
             baseVertex += (uint)vertexCount;
         }
 
-        var vertices = allVertices.ToArray();
+        var attributes = new Dictionary<string, MeshAttributeData>();
+        foreach (var (attrName, data) in attributeData)
+        {
+            var type = GetAttributeType(attrName);
+            attributes[attrName] = new MeshAttributeData
+            {
+                Name = attrName,
+                Data = data.ToArray(),
+                Type = type
+            };
+        }
+
         var indices = allIndices.ToArray();
+
+        var sourceAttributes = new MeshAttributeSet
+        {
+            Attributes = attributes,
+            VertexCount = totalVertexCount,
+            Indices = indices
+        };
+
+        var defaultFormat = isSkinned ? VertexFormat.Skinned : VertexFormat.Static;
+        var packedVertices = VertexPacker.Pack(sourceAttributes, defaultFormat);
 
         return new Mesh
         {
             Name = gltfMesh.Name ?? $"Mesh_{meshIndex}",
-            Format = format,
+            Format = defaultFormat,
             MeshType = isSkinned ? MeshType.Skinned : MeshType.Static,
-            CpuVertices = vertices,
+            SourceAttributes = sourceAttributes,
+            CpuVertices = packedVertices,
             CpuIndices = indices,
-            Bounds = ComputeBounds(vertices, format)
+            Bounds = ComputeBoundsFromAttributes(sourceAttributes)
+        };
+    }
+
+    private static void ExtractAttributeData(
+        GltfDocument document,
+        int accessorIndex,
+        string attrName,
+        int vertexCount,
+        bool convertToLeftHanded,
+        List<byte> output)
+    {
+        var data = document.GetAccessorData(accessorIndex);
+        var stride = document.GetAccessorStride(accessorIndex);
+        var accessor = document.Root.Accessors?[accessorIndex];
+
+        if (accessor == null || data.IsEmpty)
+        {
+            return;
+        }
+
+        switch (attrName)
+        {
+            case "POSITION":
+                ExtractVector3Attribute(data, stride, vertexCount, convertToLeftHanded, true, output);
+                break;
+            case "NORMAL":
+                ExtractVector3Attribute(data, stride, vertexCount, convertToLeftHanded, true, output);
+                break;
+            case "TANGENT":
+                ExtractVector4Attribute(data, stride, vertexCount, convertToLeftHanded, true, output);
+                break;
+            case "JOINTS_0":
+                ExtractJointsAttribute(data, stride, vertexCount, accessor.ComponentType, output);
+                break;
+            case "WEIGHTS_0":
+                ExtractWeightsAttribute(data, stride, vertexCount, output);
+                break;
+            default:
+                if (attrName.StartsWith("TEXCOORD_"))
+                {
+                    ExtractVector2Attribute(data, stride, vertexCount, output);
+                }
+                else if (attrName.StartsWith("COLOR_"))
+                {
+                    ExtractVector4Attribute(data, stride, vertexCount, false, false, output);
+                }
+                break;
+        }
+    }
+
+    private static void ExtractVector2Attribute(ReadOnlySpan<byte> data, int stride, int vertexCount, List<byte> output)
+    {
+        var bytes = new byte[vertexCount * 8];
+        var span = bytes.AsSpan();
+
+        for (var i = 0; i < vertexCount; i++)
+        {
+            var value = ReadVector2(data, i, stride);
+            MemoryMarshal.Write(span[(i * 8)..], in value);
+        }
+
+        output.AddRange(bytes);
+    }
+
+    private static void ExtractVector3Attribute(ReadOnlySpan<byte> data, int stride, int vertexCount, bool convertToLeftHanded, bool negateZ, List<byte> output)
+    {
+        var bytes = new byte[vertexCount * 12];
+        var span = bytes.AsSpan();
+
+        for (var i = 0; i < vertexCount; i++)
+        {
+            var value = ReadVector3(data, i, stride);
+            if (convertToLeftHanded && negateZ)
+            {
+                value.Z = -value.Z;
+            }
+            MemoryMarshal.Write(span[(i * 12)..], in value);
+        }
+
+        output.AddRange(bytes);
+    }
+
+    private static void ExtractVector4Attribute(ReadOnlySpan<byte> data, int stride, int vertexCount, bool convertToLeftHanded, bool negateZ, List<byte> output)
+    {
+        var bytes = new byte[vertexCount * 16];
+        var span = bytes.AsSpan();
+
+        for (var i = 0; i < vertexCount; i++)
+        {
+            var value = ReadVector4(data, i, stride);
+            if (convertToLeftHanded && negateZ)
+            {
+                value.Z = -value.Z;
+            }
+            MemoryMarshal.Write(span[(i * 16)..], in value);
+        }
+
+        output.AddRange(bytes);
+    }
+
+    private static void ExtractJointsAttribute(ReadOnlySpan<byte> data, int stride, int vertexCount, int componentType, List<byte> output)
+    {
+        var bytes = new byte[vertexCount * 16];
+        var span = bytes.AsSpan();
+
+        for (var i = 0; i < vertexCount; i++)
+        {
+            var value = ReadJoints(data, i, stride, componentType);
+            MemoryMarshal.Write(span[(i * 16)..], in value);
+        }
+
+        output.AddRange(bytes);
+    }
+
+    private static void ExtractWeightsAttribute(ReadOnlySpan<byte> data, int stride, int vertexCount, List<byte> output)
+    {
+        var bytes = new byte[vertexCount * 16];
+        var span = bytes.AsSpan();
+
+        for (var i = 0; i < vertexCount; i++)
+        {
+            var value = ReadVector4(data, i, stride);
+            value = NormalizeWeights(value);
+            MemoryMarshal.Write(span[(i * 16)..], in value);
+        }
+
+        output.AddRange(bytes);
+    }
+
+    private static void GenerateDefaultNormals(int vertexCount, List<byte> output)
+    {
+        var bytes = new byte[vertexCount * 12];
+        var span = bytes.AsSpan();
+        var defaultNormal = Vector3.UnitY;
+
+        for (var i = 0; i < vertexCount; i++)
+        {
+            MemoryMarshal.Write(span[(i * 12)..], in defaultNormal);
+        }
+
+        output.AddRange(bytes);
+    }
+
+    private static void GenerateDefaultTangents(int vertexCount, List<byte>? normalBytes, int normalOffset, List<byte> output)
+    {
+        var bytes = new byte[vertexCount * 16];
+        var span = bytes.AsSpan();
+
+        for (var i = 0; i < vertexCount; i++)
+        {
+            Vector3 normal;
+            if (normalBytes != null && normalOffset + (i + 1) * 12 <= normalBytes.Count)
+            {
+                normal = MemoryMarshal.Read<Vector3>(normalBytes.ToArray().AsSpan()[(normalOffset + i * 12)..]);
+            }
+            else
+            {
+                normal = Vector3.UnitY;
+            }
+
+            var tangent = ComputeTangent(normal);
+            MemoryMarshal.Write(span[(i * 16)..], in tangent);
+        }
+
+        output.AddRange(bytes);
+    }
+
+    private static VertexAttributeType GetAttributeType(string attrName)
+    {
+        return attrName switch
+        {
+            "POSITION" => VertexAttributeType.Float3,
+            "NORMAL" => VertexAttributeType.Float3,
+            "TANGENT" => VertexAttributeType.Float4,
+            "JOINTS_0" => VertexAttributeType.UInt4,
+            "WEIGHTS_0" => VertexAttributeType.Float4,
+            _ when attrName.StartsWith("TEXCOORD_") => VertexAttributeType.Float2,
+            _ when attrName.StartsWith("COLOR_") => VertexAttributeType.Float4,
+            _ => VertexAttributeType.Float4
         };
     }
 
@@ -456,21 +571,21 @@ public static class GltfMeshExtractor
         return new Vector4(tangent, 1.0f);
     }
 
-    private static BoundingBox ComputeBounds(byte[] vertices, VertexFormat format)
+    private static BoundingBox ComputeBoundsFromAttributes(MeshAttributeSet attributes)
     {
-        if (vertices.Length == 0)
+        var positionData = attributes.GetAttribute("POSITION");
+        if (positionData == null || positionData.Data.Length == 0)
         {
             return new BoundingBox(Vector3.Zero, Vector3.Zero);
         }
 
         var min = new Vector3(float.MaxValue);
         var max = new Vector3(float.MinValue);
-        var vertexCount = vertices.Length / format.Stride;
-        var span = vertices.AsSpan();
+        var span = positionData.Data.AsSpan();
 
-        for (var i = 0; i < vertexCount; i++)
+        for (var i = 0; i < attributes.VertexCount; i++)
         {
-            var pos = MemoryMarshal.Read<Vector3>(span[(i * format.Stride)..]);
+            var pos = MemoryMarshal.Read<Vector3>(span[(i * 12)..]);
             min = Vector3.Min(min, pos);
             max = Vector3.Max(max, pos);
         }

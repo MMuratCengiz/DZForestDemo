@@ -46,12 +46,50 @@ public class Mesh : IDisposable
     public VertexBufferView VertexBuffer { get; internal set; }
     public IndexBufferView IndexBuffer { get; internal set; }
 
-    public int NumVertices => CpuVertices != null ? CpuVertices.Length / Format.Stride : (int)VertexBuffer.Count;
-    public int NumIndices => CpuIndices?.Length ?? (int)IndexBuffer.Count;
+    public MeshAttributeSet? SourceAttributes { get; set; }
+
+    private readonly Dictionary<string, VertexBufferView> _formatVariants = new();
+
+    public int NumVertices => SourceAttributes?.VertexCount ??
+                              (CpuVertices != null ? CpuVertices.Length / Format.Stride : (int)VertexBuffer.Count);
+    public int NumIndices => SourceAttributes?.Indices.Length ?? CpuIndices?.Length ?? (int)IndexBuffer.Count;
 
     public bool IsUploaded => VertexBuffer.IsValid;
+    public bool HasSourceData => SourceAttributes != null;
 
     internal uint Index { get; set; }
+
+    public VertexBufferView GetVertexBuffer(VertexFormat format)
+    {
+        if (_formatVariants.TryGetValue(format.Name, out var cached))
+        {
+            return cached;
+        }
+
+        if (format.Name == Format.Name && VertexBuffer.IsValid)
+        {
+            return VertexBuffer;
+        }
+
+        if (SourceAttributes == null)
+        {
+            if (VertexBuffer.IsValid)
+            {
+                return VertexBuffer;
+            }
+            throw new InvalidOperationException($"Cannot create vertex buffer variant for format '{format.Name}': source data has been discarded");
+        }
+
+        var packed = VertexPacker.Pack(SourceAttributes, format);
+        var view = Assets.Instance.UploadVerticesInternal(packed, format);
+        _formatVariants[format.Name] = view;
+        return view;
+    }
+
+    public void DiscardSourceData()
+    {
+        SourceAttributes = null;
+    }
 
     public void Dispose()
     {

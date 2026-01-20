@@ -69,7 +69,7 @@ public class ForwardRenderer : IRenderer
                 continue;
             }
 
-            pass.BindPipeline(gpuShader.Pipeline);
+            pass.BindShader(gpuShader);
             pass.Bind<MaterialBinding>(material);
 
             foreach (var batch in renderWorld.GetDrawBatches(material))

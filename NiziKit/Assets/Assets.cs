@@ -114,6 +114,11 @@ public sealed class Assets : IDisposable
         return mesh;
     }
 
+    internal VertexBufferView UploadVerticesInternal(byte[] data, VertexFormat format)
+    {
+        return UploadVertices(data, format);
+    }
+
     private VertexBufferView UploadVertices(byte[] data, VertexFormat format)
     {
         var numBytes = (uint)data.Length;

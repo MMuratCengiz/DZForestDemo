@@ -1,4 +1,5 @@
 using DenOfIz;
+using NiziKit.Assets;
 
 namespace NiziKit.Graphics;
 
@@ -8,6 +9,7 @@ public class GpuShader : IDisposable
     public ShaderProgram ShaderProgram { get; private set; }
     public RootSignature RootSignature { get; private set; }
     public InputLayout InputLayout { get; private set; }
+    public VertexFormat VertexFormat { get; private set; }
     public LocalRootSignature[] LocalRootSignatures { get; private set; } = [];
 
     private readonly bool _ownsProgram;
@@ -35,6 +37,7 @@ public class GpuShader : IDisposable
         };
         RootSignature = GraphicsContext.Device.CreateRootSignature(rootSigDesc);
         InputLayout = GraphicsContext.Device.CreateInputLayout(reflection.InputLayout);
+        VertexFormat = VertexFormat.FromInputLayout(reflection.InputLayout);
 
         var bindPoint = explicitBindPoint ?? DetermineBindPoint(graphicsDesc, rayTracingPipelineDesc);
 

@@ -20,6 +20,8 @@ public class GraphicsPass(CommandList commandList) : RenderPass(commandList)
     private bool _hasDepth;
     private bool _hasStencil;
 
+    private GpuShader? _boundShader;
+
     private float _viewportX;
     private float _viewportY;
     private float _viewportWidth;
@@ -111,9 +113,16 @@ public class GraphicsPass(CommandList commandList) : RenderPass(commandList)
         _hasStencil = false;
         _hasViewport = false;
         _hasScissor = false;
+        _boundShader = null;
         Array.Clear(_rtTextures);
         _depthTexture = null;
         _stencilTexture = null;
+    }
+
+    public void BindShader(GpuShader shader)
+    {
+        _boundShader = shader;
+        BindPipeline(shader.Pipeline);
     }
 
     protected override void BeginInternal()
@@ -217,7 +226,13 @@ public class GraphicsPass(CommandList commandList) : RenderPass(commandList)
 
     public void DrawMesh(Mesh mesh, uint instanceCount = 1)
     {
-        BindVertexBuffer(mesh.VertexBuffer.View.Buffer, mesh.VertexBuffer.View.Offset, mesh.VertexBuffer.Stride, 0);
+        if (_boundShader == null)
+        {
+            throw new InvalidOperationException("No shader bound. Call BindShader before DrawMesh.");
+        }
+
+        var vb = mesh.GetVertexBuffer(_boundShader.VertexFormat);
+        BindVertexBuffer(vb.View.Buffer, vb.View.Offset, vb.Stride, 0);
         BindIndexBuffer(mesh.IndexBuffer.View.Buffer, mesh.IndexBuffer.IndexType, mesh.IndexBuffer.View.Offset);
         DrawIndexed((uint)mesh.NumIndices, instanceCount, 0, 0, 0);
     }
