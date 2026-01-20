@@ -2,7 +2,7 @@ using NiziKit.Assets;
 
 namespace NiziKit.Components;
 
-[NiziComponent(GenerateFactory = false)]
+[NiziComponent]
 public partial class MaterialComponent
 {
     [AssetRef(AssetRefType.Material, "material")]

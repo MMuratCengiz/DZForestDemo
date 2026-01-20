@@ -75,7 +75,15 @@
       "Bash(readlink:*)",
       "Bash(git reset:*)",
       "WebFetch(domain:docs.unity3d.com)",
-      "Bash(/opt/homebrew/bin/magick:*)"
+      "Bash(/opt/homebrew/bin/magick:*)",
+      "Bash(for:*)",
+      "Bash(do)",
+      "Bash(if [ -f \"C:/Workspace/DZForestDemo/DZForestDemo/Assets/Synty/Models/VikingRealm/FBX/$model.glb\" ])",
+      "Bash(then)",
+      "Bash(else)",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(python -m py_compile:*)"
     ]
   }
 }

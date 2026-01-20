@@ -19,7 +19,7 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
     protected override void Load(Game game)
     {
         _renderer = new ForwardRenderer(RenderUi);
-        World.LoadScene("Scenes/Default.niziscene.json");
+        World.LoadScene("Scenes/VikingShowcase.niziscene.json");
     }
 
     private static void RenderUi(UiFrame ui)

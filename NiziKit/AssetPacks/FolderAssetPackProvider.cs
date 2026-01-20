@@ -1,13 +1,8 @@
 namespace NiziKit.AssetPacks;
 
-internal sealed class FolderAssetPackProvider : IAssetPackProvider
+internal sealed class FolderAssetPackProvider(string rootPath) : IAssetPackProvider
 {
-    private readonly string _rootPath;
-
-    public FolderAssetPackProvider(string rootPath)
-    {
-        _rootPath = Path.GetFullPath(rootPath);
-    }
+    private readonly string _rootPath = Path.GetFullPath(rootPath);
 
     public string ReadText(string path) => File.ReadAllText(ResolvePath(path));
 

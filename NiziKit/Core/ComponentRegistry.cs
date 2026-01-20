@@ -208,6 +208,8 @@ public static class ComponentRegistry
                         AssetRefType.Material => resolver.ResolveMaterial(reference),
                         AssetRefType.Texture => resolver.ResolveTexture(reference),
                         AssetRefType.Shader => resolver.ResolveShader(reference),
+                        AssetRefType.Skeleton => resolver.ResolveSkeleton(reference),
+                        AssetRefType.Animation => resolver.ResolveAnimation(reference),
                         _ => null
                     };
                     property.SetValue(instance, asset);

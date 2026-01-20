@@ -3,13 +3,22 @@ using NiziKit.Physics;
 
 namespace NiziKit.Components;
 
-[NiziComponent(GenerateFactory = false)]
+[NiziComponent]
 public partial class RigidbodyComponent
 {
+    [JsonProperty("shape")]
     public partial PhysicsShape Shape { get; set; }
+
+    [JsonProperty("bodyType")]
     public partial PhysicsBodyType BodyType { get; set; }
+
+    [JsonProperty("mass")]
     public partial float Mass { get; set; }
+
+    [JsonProperty("speculativeMargin")]
     public partial float SpeculativeMargin { get; set; }
+
+    [JsonProperty("sleepThreshold")]
     public partial float SleepThreshold { get; set; }
 
     internal BodyHandle? BodyHandle { get; set; }

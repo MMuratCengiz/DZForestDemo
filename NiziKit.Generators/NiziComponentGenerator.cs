@@ -83,11 +83,16 @@ public class NiziComponentGenerator : IIncrementalGenerator
             context.AddSource($"{classSymbol.Name}.g.cs", SourceText.From(source, Encoding.UTF8));
         }
 
-        // Generate module initializer for component registration
         if (componentInfos.Any(c => c.GenerateFactory))
         {
             var registrationSource = GenerateModuleInitializer(componentInfos);
             context.AddSource("ComponentRegistration.g.cs", SourceText.From(registrationSource, Encoding.UTF8));
+        }
+
+        if (componentInfos.Count > 0)
+        {
+            var schemaSource = GenerateComponentSchema(componentInfos);
+            context.AddSource("ComponentSchema.g.cs", SourceText.From(schemaSource, Encoding.UTF8));
         }
     }
 
@@ -97,7 +102,6 @@ public class NiziComponentGenerator : IIncrementalGenerator
         var namespaceName = classSymbol.ContainingNamespace.ToDisplayString();
         var className = classSymbol.Name;
 
-        // Get attribute data
         var attribute = classSymbol.GetAttributes()
             .FirstOrDefault(a => a.AttributeClass?.Name == "NiziComponentAttribute");
 
@@ -119,7 +123,6 @@ public class NiziComponentGenerator : IIncrementalGenerator
             }
         }
 
-        // Default type name: remove "Component" suffix and lowercase
         if (string.IsNullOrEmpty(typeName))
         {
             typeName = className;
@@ -130,7 +133,6 @@ public class NiziComponentGenerator : IIncrementalGenerator
             typeName = typeName.ToLowerInvariant();
         }
 
-        // Extract properties
         var properties = new List<PropertyInfo>();
         foreach (var member in classSymbol.GetMembers())
         {
@@ -171,7 +173,6 @@ public class NiziComponentGenerator : IIncrementalGenerator
             }
         }
 
-        // Get partial properties for Owner generation
         var partialProperties = classDecl.Members
             .OfType<PropertyDeclarationSyntax>()
             .Where(p => p.Modifiers.Any(SyntaxKind.PartialKeyword))
@@ -276,7 +277,6 @@ public class NiziComponentGenerator : IIncrementalGenerator
         sb.AppendLine("    }");
         sb.AppendLine();
 
-        // Generate factory classes
         foreach (var comp in components.Where(c => c.GenerateFactory))
         {
             GenerateFactoryClass(sb, comp);
@@ -301,13 +301,14 @@ public class NiziComponentGenerator : IIncrementalGenerator
         {
             if (!string.IsNullOrEmpty(prop.AssetJsonName))
             {
-                // Asset reference property
                 var resolverMethod = prop.AssetType switch
                 {
-                    0 => "ResolveMesh",      // Mesh
-                    1 => "ResolveMaterial",  // Material
-                    2 => "ResolveTexture",   // Texture
-                    3 => "ResolveShader",    // Shader
+                    0 => "ResolveMesh",
+                    1 => "ResolveMaterial",
+                    2 => "ResolveTexture",
+                    3 => "ResolveShader",
+                    4 => "ResolveSkeleton",
+                    5 => "ResolveAnimation",
                     _ => null
                 };
 
@@ -321,11 +322,11 @@ public class NiziComponentGenerator : IIncrementalGenerator
             }
             else if (!string.IsNullOrEmpty(prop.JsonName))
             {
-                // Regular JSON property
-                var getterMethod = GetJsonGetterMethod(prop.Type);
+                var varName = $"{prop.Name.ToLower()}Val";
+                var getterMethod = GetJsonGetterMethod(prop.Type, varName);
                 if (getterMethod != null)
                 {
-                    sb.AppendLine($"            if (properties != null && properties.TryGetValue(\"{prop.JsonName}\", out var {prop.Name.ToLower()}Val))");
+                    sb.AppendLine($"            if (properties != null && properties.TryGetValue(\"{prop.JsonName}\", out var {varName}))");
                     sb.AppendLine("            {");
                     sb.AppendLine($"                component.{prop.Name} = {getterMethod};");
                     sb.AppendLine("            }");
@@ -339,21 +340,167 @@ public class NiziComponentGenerator : IIncrementalGenerator
         sb.AppendLine();
     }
 
-    private static string? GetJsonGetterMethod(string typeName)
+    private static string? GetJsonGetterMethod(string typeName, string varName)
     {
-        // Handle nullable types
         var isNullable = typeName.EndsWith("?");
         var baseType = isNullable ? typeName.TrimEnd('?') : typeName;
+        baseType = baseType.Replace("global::", "");
+        var simpleType = baseType.Contains(".") ? baseType.Substring(baseType.LastIndexOf('.') + 1) : baseType;
 
-        return baseType switch
+        return simpleType switch
         {
-            "string" or "System.String" => $"{baseType.ToLower()}Val.GetString()",
-            "int" or "System.Int32" => $"{baseType.ToLower()}Val.GetInt32()",
-            "float" or "System.Single" => $"{baseType.ToLower()}Val.GetSingle()",
-            "double" or "System.Double" => $"{baseType.ToLower()}Val.GetDouble()",
-            "bool" or "System.Boolean" => $"{baseType.ToLower()}Val.GetBoolean()",
-            "uint" or "System.UInt32" => $"{baseType.ToLower()}Val.GetUInt32()",
+            "String" or "string" => $"{varName}.GetString()",
+            "Int32" or "int" => $"{varName}.GetInt32()",
+            "Int64" or "long" => $"{varName}.GetInt64()",
+            "Single" or "float" => $"{varName}.GetSingle()",
+            "Double" or "double" => $"{varName}.GetDouble()",
+            "Boolean" or "bool" => $"{varName}.GetBoolean()",
+            "UInt32" or "uint" => $"{varName}.GetUInt32()",
+            "PhysicsBodyType" => $"System.Enum.Parse<NiziKit.Physics.PhysicsBodyType>({varName}.GetString()!, true)",
+            "PhysicsShapeType" => $"System.Enum.Parse<NiziKit.Physics.PhysicsShapeType>({varName}.GetString()!, true)",
             _ => null
+        };
+    }
+
+    private static string GenerateComponentSchema(List<ComponentInfo> components)
+    {
+        var sb = new StringBuilder();
+
+        sb.AppendLine("// <auto-generated/>");
+        sb.AppendLine("#nullable enable");
+        sb.AppendLine();
+        sb.AppendLine("namespace NiziKit.Generated;");
+        sb.AppendLine();
+        sb.AppendLine("/// <summary>");
+        sb.AppendLine("/// Auto-generated JSON Schema definitions for NiziKit components.");
+        sb.AppendLine("/// </summary>");
+        sb.AppendLine("public static class ComponentSchema");
+        sb.AppendLine("{");
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine("    /// JSON Schema $defs for all registered component types.");
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine("    public const string ComponentDefs = \"\"\"");
+        sb.AppendLine("  {");
+        sb.AppendLine("    \"component\": {");
+        sb.AppendLine("      \"oneOf\": [");
+        for (var i = 0; i < components.Count; i++)
+        {
+            var comp = components[i];
+            var comma = i < components.Count - 1 ? "," : "";
+            sb.AppendLine($"        {{ \"$ref\": \"#/$defs/{comp.TypeName}\" }}{comma}");
+        }
+        sb.AppendLine("      ]");
+        sb.AppendLine("    },");
+
+        for (var i = 0; i < components.Count; i++)
+        {
+            var comp = components[i];
+            var isLast = i == components.Count - 1;
+            GenerateComponentSchemaDef(sb, comp, isLast);
+        }
+
+        sb.AppendLine("  }");
+        sb.AppendLine("\"\"\";");
+        sb.AppendLine();
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine("    /// Gets all registered component type names.");
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine("    public static readonly string[] ComponentTypes = [");
+        foreach (var comp in components)
+        {
+            sb.AppendLine($"        \"{comp.TypeName}\",");
+        }
+        sb.AppendLine("    ];");
+
+        sb.AppendLine("}");
+
+        return sb.ToString();
+    }
+
+    private static void GenerateComponentSchemaDef(StringBuilder sb, ComponentInfo comp, bool isLast)
+    {
+        var comma = isLast ? "" : ",";
+
+        var allProps = new List<(string jsonName, string schemaType, string? description)>();
+
+        foreach (var prop in comp.Properties)
+        {
+            var jsonName = prop.AssetJsonName ?? prop.JsonName;
+            if (string.IsNullOrEmpty(jsonName))
+            {
+                continue;
+            }
+
+            var (schemaType, description) = GetJsonSchemaType(prop.Type, prop.AssetType);
+            allProps.Add((jsonName!, schemaType, description));
+        }
+
+        sb.AppendLine($"    \"{comp.TypeName}\": {{");
+        sb.AppendLine("      \"type\": \"object\",");
+        sb.AppendLine("      \"required\": [\"type\"],");
+        sb.AppendLine("      \"properties\": {");
+
+        var typeComma = allProps.Count > 0 ? "," : "";
+        sb.AppendLine($"        \"type\": {{ \"const\": \"{comp.TypeName}\" }}{typeComma}");
+
+        for (var i = 0; i < allProps.Count; i++)
+        {
+            var (jsonName, schemaType, description) = allProps[i];
+            var propComma = i < allProps.Count - 1 ? "," : "";
+
+            if (description != null)
+            {
+                sb.AppendLine($"        \"{jsonName}\": {{ {schemaType}, \"description\": \"{description}\" }}{propComma}");
+            }
+            else
+            {
+                sb.AppendLine($"        \"{jsonName}\": {{ {schemaType} }}{propComma}");
+            }
+        }
+
+        sb.AppendLine("      }");
+        sb.AppendLine($"    }}{comma}");
+    }
+
+    private static (string schemaType, string? description) GetJsonSchemaType(string csharpType, int? assetType)
+    {
+        if (assetType.HasValue)
+        {
+            var assetTypeName = assetType.Value switch
+            {
+                0 => "Mesh",
+                1 => "Material",
+                2 => "Texture",
+                3 => "Shader",
+                4 => "Skeleton",
+                5 => "Animation",
+                _ => "Asset"
+            };
+            return ("\"type\": \"string\"", $"{assetTypeName} asset reference (pack:asset/selector)");
+        }
+
+        var isNullable = csharpType.EndsWith("?");
+        var baseType = isNullable ? csharpType.TrimEnd('?') : csharpType;
+        baseType = baseType.Replace("global::", "");
+        var simpleType = baseType.Contains(".") ? baseType.Substring(baseType.LastIndexOf('.') + 1) : baseType;
+
+        return simpleType switch
+        {
+            "String" or "string" => ("\"type\": \"string\"", null),
+            "Int32" or "int" => ("\"type\": \"integer\"", null),
+            "Int64" or "long" => ("\"type\": \"integer\"", null),
+            "Single" or "float" => ("\"type\": \"number\"", null),
+            "Double" or "double" => ("\"type\": \"number\"", null),
+            "Boolean" or "bool" => ("\"type\": \"boolean\"", null),
+            "UInt32" or "uint" => ("\"type\": \"integer\", \"minimum\": 0", null),
+            "Vector3" => ("\"$ref\": \"#/$defs/vector3\"", null),
+            "Vector2" => ("\"type\": \"array\", \"items\": { \"type\": \"number\" }, \"minItems\": 2, \"maxItems\": 2", null),
+            "Quaternion" => ("\"type\": \"array\", \"items\": { \"type\": \"number\" }, \"minItems\": 4, \"maxItems\": 4", null),
+            "PhysicsShape" => ("\"$ref\": \"#/$defs/physicsShape\"", "Physics collision shape"),
+            "PhysicsBodyType" => ("\"enum\": [\"dynamic\", \"static\", \"kinematic\"]", "Physics body type"),
+            "PhysicsShapeType" => ("\"enum\": [\"box\", \"sphere\", \"capsule\", \"cylinder\"]", "Shape type"),
+            _ when baseType.Contains("Enum") || csharpType.Contains("Enum") => ("\"type\": \"string\"", "Enum value"),
+            _ => ("\"type\": \"object\"", $"Complex type: {simpleType}")
         };
     }
 

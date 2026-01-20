@@ -11,19 +11,13 @@ using NiziKit.Physics;
 
 namespace NiziKit.Core;
 
-public class JsonScene : Scene, IAssetResolver
+public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension(jsonPath)), IAssetResolver
 {
-    private readonly string _jsonPath;
     private readonly List<AssetPack> _loadedPacks = new();
-
-    public JsonScene(string jsonPath) : base(Path.GetFileNameWithoutExtension(jsonPath))
-    {
-        _jsonPath = jsonPath;
-    }
 
     public override void Load()
     {
-        var json = Content.ReadText(_jsonPath);
+        var json = Content.ReadText(jsonPath);
         var sceneData = SceneJson.FromJson(json);
 
         Name = sceneData.Name;

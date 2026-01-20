@@ -7,6 +7,26 @@
     "VikingRealmAlt": "../../Materials/VikingScene.nizimat.json"
   },
   "models": {
-    "characters": "../../Synty/Models/VikingRealm/FBX/VikingRealm_Characters.glb"
+    "characters": "../../Synty/Models/VikingRealm/FBX/VikingRealm_Characters.glb",
+    "boat-large": "../../Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Large_01.glb",
+    "boat-small": "../../Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Small_01.glb",
+    "cart": "../../Synty/Models/VikingRealm/FBX/SM_Veh_Cart_01.glb",
+    "barrel": "../../Synty/Models/VikingRealm/FBX/SM_Prop_Barrel_01.glb",
+    "barrel2": "../../Synty/Models/VikingRealm/FBX/SM_Prop_Barrel_02.glb",
+    "anvil": "../../Synty/Models/VikingRealm/FBX/SM_Prop_Anvil_01.glb",
+    "table": "../../Synty/Models/VikingRealm/FBX/SM_Prop_Table_01.glb",
+    "chair": "../../Synty/Models/VikingRealm/FBX/SM_Prop_Chair_01.glb",
+    "bench": "../../Synty/Models/VikingRealm/FBX/SM_Prop_Bench_01.glb",
+    "axe": "../../Synty/Models/VikingRealm/FBX/SM_Wep_Axe_01.glb",
+    "sword": "../../Synty/Models/VikingRealm/FBX/SM_Wep_Sword_01.glb",
+    "shield": "../../Synty/Models/VikingRealm/FBX/SM_Wep_Shield_01.glb",
+    "hammer": "../../Synty/Models/VikingRealm/FBX/SM_Wep_Hammer_01.glb",
+    "spear": "../../Synty/Models/VikingRealm/FBX/SM_Wep_Spear_01.glb",
+    "tree-pine": "../../Synty/Models/VikingRealm/FBX/SM_Env_Tree_Pine_01.glb",
+    "rock": "../../Synty/Models/VikingRealm/FBX/SM_Env_Rock_Cliff_01.glb",
+    "bush": "../../Synty/Models/VikingRealm/FBX/SM_Env_Bush_Berries_01.glb",
+    "torch": "../../Synty/Models/VikingRealm/FBX/SM_Prop_Torch_01.glb",
+    "firepit": "../../Synty/Models/VikingRealm/FBX/SM_Prop_Fire_Pit_01.glb",
+    "flag": "../../Synty/Models/VikingRealm/FBX/SM_Prop_Flag_01.glb"
   }
 }

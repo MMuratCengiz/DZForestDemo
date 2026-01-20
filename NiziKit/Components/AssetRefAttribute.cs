@@ -8,7 +8,9 @@ public enum AssetRefType
     Mesh,
     Material,
     Texture,
-    Shader
+    Shader,
+    Skeleton,
+    Animation
 }
 
 /// <summary>
@@ -16,21 +18,15 @@ public enum AssetRefType
 /// Used by the source generator to resolve asset references during component creation.
 /// </summary>
 [AttributeUsage(AttributeTargets.Property, Inherited = false)]
-public sealed class AssetRefAttribute : Attribute
+public sealed class AssetRefAttribute(AssetRefType assetType, string jsonPropertyName) : Attribute
 {
     /// <summary>
     /// The type of asset this property references.
     /// </summary>
-    public AssetRefType AssetType { get; }
+    public AssetRefType AssetType { get; } = assetType;
 
     /// <summary>
     /// The name of the JSON property containing the asset reference.
     /// </summary>
-    public string JsonPropertyName { get; }
-
-    public AssetRefAttribute(AssetRefType assetType, string jsonPropertyName)
-    {
-        AssetType = assetType;
-        JsonPropertyName = jsonPropertyName;
-    }
+    public string JsonPropertyName { get; } = jsonPropertyName;
 }
