@@ -3,14 +3,8 @@ using DenOfIz;
 
 namespace NiziKit.Components;
 
-public enum CameraMode
-{
-    FreeFly,
-    Orbit
-}
-
 [NiziComponent]
-public partial class CameraController
+public partial class FreeFlyController
 {
     private bool _isLooking;
     private int _lastMouseX;
@@ -31,29 +25,19 @@ public partial class CameraController
     private float _targetYaw;
     private float _targetPitch;
 
-    public partial CameraMode Mode { get; set; }
-
     public partial float MoveSpeed { get; set; }
     public partial float SprintMultiplier { get; set; }
     public partial float SlowMultiplier { get; set; }
     public partial float MoveDamping { get; set; }
-
     public partial float LookSensitivity { get; set; }
     public partial float LookDamping { get; set; }
     public partial float MinPitch { get; set; }
     public partial float MaxPitch { get; set; }
-
-    public partial Vector3 OrbitTarget { get; set; }
-    public partial float OrbitDistance { get; set; }
-    public partial float ZoomSensitivity { get; set; }
-    public partial float MinOrbitDistance { get; set; }
-    public partial float MaxOrbitDistance { get; set; }
-
     public partial float ScrollZoomSpeed { get; set; }
+    public partial bool IsEnabled { get; set; }
 
-    public CameraController()
+    public FreeFlyController()
     {
-        Mode = CameraMode.FreeFly;
         MoveSpeed = 10f;
         SprintMultiplier = 3f;
         SlowMultiplier = 0.25f;
@@ -62,11 +46,8 @@ public partial class CameraController
         LookDamping = 50f;
         MinPitch = -MathF.PI / 2f + 0.01f;
         MaxPitch = MathF.PI / 2f - 0.01f;
-        OrbitDistance = 10f;
-        ZoomSensitivity = 1f;
-        MinOrbitDistance = 1f;
-        MaxOrbitDistance = 100f;
         ScrollZoomSpeed = 2f;
+        IsEnabled = true;
     }
 
     public Vector3 Forward
@@ -98,9 +79,6 @@ public partial class CameraController
         _currentPitch = _targetPitch;
         _targetPosition = Owner.LocalPosition;
 
-        OrbitTarget = target;
-        OrbitDistance = Vector3.Distance(Owner.LocalPosition, target);
-
         UpdateOwnerRotation();
     }
 
@@ -112,8 +90,6 @@ public partial class CameraController
         }
 
         _targetPosition = position;
-        OrbitTarget = target;
-        OrbitDistance = Vector3.Distance(position, target);
 
         var direction = Vector3.Normalize(target - position);
         _targetYaw = MathF.Atan2(direction.X, direction.Z);
@@ -129,9 +105,9 @@ public partial class CameraController
         }
     }
 
-    public void Update(float deltaTime)
+    public void UpdateCamera(float deltaTime)
     {
-        if (Owner == null)
+        if (Owner == null || !IsEnabled)
         {
             return;
         }
@@ -139,20 +115,6 @@ public partial class CameraController
         _currentYaw = SmoothDampAngle(_currentYaw, _targetYaw, LookDamping, deltaTime);
         _currentPitch = SmoothDamp(_currentPitch, _targetPitch, LookDamping, deltaTime);
 
-        if (Mode == CameraMode.FreeFly)
-        {
-            UpdateFreeFly(deltaTime);
-        }
-        else
-        {
-            UpdateOrbit(deltaTime);
-        }
-
-        UpdateOwnerRotation();
-    }
-
-    private void UpdateFreeFly(float deltaTime)
-    {
         var moveDir = Vector3.Zero;
 
         if (_moveForward)
@@ -205,22 +167,9 @@ public partial class CameraController
 
         _currentVelocity = Vector3.Lerp(_currentVelocity, targetVelocity, 1f - MathF.Exp(-MoveDamping * deltaTime));
         _targetPosition += _currentVelocity * deltaTime;
-        Owner!.LocalPosition =
-            Vector3.Lerp(Owner.LocalPosition, _targetPosition, 1f - MathF.Exp(-MoveDamping * deltaTime));
-    }
+        Owner.LocalPosition = Vector3.Lerp(Owner.LocalPosition, _targetPosition, 1f - MathF.Exp(-MoveDamping * deltaTime));
 
-    private void UpdateOrbit(float deltaTime)
-    {
-        var cosP = MathF.Cos(_currentPitch);
-        var targetOrbitPos = OrbitTarget - new Vector3(
-            MathF.Sin(_currentYaw) * cosP,
-            MathF.Sin(_currentPitch),
-            MathF.Cos(_currentYaw) * cosP
-        ) * OrbitDistance;
-
-        _targetPosition = targetOrbitPos;
-        Owner!.LocalPosition =
-            Vector3.Lerp(Owner.LocalPosition, _targetPosition, 1f - MathF.Exp(-MoveDamping * deltaTime));
+        UpdateOwnerRotation();
     }
 
     private void UpdateOwnerRotation()
@@ -235,6 +184,11 @@ public partial class CameraController
 
     public bool HandleEvent(in Event ev)
     {
+        if (!IsEnabled)
+        {
+            return false;
+        }
+
         switch (ev.Type)
         {
             case EventType.MouseButtonDown:
@@ -245,7 +199,6 @@ public partial class CameraController
                     _lastMouseY = (int)ev.MouseButton.Y;
                     return true;
                 }
-
                 break;
 
             case EventType.MouseButtonUp:
@@ -254,7 +207,6 @@ public partial class CameraController
                     _isLooking = false;
                     return true;
                 }
-
                 break;
 
             case EventType.MouseMotion:
@@ -271,20 +223,10 @@ public partial class CameraController
 
                     return true;
                 }
-
                 break;
 
             case EventType.MouseWheel:
-                if (Mode == CameraMode.Orbit)
-                {
-                    OrbitDistance -= ev.MouseWheel.Y * ZoomSensitivity;
-                    OrbitDistance = Math.Clamp(OrbitDistance, MinOrbitDistance, MaxOrbitDistance);
-                }
-                else
-                {
-                    _targetPosition += Forward * ev.MouseWheel.Y * ScrollZoomSpeed;
-                }
-
+                _targetPosition += Forward * ev.MouseWheel.Y * ScrollZoomSpeed;
                 return true;
 
             case EventType.KeyDown:
@@ -329,16 +271,7 @@ public partial class CameraController
             case KeyCode.Ralt:
                 _speedSlow = true;
                 return true;
-            case KeyCode.F:
-                Mode = Mode == CameraMode.FreeFly ? CameraMode.Orbit : CameraMode.FreeFly;
-                if (Mode == CameraMode.Orbit && Owner != null)
-                {
-                    OrbitTarget = Owner.LocalPosition + Forward * OrbitDistance;
-                }
-
-                return true;
         }
-
         return false;
     }
 
@@ -375,8 +308,12 @@ public partial class CameraController
                 _speedSlow = false;
                 return true;
         }
-
         return false;
+    }
+
+    public void ResetVelocity()
+    {
+        _currentVelocity = Vector3.Zero;
     }
 
     private static float SmoothDamp(float current, float target, float damping, float deltaTime)
@@ -392,36 +329,8 @@ public partial class CameraController
 
     private static float WrapAngle(float angle)
     {
-        while (angle > MathF.PI)
-        {
-            angle -= MathF.PI * 2f;
-        }
-
-        while (angle < -MathF.PI)
-        {
-            angle += MathF.PI * 2f;
-        }
-
+        while (angle > MathF.PI) angle -= MathF.PI * 2f;
+        while (angle < -MathF.PI) angle += MathF.PI * 2f;
         return angle;
-    }
-
-    public void FocusOn(Vector3 target, float distance = -1f)
-    {
-        OrbitTarget = target;
-        if (distance > 0)
-        {
-            OrbitDistance = distance;
-        }
-        else if (Owner != null)
-        {
-            OrbitDistance = Vector3.Distance(Owner.LocalPosition, target);
-        }
-
-        Mode = CameraMode.Orbit;
-    }
-
-    public void ResetVelocity()
-    {
-        _currentVelocity = Vector3.Zero;
     }
 }

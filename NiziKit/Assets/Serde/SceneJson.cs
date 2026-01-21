@@ -39,6 +39,9 @@ public sealed class Vector3Json
 
 public sealed class CameraControllerJson
 {
+    [JsonPropertyName("type")]
+    public string? Type { get; set; }
+
     [JsonPropertyName("lookAt")]
     public float[]? LookAt { get; set; }
 
@@ -47,6 +50,12 @@ public sealed class CameraControllerJson
 
     [JsonPropertyName("lookSensitivity")]
     public float? LookSensitivity { get; set; }
+
+    [JsonPropertyName("orbitTarget")]
+    public float[]? OrbitTarget { get; set; }
+
+    [JsonPropertyName("orbitDistance")]
+    public float? OrbitDistance { get; set; }
 }
 
 public sealed class CameraJson
@@ -68,6 +77,18 @@ public sealed class CameraJson
 
     [JsonPropertyName("farPlane")]
     public float? FarPlane { get; set; }
+
+    [JsonPropertyName("projectionType")]
+    public string? ProjectionType { get; set; }
+
+    [JsonPropertyName("orthographicSize")]
+    public float? OrthographicSize { get; set; }
+
+    [JsonPropertyName("priority")]
+    public int? Priority { get; set; }
+
+    [JsonPropertyName("isActive")]
+    public bool? IsActive { get; set; }
 
     [JsonPropertyName("controller")]
     public CameraControllerJson? Controller { get; set; }
@@ -158,6 +179,9 @@ public sealed class SceneJson
 
     [JsonPropertyName("camera")]
     public CameraJson? Camera { get; set; }
+
+    [JsonPropertyName("cameras")]
+    public List<CameraJson>? Cameras { get; set; }
 
     [JsonPropertyName("lights")]
     public List<LightJson>? Lights { get; set; }

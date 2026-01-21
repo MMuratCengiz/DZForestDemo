@@ -19,7 +19,7 @@ public class Game : IDisposable
 
     public AppWindow Window { get; }
     public bool IsRunning { get; set; }
-    
+
     public static void Run<TGame>(GameDesc? desc = null) where TGame : Game
     {
         if (_instance != null)
@@ -49,13 +49,13 @@ public class Game : IDisposable
         _instance = this;
     }
 
-    
+
     protected virtual void Load(Game game) { }
     protected virtual void FixedUpdate(float fixedDt) { }
     protected virtual void Update(float dt) { }
     protected virtual void OnEvent(ref Event ev) { }
     protected virtual void OnShutdown() { }
-    
+
     private void Run()
     {
         Window.Show();
@@ -115,7 +115,7 @@ public class Game : IDisposable
         World.AnimationWorld.Update(Time.DeltaTime);
         Update(Time.DeltaTime);
 
-        World.CurrentScene?.MainCamera?.Update(Time.DeltaTime);
+        World.CurrentScene?.UpdateCameras(Time.DeltaTime);
         World.CurrentScene?.PostUpdateGameObjects();
     }
 
@@ -141,11 +141,11 @@ public class Game : IDisposable
                     var width = (uint)ev.Window.Data1;
                     var height = (uint)ev.Window.Data2;
                     GraphicsContext.Resize(width, height);
-                    World.CurrentScene?.MainCamera?.SetAspectRatio(width, height);
+                    World.CurrentScene?.OnCameraResize(width, height);
                 }
             }
 
-            World.CurrentScene?.MainCamera?.HandleEvent(in ev);
+            World.CurrentScene?.HandleCameraEvent(in ev);
             OnEvent(ref ev);
         }
     }

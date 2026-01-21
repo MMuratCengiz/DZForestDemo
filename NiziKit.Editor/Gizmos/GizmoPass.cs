@@ -64,7 +64,7 @@ public sealed class GizmoPass : IDisposable
         _vertices.Clear();
     }
 
-    public void BuildGizmoGeometry(CameraObject camera)
+    public void BuildGizmoGeometry(ICameraProvider camera)
     {
         var target = Gizmo.Target;
         if (target == null)
@@ -145,7 +145,7 @@ public sealed class GizmoPass : IDisposable
 
     private void UpdateConstants(ViewData viewData)
     {
-        var camera = viewData.Camera ?? viewData.Scene?.MainCamera;
+        var camera = viewData.Camera ?? viewData.Scene?.GetActiveCamera();
         var viewProjection = camera?.ViewProjectionMatrix ?? Matrix4x4.Identity;
         var cameraPosition = camera?.WorldPosition ?? Vector3.Zero;
 

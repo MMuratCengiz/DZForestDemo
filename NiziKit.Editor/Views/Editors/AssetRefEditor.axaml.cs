@@ -30,7 +30,7 @@ public partial class AssetRefEditor : UserControl
     public AssetBrowserService? AssetBrowser { get; set; }
     public object? CurrentAsset { get; set; }
     public bool IsReadOnly { get; set; }
-    public Action<object?>? OnAssetChanged { get; set; }
+    public Action<object?, string?>? OnAssetChanged { get; set; }
 
     private string? _selectedPack;
     private string? _selectedAssetName;
@@ -91,7 +91,10 @@ public partial class AssetRefEditor : UserControl
 
     private void OnPackSelectorHostPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (IsReadOnly) return;
+        if (IsReadOnly)
+        {
+            return;
+        }
 
         // Toggle pack selector panel
         if (_packSelectorPanel != null)
@@ -100,11 +103,19 @@ public partial class AssetRefEditor : UserControl
             if (_packSelectorPanel.IsVisible)
             {
                 // Close asset panel if open
-                if (_assetSelectorPanel != null) _assetSelectorPanel.IsVisible = false;
+                if (_assetSelectorPanel != null)
+                {
+                    _assetSelectorPanel.IsVisible = false;
+                }
+
                 // Focus search box
                 _packSearchBox?.Focus();
                 // Reset search
-                if (_packSearchBox != null) _packSearchBox.Text = "";
+                if (_packSearchBox != null)
+                {
+                    _packSearchBox.Text = "";
+                }
+
                 FilterPacks("");
             }
         }
@@ -112,7 +123,10 @@ public partial class AssetRefEditor : UserControl
 
     private void OnAssetSelectorHostPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (IsReadOnly) return;
+        if (IsReadOnly)
+        {
+            return;
+        }
 
         // Toggle asset selector panel
         if (_assetSelectorPanel != null)
@@ -121,11 +135,19 @@ public partial class AssetRefEditor : UserControl
             if (_assetSelectorPanel.IsVisible)
             {
                 // Close pack panel if open
-                if (_packSelectorPanel != null) _packSelectorPanel.IsVisible = false;
+                if (_packSelectorPanel != null)
+                {
+                    _packSelectorPanel.IsVisible = false;
+                }
+
                 // Focus search box
                 _assetSearchBox?.Focus();
                 // Reset search
-                if (_assetSearchBox != null) _assetSearchBox.Text = "";
+                if (_assetSearchBox != null)
+                {
+                    _assetSearchBox.Text = "";
+                }
+
                 FilterAssets("");
             }
         }
@@ -143,7 +165,10 @@ public partial class AssetRefEditor : UserControl
 
     private void FilterPacks(string searchText)
     {
-        if (_packItemsControl == null) return;
+        if (_packItemsControl == null)
+        {
+            return;
+        }
 
         IEnumerable<string> filtered = string.IsNullOrWhiteSpace(searchText)
             ? _allPacks
@@ -154,7 +179,10 @@ public partial class AssetRefEditor : UserControl
 
     private void FilterAssets(string searchText)
     {
-        if (_assetItemsControl == null) return;
+        if (_assetItemsControl == null)
+        {
+            return;
+        }
 
         IEnumerable<AssetInfo> filtered = string.IsNullOrWhiteSpace(searchText)
             ? _allAssets
@@ -165,7 +193,10 @@ public partial class AssetRefEditor : UserControl
 
     private void BuildPackItems(IEnumerable<string> packs)
     {
-        if (_packItemsControl == null) return;
+        if (_packItemsControl == null)
+        {
+            return;
+        }
 
         var items = new List<Button>();
         foreach (var pack in packs)
@@ -189,7 +220,10 @@ public partial class AssetRefEditor : UserControl
 
     private void BuildAssetItems(IEnumerable<AssetInfo> assets)
     {
-        if (_assetItemsControl == null) return;
+        if (_assetItemsControl == null)
+        {
+            return;
+        }
 
         var items = new List<Button>();
         foreach (var asset in assets)
@@ -216,7 +250,10 @@ public partial class AssetRefEditor : UserControl
         if (sender is Button button && button.Tag is string pack)
         {
             SelectPack(pack);
-            if (_packSelectorPanel != null) _packSelectorPanel.IsVisible = false;
+            if (_packSelectorPanel != null)
+            {
+                _packSelectorPanel.IsVisible = false;
+            }
         }
     }
 
@@ -225,7 +262,10 @@ public partial class AssetRefEditor : UserControl
         if (sender is Button button && button.Tag is AssetInfo assetInfo)
         {
             SelectAsset(assetInfo);
-            if (_assetSelectorPanel != null) _assetSelectorPanel.IsVisible = false;
+            if (_assetSelectorPanel != null)
+            {
+                _assetSelectorPanel.IsVisible = false;
+            }
         }
     }
 
@@ -254,7 +294,10 @@ public partial class AssetRefEditor : UserControl
 
     private void LoadPacks()
     {
-        if (AssetBrowser == null) return;
+        if (AssetBrowser == null)
+        {
+            return;
+        }
 
         _isUpdating = true;
         try
@@ -263,7 +306,10 @@ public partial class AssetRefEditor : UserControl
 
             if (!string.IsNullOrEmpty(_selectedPack) && _allPacks.Contains(_selectedPack))
             {
-                if (_packDisplayText != null) _packDisplayText.Text = _selectedPack;
+                if (_packDisplayText != null)
+                {
+                    _packDisplayText.Text = _selectedPack;
+                }
             }
             else if (!string.IsNullOrEmpty(_selectedAssetName))
             {
@@ -272,18 +318,27 @@ public partial class AssetRefEditor : UserControl
                 if (foundPack != null)
                 {
                     _selectedPack = foundPack;
-                    if (_packDisplayText != null) _packDisplayText.Text = _selectedPack;
+                    if (_packDisplayText != null)
+                    {
+                        _packDisplayText.Text = _selectedPack;
+                    }
                 }
                 else if (_allPacks.Count > 0)
                 {
                     _selectedPack = _allPacks[0];
-                    if (_packDisplayText != null) _packDisplayText.Text = _selectedPack;
+                    if (_packDisplayText != null)
+                    {
+                        _packDisplayText.Text = _selectedPack;
+                    }
                 }
             }
             else if (_allPacks.Count > 0)
             {
                 _selectedPack = _allPacks[0];
-                if (_packDisplayText != null) _packDisplayText.Text = _selectedPack;
+                if (_packDisplayText != null)
+                {
+                    _packDisplayText.Text = _selectedPack;
+                }
             }
 
             LoadAssetsForPack();
@@ -296,7 +351,10 @@ public partial class AssetRefEditor : UserControl
 
     private string? FindPackContainingAsset(string assetName)
     {
-        if (AssetBrowser == null) return null;
+        if (AssetBrowser == null)
+        {
+            return null;
+        }
 
         foreach (var packName in _allPacks)
         {
@@ -311,7 +369,10 @@ public partial class AssetRefEditor : UserControl
 
     private void ParseCurrentAsset()
     {
-        if (CurrentAsset == null) return;
+        if (CurrentAsset == null)
+        {
+            return;
+        }
 
         var assetType = CurrentAsset.GetType();
         var nameProperty = assetType.GetProperty("Name");
@@ -323,7 +384,10 @@ public partial class AssetRefEditor : UserControl
 
     private void LoadAssetsForPack()
     {
-        if (AssetBrowser == null || string.IsNullOrEmpty(_selectedPack)) return;
+        if (AssetBrowser == null || string.IsNullOrEmpty(_selectedPack))
+        {
+            return;
+        }
 
         _isUpdating = true;
         try
@@ -354,16 +418,26 @@ public partial class AssetRefEditor : UserControl
 
     private void ResolveAndNotify(AssetInfo assetInfo)
     {
-        if (AssetBrowser == null) return;
+        if (AssetBrowser == null)
+        {
+            return;
+        }
 
         var resolvedAsset = AssetBrowser.ResolveAsset(AssetType, assetInfo.FullReference);
-        OnAssetChanged?.Invoke(resolvedAsset);
+        OnAssetChanged?.Invoke(resolvedAsset, assetInfo.FullReference);
     }
 
     private void UpdateReadOnly()
     {
         var opacity = IsReadOnly ? 0.5 : 1.0;
-        if (_packSelectorHost != null) _packSelectorHost.Opacity = opacity;
-        if (_assetSelectorHost != null) _assetSelectorHost.Opacity = opacity;
+        if (_packSelectorHost != null)
+        {
+            _packSelectorHost.Opacity = opacity;
+        }
+
+        if (_assetSelectorHost != null)
+        {
+            _assetSelectorHost.Opacity = opacity;
+        }
     }
 }

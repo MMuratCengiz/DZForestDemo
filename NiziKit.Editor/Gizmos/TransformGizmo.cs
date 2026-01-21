@@ -39,7 +39,6 @@ public class TransformGizmo
     private const float PlaneOffset = 0.3f;
     private const float RotateRingRadius = 1.2f;
     private const float RotateRingThickness = 0.15f;
-    private const float ScaleBoxSize = 0.2f;
     private const float CenterBoxSize = 0.25f;
     private const float MinGizmoScale = 0.5f;
     private const float MaxGizmoScale = 5f;
@@ -73,7 +72,7 @@ public class TransformGizmo
         }
     }
 
-    public float GetGizmoScale(CameraObject camera)
+    public float GetGizmoScale(ICameraProvider camera)
     {
         if (_target == null)
         {
@@ -95,7 +94,7 @@ public class TransformGizmo
         return 1f;
     }
 
-    public void UpdateHover(Ray ray, CameraObject camera)
+    public void UpdateHover(Ray ray, ICameraProvider camera)
     {
         if (_target == null || IsDragging)
         {
@@ -106,7 +105,7 @@ public class TransformGizmo
         HoveredAxis = GetHitAxis(ray, scale);
     }
 
-    public bool BeginDrag(Ray ray, CameraObject camera)
+    public bool BeginDrag(Ray ray, ICameraProvider camera)
     {
         if (_target == null)
         {
@@ -151,7 +150,7 @@ public class TransformGizmo
         return true;
     }
 
-    public void UpdateDrag(Ray ray, CameraObject camera)
+    public void UpdateDrag(Ray ray, ICameraProvider camera)
     {
         if (_target == null || ActiveAxis == GizmoAxis.None)
         {

@@ -34,7 +34,7 @@ public class EditorRenderer : IRenderer
 
     public GizmoPass? GizmoPass => _gizmoPass;
 
-    public CameraObject? Camera
+    public ICameraProvider? Camera
     {
         get => _viewData.Camera;
         set => _viewData.Camera = value;

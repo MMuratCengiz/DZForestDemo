@@ -25,6 +25,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
         LoadAssetPacks(sceneData.AssetPacks);
         LoadCamera(sceneData.Camera);
+        LoadCameras(sceneData.Cameras);
         LoadLights(sceneData.Lights);
         LoadObjects(sceneData.Objects);
     }
@@ -53,54 +54,220 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             return;
         }
 
-        var camera = CreateObject<CameraObject>(cameraData.Name ?? "Main Camera");
+        var cameraObj = CreateObject(cameraData.Name ?? "Main Camera");
 
         if (cameraData.Position != null)
         {
-            camera.LocalPosition = ParseVector3(cameraData.Position);
+            cameraObj.LocalPosition = ParseVector3(cameraData.Position);
         }
 
         if (cameraData.Rotation != null)
         {
-            camera.LocalRotation = ParseRotation(cameraData.Rotation);
+            cameraObj.LocalRotation = ParseRotation(cameraData.Rotation);
         }
+
+        var cameraComponent = cameraObj.AddComponent<CameraComponent>();
 
         if (cameraData.FieldOfView.HasValue)
         {
-            camera.FieldOfView = cameraData.FieldOfView.Value;
+            cameraComponent.FieldOfView = cameraData.FieldOfView.Value;
         }
 
         if (cameraData.NearPlane.HasValue)
         {
-            camera.NearPlane = cameraData.NearPlane.Value;
+            cameraComponent.NearPlane = cameraData.NearPlane.Value;
         }
 
         if (cameraData.FarPlane.HasValue)
         {
-            camera.FarPlane = cameraData.FarPlane.Value;
+            cameraComponent.FarPlane = cameraData.FarPlane.Value;
+        }
+
+        if (!string.IsNullOrEmpty(cameraData.ProjectionType))
+        {
+            cameraComponent.ProjectionType = cameraData.ProjectionType.ToLowerInvariant() switch
+            {
+                "orthographic" => ProjectionType.Orthographic,
+                _ => ProjectionType.Perspective
+            };
+        }
+
+        if (cameraData.OrthographicSize.HasValue)
+        {
+            cameraComponent.OrthographicSize = cameraData.OrthographicSize.Value;
+        }
+
+        if (cameraData.Priority.HasValue)
+        {
+            cameraComponent.Priority = cameraData.Priority.Value;
+        }
+
+        if (cameraData.IsActive.HasValue)
+        {
+            cameraComponent.IsActiveCamera = cameraData.IsActive.Value;
         }
 
         if (cameraData.Controller != null)
         {
-            var controller = camera.AddComponent<CameraController>();
+            var controllerType = cameraData.Controller.Type?.ToLowerInvariant() ?? "freefly";
 
-            if (cameraData.Controller.MoveSpeed.HasValue)
+            if (controllerType == "orbit")
             {
-                controller.MoveSpeed = cameraData.Controller.MoveSpeed.Value;
+                var orbit = cameraObj.AddComponent<OrbitController>();
+
+                if (cameraData.Controller.LookSensitivity.HasValue)
+                {
+                    orbit.LookSensitivity = cameraData.Controller.LookSensitivity.Value;
+                }
+
+                if (cameraData.Controller.OrbitTarget != null)
+                {
+                    orbit.OrbitTarget = ParseVector3(cameraData.Controller.OrbitTarget);
+                }
+
+                if (cameraData.Controller.OrbitDistance.HasValue)
+                {
+                    orbit.OrbitDistance = cameraData.Controller.OrbitDistance.Value;
+                }
+
+                if (cameraData.Controller.LookAt != null)
+                {
+                    orbit.FocusOn(ParseVector3(cameraData.Controller.LookAt));
+                }
             }
-
-            if (cameraData.Controller.LookSensitivity.HasValue)
+            else
             {
-                controller.LookSensitivity = cameraData.Controller.LookSensitivity.Value;
-            }
+                var freeFly = cameraObj.AddComponent<FreeFlyController>();
 
-            if (cameraData.Controller.LookAt != null)
-            {
-                controller.LookAt(ParseVector3(cameraData.Controller.LookAt));
+                if (cameraData.Controller.MoveSpeed.HasValue)
+                {
+                    freeFly.MoveSpeed = cameraData.Controller.MoveSpeed.Value;
+                }
+
+                if (cameraData.Controller.LookSensitivity.HasValue)
+                {
+                    freeFly.LookSensitivity = cameraData.Controller.LookSensitivity.Value;
+                }
+
+                if (cameraData.Controller.LookAt != null)
+                {
+                    freeFly.LookAt(ParseVector3(cameraData.Controller.LookAt));
+                }
             }
         }
+    }
 
-        MainCamera = camera;
+    private void LoadCameras(List<CameraJson>? camerasData)
+    {
+        if (camerasData == null)
+        {
+            return;
+        }
+
+        foreach (var cameraData in camerasData)
+        {
+            var cameraObj = CreateObject(cameraData.Name ?? "Camera");
+
+            if (cameraData.Position != null)
+            {
+                cameraObj.LocalPosition = ParseVector3(cameraData.Position);
+            }
+
+            if (cameraData.Rotation != null)
+            {
+                cameraObj.LocalRotation = ParseRotation(cameraData.Rotation);
+            }
+
+            var cameraComponent = cameraObj.AddComponent<CameraComponent>();
+
+            if (cameraData.FieldOfView.HasValue)
+            {
+                cameraComponent.FieldOfView = cameraData.FieldOfView.Value;
+            }
+
+            if (cameraData.NearPlane.HasValue)
+            {
+                cameraComponent.NearPlane = cameraData.NearPlane.Value;
+            }
+
+            if (cameraData.FarPlane.HasValue)
+            {
+                cameraComponent.FarPlane = cameraData.FarPlane.Value;
+            }
+
+            if (!string.IsNullOrEmpty(cameraData.ProjectionType))
+            {
+                cameraComponent.ProjectionType = cameraData.ProjectionType.ToLowerInvariant() switch
+                {
+                    "orthographic" => ProjectionType.Orthographic,
+                    _ => ProjectionType.Perspective
+                };
+            }
+
+            if (cameraData.OrthographicSize.HasValue)
+            {
+                cameraComponent.OrthographicSize = cameraData.OrthographicSize.Value;
+            }
+
+            if (cameraData.Priority.HasValue)
+            {
+                cameraComponent.Priority = cameraData.Priority.Value;
+            }
+
+            if (cameraData.IsActive.HasValue)
+            {
+                cameraComponent.IsActiveCamera = cameraData.IsActive.Value;
+            }
+
+            if (cameraData.Controller != null)
+            {
+                var controllerType = cameraData.Controller.Type?.ToLowerInvariant() ?? "freefly";
+
+                if (controllerType == "orbit")
+                {
+                    var orbit = cameraObj.AddComponent<OrbitController>();
+
+                    if (cameraData.Controller.LookSensitivity.HasValue)
+                    {
+                        orbit.LookSensitivity = cameraData.Controller.LookSensitivity.Value;
+                    }
+
+                    if (cameraData.Controller.OrbitTarget != null)
+                    {
+                        orbit.OrbitTarget = ParseVector3(cameraData.Controller.OrbitTarget);
+                    }
+
+                    if (cameraData.Controller.OrbitDistance.HasValue)
+                    {
+                        orbit.OrbitDistance = cameraData.Controller.OrbitDistance.Value;
+                    }
+
+                    if (cameraData.Controller.LookAt != null)
+                    {
+                        orbit.FocusOn(ParseVector3(cameraData.Controller.LookAt));
+                    }
+                }
+                else
+                {
+                    var freeFly = cameraObj.AddComponent<FreeFlyController>();
+
+                    if (cameraData.Controller.MoveSpeed.HasValue)
+                    {
+                        freeFly.MoveSpeed = cameraData.Controller.MoveSpeed.Value;
+                    }
+
+                    if (cameraData.Controller.LookSensitivity.HasValue)
+                    {
+                        freeFly.LookSensitivity = cameraData.Controller.LookSensitivity.Value;
+                    }
+
+                    if (cameraData.Controller.LookAt != null)
+                    {
+                        freeFly.LookAt(ParseVector3(cameraData.Controller.LookAt));
+                    }
+                }
+            }
+        }
     }
 
     private void LoadLights(List<LightJson>? lights)
@@ -278,14 +445,12 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
     private void AddComponent(GameObject obj, ComponentJson data)
     {
-        // First try to use the ComponentRegistry for registered component types
         if (ComponentRegistry.TryCreate(data.Type, data.Properties, this, out var component) && component != null)
         {
             obj.AddComponent(component);
             return;
         }
 
-        // Fallback to built-in component handling for backward compatibility
         switch (data.Type.ToLowerInvariant())
         {
             case "mesh":
