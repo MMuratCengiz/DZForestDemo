@@ -1,10 +1,7 @@
 using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Controls.Embedding;
 using Avalonia.Input;
 using Avalonia.Input.Raw;
-using Avalonia.Media;
-using Avalonia.Skia.Helpers;
 using DenOfIz;
 using AvaloniaMouseButton = Avalonia.Input.MouseButton;
 
@@ -13,24 +10,22 @@ namespace NiziKit.Skia.Avalonia;
 public sealed class DenOfIzTopLevel : EmbeddableControlRoot
 {
     private readonly DenOfIzTopLevelImpl _impl;
-    private DenOfIzSkiaSurface? _surface;
-    private double _scaling = 1.0;
 
-    public Texture? Texture => _surface?.Texture;
+    public Texture? Texture => _impl.Surface?.Texture;
 
-    public DenOfIzSkiaSurface? Surface => _surface;
+    public DenOfIzSkiaSurface? Surface => _impl.Surface;
 
-    public int PixelWidth => _surface?.Width ?? 0;
+    public int PixelWidth => _impl.Surface?.Width ?? 0;
 
-    public int PixelHeight => _surface?.Height ?? 0;
+    public int PixelHeight => _impl.Surface?.Height ?? 0;
 
     public DenOfIzTopLevel(int width, int height, double scaling = 1.0)
         : this(new DenOfIzTopLevelImpl())
     {
-        _scaling = scaling;
-        SetRenderSize(width, height, scaling);
+        _impl.SetRenderSize(width, height, scaling);
 
         Prepare();
+        StartRendering();
 
         InvalidateMeasure();
         InvalidateArrange();
@@ -43,53 +38,17 @@ public sealed class DenOfIzTopLevel : EmbeddableControlRoot
         Background = null;
     }
 
-    private void SetRenderSize(int width, int height, double scaling)
-    {
-        if (width <= 0 || height <= 0)
-        {
-            return;
-        }
-
-        _scaling = scaling;
-
-        if (_surface == null)
-        {
-            _surface = new DenOfIzSkiaSurface(width, height, scaling);
-        }
-        else if (_surface.Width != width || _surface.Height != height)
-        {
-            _surface.Resize(width, height, scaling);
-        }
-
-        _impl.SetClientSize(new Size(width / scaling, height / scaling), scaling);
-    }
-
     public void Resize(int width, int height, double scaling = 1.0)
     {
-        SetRenderSize(width, height, scaling);
-
+        _impl.SetRenderSize(width, height, scaling);
         InvalidateMeasure();
         InvalidateArrange();
     }
 
     public void Render()
     {
-        if (_surface == null)
-        {
-            return;
-        }
-        var size = new Size(_surface.Width / _scaling, _surface.Height / _scaling);
-        if (!IsMeasureValid || !IsArrangeValid)
-        {
-            Measure(size);
-            Arrange(new Rect(size));
-        }
-
-        var canvas = _surface.RenderTarget.Canvas;
-        canvas.Clear(SkiaSharp.SKColors.Transparent);
-
-        DrawingContextHelper.RenderAsync(canvas, this).GetAwaiter().GetResult();
-        _surface.RenderTarget.Flush();
+        _impl.TriggerPaint();
+        _impl.Surface?.RenderTarget.Flush();
     }
 
     public void InjectMouseMove(double x, double y, RawInputModifiers modifiers = RawInputModifiers.None)
