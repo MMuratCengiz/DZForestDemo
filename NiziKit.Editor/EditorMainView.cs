@@ -30,6 +30,7 @@ public class EditorMainView : UserControl
     {
         var menu = new Menu
         {
+            FontSize = 24,
             Items =
             {
                 new MenuItem { Header = "_File", Items = { new MenuItem { Header = "_New Scene" }, new MenuItem { Header = "_Open..." }, new MenuItem { Header = "_Save" }, new MenuItem { Header = "E_xit" } } },

@@ -1,6 +1,5 @@
 using NiziKit.Assets;
 using NiziKit.ContentPipeline;
-using NiziKit.Graphics;
 using NiziKit.Graphics.Binding;
 
 namespace DZForestDemo.Scenes;

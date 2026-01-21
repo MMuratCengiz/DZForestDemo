@@ -13,9 +13,16 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
     private Size _clientSize;
     private double _scaling = 1.0;
     private IInputRoot? _inputRoot;
+    private readonly MouseDevice _mouseDevice = new();
+    private DenOfIzSkiaSurface? _surface;
 
     public DenOfIzTopLevelImpl()
     {
+    }
+
+    public void SetSurface(DenOfIzSkiaSurface? surface)
+    {
+        _surface = surface;
     }
 
 
@@ -31,7 +38,7 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
 
     public Size? FrameSize => null;
 
-    public IEnumerable<object> Surfaces => Array.Empty<object>();
+    public IEnumerable<object> Surfaces => _surface != null ? new object[] { _surface } : Array.Empty<object>();
 
     public Action<RawInputEventArgs>? Input { get; set; }
     public Action<Rect>? Paint { get; set; }
@@ -208,9 +215,9 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
 
     private IInputRoot? GetInputRoot() => _inputRoot;
 
-    private static IMouseDevice GetMouseDevice()
+    private IMouseDevice GetMouseDevice()
     {
-        return new MouseDevice();
+        return _mouseDevice;
     }
 
     private static IKeyboardDevice GetKeyboardDevice()
@@ -255,5 +262,10 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
 
     public object? TryGetFeature(Type featureType)
         => null;
+
+    public void TriggerPaint()
+    {
+        Paint?.Invoke(new Rect(0, 0, _clientSize.Width, _clientSize.Height));
+    }
 }
 

@@ -1,4 +1,3 @@
-using System.Threading;
 using Avalonia;
 using Avalonia.Input;
 using Avalonia.Input.Platform;

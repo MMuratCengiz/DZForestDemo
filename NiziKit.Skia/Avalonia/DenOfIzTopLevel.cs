@@ -1,9 +1,6 @@
 using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Controls.Embedding;
 using Avalonia.Input;
-using Avalonia.Input.Raw;
-using Avalonia.Media;
 using Avalonia.Skia.Helpers;
 using DenOfIz;
 using AvaloniaMouseButton = Avalonia.Input.MouseButton;
@@ -31,6 +28,7 @@ public sealed class DenOfIzTopLevel : EmbeddableControlRoot
         SetRenderSize(width, height, scaling);
 
         Prepare();
+        StartRendering();
 
         InvalidateMeasure();
         InvalidateArrange();
@@ -55,6 +53,7 @@ public sealed class DenOfIzTopLevel : EmbeddableControlRoot
         if (_surface == null)
         {
             _surface = new DenOfIzSkiaSurface(width, height, scaling);
+            _impl.SetSurface(_surface);
         }
         else if (_surface.Width != width || _surface.Height != height)
         {
@@ -74,6 +73,7 @@ public sealed class DenOfIzTopLevel : EmbeddableControlRoot
 
     public void Render()
     {
+        _impl.TriggerPaint();
         if (_surface == null)
         {
             return;

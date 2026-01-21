@@ -1,13 +1,6 @@
-using System.Numerics;
-using DenOfIz;
-using DZForestDemo.GameObjects;
-using DZForestDemo.Scenes;
-using NiziKit.Animation;
 using NiziKit.Application;
 using NiziKit.Core;
 using NiziKit.Graphics.Renderer.Forward;
-using NiziKit.Inputs;
-using NiziKit.Physics;
 using NiziKit.UI;
 
 namespace DZForestDemo;
