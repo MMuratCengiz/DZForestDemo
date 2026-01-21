@@ -100,7 +100,9 @@ public sealed class SkiaRenderTarget : IDisposable
         {
             GraphicsBackendType.Metal => CreateMetalBackendRenderTarget(handles),
             GraphicsBackendType.Vulkan => CreateVulkanBackendRenderTarget(handles, format, sampleCount),
-            _ => throw new NotSupportedException($"Backend {handles.Backend} is not supported for Skia render targets")
+            GraphicsBackendType.Directx12 => CreateDirect3DBackendRenderTarget(handles, format, sampleCount),
+            _ => throw new NotSupportedException($"Backend {handles.Backend} is not supported for Skia render targets. " +
+                "Supported backends: Metal, Vulkan, D3D12.")
         };
     }
 
@@ -143,6 +145,28 @@ public sealed class SkiaRenderTarget : IDisposable
         };
 
         return new GRBackendRenderTarget(Width, Height, vkImageInfo);
+    }
+
+    private GRBackendRenderTarget CreateDirect3DBackendRenderTarget(NativeTextureHandles handles, Format format,
+        int sampleCount)
+    {
+        if (handles.DX12Resource == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("D3D12 resource handle is null");
+        }
+
+        var d3dTextureInfo = new GRD3DTextureResourceInfo
+        {
+            Resource = handles.DX12Resource,
+            ResourceState = Direct3DInterop.D3D12_RESOURCE_STATE_RENDER_TARGET,
+            Format = Direct3DInterop.FormatToDxgi(format),
+            SampleCount = (uint)sampleCount,
+            LevelCount = 1,
+            SampleQualityPattern = 0,
+            Protected = false
+        };
+
+        return new GRBackendRenderTarget(Width, Height, d3dTextureInfo);
     }
 
     public void Flush()

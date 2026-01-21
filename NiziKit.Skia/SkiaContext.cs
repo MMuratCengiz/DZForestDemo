@@ -14,6 +14,7 @@ public sealed class SkiaContext : IDisposable
     private readonly GRContext _grContext;
     private readonly GRMtlBackendContext? _mtlBackendContext;
     private readonly GRVkBackendContext? _vkBackendContext;
+    private readonly GRD3DBackendContext? _d3dBackendContext;
     private readonly CommandListPool _commandListPool;
     private readonly CommandList[] _commandLists;
     private int _currentCommandListIndex;
@@ -27,7 +28,7 @@ public sealed class SkiaContext : IDisposable
         var deviceHandles = NativeInterop.GetNativeDeviceHandles(device);
         var queueHandles = NativeInterop.GetNativeQueueHandles(graphicsQueue);
 
-        (_grContext, _mtlBackendContext, _vkBackendContext) = CreateGRContext(deviceHandles, queueHandles);
+        (_grContext, _mtlBackendContext, _vkBackendContext, _d3dBackendContext) = CreateGRContext(deviceHandles, queueHandles);
 
         _commandListPool = device.CreateCommandListPool(new CommandListPoolDesc
         {
@@ -44,7 +45,7 @@ public sealed class SkiaContext : IDisposable
     {
     }
 
-    private static (GRContext context, GRMtlBackendContext? mtl, GRVkBackendContext? vk) CreateGRContext(
+    private static (GRContext context, GRMtlBackendContext? mtl, GRVkBackendContext? vk, GRD3DBackendContext? d3d) CreateGRContext(
         NativeDeviceHandles deviceHandles,
         NativeQueueHandles queueHandles)
     {
@@ -52,13 +53,14 @@ public sealed class SkiaContext : IDisposable
         {
             GraphicsBackendType.Metal => CreateMetalContext(deviceHandles, queueHandles),
             GraphicsBackendType.Vulkan => CreateVulkanContext(deviceHandles, queueHandles),
+            GraphicsBackendType.Directx12 => CreateDirect3DContext(deviceHandles, queueHandles),
             _ => throw new NotSupportedException(
                 $"Graphics backend {deviceHandles.Backend} is not supported for Skia interop. " +
-                "Supported backends: Metal, Vulkan.")
+                "Supported backends: Metal, Vulkan, D3D12.")
         };
     }
 
-    private static (GRContext, GRMtlBackendContext?, GRVkBackendContext?) CreateMetalContext(
+    private static (GRContext, GRMtlBackendContext?, GRVkBackendContext?, GRD3DBackendContext?) CreateMetalContext(
         NativeDeviceHandles deviceHandles,
         NativeQueueHandles queueHandles)
     {
@@ -85,10 +87,10 @@ public sealed class SkiaContext : IDisposable
             throw new InvalidOperationException("Failed to create Metal GRContext");
         }
 
-        return (grContext, mtlContext, null);
+        return (grContext, mtlContext, null, null);
     }
 
-    private static (GRContext, GRMtlBackendContext?, GRVkBackendContext?) CreateVulkanContext(
+    private static (GRContext, GRMtlBackendContext?, GRVkBackendContext?, GRD3DBackendContext?) CreateVulkanContext(
         NativeDeviceHandles deviceHandles,
         NativeQueueHandles queueHandles)
     {
@@ -122,7 +124,44 @@ public sealed class SkiaContext : IDisposable
             throw new InvalidOperationException("Failed to create Vulkan GRContext");
         }
 
-        return (grContext, null, vkContext);
+        return (grContext, null, vkContext, null);
+    }
+
+    private static (GRContext, GRMtlBackendContext?, GRVkBackendContext?, GRD3DBackendContext?) CreateDirect3DContext(
+        NativeDeviceHandles deviceHandles,
+        NativeQueueHandles queueHandles)
+    {
+        if (deviceHandles.DX12Device == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("D3D12 device handle is null");
+        }
+
+        if (deviceHandles.DX12Adapter == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("D3D12 adapter handle is null");
+        }
+
+        if (queueHandles.DX12CommandQueue == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("D3D12 command queue handle is null");
+        }
+
+        var d3dContext = new GRD3DBackendContext
+        {
+            Adapter = deviceHandles.DX12Adapter,
+            Device = deviceHandles.DX12Device,
+            Queue = queueHandles.DX12CommandQueue,
+            ProtectedContext = false
+        };
+
+        var grContext = GRContext.CreateDirect3D(d3dContext);
+        if (grContext == null)
+        {
+            d3dContext.Dispose();
+            throw new InvalidOperationException("Failed to create Direct3D GRContext");
+        }
+
+        return (grContext, null, null, d3dContext);
     }
 
     private static GRVkGetProcedureAddressDelegate CreateVkGetProcDelegate(
@@ -252,6 +291,7 @@ public sealed class SkiaContext : IDisposable
 
         _grContext.Dispose();
         _mtlBackendContext?.Dispose();
+        _d3dBackendContext?.Dispose();
         _commandListPool.Dispose();
 
         if (_instance == this)
