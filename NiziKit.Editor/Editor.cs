@@ -11,8 +11,8 @@ public sealed class EditorConfig
     public string GameProjectDir { get; init; } = ".";
     public string? InitialScene { get; init; }
     public string Title { get; init; } = "NiziKit Editor";
-    public uint Width { get; init; } = 2560;
-    public uint Height { get; init; } = 1440;
+    public uint Width { get; init; } = 3000;
+    public uint Height { get; init; } = 2000;
 }
 
 public static class Editor
@@ -24,6 +24,9 @@ public static class Editor
         [CallerFilePath] string callerFilePath = "")
     {
         Config = config ?? new EditorConfig();
+        var displaySize = Display.GetPrimaryDisplay().Size;
+        var width = Config.Width == 0 ? (uint)displaySize.Width : Config.Width;
+        var height = Config.Height == 0 ? (uint)displaySize.Height : Config.Height;
 
         var callerDir = Path.GetDirectoryName(callerFilePath) ?? ".";
         var gameProjectDir = Path.GetFullPath(Path.Combine(callerDir, Config.GameProjectDir));
@@ -34,8 +37,8 @@ public static class Editor
         var desc = new GameDesc
         {
             Title = Config.Title,
-            Width = Config.Width,
-            Height = Config.Height,
+            Width = width,
+            Height = height,
             Graphics = new GraphicsDesc
             {
                 ApiPreference = new APIPreference

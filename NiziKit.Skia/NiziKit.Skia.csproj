@@ -14,7 +14,7 @@
         <PackageReference Include="Avalonia" Version="11.3.7" />
         <PackageReference Include="Avalonia.Headless" Version="11.3.7" />
         <PackageReference Include="Avalonia.Skia" Version="11.3.7" />
-        <PackageReference Include="DenOfIzGraphics" Version="0.6.8-alpha" />
+        <PackageReference Include="DenOfIzGraphics" Version="0.6.9-alpha" />
         <PackageReference Include="SkiaSharp" Version="3.118.0-preview.2.3" />
     </ItemGroup>
 
