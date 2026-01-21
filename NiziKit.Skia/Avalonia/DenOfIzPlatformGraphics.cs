@@ -88,6 +88,7 @@ internal sealed class DenOfIzSkiaGpuRenderTarget(DenOfIzSkiaSurface surface) : I
 
     public ISkiaGpuRenderSession BeginRenderingSession()
     {
+        Console.WriteLine("[DEBUG] BeginRenderingSession called");
         return new DenOfIzSkiaGpuRenderSession(surface);
     }
 

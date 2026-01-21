@@ -13,13 +13,11 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
     private Size _clientSize;
     private double _scaling = 1.0;
     private IInputRoot? _inputRoot;
-    private DenOfIzSkiaSurface? _surface;
 
     public DenOfIzTopLevelImpl()
     {
     }
 
-    public DenOfIzSkiaSurface? Surface => _surface;
 
     public double DesktopScaling => _scaling;
 
@@ -33,7 +31,7 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
 
     public Size? FrameSize => null;
 
-    public IEnumerable<object> Surfaces => _surface != null ? new object[] { _surface } : Array.Empty<object>();
+    public IEnumerable<object> Surfaces => Array.Empty<object>();
 
     public Action<RawInputEventArgs>? Input { get; set; }
     public Action<Rect>? Paint { get; set; }
@@ -49,28 +47,18 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
 
     public Compositor Compositor => DenOfIzPlatform.Compositor;
 
-    public void SetRenderSize(int width, int height, double scaling)
+    public void SetClientSize(Size size, double scaling = 1.0)
     {
-        if (width <= 0 || height <= 0)
+        var scalingChanged = Math.Abs(scaling - _scaling) > 0.001;
+        var sizeChanged = size != _clientSize;
+
+        if (!sizeChanged && !scalingChanged)
         {
             return;
         }
 
-        var newClientSize = new Size(width / scaling, height / scaling);
-        var scalingChanged = Math.Abs(scaling - _scaling) > 0.001;
-        var sizeChanged = newClientSize != _clientSize;
-
+        _clientSize = size;
         _scaling = scaling;
-        _clientSize = newClientSize;
-
-        if (_surface == null)
-        {
-            _surface = new DenOfIzSkiaSurface(width, height, scaling);
-        }
-        else if (_surface.Width != width || _surface.Height != height)
-        {
-            _surface.Resize(width, height, scaling);
-        }
 
         if (scalingChanged)
         {
@@ -81,11 +69,6 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
         {
             Resized?.Invoke(_clientSize, WindowResizeReason.Unspecified);
         }
-    }
-
-    public void TriggerPaint()
-    {
-        Paint?.Invoke(new Rect(0, 0, _clientSize.Width, _clientSize.Height));
     }
 
     public void InjectMouseMove(Point position, RawInputModifiers modifiers = RawInputModifiers.None)
