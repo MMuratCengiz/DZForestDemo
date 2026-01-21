@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
-using System.Text.Json;
+using Avalonia.Controls;
+using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NiziKit.Assets.Serde;
@@ -37,11 +38,19 @@ public partial class PackAssetEntry : ObservableObject
 public partial class PackManagerViewModel : ObservableObject
 {
     private readonly string _packsDirectory;
+    private readonly string _assetsDirectory;
+    private TopLevel? _topLevel;
 
     public PackManagerViewModel()
     {
         _packsDirectory = Path.Combine(Content.ResolvePath(""), "Packs");
+        _assetsDirectory = Content.ResolvePath("");
         LoadPacks();
+    }
+
+    public void SetTopLevel(TopLevel topLevel)
+    {
+        _topLevel = topLevel;
     }
 
     [ObservableProperty]
@@ -74,6 +83,9 @@ public partial class PackManagerViewModel : ObservableObject
 
     [ObservableProperty]
     private string _statusMessage = "";
+
+    [ObservableProperty]
+    private int _selectedTabIndex;
 
     public bool HasSelectedPack => SelectedPack != null;
 
@@ -309,6 +321,154 @@ public partial class PackManagerViewModel : ObservableObject
     {
         LoadPacks();
         StatusMessage = "Packs refreshed";
+    }
+
+    [RelayCommand]
+    public async Task BrowseTexture()
+    {
+        await BrowseAsset(AssetFileType.Texture, Textures);
+    }
+
+    [RelayCommand]
+    public async Task BrowseMaterial()
+    {
+        await BrowseAsset(AssetFileType.Material, Materials);
+    }
+
+    [RelayCommand]
+    public async Task BrowseModel()
+    {
+        await BrowseAsset(AssetFileType.Model, Models);
+    }
+
+    [RelayCommand]
+    public async Task BrowseShader()
+    {
+        await BrowseAsset(AssetFileType.Shader, Shaders);
+    }
+
+    private async Task BrowseAsset(AssetFileType type, ObservableCollection<PackAssetEntry> collection)
+    {
+        if (_topLevel == null)
+        {
+            StatusMessage = "Cannot open file browser";
+            return;
+        }
+
+        var filters = GetFileFilters(type);
+        var options = new FilePickerOpenOptions
+        {
+            Title = $"Select {type}",
+            AllowMultiple = true,
+            FileTypeFilter = filters,
+            SuggestedStartLocation = await _topLevel.StorageProvider.TryGetFolderFromPathAsync(_assetsDirectory)
+        };
+
+        var files = await _topLevel.StorageProvider.OpenFilePickerAsync(options);
+
+        foreach (var file in files)
+        {
+            var fullPath = file.Path.LocalPath;
+            var relativePath = GetRelativePath(fullPath);
+            var key = Path.GetFileNameWithoutExtension(fullPath);
+
+            // Avoid duplicates
+            if (!collection.Any(e => e.Path == relativePath))
+            {
+                collection.Add(new PackAssetEntry(key, relativePath));
+            }
+        }
+
+        if (files.Count > 0)
+        {
+            StatusMessage = $"Added {files.Count} {type}(s)";
+        }
+    }
+
+    private List<FilePickerFileType> GetFileFilters(AssetFileType type)
+    {
+        return type switch
+        {
+            AssetFileType.Texture => [new FilePickerFileType("Images") { Patterns = ["*.png", "*.jpg", "*.jpeg", "*.tga", "*.bmp", "*.dds"] }],
+            AssetFileType.Material => [new FilePickerFileType("Materials") { Patterns = ["*.nizimat.json"] }],
+            AssetFileType.Model => [new FilePickerFileType("Models") { Patterns = ["*.fbx", "*.glb", "*.gltf", "*.obj", "*.dae"] }],
+            AssetFileType.Shader => [new FilePickerFileType("Shaders") { Patterns = ["*.nizishp.json"] }],
+            _ => [new FilePickerFileType("All Files") { Patterns = ["*.*"] }]
+        };
+    }
+
+    private string GetRelativePath(string fullPath)
+    {
+        if (fullPath.StartsWith(_assetsDirectory, StringComparison.OrdinalIgnoreCase))
+        {
+            var relative = fullPath[_assetsDirectory.Length..].TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            return relative.Replace(Path.DirectorySeparatorChar, '/');
+        }
+        return fullPath.Replace(Path.DirectorySeparatorChar, '/');
+    }
+
+    [RelayCommand]
+    public async Task CreateMaterial()
+    {
+        if (_topLevel == null || string.IsNullOrWhiteSpace(PackName))
+        {
+            StatusMessage = "Create a pack first";
+            return;
+        }
+
+        var packDir = Path.Combine(_packsDirectory, PackName);
+        Directory.CreateDirectory(packDir);
+
+        var baseName = $"material_{Materials.Count + 1}";
+        var fileName = $"{baseName}.nizimat.json";
+        var filePath = Path.Combine(packDir, fileName);
+
+        // Create default material JSON
+        var materialJson = """
+{
+  "shader": "default",
+  "parameters": {}
+}
+""";
+
+        await File.WriteAllTextAsync(filePath, materialJson);
+
+        var relativePath = GetRelativePath(filePath);
+        Materials.Add(new PackAssetEntry(baseName, relativePath));
+        StatusMessage = $"Created material: {baseName}";
+    }
+
+    [RelayCommand]
+    public async Task CreateShader()
+    {
+        if (_topLevel == null || string.IsNullOrWhiteSpace(PackName))
+        {
+            StatusMessage = "Create a pack first";
+            return;
+        }
+
+        var packDir = Path.Combine(_packsDirectory, PackName);
+        Directory.CreateDirectory(packDir);
+
+        var baseName = $"shader_{Shaders.Count + 1}";
+        var fileName = $"{baseName}.nizishp.json";
+        var filePath = Path.Combine(packDir, fileName);
+
+        // Create default shader JSON
+        var shaderJson = """
+{
+  "name": "custom_shader",
+  "vertex": "default.vert",
+  "fragment": "default.frag",
+  "parameters": []
+}
+""";
+
+        await File.WriteAllTextAsync(filePath, shaderJson);
+
+        var relativePath = GetRelativePath(filePath);
+        Shaders.Add(new PackAssetEntry(baseName, relativePath));
+        StatusMessage = $"Created shader: {baseName}";
     }
 
     public void AddAssetEntry(AssetFileType type, string key, string relativePath)

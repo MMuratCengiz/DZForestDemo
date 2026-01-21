@@ -149,6 +149,11 @@ public sealed class EditorGame : Game
             if (!_textInputActive)
             {
                 HandleGizmoModeKey(ev.Key.KeyCode);
+
+                if (ev.Key.KeyCode == KeyCode.F)
+                {
+                    FocusOnSelectedObject();
+                }
             }
 
             if (ev.Key.KeyCode == KeyCode.Escape && _gizmoDragging)
@@ -313,6 +318,51 @@ public sealed class EditorGame : Game
             }
         }
         return null;
+    }
+
+    private void FocusOnSelectedObject()
+    {
+        var selected = _renderer.EditorViewModel?.SelectedGameObject?.GameObject;
+        if (selected == null)
+        {
+            return;
+        }
+
+        var controller = _editorCamera.GetComponent<CameraController>();
+        if (controller == null)
+        {
+            return;
+        }
+
+        var targetPosition = selected.WorldPosition;
+        var distance = 5f;
+
+        var meshComponent = selected.GetComponent<MeshComponent>();
+        if (meshComponent?.Mesh != null)
+        {
+            var bounds = meshComponent.Mesh.Bounds;
+            var size = bounds.Max - bounds.Min;
+            var scale = selected.LocalScale;
+            var maxExtent = MathF.Max(size.X * scale.X, MathF.Max(size.Y * scale.Y, size.Z * scale.Z));
+            distance = maxExtent * 2f;
+            distance = MathF.Max(distance, 2f);
+
+            var center = (bounds.Min + bounds.Max) * 0.5f;
+            targetPosition = Vector3.Transform(center, selected.WorldMatrix);
+        }
+
+        var directionToTarget = targetPosition - _editorCamera.LocalPosition;
+        if (directionToTarget.LengthSquared() > 0.001f)
+        {
+            directionToTarget = Vector3.Normalize(directionToTarget);
+        }
+        else
+        {
+            directionToTarget = controller.Forward;
+        }
+
+        var cameraPosition = targetPosition - directionToTarget * distance;
+        controller.SetPositionAndLookAt(cameraPosition, targetPosition, immediate: false);
     }
 
     private void OnResize(uint width, uint height)

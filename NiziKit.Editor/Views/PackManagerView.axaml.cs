@@ -26,4 +26,19 @@ public partial class PackManagerView : UserControl
             };
         }
     }
+
+    protected override void OnAttachedToVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+
+        // Set up TopLevel for file dialogs
+        if (DataContext is PackManagerViewModel vm)
+        {
+            var topLevel = TopLevel.GetTopLevel(this);
+            if (topLevel != null)
+            {
+                vm.SetTopLevel(topLevel);
+            }
+        }
+    }
 }

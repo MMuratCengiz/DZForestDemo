@@ -79,8 +79,8 @@ public sealed class GizmoShaders : IDisposable
                 FillMode = FillMode.Solid,
                 DepthTest = new DepthTest
                 {
-                    Enable = true,
-                    CompareOp = CompareOp.LessOrEqual,
+                    Enable = false,
+                    CompareOp = CompareOp.Always,
                     Write = false
                 },
                 RenderTargets = renderTargets,

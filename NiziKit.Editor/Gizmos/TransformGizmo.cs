@@ -381,34 +381,55 @@ public class TransformGizmo
         var origin = _target.WorldPosition;
 
         Vector3 planeNormal;
-        switch (axis)
+        if (Mode == GizmoMode.Rotate)
         {
-            case GizmoAxis.X:
-                planeNormal = MathF.Abs(Vector3.Dot(ray.Direction, _dragAxisY)) >
-                              MathF.Abs(Vector3.Dot(ray.Direction, _dragAxisZ)) ? _dragAxisY : _dragAxisZ;
-                break;
-            case GizmoAxis.Y:
-                planeNormal = MathF.Abs(Vector3.Dot(ray.Direction, _dragAxisX)) >
-                              MathF.Abs(Vector3.Dot(ray.Direction, _dragAxisZ)) ? _dragAxisX : _dragAxisZ;
-                break;
-            case GizmoAxis.Z:
-                planeNormal = MathF.Abs(Vector3.Dot(ray.Direction, _dragAxisX)) >
-                              MathF.Abs(Vector3.Dot(ray.Direction, _dragAxisY)) ? _dragAxisX : _dragAxisY;
-                break;
-            case GizmoAxis.XY:
-                planeNormal = _dragAxisZ;
-                break;
-            case GizmoAxis.XZ:
-                planeNormal = _dragAxisY;
-                break;
-            case GizmoAxis.YZ:
-                planeNormal = _dragAxisX;
-                break;
-            case GizmoAxis.All:
-                planeNormal = Vector3.Normalize(ray.Origin - origin);
-                break;
-            default:
-                return origin;
+            switch (axis)
+            {
+                case GizmoAxis.X:
+                    planeNormal = _dragAxisX;
+                    break;
+                case GizmoAxis.Y:
+                    planeNormal = _dragAxisY;
+                    break;
+                case GizmoAxis.Z:
+                    planeNormal = _dragAxisZ;
+                    break;
+                default:
+                    planeNormal = Vector3.Normalize(ray.Origin - origin);
+                    break;
+            }
+        }
+        else
+        {
+            switch (axis)
+            {
+                case GizmoAxis.X:
+                    planeNormal = MathF.Abs(Vector3.Dot(ray.Direction, _dragAxisY)) >
+                                  MathF.Abs(Vector3.Dot(ray.Direction, _dragAxisZ)) ? _dragAxisY : _dragAxisZ;
+                    break;
+                case GizmoAxis.Y:
+                    planeNormal = MathF.Abs(Vector3.Dot(ray.Direction, _dragAxisX)) >
+                                  MathF.Abs(Vector3.Dot(ray.Direction, _dragAxisZ)) ? _dragAxisX : _dragAxisZ;
+                    break;
+                case GizmoAxis.Z:
+                    planeNormal = MathF.Abs(Vector3.Dot(ray.Direction, _dragAxisX)) >
+                                  MathF.Abs(Vector3.Dot(ray.Direction, _dragAxisY)) ? _dragAxisX : _dragAxisY;
+                    break;
+                case GizmoAxis.XY:
+                    planeNormal = _dragAxisZ;
+                    break;
+                case GizmoAxis.XZ:
+                    planeNormal = _dragAxisY;
+                    break;
+                case GizmoAxis.YZ:
+                    planeNormal = _dragAxisX;
+                    break;
+                case GizmoAxis.All:
+                    planeNormal = Vector3.Normalize(ray.Origin - origin);
+                    break;
+                default:
+                    return origin;
+            }
         }
 
         if (RayPlaneIntersection(ray, origin, planeNormal, out var hitPoint, out _))
