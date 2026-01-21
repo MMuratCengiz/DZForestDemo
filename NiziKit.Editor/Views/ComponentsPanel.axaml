@@ -11,14 +11,15 @@
             <StackPanel IsVisible="{Binding !HasSelection}"
                         HorizontalAlignment="Center"
                         Margin="0,40">
-                <PathIcon Data="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"
-                          Width="48" Height="48"
-                          Foreground="{DynamicResource TextMutedBrush}"
-                          HorizontalAlignment="Center"
-                          Margin="0,0,0,12"/>
+                <PathIcon
+                    Data="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"
+                    Width="48" Height="48"
+                    Foreground="{DynamicResource TextMutedBrush}"
+                    HorizontalAlignment="Center"
+                    Margin="0,0,0,12" />
                 <TextBlock Text="Select an object to edit"
                            Classes="muted"
-                           HorizontalAlignment="Center"/>
+                           HorizontalAlignment="Center" />
             </StackPanel>
 
             <StackPanel IsVisible="{Binding HasSelection}"
@@ -32,42 +33,42 @@
                         <CheckBox Grid.Column="0"
                                   IsChecked="{Binding IsActive}"
                                   VerticalAlignment="Center"
-                                  Margin="0,0,8,0"/>
+                                  Margin="0,0,8,0" />
                         <TextBlock Grid.Column="1"
                                    Text="Name"
                                    Classes="label"
                                    VerticalAlignment="Center"
-                                   Margin="0,0,10,0"/>
+                                   Margin="0,0,10,0" />
                         <TextBox Grid.Column="2"
                                  Text="{Binding Name}"
-                                 VerticalAlignment="Center"/>
+                                 VerticalAlignment="Center" />
                     </Grid>
                 </Border>
 
-                <TextBlock Text="Transform" Classes="section-header"/>
+                <TextBlock Text="Transform" Classes="section-header" />
 
-                <TextBlock Text="Position" Classes="label" Margin="0,0,0,4"/>
+                <TextBlock Text="Position" Classes="label" Margin="0,0,0,4" />
                 <Grid ColumnDefinitions="*,*,*" Margin="0,0,0,12">
                     <views:DraggableValueEditor Grid.Column="0"
                                                 Label="X"
                                                 LabelColor="#E06060"
                                                 Value="{Binding PositionX}"
                                                 DragSensitivity="0.05"
-                                                Margin="0,0,4,0"/>
+                                                Margin="0,0,4,0" />
                     <views:DraggableValueEditor Grid.Column="1"
                                                 Label="Y"
                                                 LabelColor="#60E060"
                                                 Value="{Binding PositionY}"
                                                 DragSensitivity="0.05"
-                                                Margin="0,0,4,0"/>
+                                                Margin="0,0,4,0" />
                     <views:DraggableValueEditor Grid.Column="2"
                                                 Label="Z"
                                                 LabelColor="#6060E0"
                                                 Value="{Binding PositionZ}"
-                                                DragSensitivity="0.05"/>
+                                                DragSensitivity="0.05" />
                 </Grid>
 
-                <TextBlock Text="Rotation" Classes="label" Margin="0,0,0,4"/>
+                <TextBlock Text="Rotation" Classes="label" Margin="0,0,0,4" />
                 <Grid ColumnDefinitions="*,*,*" Margin="0,0,0,12">
                     <views:DraggableValueEditor Grid.Column="0"
                                                 Label="X"
@@ -75,45 +76,45 @@
                                                 Value="{Binding RotationX}"
                                                 DragSensitivity="0.5"
                                                 StringFormat="F1"
-                                                Margin="0,0,4,0"/>
+                                                Margin="0,0,4,0" />
                     <views:DraggableValueEditor Grid.Column="1"
                                                 Label="Y"
                                                 LabelColor="#60E060"
                                                 Value="{Binding RotationY}"
                                                 DragSensitivity="0.5"
                                                 StringFormat="F1"
-                                                Margin="0,0,4,0"/>
+                                                Margin="0,0,4,0" />
                     <views:DraggableValueEditor Grid.Column="2"
                                                 Label="Z"
                                                 LabelColor="#6060E0"
                                                 Value="{Binding RotationZ}"
                                                 DragSensitivity="0.5"
-                                                StringFormat="F1"/>
+                                                StringFormat="F1" />
                 </Grid>
 
-                <TextBlock Text="Scale" Classes="label" Margin="0,0,0,4"/>
+                <TextBlock Text="Scale" Classes="label" Margin="0,0,0,4" />
                 <Grid ColumnDefinitions="*,*,*" Margin="0,0,0,16">
                     <views:DraggableValueEditor Grid.Column="0"
                                                 Label="X"
                                                 LabelColor="#E06060"
                                                 Value="{Binding ScaleX}"
                                                 DragSensitivity="0.01"
-                                                Margin="0,0,4,0"/>
+                                                Margin="0,0,4,0" />
                     <views:DraggableValueEditor Grid.Column="1"
                                                 Label="Y"
                                                 LabelColor="#60E060"
                                                 Value="{Binding ScaleY}"
                                                 DragSensitivity="0.01"
-                                                Margin="0,0,4,0"/>
+                                                Margin="0,0,4,0" />
                     <views:DraggableValueEditor Grid.Column="2"
                                                 Label="Z"
                                                 LabelColor="#6060E0"
                                                 Value="{Binding ScaleZ}"
-                                                DragSensitivity="0.01"/>
+                                                DragSensitivity="0.01" />
                 </Grid>
 
-                <Border Classes="separator" Margin="0,6,0,14"/>
-                <TextBlock Text="Components" Classes="section-header"/>
+                <Border Classes="separator" Margin="0,6,0,14" />
+                <TextBlock Text="Components" Classes="section-header" />
 
                 <ItemsControl ItemsSource="{Binding Components}">
                     <ItemsControl.ItemTemplate>
@@ -134,7 +135,7 @@
                                                         <Template>
                                                             <PathIcon Data="M8,5.14V19.14L19,12.14L8,5.14Z"
                                                                       Width="12" Height="12"
-                                                                      Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                                      Foreground="{DynamicResource TextSecondaryBrush}" />
                                                         </Template>
                                                     </Setter>
                                                 </Style>
@@ -143,7 +144,7 @@
                                                         <Template>
                                                             <PathIcon Data="M7,10L12,15L17,10H7Z"
                                                                       Width="12" Height="12"
-                                                                      Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                                      Foreground="{DynamicResource TextSecondaryBrush}" />
                                                         </Template>
                                                     </Setter>
                                                 </Style>
@@ -152,22 +153,23 @@
                                         <TextBlock Grid.Column="1"
                                                    Text="{Binding DisplayName}"
                                                    Classes="component-name"
-                                                   Margin="6,0,0,0"/>
+                                                   Margin="6,0,0,0" />
                                         <Button Grid.Column="2"
                                                 Classes="ghost"
                                                 Padding="6,4"
                                                 Command="{Binding RemoveCommand}"
                                                 ToolTip.Tip="Remove Component">
-                                            <PathIcon Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"
-                                                      Width="16"
-                                                      Height="16"
-                                                      Foreground="{DynamicResource DangerBrush}"/>
+                                            <PathIcon
+                                                Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"
+                                                Width="16"
+                                                Height="16"
+                                                Foreground="{DynamicResource DangerBrush}" />
                                         </Button>
                                     </Grid>
                                     <Border IsVisible="{Binding IsExpanded}"
                                             Margin="0,10,0,0"
                                             Padding="0">
-                                        <views:ComponentEditor DataContext="{Binding}"/>
+                                        <views:ComponentEditor DataContext="{Binding}" />
                                     </Border>
                                 </StackPanel>
                             </Border>
@@ -187,14 +189,15 @@
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <PathIcon Data="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"
                                   Width="16" Height="16"
-                                  Foreground="{DynamicResource AccentBrush}"/>
+                                  Foreground="{DynamicResource AccentBrush}" />
                         <TextBlock Text="Add Component"
-                                   Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                   Foreground="{DynamicResource TextSecondaryBrush}"
+                                   FontSize="{DynamicResource EditorFontSizeSmall}" />
                     </StackPanel>
                 </Button>
 
                 <views:AddComponentPanel IsVisible="{Binding IsAddingComponent}"
-                                         DataContext="{Binding}"/>
+                                         DataContext="{Binding}" />
             </StackPanel>
         </StackPanel>
     </ScrollViewer>

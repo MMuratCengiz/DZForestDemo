@@ -1,4 +1,6 @@
 using System.Numerics;
+using NiziKit.Assets;
+using NiziKit.Components;
 using NiziKit.Core;
 using NiziKit.Physics;
 
@@ -32,13 +34,15 @@ public enum GizmoSpace
 public class TransformGizmo
 {
     private const float AxisLength = 1.5f;
-    private const float AxisHitRadius = 0.15f;
+    private const float AxisHitRadius = 0.12f;
     private const float PlaneSize = 0.4f;
     private const float PlaneOffset = 0.3f;
     private const float RotateRingRadius = 1.2f;
-    private const float RotateRingThickness = 0.1f;
-    private const float ScaleBoxSize = 0.15f;
-    private const float CenterBoxSize = 0.2f;
+    private const float RotateRingThickness = 0.15f;
+    private const float ScaleBoxSize = 0.2f;
+    private const float CenterBoxSize = 0.25f;
+    private const float MinGizmoScale = 0.5f;
+    private const float MaxGizmoScale = 5f;
 
     public GizmoMode Mode { get; set; } = GizmoMode.Translate;
     public GizmoSpace Space { get; set; } = GizmoSpace.Local;
@@ -51,8 +55,10 @@ public class TransformGizmo
     private Quaternion _dragStartRotation;
     private Vector3 _dragStartScale;
     private Vector3 _dragStartHitPoint;
-    private Vector3 _lastDragPoint;
     private float _dragStartAngle;
+    private Vector3 _dragAxisX;
+    private Vector3 _dragAxisY;
+    private Vector3 _dragAxisZ;
 
     public GameObject? Target
     {
@@ -74,8 +80,19 @@ public class TransformGizmo
             return 1f;
         }
 
-        var distance = Vector3.Distance(camera.WorldPosition, _target.WorldPosition);
-        return distance * 0.15f;
+        var meshComponent = _target.GetComponent<MeshComponent>();
+        if (meshComponent?.Mesh != null)
+        {
+            var bounds = meshComponent.Mesh.Bounds;
+            var size = bounds.Max - bounds.Min;
+            var maxExtent = MathF.Max(size.X, MathF.Max(size.Y, size.Z));
+            var objectScale = _target.LocalScale;
+            var avgScale = (objectScale.X + objectScale.Y + objectScale.Z) / 3f;
+            var scale = maxExtent * avgScale * 0.6f;
+            return Math.Clamp(scale, MinGizmoScale, MaxGizmoScale);
+        }
+
+        return 1f;
     }
 
     public void UpdateHover(Ray ray, CameraObject camera)
@@ -109,14 +126,26 @@ public class TransformGizmo
         _dragStartRotation = _target.LocalRotation;
         _dragStartScale = _target.LocalScale;
 
-        var hitPoint = GetAxisPlaneIntersection(ray, hitAxis, scale);
+        var rotation = Space == GizmoSpace.Local ? _dragStartRotation : Quaternion.Identity;
+        _dragAxisX = Vector3.Transform(Vector3.UnitX, rotation);
+        _dragAxisY = Vector3.Transform(Vector3.UnitY, rotation);
+        _dragAxisZ = Vector3.Transform(Vector3.UnitZ, rotation);
+
+        var hitPoint = GetAxisPlaneIntersection(ray, hitAxis);
         _dragStartHitPoint = hitPoint;
-        _lastDragPoint = hitPoint;
 
         if (Mode == GizmoMode.Rotate)
         {
-            var toHit = Vector3.Normalize(hitPoint - _target.WorldPosition);
-            _dragStartAngle = GetAngleOnAxis(toHit, hitAxis);
+            var toHit = hitPoint - _target.WorldPosition;
+            if (toHit.LengthSquared() > 0.0001f)
+            {
+                toHit = Vector3.Normalize(toHit);
+                _dragStartAngle = GetAngleOnAxis(toHit, hitAxis);
+            }
+            else
+            {
+                _dragStartAngle = 0;
+            }
         }
 
         return true;
@@ -129,8 +158,7 @@ public class TransformGizmo
             return;
         }
 
-        var scale = GetGizmoScale(camera);
-        var currentHitPoint = GetAxisPlaneIntersection(ray, ActiveAxis, scale);
+        var currentHitPoint = GetAxisPlaneIntersection(ray, ActiveAxis);
 
         switch (Mode)
         {
@@ -144,8 +172,6 @@ public class TransformGizmo
                 ApplyScale(currentHitPoint);
                 break;
         }
-
-        _lastDragPoint = currentHitPoint;
     }
 
     public void EndDrag()
@@ -203,17 +229,17 @@ public class TransformGizmo
                     closestAxis = GizmoAxis.YZ;
                 }
 
-                if (TryHitAxis(ray, origin, axisX, scale, out var distX) && distX < closestDist)
+                if (TryHitAxisLine(ray, origin, axisX, scale, out var distX) && distX < closestDist)
                 {
                     closestDist = distX;
                     closestAxis = GizmoAxis.X;
                 }
-                if (TryHitAxis(ray, origin, axisY, scale, out var distY) && distY < closestDist)
+                if (TryHitAxisLine(ray, origin, axisY, scale, out var distY) && distY < closestDist)
                 {
                     closestDist = distY;
                     closestAxis = GizmoAxis.Y;
                 }
-                if (TryHitAxis(ray, origin, axisZ, scale, out var distZ) && distZ < closestDist)
+                if (TryHitAxisLine(ray, origin, axisZ, scale, out var distZ) && distZ < closestDist)
                 {
                     closestDist = distZ;
                     closestAxis = GizmoAxis.Z;
@@ -247,17 +273,17 @@ public class TransformGizmo
                     closestAxis = GizmoAxis.All;
                 }
 
-                if (TryHitScaleBox(ray, origin, axisX, scale, out var distX) && distX < closestDist)
+                if (TryHitAxisLine(ray, origin, axisX, scale, out var distX) && distX < closestDist)
                 {
                     closestDist = distX;
                     closestAxis = GizmoAxis.X;
                 }
-                if (TryHitScaleBox(ray, origin, axisY, scale, out var distY) && distY < closestDist)
+                if (TryHitAxisLine(ray, origin, axisY, scale, out var distY) && distY < closestDist)
                 {
                     closestDist = distY;
                     closestAxis = GizmoAxis.Y;
                 }
-                if (TryHitScaleBox(ray, origin, axisZ, scale, out var distZ) && distZ < closestDist)
+                if (TryHitAxisLine(ray, origin, axisZ, scale, out var distZ) && distZ < closestDist)
                 {
                     closestDist = distZ;
                     closestAxis = GizmoAxis.Z;
@@ -269,18 +295,19 @@ public class TransformGizmo
         return closestAxis;
     }
 
-    private bool TryHitAxis(Ray ray, Vector3 origin, Vector3 axis, float scale, out float distance)
+    private bool TryHitAxisLine(Ray ray, Vector3 origin, Vector3 axis, float scale, out float distance)
     {
         distance = float.MaxValue;
 
+        var axisStart = origin;
         var axisEnd = origin + axis * AxisLength * scale;
-        var closestOnRay = ClosestPointOnRay(ray, origin);
-        var closestOnAxis = ClosestPointOnSegment(origin, axisEnd, closestOnRay);
+        var hitRadius = AxisHitRadius * scale;
 
-        var dist = Vector3.Distance(closestOnRay, closestOnAxis);
-        if (dist < AxisHitRadius * scale)
+        var rayToLineDistance = RayLineSegmentDistance(ray, axisStart, axisEnd, out var rayT, out var lineT);
+
+        if (rayToLineDistance < hitRadius && lineT > 0.05f)
         {
-            distance = Vector3.Distance(ray.Origin, closestOnRay);
+            distance = rayT;
             return true;
         }
 
@@ -336,16 +363,6 @@ public class TransformGizmo
         return false;
     }
 
-    private bool TryHitScaleBox(Ray ray, Vector3 origin, Vector3 axis, float scale, out float distance)
-    {
-        distance = float.MaxValue;
-
-        var boxCenter = origin + axis * AxisLength * scale;
-        var boxHalfSize = ScaleBoxSize * scale * 0.5f;
-
-        return RayBoxIntersection(ray, boxCenter, boxHalfSize, out distance);
-    }
-
     private bool TryHitCenterBox(Ray ray, Vector3 origin, float scale, out float distance)
     {
         distance = float.MaxValue;
@@ -354,7 +371,7 @@ public class TransformGizmo
         return RayBoxIntersection(ray, origin, boxHalfSize, out distance);
     }
 
-    private Vector3 GetAxisPlaneIntersection(Ray ray, GizmoAxis axis, float scale)
+    private Vector3 GetAxisPlaneIntersection(Ray ray, GizmoAxis axis)
     {
         if (_target == null)
         {
@@ -362,35 +379,30 @@ public class TransformGizmo
         }
 
         var origin = _target.WorldPosition;
-        var rotation = Space == GizmoSpace.Local ? _target.LocalRotation : Quaternion.Identity;
-
-        var axisX = Vector3.Transform(Vector3.UnitX, rotation);
-        var axisY = Vector3.Transform(Vector3.UnitY, rotation);
-        var axisZ = Vector3.Transform(Vector3.UnitZ, rotation);
 
         Vector3 planeNormal;
         switch (axis)
         {
             case GizmoAxis.X:
-                planeNormal = MathF.Abs(Vector3.Dot(ray.Direction, axisY)) >
-                              MathF.Abs(Vector3.Dot(ray.Direction, axisZ)) ? axisY : axisZ;
+                planeNormal = MathF.Abs(Vector3.Dot(ray.Direction, _dragAxisY)) >
+                              MathF.Abs(Vector3.Dot(ray.Direction, _dragAxisZ)) ? _dragAxisY : _dragAxisZ;
                 break;
             case GizmoAxis.Y:
-                planeNormal = MathF.Abs(Vector3.Dot(ray.Direction, axisX)) >
-                              MathF.Abs(Vector3.Dot(ray.Direction, axisZ)) ? axisX : axisZ;
+                planeNormal = MathF.Abs(Vector3.Dot(ray.Direction, _dragAxisX)) >
+                              MathF.Abs(Vector3.Dot(ray.Direction, _dragAxisZ)) ? _dragAxisX : _dragAxisZ;
                 break;
             case GizmoAxis.Z:
-                planeNormal = MathF.Abs(Vector3.Dot(ray.Direction, axisX)) >
-                              MathF.Abs(Vector3.Dot(ray.Direction, axisY)) ? axisX : axisY;
+                planeNormal = MathF.Abs(Vector3.Dot(ray.Direction, _dragAxisX)) >
+                              MathF.Abs(Vector3.Dot(ray.Direction, _dragAxisY)) ? _dragAxisX : _dragAxisY;
                 break;
             case GizmoAxis.XY:
-                planeNormal = axisZ;
+                planeNormal = _dragAxisZ;
                 break;
             case GizmoAxis.XZ:
-                planeNormal = axisY;
+                planeNormal = _dragAxisY;
                 break;
             case GizmoAxis.YZ:
-                planeNormal = axisX;
+                planeNormal = _dragAxisX;
                 break;
             case GizmoAxis.All:
                 planeNormal = Vector3.Normalize(ray.Origin - origin);
@@ -415,32 +427,27 @@ public class TransformGizmo
         }
 
         var delta = currentHitPoint - _dragStartHitPoint;
-        var rotation = Space == GizmoSpace.Local ? _target.LocalRotation : Quaternion.Identity;
-
-        var axisX = Vector3.Transform(Vector3.UnitX, rotation);
-        var axisY = Vector3.Transform(Vector3.UnitY, rotation);
-        var axisZ = Vector3.Transform(Vector3.UnitZ, rotation);
 
         Vector3 constrainedDelta;
         switch (ActiveAxis)
         {
             case GizmoAxis.X:
-                constrainedDelta = axisX * Vector3.Dot(delta, axisX);
+                constrainedDelta = _dragAxisX * Vector3.Dot(delta, _dragAxisX);
                 break;
             case GizmoAxis.Y:
-                constrainedDelta = axisY * Vector3.Dot(delta, axisY);
+                constrainedDelta = _dragAxisY * Vector3.Dot(delta, _dragAxisY);
                 break;
             case GizmoAxis.Z:
-                constrainedDelta = axisZ * Vector3.Dot(delta, axisZ);
+                constrainedDelta = _dragAxisZ * Vector3.Dot(delta, _dragAxisZ);
                 break;
             case GizmoAxis.XY:
-                constrainedDelta = axisX * Vector3.Dot(delta, axisX) + axisY * Vector3.Dot(delta, axisY);
+                constrainedDelta = _dragAxisX * Vector3.Dot(delta, _dragAxisX) + _dragAxisY * Vector3.Dot(delta, _dragAxisY);
                 break;
             case GizmoAxis.XZ:
-                constrainedDelta = axisX * Vector3.Dot(delta, axisX) + axisZ * Vector3.Dot(delta, axisZ);
+                constrainedDelta = _dragAxisX * Vector3.Dot(delta, _dragAxisX) + _dragAxisZ * Vector3.Dot(delta, _dragAxisZ);
                 break;
             case GizmoAxis.YZ:
-                constrainedDelta = axisY * Vector3.Dot(delta, axisY) + axisZ * Vector3.Dot(delta, axisZ);
+                constrainedDelta = _dragAxisY * Vector3.Dot(delta, _dragAxisY) + _dragAxisZ * Vector3.Dot(delta, _dragAxisZ);
                 break;
             default:
                 constrainedDelta = delta;
@@ -457,28 +464,33 @@ public class TransformGizmo
             return;
         }
 
-        var toHit = Vector3.Normalize(currentHitPoint - _target.WorldPosition);
+        var toHit = currentHitPoint - _target.WorldPosition;
+        if (toHit.LengthSquared() < 0.0001f)
+        {
+            return;
+        }
+
+        toHit = Vector3.Normalize(toHit);
         var currentAngle = GetAngleOnAxis(toHit, ActiveAxis);
         var deltaAngle = currentAngle - _dragStartAngle;
 
-        var rotation = Space == GizmoSpace.Local ? _target.LocalRotation : Quaternion.Identity;
-        Vector3 axis;
+        Vector3 rotationAxis;
         switch (ActiveAxis)
         {
             case GizmoAxis.X:
-                axis = Vector3.Transform(Vector3.UnitX, rotation);
+                rotationAxis = _dragAxisX;
                 break;
             case GizmoAxis.Y:
-                axis = Vector3.Transform(Vector3.UnitY, rotation);
+                rotationAxis = _dragAxisY;
                 break;
             case GizmoAxis.Z:
-                axis = Vector3.Transform(Vector3.UnitZ, rotation);
+                rotationAxis = _dragAxisZ;
                 break;
             default:
                 return;
         }
 
-        var deltaRotation = Quaternion.CreateFromAxisAngle(axis, deltaAngle);
+        var deltaRotation = Quaternion.CreateFromAxisAngle(rotationAxis, deltaAngle);
         _target.LocalRotation = deltaRotation * _dragStartRotation;
     }
 
@@ -498,6 +510,7 @@ public class TransformGizmo
         }
 
         var scaleFactor = currentDist / startDist;
+        scaleFactor = Math.Clamp(scaleFactor, 0.01f, 100f);
 
         switch (ActiveAxis)
         {
@@ -518,22 +531,20 @@ public class TransformGizmo
 
     private float GetAngleOnAxis(Vector3 direction, GizmoAxis axis)
     {
-        var rotation = Space == GizmoSpace.Local && _target != null ? _target.LocalRotation : Quaternion.Identity;
-
         Vector3 axis1, axis2;
         switch (axis)
         {
             case GizmoAxis.X:
-                axis1 = Vector3.Transform(Vector3.UnitY, rotation);
-                axis2 = Vector3.Transform(Vector3.UnitZ, rotation);
+                axis1 = _dragAxisY;
+                axis2 = _dragAxisZ;
                 break;
             case GizmoAxis.Y:
-                axis1 = Vector3.Transform(Vector3.UnitX, rotation);
-                axis2 = Vector3.Transform(Vector3.UnitZ, rotation);
+                axis1 = _dragAxisZ;
+                axis2 = _dragAxisX;
                 break;
             case GizmoAxis.Z:
-                axis1 = Vector3.Transform(Vector3.UnitX, rotation);
-                axis2 = Vector3.Transform(Vector3.UnitY, rotation);
+                axis1 = _dragAxisX;
+                axis2 = _dragAxisY;
                 break;
             default:
                 return 0;
@@ -544,19 +555,45 @@ public class TransformGizmo
         return MathF.Atan2(v, u);
     }
 
-    private static Vector3 ClosestPointOnRay(Ray ray, Vector3 point)
+    private static float RayLineSegmentDistance(Ray ray, Vector3 lineStart, Vector3 lineEnd, out float rayT, out float lineT)
     {
-        var t = Vector3.Dot(point - ray.Origin, ray.Direction);
-        t = MathF.Max(0, t);
-        return ray.Origin + ray.Direction * t;
-    }
+        var lineDir = lineEnd - lineStart;
+        var lineLength = lineDir.Length();
+        if (lineLength < 0.0001f)
+        {
+            rayT = 0;
+            lineT = 0;
+            return Vector3.Distance(ray.Origin, lineStart);
+        }
+        lineDir /= lineLength;
 
-    private static Vector3 ClosestPointOnSegment(Vector3 a, Vector3 b, Vector3 point)
-    {
-        var ab = b - a;
-        var t = Vector3.Dot(point - a, ab) / Vector3.Dot(ab, ab);
-        t = Math.Clamp(t, 0, 1);
-        return a + ab * t;
+        var w0 = ray.Origin - lineStart;
+        var a = Vector3.Dot(ray.Direction, ray.Direction);
+        var b = Vector3.Dot(ray.Direction, lineDir);
+        var c = Vector3.Dot(lineDir, lineDir);
+        var d = Vector3.Dot(ray.Direction, w0);
+        var e = Vector3.Dot(lineDir, w0);
+
+        var denom = a * c - b * b;
+
+        if (MathF.Abs(denom) < 1e-6f)
+        {
+            rayT = 0;
+            lineT = e / c;
+        }
+        else
+        {
+            rayT = (b * e - c * d) / denom;
+            lineT = (a * e - b * d) / denom;
+        }
+
+        rayT = MathF.Max(0, rayT);
+        lineT = Math.Clamp(lineT / lineLength, 0, 1);
+
+        var closestOnRay = ray.Origin + ray.Direction * rayT;
+        var closestOnLine = lineStart + (lineEnd - lineStart) * lineT;
+
+        return Vector3.Distance(closestOnRay, closestOnLine);
     }
 
     private static bool RayPlaneIntersection(Ray ray, Vector3 planePoint, Vector3 planeNormal, out Vector3 hitPoint, out float distance)
@@ -606,6 +643,51 @@ public class TransformGizmo
         }
 
         distance = tmin >= 0 ? tmin : tmax;
+        return true;
+    }
+
+    public static bool RayBoundsIntersection(Ray ray, BoundingBox bounds, Matrix4x4 worldMatrix, out float distance)
+    {
+        distance = float.MaxValue;
+
+        Matrix4x4.Invert(worldMatrix, out var invWorld);
+
+        var localOrigin = Vector3.Transform(ray.Origin, invWorld);
+        var localDir = Vector3.TransformNormal(ray.Direction, invWorld);
+        if (localDir.LengthSquared() < 0.0001f)
+        {
+            return false;
+        }
+        localDir = Vector3.Normalize(localDir);
+
+        var min = bounds.Min;
+        var max = bounds.Max;
+
+        var invDir = new Vector3(
+            MathF.Abs(localDir.X) > 1e-6f ? 1f / localDir.X : float.MaxValue,
+            MathF.Abs(localDir.Y) > 1e-6f ? 1f / localDir.Y : float.MaxValue,
+            MathF.Abs(localDir.Z) > 1e-6f ? 1f / localDir.Z : float.MaxValue
+        );
+
+        var t1 = (min.X - localOrigin.X) * invDir.X;
+        var t2 = (max.X - localOrigin.X) * invDir.X;
+        var t3 = (min.Y - localOrigin.Y) * invDir.Y;
+        var t4 = (max.Y - localOrigin.Y) * invDir.Y;
+        var t5 = (min.Z - localOrigin.Z) * invDir.Z;
+        var t6 = (max.Z - localOrigin.Z) * invDir.Z;
+
+        var tmin = MathF.Max(MathF.Max(MathF.Min(t1, t2), MathF.Min(t3, t4)), MathF.Min(t5, t6));
+        var tmax = MathF.Min(MathF.Min(MathF.Max(t1, t2), MathF.Max(t3, t4)), MathF.Max(t5, t6));
+
+        if (tmax < 0 || tmin > tmax)
+        {
+            return false;
+        }
+
+        var localHitT = tmin >= 0 ? tmin : tmax;
+        var localHitPoint = localOrigin + localDir * localHitT;
+        var worldHitPoint = Vector3.Transform(localHitPoint, worldMatrix);
+        distance = Vector3.Distance(ray.Origin, worldHitPoint);
         return true;
     }
 }

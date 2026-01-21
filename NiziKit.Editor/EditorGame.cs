@@ -6,6 +6,7 @@ using NiziKit.Application;
 using NiziKit.Components;
 using NiziKit.Core;
 using NiziKit.Editor.Gizmos;
+using NiziKit.Editor.ViewModels;
 using NiziKit.Graphics;
 using NiziKit.Skia;
 using NiziKit.Skia.Avalonia;
@@ -121,6 +122,8 @@ public sealed class EditorGame : Game
                 {
                     return;
                 }
+
+                TrySelectMeshAtCursor();
             }
         }
         else if (ev.Type == EventType.MouseButtonUp)
@@ -244,6 +247,72 @@ public sealed class EditorGame : Game
                 gizmoPass.Gizmo.Mode = GizmoMode.Scale;
                 break;
         }
+    }
+
+    private void TrySelectMeshAtCursor()
+    {
+        var scene = World.CurrentScene;
+        var viewModel = _renderer.EditorViewModel;
+        if (scene == null || viewModel == null)
+        {
+            return;
+        }
+
+        var ray = _editorCamera.ScreenPointToRay(_lastMouseX, _lastMouseY, _width, _height);
+
+        GameObject? closestObject = null;
+        var closestDistance = float.MaxValue;
+
+        foreach (var meshComponent in scene.FindComponents<MeshComponent>())
+        {
+            if (meshComponent.Mesh == null)
+            {
+                continue;
+            }
+
+            var gameObject = meshComponent.Owner;
+            if (gameObject == null)
+            {
+                continue;
+            }
+
+            if (TransformGizmo.RayBoundsIntersection(ray, meshComponent.Mesh.Bounds, gameObject.WorldMatrix, out var distance))
+            {
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    closestObject = gameObject;
+                }
+            }
+        }
+
+        if (closestObject != null)
+        {
+            var objectVm = FindGameObjectViewModel(viewModel.RootObjects, closestObject);
+            viewModel.SelectObject(objectVm);
+        }
+        else
+        {
+            viewModel.SelectObject(null);
+        }
+    }
+
+    private static GameObjectViewModel? FindGameObjectViewModel(IEnumerable<GameObjectViewModel> viewModels, GameObject target)
+    {
+        foreach (var vm in viewModels)
+        {
+            if (vm.GameObject == target)
+            {
+                return vm;
+            }
+
+            var found = FindGameObjectViewModel(vm.Children, target);
+            if (found != null)
+            {
+                return found;
+            }
+        }
+        return null;
     }
 
     private void OnResize(uint width, uint height)
