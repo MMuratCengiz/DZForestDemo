@@ -7,4 +7,6 @@ public partial class MaterialComponent
 {
     [AssetRef(AssetRefType.Material, "material")]
     public partial Material? Material { get; set; }
+
+    public string? MaterialRef { get; set; }
 }

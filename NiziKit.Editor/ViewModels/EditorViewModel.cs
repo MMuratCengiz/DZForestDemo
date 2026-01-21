@@ -173,7 +173,7 @@ public partial class EditorViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private async Task SaveScene()
+    private void SaveScene()
     {
         var scene = World.CurrentScene;
         if (scene == null)
@@ -181,7 +181,7 @@ public partial class EditorViewModel : ObservableObject
             return;
         }
 
-        await _sceneService.SaveSceneAsync(scene, $"{scene.Name}.niziscene.json");
+        _sceneService.SaveScene(scene);
     }
 
     [RelayCommand]

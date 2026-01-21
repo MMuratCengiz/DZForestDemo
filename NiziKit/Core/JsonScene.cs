@@ -17,6 +17,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
     public override void Load()
     {
+        SourcePath = jsonPath;
         var json = Content.ReadText(jsonPath);
         var sceneData = SceneJson.FromJson(json);
 
@@ -289,7 +290,9 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         {
             case "mesh":
                 var meshComp = obj.AddComponent<MeshComponent>();
+                var meshRef = data.Properties?.GetStringOrDefault("mesh");
                 meshComp.Mesh = ResolveMeshFromProperties(data.Properties);
+                meshComp.MeshRef = meshRef;
                 break;
 
             case "material":
@@ -298,6 +301,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
                 if (!string.IsNullOrEmpty(materialRef))
                 {
                     matComp.Material = ResolveMaterial(materialRef);
+                    matComp.MaterialRef = materialRef;
                 }
                 break;
 

@@ -10,6 +10,8 @@ public partial class AnimatorComponent
     [AssetRef(AssetRefType.Skeleton, "skeleton")]
     public partial Skeleton? Skeleton { get; set; }
 
+    public string? SkeletonRef { get; set; }
+
     [JsonProperty("defaultAnimation")]
     public partial string? DefaultAnimation { get; set; }
 

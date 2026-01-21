@@ -70,13 +70,24 @@ public class EditorSceneService
         return null;
     }
 
-    public async Task SaveSceneAsync(Scene scene, string filename)
+    public void SaveScene(Scene scene)
     {
         var sceneJson = ConvertToJson(scene);
         var json = JsonSerializer.Serialize(sceneJson, NiziJsonSerializationOptions.Default);
 
-        var path = Path.Combine(GetScenesDirectory(), filename);
-        await File.WriteAllTextAsync(path, json);
+        string path;
+        if (!string.IsNullOrEmpty(scene.SourcePath))
+        {
+            path = Content.ResolvePath(scene.SourcePath);
+        }
+        else
+        {
+            var filename = $"{scene.Name}.niziscene.json";
+            path = Path.Combine(GetScenesDirectory(), "Scenes", filename);
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        }
+
+        File.WriteAllText(path, json);
     }
 
     public SceneJson ConvertToJson(Scene scene)
@@ -84,7 +95,7 @@ public class EditorSceneService
         var json = new SceneJson
         {
             Name = scene.Name,
-            AssetPacks = GetLoadedPackNames(),
+            AssetPacks = GetLoadedPackPaths(),
             Objects = []
         };
 
@@ -182,8 +193,6 @@ public class EditorSceneService
     {
         var type = component.GetType();
         var typeName = type.Name.ToLowerInvariant();
-
-        // Remove "Component" suffix
         if (typeName.EndsWith("component"))
         {
             typeName = typeName[..^9];
@@ -195,25 +204,45 @@ public class EditorSceneService
             Properties = []
         };
 
-        // Handle specific component types
         if (component is MeshComponent meshComp)
         {
-            if (meshComp.Mesh != null)
+            if (!string.IsNullOrEmpty(meshComp.MeshRef))
             {
-                // Store mesh reference - this is simplified
+                json.Properties["mesh"] = JsonSerializer.SerializeToElement(meshComp.MeshRef);
+            }
+            else if (meshComp.Mesh != null)
+            {
                 json.Properties["mesh"] = JsonSerializer.SerializeToElement(meshComp.Mesh.Name ?? "unknown");
             }
         }
         else if (component is MaterialComponent matComp)
         {
-            if (matComp.Material != null)
+            if (!string.IsNullOrEmpty(matComp.MaterialRef))
+            {
+                json.Properties["material"] = JsonSerializer.SerializeToElement(matComp.MaterialRef);
+            }
+            else if (matComp.Material != null)
             {
                 json.Properties["material"] = JsonSerializer.SerializeToElement(matComp.Material.Name ?? "unknown");
             }
         }
+        else if (component is AnimatorComponent animComp)
+        {
+            if (!string.IsNullOrEmpty(animComp.SkeletonRef))
+            {
+                json.Properties["skeleton"] = JsonSerializer.SerializeToElement(animComp.SkeletonRef);
+            }
+            else if (animComp.Skeleton != null)
+            {
+                json.Properties["skeleton"] = JsonSerializer.SerializeToElement(animComp.Skeleton.Name ?? "unknown");
+            }
+            if (!string.IsNullOrEmpty(animComp.DefaultAnimation))
+            {
+                json.Properties["defaultAnimation"] = JsonSerializer.SerializeToElement(animComp.DefaultAnimation);
+            }
+        }
         else
         {
-            // Generic property serialization for other components
             foreach (var prop in type.GetProperties())
             {
                 if (prop.CanRead && prop.Name != "Owner" && prop.PropertyType.IsPrimitive || prop.PropertyType == typeof(string))
@@ -254,14 +283,14 @@ public class EditorSceneService
         return new Vector3(roll, pitch, yaw) * (180f / MathF.PI);
     }
 
-    private static List<string>? GetLoadedPackNames()
+    private static List<string>? GetLoadedPackPaths()
     {
         var field = typeof(AssetPacks.AssetPacks).GetField("_packs",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
         if (field?.GetValue(null) is Dictionary<string, AssetPacks.AssetPack> packs)
         {
-            return packs.Keys.ToList();
+            return packs.Values.Select(p => p.SourcePath).Where(p => !string.IsNullOrEmpty(p)).ToList();
         }
 
         return null;

@@ -7,4 +7,6 @@ public partial class MeshComponent
 {
     [AssetRef(AssetRefType.Mesh, "mesh")]
     public partial Mesh? Mesh { get; set; }
+
+    public string? MeshRef { get; set; }
 }

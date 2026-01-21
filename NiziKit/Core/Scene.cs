@@ -5,6 +5,7 @@ namespace NiziKit.Core;
 public abstract class Scene(string name = "Scene") : IDisposable
 {
     public string Name { get; set; } = name;
+    public string? SourcePath { get; set; }
     protected World World => World.Instance;
 
     private readonly List<GameObject> _rootObjects = [];

@@ -10,6 +10,7 @@ public sealed class AssetPack : IDisposable
 
     public string Name { get; private set; } = string.Empty;
     public string Version { get; private set; } = "1.0.0";
+    public string SourcePath { get; private set; } = string.Empty;
 
     private readonly Dictionary<string, Texture2d> _textures = new();
     private readonly Dictionary<string, Graphics.GpuShader> _shaders = new();
@@ -82,6 +83,7 @@ public sealed class AssetPack : IDisposable
 
     private void LoadInternal(string path)
     {
+        SourcePath = path;
         (_provider, _basePath) = CreateProvider(path);
         var json = _provider.ReadText(ManifestFileName);
         var definition = AssetPackJson.FromJson(json);
@@ -91,6 +93,7 @@ public sealed class AssetPack : IDisposable
 
     private async Task LoadInternalAsync(string path, CancellationToken ct)
     {
+        SourcePath = path;
         (_provider, _basePath) = CreateProvider(path);
         var json = await _provider.ReadTextAsync(ManifestFileName, ct);
         var definition = AssetPackJson.FromJson(json);
@@ -153,10 +156,9 @@ public sealed class AssetPack : IDisposable
 
     private void LoadTextures(Dictionary<string, string> textureDefs)
     {
-        foreach (var (key, relativePath) in textureDefs)
+        foreach (var (key, path) in textureDefs)
         {
-            var fullPath = ResolvePath(relativePath);
-            var texture = Assets.Assets.LoadTexture(fullPath);
+            var texture = Assets.Assets.LoadTexture(path);
             _textures[key] = texture;
         }
     }
@@ -165,8 +167,7 @@ public sealed class AssetPack : IDisposable
     {
         var tasks = textureDefs.Select(async kvp =>
         {
-            var fullPath = ResolvePath(kvp.Value);
-            var texture = await Assets.Assets.LoadTextureAsync(fullPath, ct);
+            var texture = await Assets.Assets.LoadTextureAsync(kvp.Value, ct);
             return (kvp.Key, texture);
         });
 
@@ -178,10 +179,9 @@ public sealed class AssetPack : IDisposable
 
     private void LoadShaders(Dictionary<string, string> shaderDefs)
     {
-        foreach (var (key, relativePath) in shaderDefs)
+        foreach (var (key, path) in shaderDefs)
         {
-            var fullPath = ResolvePath(relativePath);
-            var shader = Assets.Assets.LoadShaderFromJson(fullPath);
+            var shader = Assets.Assets.LoadShaderFromJson(path);
             _shaders[key] = shader;
         }
     }
@@ -190,8 +190,7 @@ public sealed class AssetPack : IDisposable
     {
         var tasks = shaderDefs.Select(async kvp =>
         {
-            var fullPath = ResolvePath(kvp.Value);
-            var shader = await Assets.Assets.LoadShaderFromJsonAsync(fullPath, ct);
+            var shader = await Assets.Assets.LoadShaderFromJsonAsync(kvp.Value, ct);
             return (kvp.Key, shader);
         });
 
@@ -203,10 +202,9 @@ public sealed class AssetPack : IDisposable
 
     private void LoadMaterials(Dictionary<string, string> materialDefs)
     {
-        foreach (var (key, relativePath) in materialDefs)
+        foreach (var (key, path) in materialDefs)
         {
-            var fullPath = ResolvePath(relativePath);
-            var material = Assets.Assets.LoadMaterial(fullPath);
+            var material = Assets.Assets.LoadMaterial(path);
             _materials[key] = material;
         }
     }
@@ -215,8 +213,7 @@ public sealed class AssetPack : IDisposable
     {
         var tasks = materialDefs.Select(async kvp =>
         {
-            var fullPath = ResolvePath(kvp.Value);
-            var material = await Assets.Assets.LoadMaterialAsync(fullPath, ct);
+            var material = await Assets.Assets.LoadMaterialAsync(kvp.Value, ct);
             return (kvp.Key, material);
         });
 
@@ -228,10 +225,9 @@ public sealed class AssetPack : IDisposable
 
     private void LoadModels(Dictionary<string, string> modelDefs)
     {
-        foreach (var (key, relativePath) in modelDefs)
+        foreach (var (key, path) in modelDefs)
         {
-            var fullPath = ResolvePath(relativePath);
-            var model = Assets.Assets.LoadModel(fullPath);
+            var model = Assets.Assets.LoadModel(path);
             _models[key] = model;
         }
     }
@@ -240,8 +236,7 @@ public sealed class AssetPack : IDisposable
     {
         var tasks = modelDefs.Select(async kvp =>
         {
-            var fullPath = ResolvePath(kvp.Value);
-            var model = await Assets.Assets.LoadModelAsync(fullPath, ct);
+            var model = await Assets.Assets.LoadModelAsync(kvp.Value, ct);
             return (kvp.Key, model);
         });
 
@@ -249,15 +244,6 @@ public sealed class AssetPack : IDisposable
         {
             _models[key] = model;
         }
-    }
-
-    private string ResolvePath(string relativePath)
-    {
-        if (Path.IsPathRooted(relativePath))
-        {
-            return relativePath;
-        }
-        return Path.Combine(_basePath, relativePath).Replace('\\', '/');
     }
 
     public void Dispose()

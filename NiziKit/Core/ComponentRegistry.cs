@@ -105,6 +105,13 @@ public static class ComponentRegistry
             if (jsonPropAttr != null)
             {
                 properties.Add(new PropertyMapping(jsonPropAttr.Name, prop));
+                continue;
+            }
+
+            var assetRefAttr = prop.GetCustomAttribute<AssetRefAttribute>();
+            if (assetRefAttr != null)
+            {
+                properties.Add(new PropertyMapping(assetRefAttr.JsonPropertyName, prop));
             }
         }
 
@@ -213,6 +220,10 @@ public static class ComponentRegistry
                         _ => null
                     };
                     property.SetValue(instance, asset);
+
+                    var refPropertyName = property.Name + "Ref";
+                    var refProperty = instance.GetType().GetProperty(refPropertyName);
+                    refProperty?.SetValue(instance, reference);
                 }
                 return;
             }

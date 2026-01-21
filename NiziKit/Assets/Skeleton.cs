@@ -21,13 +21,13 @@ public class Skeleton : IDisposable
 
     public static Skeleton Load(string modelPath)
     {
-        var bytes = Content.ReadBytes($"Models/{modelPath}");
+        var bytes = Content.ReadBytes(modelPath);
         return LoadFromBytes(bytes, modelPath);
     }
 
     public static async Task<Skeleton> LoadAsync(string modelPath, CancellationToken ct = default)
     {
-        var bytes = await Content.ReadBytesAsync($"Models/{modelPath}", ct);
+        var bytes = await Content.ReadBytesAsync(modelPath, ct);
         return LoadFromBytes(bytes, modelPath);
     }
 
@@ -139,7 +139,7 @@ public class Skeleton : IDisposable
             return cached;
         }
 
-        var bytes = Content.ReadBytes($"Models/{modelPath}");
+        var bytes = Content.ReadBytes(modelPath);
         return LoadAnimationFromBytes(bytes, animationName, cacheKey);
     }
 
@@ -151,7 +151,7 @@ public class Skeleton : IDisposable
             return cached;
         }
 
-        var bytes = await Content.ReadBytesAsync($"Models/{modelPath}", ct);
+        var bytes = await Content.ReadBytesAsync(modelPath, ct);
         return LoadAnimationFromBytes(bytes, animationName, cacheKey);
     }
 

@@ -1,10 +1,14 @@
 using Avalonia.Controls;
+using Avalonia.Input;
+using Avalonia.Interactivity;
 using NiziKit.Editor.ViewModels;
 
 namespace NiziKit.Editor.Views;
 
 public partial class PackManagerView : UserControl
 {
+    private PackManagerViewModel? _subscribedVm;
+
     public PackManagerView()
     {
         InitializeComponent();
@@ -13,32 +17,54 @@ public partial class PackManagerView : UserControl
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
+        if (_subscribedVm != null)
+        {
+            _subscribedVm.PropertyChanged -= OnViewModelPropertyChanged;
+            _subscribedVm = null;
+        }
 
         if (DataContext is PackManagerViewModel vm)
         {
-            // Wire up selection changed to load pack
-            vm.PropertyChanged += (_, args) =>
-            {
-                if (args.PropertyName == nameof(PackManagerViewModel.SelectedPack) && vm.SelectedPack != null)
-                {
-                    vm.LoadPackCommand.Execute(vm.SelectedPack);
-                }
-            };
+            vm.PropertyChanged += OnViewModelPropertyChanged;
+            _subscribedVm = vm;
+            TrySetTopLevel(vm);
+        }
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs args)
+    {
+        if (sender is PackManagerViewModel vm &&
+            args.PropertyName == nameof(PackManagerViewModel.SelectedPack) &&
+            vm.SelectedPack != null)
+        {
+            vm.LoadPackCommand.Execute(vm.SelectedPack);
         }
     }
 
     protected override void OnAttachedToVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)
     {
         base.OnAttachedToVisualTree(e);
-
-        // Set up TopLevel for file dialogs
         if (DataContext is PackManagerViewModel vm)
         {
-            var topLevel = TopLevel.GetTopLevel(this);
-            if (topLevel != null)
-            {
-                vm.SetTopLevel(topLevel);
-            }
+            TrySetTopLevel(vm);
+        }
+    }
+
+    private void TrySetTopLevel(PackManagerViewModel vm)
+    {
+        var topLevel = TopLevel.GetTopLevel(this);
+        if (topLevel != null)
+        {
+            vm.SetTopLevel(topLevel);
+        }
+    }
+
+    private void OnAssetCardDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if (sender is Border { Tag: PackAssetEntry entry } &&
+            DataContext is PackManagerViewModel vm)
+        {
+            vm.OpenAssetEditorCommand.Execute(entry);
         }
     }
 }

@@ -29,8 +29,7 @@ public sealed class GltfModel : IDisposable
 
     public static GltfModel Load(string path, GltfLoadOptions? options = null)
     {
-        var contentPath = Path.IsPathRooted(path) ? path : $"Models/{path}";
-        var bytes = Content.ReadBytes(contentPath);
+        var bytes = Content.ReadBytes(path);
         return LoadFromBytes(bytes, path, options);
     }
 
@@ -41,8 +40,7 @@ public sealed class GltfModel : IDisposable
 
     public static async Task<GltfModel> LoadAsync(string path, GltfLoadOptions? options = null, CancellationToken ct = default)
     {
-        var contentPath = Path.IsPathRooted(path) ? path : $"Models/{path}";
-        var bytes = await Content.ReadBytesAsync(contentPath, ct);
+        var bytes = await Content.ReadBytesAsync(path, ct);
         return LoadFromBytes(bytes, path, options);
     }
 
@@ -68,7 +66,7 @@ public sealed class GltfModel : IDisposable
         Func<string, byte[]>? loadBuffer = null;
         if (!string.IsNullOrEmpty(basePath))
         {
-            loadBuffer = uri => Content.ReadBytes($"Models/{basePath}/{uri}");
+            loadBuffer = uri => Content.ReadBytes($"{basePath}/{uri}");
         }
 
         var document = GltfReader.Read(bytes, loadBuffer, basePath);
@@ -264,7 +262,7 @@ public sealed class GltfModel : IDisposable
         {
             var basePath = Path.GetDirectoryName(SourcePath)?.Replace('\\', '/');
             var imagePath = string.IsNullOrEmpty(basePath) ? image.Uri : $"{basePath}/{image.Uri}";
-            return Content.ReadBytes($"Models/{imagePath}");
+            return Content.ReadBytes(imagePath);
         }
 
         return null;

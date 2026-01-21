@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Text.Json;
 using Avalonia.Controls;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -40,11 +41,15 @@ public partial class PackManagerViewModel : ObservableObject
     private readonly string _packsDirectory;
     private readonly string _assetsDirectory;
     private TopLevel? _topLevel;
+    private AssetFileType _pendingBrowseType;
+    private ObservableCollection<PackAssetEntry>? _pendingBrowseCollection;
 
     public PackManagerViewModel()
     {
         _packsDirectory = Path.Combine(Content.ResolvePath(""), "Packs");
         _assetsDirectory = Content.ResolvePath("");
+        FileBrowserViewModel = new FileBrowserViewModel(_assetsDirectory);
+        FileBrowserViewModel.FileDoubleClicked += OnFileBrowserFileSelected;
         LoadPacks();
     }
 
@@ -86,6 +91,57 @@ public partial class PackManagerViewModel : ObservableObject
 
     [ObservableProperty]
     private int _selectedTabIndex;
+
+    [ObservableProperty]
+    private bool _isFileBrowserOpen;
+
+    [ObservableProperty]
+    private string _fileBrowserTitle = "Select File";
+
+    [ObservableProperty]
+    private FileBrowserViewModel _fileBrowserViewModel;
+
+    [ObservableProperty]
+    private bool _isAssetEditorOpen;
+
+    [ObservableProperty]
+    private string _assetEditorTitle = "Edit Asset";
+
+    [ObservableProperty]
+    private PackAssetEntry? _editingAsset;
+
+    [ObservableProperty]
+    private AssetFileType _editingAssetType;
+
+    [ObservableProperty]
+    private string _editingAssetName = "";
+
+    [ObservableProperty]
+    private string _editingAssetShader = "";
+
+    [ObservableProperty]
+    private string _editingAssetAlbedo = "";
+
+    [ObservableProperty]
+    private string _editingAssetNormal = "";
+
+    [ObservableProperty]
+    private string _editingAssetMetallic = "";
+
+    [ObservableProperty]
+    private string _editingAssetRoughness = "";
+
+    [ObservableProperty]
+    private string _editingShaderName = "";
+
+    [ObservableProperty]
+    private string _editingShaderType = "graphics";
+
+    [ObservableProperty]
+    private string _editingShaderVertexPath = "";
+
+    [ObservableProperty]
+    private string _editingShaderPixelPath = "";
 
     public bool HasSelectedPack => SelectedPack != null;
 
@@ -189,7 +245,7 @@ public partial class PackManagerViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public async Task SavePack()
+    public void SavePack()
     {
         if (string.IsNullOrWhiteSpace(PackName))
         {
@@ -242,12 +298,10 @@ public partial class PackManagerViewModel : ObservableObject
 
             var packFile = Path.Combine(packDir, "pack.nizipack.json");
             var json = packData.ToJson();
-            await File.WriteAllTextAsync(packFile, json);
+            File.WriteAllText(packFile, json);
 
             StatusMessage = $"Pack saved: {PackName}";
             LoadPacks();
-
-            // Select the saved pack
             SelectedPack = Packs.FirstOrDefault(p => p.Name.Equals(PackName, StringComparison.OrdinalIgnoreCase));
         }
         catch (Exception ex)
@@ -324,93 +378,277 @@ public partial class PackManagerViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public async Task BrowseTexture()
+    public void BrowseTexture()
     {
-        await BrowseAsset(AssetFileType.Texture, Textures);
+        OpenFileBrowser(AssetFileType.Texture, Textures, "Select Texture");
     }
 
     [RelayCommand]
-    public async Task BrowseMaterial()
+    public void BrowseMaterial()
     {
-        await BrowseAsset(AssetFileType.Material, Materials);
+        OpenFileBrowser(AssetFileType.Material, Materials, "Select Material");
     }
 
     [RelayCommand]
-    public async Task BrowseModel()
+    public void BrowseModel()
     {
-        await BrowseAsset(AssetFileType.Model, Models);
+        OpenFileBrowser(AssetFileType.Model, Models, "Select Model");
     }
 
     [RelayCommand]
-    public async Task BrowseShader()
+    public void BrowseShader()
     {
-        await BrowseAsset(AssetFileType.Shader, Shaders);
+        OpenFileBrowser(AssetFileType.Shader, Shaders, "Select Shader");
     }
 
-    private async Task BrowseAsset(AssetFileType type, ObservableCollection<PackAssetEntry> collection)
+    private void OpenFileBrowser(AssetFileType type, ObservableCollection<PackAssetEntry> collection, string title)
     {
-        if (_topLevel == null)
+        _pendingBrowseType = type;
+        _pendingBrowseCollection = collection;
+        FileBrowserTitle = title;
+        FileBrowserViewModel.Filter = type;
+        FileBrowserViewModel.SetRootPath(_assetsDirectory);
+        IsFileBrowserOpen = true;
+    }
+
+    private void OnFileBrowserFileSelected(FileEntry entry)
+    {
+        if (_pendingBrowseCollection == null)
         {
-            StatusMessage = "Cannot open file browser";
             return;
         }
 
-        var filters = GetFileFilters(type);
-        var options = new FilePickerOpenOptions
+        var relativePath = GetRelativePath(entry.FullPath);
+        if (relativePath == null)
         {
-            Title = $"Select {type}",
-            AllowMultiple = true,
-            FileTypeFilter = filters,
-            SuggestedStartLocation = await _topLevel.StorageProvider.TryGetFolderFromPathAsync(_assetsDirectory)
-        };
-
-        var files = await _topLevel.StorageProvider.OpenFilePickerAsync(options);
-
-        foreach (var file in files)
-        {
-            var fullPath = file.Path.LocalPath;
-            var relativePath = GetRelativePath(fullPath);
-            var key = Path.GetFileNameWithoutExtension(fullPath);
-
-            // Avoid duplicates
-            if (!collection.Any(e => e.Path == relativePath))
-            {
-                collection.Add(new PackAssetEntry(key, relativePath));
-            }
+            StatusMessage = "File must be within the Assets directory";
+            IsFileBrowserOpen = false;
+            _pendingBrowseCollection = null;
+            return;
         }
 
-        if (files.Count > 0)
+        var key = Path.GetFileNameWithoutExtension(entry.Name);
+        if (entry.Name.EndsWith(".nizimat.json", StringComparison.OrdinalIgnoreCase))
         {
-            StatusMessage = $"Added {files.Count} {type}(s)";
+            key = entry.Name[..^".nizimat.json".Length];
         }
-    }
-
-    private List<FilePickerFileType> GetFileFilters(AssetFileType type)
-    {
-        return type switch
+        else if (entry.Name.EndsWith(".nizishp.json", StringComparison.OrdinalIgnoreCase))
         {
-            AssetFileType.Texture => [new FilePickerFileType("Images") { Patterns = ["*.png", "*.jpg", "*.jpeg", "*.tga", "*.bmp", "*.dds"] }],
-            AssetFileType.Material => [new FilePickerFileType("Materials") { Patterns = ["*.nizimat.json"] }],
-            AssetFileType.Model => [new FilePickerFileType("Models") { Patterns = ["*.fbx", "*.glb", "*.gltf", "*.obj", "*.dae"] }],
-            AssetFileType.Shader => [new FilePickerFileType("Shaders") { Patterns = ["*.nizishp.json"] }],
-            _ => [new FilePickerFileType("All Files") { Patterns = ["*.*"] }]
-        };
-    }
-
-    private string GetRelativePath(string fullPath)
-    {
-        if (fullPath.StartsWith(_assetsDirectory, StringComparison.OrdinalIgnoreCase))
-        {
-            var relative = fullPath[_assetsDirectory.Length..].TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            return relative.Replace(Path.DirectorySeparatorChar, '/');
+            key = entry.Name[..^".nizishp.json".Length];
         }
-        return fullPath.Replace(Path.DirectorySeparatorChar, '/');
+
+        if (!_pendingBrowseCollection.Any(e => e.Path == relativePath))
+        {
+            _pendingBrowseCollection.Add(new PackAssetEntry(key, relativePath));
+            StatusMessage = $"Added: {key}";
+        }
+
+        IsFileBrowserOpen = false;
+        _pendingBrowseCollection = null;
     }
 
     [RelayCommand]
-    public async Task CreateMaterial()
+    public void CloseFileBrowser()
     {
-        if (_topLevel == null || string.IsNullOrWhiteSpace(PackName))
+        IsFileBrowserOpen = false;
+        _pendingBrowseCollection = null;
+    }
+
+    [RelayCommand]
+    public void OpenAssetEditor(PackAssetEntry entry)
+    {
+        var fullPath = Path.Combine(_assetsDirectory, entry.Path);
+        if (!File.Exists(fullPath))
+        {
+            StatusMessage = $"File not found: {entry.Path}";
+            return;
+        }
+
+        EditingAsset = entry;
+
+        if (entry.Path.EndsWith(".nizimat.json", StringComparison.OrdinalIgnoreCase))
+        {
+            EditingAssetType = AssetFileType.Material;
+            AssetEditorTitle = $"Edit Material: {entry.Key}";
+            LoadMaterialForEditing(fullPath);
+        }
+        else if (entry.Path.EndsWith(".nizishp.json", StringComparison.OrdinalIgnoreCase))
+        {
+            EditingAssetType = AssetFileType.Shader;
+            AssetEditorTitle = $"Edit Shader: {entry.Key}";
+            LoadShaderForEditing(fullPath);
+        }
+        else
+        {
+            StatusMessage = "Only materials and shaders can be edited";
+            return;
+        }
+
+        IsAssetEditorOpen = true;
+    }
+
+    private void LoadMaterialForEditing(string path)
+    {
+        try
+        {
+            var json = File.ReadAllText(path);
+            var material = MaterialJson.FromJson(json);
+            EditingAssetName = material.Name;
+            EditingAssetShader = material.Shader;
+            EditingAssetAlbedo = material.Textures?.Albedo ?? "";
+            EditingAssetNormal = material.Textures?.Normal ?? "";
+            EditingAssetMetallic = material.Textures?.Metallic ?? "";
+            EditingAssetRoughness = material.Textures?.Roughness ?? "";
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error loading material: {ex.Message}";
+        }
+    }
+
+    private void LoadShaderForEditing(string path)
+    {
+        try
+        {
+            var json = File.ReadAllText(path);
+            using var doc = JsonDocument.Parse(json);
+            var root = doc.RootElement;
+
+            EditingShaderName = root.TryGetProperty("name", out var name) ? name.GetString() ?? "" : "";
+            EditingShaderType = root.TryGetProperty("type", out var type) ? type.GetString() ?? "graphics" : "graphics";
+
+            if (root.TryGetProperty("stages", out var stages) && stages.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var stage in stages.EnumerateArray())
+                {
+                    var stageType = stage.TryGetProperty("stage", out var st) ? st.GetString() : "";
+                    var stagePath = stage.TryGetProperty("path", out var sp) ? sp.GetString() ?? "" : "";
+
+                    if (stageType == "vertex")
+                    {
+                        EditingShaderVertexPath = stagePath;
+                    }
+                    else if (stageType == "pixel")
+                    {
+                        EditingShaderPixelPath = stagePath;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error loading shader: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    public void CloseAssetEditor()
+    {
+        IsAssetEditorOpen = false;
+        EditingAsset = null;
+    }
+
+    [RelayCommand]
+    public void SaveAssetEditor()
+    {
+        if (EditingAsset == null)
+        {
+            return;
+        }
+
+        var fullPath = Path.Combine(_assetsDirectory, EditingAsset.Path);
+        var assetKey = EditingAsset.Key;
+
+        try
+        {
+            if (EditingAssetType == AssetFileType.Material)
+            {
+                SaveMaterial(fullPath);
+            }
+            else if (EditingAssetType == AssetFileType.Shader)
+            {
+                SaveShader(fullPath);
+            }
+
+            StatusMessage = $"Saved: {assetKey}";
+            IsAssetEditorOpen = false;
+            EditingAsset = null;
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error saving: {ex.Message}";
+        }
+    }
+
+    private void SaveMaterial(string path)
+    {
+        var material = new MaterialJson
+        {
+            Name = EditingAssetName,
+            Shader = EditingAssetShader,
+            Textures = new TexturesJson
+            {
+                Albedo = string.IsNullOrWhiteSpace(EditingAssetAlbedo) ? null : EditingAssetAlbedo,
+                Normal = string.IsNullOrWhiteSpace(EditingAssetNormal) ? null : EditingAssetNormal,
+                Metallic = string.IsNullOrWhiteSpace(EditingAssetMetallic) ? null : EditingAssetMetallic,
+                Roughness = string.IsNullOrWhiteSpace(EditingAssetRoughness) ? null : EditingAssetRoughness
+            }
+        };
+
+        var json = material.ToJson();
+        File.WriteAllText(path, json);
+    }
+
+    private void SaveShader(string path)
+    {
+        var stages = new List<object>();
+
+        if (!string.IsNullOrWhiteSpace(EditingShaderVertexPath))
+        {
+            stages.Add(new { stage = "vertex", path = EditingShaderVertexPath, entryPoint = "VSMain" });
+        }
+        if (!string.IsNullOrWhiteSpace(EditingShaderPixelPath))
+        {
+            stages.Add(new { stage = "pixel", path = EditingShaderPixelPath, entryPoint = "PSMain" });
+        }
+
+        var shader = new
+        {
+            name = EditingShaderName,
+            type = EditingShaderType,
+            stages,
+            pipeline = new
+            {
+                primitiveTopology = "triangle",
+                cullMode = "backFace",
+                fillMode = "solid",
+                depthTest = new { enable = true, compareOp = "less", write = true },
+                blend = new { enable = false, renderTargetWriteMask = 15 }
+            }
+        };
+
+        var json = JsonSerializer.Serialize(shader, new JsonSerializerOptions { WriteIndented = true });
+        File.WriteAllText(path, json);
+    }
+
+    private string? GetRelativePath(string fullPath)
+    {
+        var normalizedFullPath = Path.GetFullPath(fullPath);
+        var normalizedAssetsDir = Path.GetFullPath(_assetsDirectory);
+
+        if (!normalizedFullPath.StartsWith(normalizedAssetsDir, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var relative = normalizedFullPath[(normalizedAssetsDir.Length + 1)..];
+        return relative.Replace(Path.DirectorySeparatorChar, '/');
+    }
+
+    [RelayCommand]
+    public void CreateMaterial()
+    {
+        if (string.IsNullOrWhiteSpace(PackName))
         {
             StatusMessage = "Create a pack first";
             return;
@@ -423,25 +661,27 @@ public partial class PackManagerViewModel : ObservableObject
         var fileName = $"{baseName}.nizimat.json";
         var filePath = Path.Combine(packDir, fileName);
 
-        // Create default material JSON
-        var materialJson = """
-{
-  "shader": "default",
-  "parameters": {}
-}
-""";
+        var material = new MaterialJson
+        {
+            Name = baseName,
+            Shader = "",
+            Textures = new TexturesJson()
+        };
 
-        await File.WriteAllTextAsync(filePath, materialJson);
+        var json = material.ToJson();
+        File.WriteAllText(filePath, json);
 
-        var relativePath = GetRelativePath(filePath);
-        Materials.Add(new PackAssetEntry(baseName, relativePath));
+        var relativePath = GetRelativePath(filePath) ?? fileName;
+        var entry = new PackAssetEntry(baseName, relativePath);
+        Materials.Add(entry);
         StatusMessage = $"Created material: {baseName}";
+        OpenAssetEditor(entry);
     }
 
     [RelayCommand]
-    public async Task CreateShader()
+    public void CreateShader()
     {
-        if (_topLevel == null || string.IsNullOrWhiteSpace(PackName))
+        if (string.IsNullOrWhiteSpace(PackName))
         {
             StatusMessage = "Create a pack first";
             return;
@@ -454,21 +694,33 @@ public partial class PackManagerViewModel : ObservableObject
         var fileName = $"{baseName}.nizishp.json";
         var filePath = Path.Combine(packDir, fileName);
 
-        // Create default shader JSON
-        var shaderJson = """
-{
-  "name": "custom_shader",
-  "vertex": "default.vert",
-  "fragment": "default.frag",
-  "parameters": []
-}
-""";
+        var shader = new
+        {
+            name = baseName,
+            type = "graphics",
+            stages = new[]
+            {
+                new { stage = "vertex", path = "", entryPoint = "VSMain" },
+                new { stage = "pixel", path = "", entryPoint = "PSMain" }
+            },
+            pipeline = new
+            {
+                primitiveTopology = "triangle",
+                cullMode = "backFace",
+                fillMode = "solid",
+                depthTest = new { enable = true, compareOp = "less", write = true },
+                blend = new { enable = false, renderTargetWriteMask = 15 }
+            }
+        };
 
-        await File.WriteAllTextAsync(filePath, shaderJson);
+        var json = JsonSerializer.Serialize(shader, new JsonSerializerOptions { WriteIndented = true });
+        File.WriteAllText(filePath, json);
 
-        var relativePath = GetRelativePath(filePath);
-        Shaders.Add(new PackAssetEntry(baseName, relativePath));
+        var relativePath = GetRelativePath(filePath) ?? fileName;
+        var entry = new PackAssetEntry(baseName, relativePath);
+        Shaders.Add(entry);
         StatusMessage = $"Created shader: {baseName}";
+        OpenAssetEditor(entry);
     }
 
     public void AddAssetEntry(AssetFileType type, string key, string relativePath)
