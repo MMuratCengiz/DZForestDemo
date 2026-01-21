@@ -1,3 +1,4 @@
+using System.Threading;
 using Avalonia;
 using Avalonia.Input;
 using Avalonia.Input.Platform;
@@ -32,15 +33,17 @@ public static class DenOfIzPlatform
         _compositor ?? throw new InvalidOperationException("DenOfIz platform not initialized");
 
     /// <summary>
-    /// Initializes the DenOfIz platform for Avalonia.
-    /// This should be called BEFORE AppBuilder.Configure().
+    /// Phase 1: Initialize core resources before UseSkia.
     /// </summary>
-    public static void EnsureInitialized()
+    internal static void Initialize()
     {
         if (_initialized)
             return;
 
         _initialized = true;
+
+        // Disable Avalonia's sync context - we manage our own game loop
+        AvaloniaSynchronizationContext.AutoInstall = false;
 
         // Create render timer
         _renderTimer = new DenOfIzRenderTimer();
@@ -50,25 +53,38 @@ public static class DenOfIzPlatform
     }
 
     /// <summary>
-    /// Called by UseWindowingSubsystem to complete platform initialization.
-    /// At this point, headless platform has registered the dispatcher.
+    /// Called by UseWindowingSubsystem to register platform services.
     /// </summary>
-    internal static void CompleteInitialization()
+    internal static void InitializeWindowing()
     {
         var locator = AvaloniaLocator.CurrentMutable;
 
-        // Override specific services for our GPU rendering
+        // Register dispatcher - this is critical and must happen first
+        locator.Bind<IDispatcherImpl>().ToConstant(new DenOfIzDispatcherImpl(Thread.CurrentThread));
+
+        // Register render timer
         locator.Bind<IRenderTimer>().ToConstant(_renderTimer!);
+
+        // Register platform graphics
         locator.Bind<IPlatformGraphics>().ToConstant(_platformGraphics!);
 
-        // Register our input services
+        // Register windowing platform (stub - we don't create windows)
+        locator.Bind<IWindowingPlatform>().ToConstant(new DenOfIzWindowingPlatform());
+
+        // Register input services
         locator.Bind<ICursorFactory>().ToConstant(new DenOfIzCursorFactory());
         locator.Bind<IClipboard>().ToConstant(new DenOfIzClipboard());
         locator.Bind<IPlatformSettings>().ToConstant(new DenOfIzPlatformSettings());
+        locator.Bind<IKeyboardDevice>().ToConstant(new KeyboardDevice());
 
-        // Create compositor after all services are registered
-        // The headless platform has already set up the dispatcher properly
-        _compositor = new Compositor(null);
+        // Platform hotkey configuration
+        locator.Bind<PlatformHotkeyConfiguration>().ToConstant(
+            OperatingSystem.IsMacOS()
+                ? new PlatformHotkeyConfiguration(KeyModifiers.Meta)
+                : new PlatformHotkeyConfiguration(KeyModifiers.Control));
+
+        // Create compositor with our platform graphics
+        _compositor = new Compositor(_platformGraphics);
     }
 
     /// <summary>
@@ -76,8 +92,10 @@ public static class DenOfIzPlatform
     /// </summary>
     public static void TriggerRenderTick(TimeSpan elapsed)
     {
-        // Run dispatcher jobs
+        // Run dispatcher jobs first
         Dispatcher.UIThread.RunJobs();
+
+        // Then trigger render timer
         _renderTimer?.TriggerTick(elapsed);
     }
 }
@@ -179,4 +197,55 @@ internal sealed class DenOfIzPlatformSettings : IPlatformSettings
     {
         ThemeVariant = PlatformThemeVariant.Dark
     };
+}
+
+/// <summary>
+/// Dispatcher implementation for DenOfIz - runs on the game's main thread.
+/// </summary>
+internal sealed class DenOfIzDispatcherImpl : IDispatcherImpl
+{
+    private readonly Thread _mainThread;
+
+    public DenOfIzDispatcherImpl(Thread mainThread)
+    {
+        _mainThread = mainThread;
+    }
+
+    public bool CurrentThreadIsLoopThread => Thread.CurrentThread == _mainThread;
+
+#pragma warning disable CS0067 // Events are required by interface but not used
+    public event Action? Signaled;
+    public event Action? Timer;
+    public event Action<DispatcherPriority?>? ReadyForBackgroundProcessing;
+#pragma warning restore CS0067
+
+    public void Signal()
+    {
+        // Signal is used to wake up the dispatcher - not needed since we pump manually
+    }
+
+    public void UpdateTimer(long? dueTimeInMs)
+    {
+        // Timer is handled by game loop via TriggerRenderTick
+    }
+
+    public long Now => Environment.TickCount64;
+}
+
+/// <summary>
+/// Stub windowing platform - we don't create native windows.
+/// </summary>
+internal sealed class DenOfIzWindowingPlatform : IWindowingPlatform
+{
+    public IWindowImpl CreateWindow()
+        => throw new NotSupportedException("DenOfIz platform doesn't support creating windows. Use DenOfIzTopLevel instead.");
+
+    public IWindowImpl CreateEmbeddableWindow()
+        => throw new NotSupportedException("DenOfIz platform doesn't support creating windows. Use DenOfIzTopLevel instead.");
+
+    public ITopLevelImpl CreateEmbeddableTopLevel()
+        => throw new NotSupportedException("Use DenOfIzTopLevel constructor directly.");
+
+    public ITrayIconImpl? CreateTrayIcon()
+        => null;
 }

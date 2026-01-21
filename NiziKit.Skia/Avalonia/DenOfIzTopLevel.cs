@@ -1,8 +1,10 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Embedding;
 using Avalonia.Input;
 using Avalonia.Input.Raw;
 using Avalonia.Media;
+using Avalonia.Skia.Helpers;
 using DenOfIz;
 using AvaloniaMouseButton = Avalonia.Input.MouseButton;
 
@@ -12,30 +14,32 @@ namespace NiziKit.Skia.Avalonia;
 /// A top-level Avalonia control that renders to a DenOfIz texture.
 /// Use this to embed Avalonia UI in your DenOfIz application.
 /// </summary>
-public sealed class DenOfIzTopLevel : TopLevel
+public sealed class DenOfIzTopLevel : EmbeddableControlRoot
 {
     private readonly DenOfIzTopLevelImpl _impl;
+    private DenOfIzSkiaSurface? _surface;
+    private double _scaling = 1.0;
 
     /// <summary>
     /// The DenOfIz texture containing the rendered Avalonia UI.
     /// Display this texture in your DenOfIz rendering pipeline.
     /// </summary>
-    public Texture? Texture => _impl.Texture;
+    public Texture? Texture => _surface?.Texture;
 
     /// <summary>
     /// The underlying surface for advanced usage.
     /// </summary>
-    public DenOfIzSkiaSurface? Surface => _impl.Surface;
+    public DenOfIzSkiaSurface? Surface => _surface;
 
     /// <summary>
     /// Width of the render target in pixels.
     /// </summary>
-    public int PixelWidth => _impl.Width;
+    public int PixelWidth => _surface?.Width ?? 0;
 
     /// <summary>
     /// Height of the render target in pixels.
     /// </summary>
-    public int PixelHeight => _impl.Height;
+    public int PixelHeight => _surface?.Height ?? 0;
 
     /// <summary>
     /// Creates a new DenOfIzTopLevel with the specified size.
@@ -43,10 +47,11 @@ public sealed class DenOfIzTopLevel : TopLevel
     public DenOfIzTopLevel(int width, int height, double scaling = 1.0)
         : this(new DenOfIzTopLevelImpl())
     {
-        _impl.SetRenderSize(width, height, scaling);
+        _scaling = scaling;
+        SetRenderSize(width, height, scaling);
 
-        // DEBUG: Set a green background to verify TopLevel rendering
-        Background = Brushes.Green;
+        // Prepare the control root - this sets up input root and other essentials
+        Prepare();
 
         // Trigger initial layout
         InvalidateMeasure();
@@ -57,6 +62,28 @@ public sealed class DenOfIzTopLevel : TopLevel
         : base(impl)
     {
         _impl = impl;
+
+        // Set transparent background - content will provide its own background
+        Background = null;
+    }
+
+    private void SetRenderSize(int width, int height, double scaling)
+    {
+        if (width <= 0 || height <= 0)
+            return;
+
+        _scaling = scaling;
+
+        if (_surface == null)
+        {
+            _surface = new DenOfIzSkiaSurface(width, height, scaling);
+        }
+        else if (_surface.Width != width || _surface.Height != height)
+        {
+            _surface.Resize(width, height, scaling);
+        }
+
+        _impl.SetClientSize(new Size(width / scaling, height / scaling), scaling);
     }
 
     /// <summary>
@@ -64,20 +91,31 @@ public sealed class DenOfIzTopLevel : TopLevel
     /// </summary>
     public void Resize(int width, int height, double scaling = 1.0)
     {
-        _impl.SetRenderSize(width, height, scaling);
+        SetRenderSize(width, height, scaling);
 
         // Force re-layout after resize
         InvalidateMeasure();
         InvalidateArrange();
     }
 
+    private int _frameCount = 0;
+
     /// <summary>
     /// Triggers rendering. Call this each frame from your game loop.
     /// </summary>
     public void Render()
     {
-        // Get the size to layout with
-        var size = _impl.ClientSize;
+        if (_surface == null)
+            return;
+
+        _frameCount++;
+        if (_frameCount % 60 == 0)
+        {
+            Console.WriteLine($"[Avalonia] Frame {_frameCount}: Surface={_surface.Width}x{_surface.Height}, Scaling={_scaling}, VisualChildren={VisualChildren.Count}");
+        }
+
+        // Get the size to layout with (logical pixels)
+        var size = new Size(_surface.Width / _scaling, _surface.Height / _scaling);
 
         // Force layout pass if needed
         if (!IsMeasureValid || !IsArrangeValid)
@@ -86,7 +124,16 @@ public sealed class DenOfIzTopLevel : TopLevel
             Arrange(new Rect(size));
         }
 
-        _impl.TriggerPaint();
+        // Clear the canvas
+        var canvas = _surface.RenderTarget.Canvas;
+        canvas.Clear(SkiaSharp.SKColors.Transparent);
+
+        // Render Avalonia visual directly to our Skia canvas
+        // DrawingContextHelper renders at the visual's arranged size (physical pixels when scaling=1)
+        DrawingContextHelper.RenderAsync(canvas, this).GetAwaiter().GetResult();
+
+        // Flush the Skia surface to ensure rendering is complete
+        _surface.RenderTarget.Flush();
     }
 
     /// <summary>

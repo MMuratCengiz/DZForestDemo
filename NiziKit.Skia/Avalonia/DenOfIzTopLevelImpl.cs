@@ -4,42 +4,23 @@ using Avalonia.Input;
 using Avalonia.Input.Raw;
 using Avalonia.Platform;
 using Avalonia.Rendering.Composition;
-using DenOfIz;
 using AvaloniaMouseButton = Avalonia.Input.MouseButton;
 
 namespace NiziKit.Skia.Avalonia;
 
 /// <summary>
 /// Top-level implementation for rendering Avalonia UI to a DenOfIz texture.
-/// This is the core bridge between Avalonia and DenOfIz.
+/// This is a minimal implementation - rendering is done directly via DrawingContextHelper.
 /// </summary>
 public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
 {
-    private DenOfIzSkiaSurface? _surface;
-    private PixelSize _renderSize;
+    private Size _clientSize;
     private double _scaling = 1.0;
-    private readonly List<object> _surfaces = new();
     private IInputRoot? _inputRoot;
 
-    /// <summary>
-    /// The DenOfIz texture containing the rendered UI.
-    /// </summary>
-    public Texture? Texture => _surface?.Texture;
-
-    /// <summary>
-    /// The underlying Skia surface.
-    /// </summary>
-    public DenOfIzSkiaSurface? Surface => _surface;
-
-    /// <summary>
-    /// Width of the render target in pixels.
-    /// </summary>
-    public int Width => _renderSize.Width;
-
-    /// <summary>
-    /// Height of the render target in pixels.
-    /// </summary>
-    public int Height => _renderSize.Height;
+    public DenOfIzTopLevelImpl()
+    {
+    }
 
     // ITopLevelImpl implementation
 
@@ -51,11 +32,11 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
 
     public IPlatformHandle? Handle => null;
 
-    public Size ClientSize => new(_renderSize.Width / _scaling, _renderSize.Height / _scaling);
+    public Size ClientSize => _clientSize;
 
     public Size? FrameSize => null;
 
-    public IEnumerable<object> Surfaces => GetOrCreateSurfaces();
+    public IEnumerable<object> Surfaces => Array.Empty<object>();
 
     public Action<RawInputEventArgs>? Input { get; set; }
     public Action<Rect>? Paint { get; set; }
@@ -72,32 +53,18 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
     public Compositor Compositor => DenOfIzPlatform.Compositor;
 
     /// <summary>
-    /// Sets the size of the render target.
+    /// Sets the client size for layout purposes.
     /// </summary>
-    public void SetRenderSize(int width, int height, double scaling = 1.0)
+    public void SetClientSize(Size size, double scaling = 1.0)
     {
-        var newSize = new PixelSize(width, height);
         var scalingChanged = Math.Abs(scaling - _scaling) > 0.001;
-        var sizeChanged = newSize != _renderSize;
+        var sizeChanged = size != _clientSize;
 
         if (!sizeChanged && !scalingChanged)
             return;
 
-        _renderSize = newSize;
+        _clientSize = size;
         _scaling = scaling;
-
-        // Create or resize the surface
-        if (_surface != null)
-        {
-            _surface.Resize(newSize, scaling);
-        }
-        else if (newSize.Width > 0 && newSize.Height > 0)
-        {
-            // Create surface eagerly on first valid size
-            _surface = new DenOfIzSkiaSurface(newSize, scaling);
-            _surfaces.Clear();
-            _surfaces.Add(_surface);
-        }
 
         if (scalingChanged)
         {
@@ -106,19 +73,8 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
 
         if (sizeChanged)
         {
-            Resized?.Invoke(ClientSize, WindowResizeReason.Unspecified);
+            Resized?.Invoke(_clientSize, WindowResizeReason.Unspecified);
         }
-    }
-
-    /// <summary>
-    /// Triggers a paint operation. Call this each frame.
-    /// </summary>
-    public void TriggerPaint()
-    {
-        if (_surface == null)
-            return;
-
-        Paint?.Invoke(new Rect(0, 0, ClientSize.Width, ClientSize.Height));
     }
 
     /// <summary>
@@ -261,17 +217,6 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
             text));
     }
 
-    private IEnumerable<object> GetOrCreateSurfaces()
-    {
-        if (_surface == null && _renderSize.Width > 0 && _renderSize.Height > 0)
-        {
-            _surface = new DenOfIzSkiaSurface(_renderSize, _scaling);
-            _surfaces.Clear();
-            _surfaces.Add(_surface);
-        }
-        return _surfaces;
-    }
-
     /// <summary>
     /// Returns true if input can be injected (input root is set).
     /// </summary>
@@ -293,8 +238,6 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
 
     public void Dispose()
     {
-        _surface?.Dispose();
-        _surface = null;
         Closed?.Invoke();
     }
 

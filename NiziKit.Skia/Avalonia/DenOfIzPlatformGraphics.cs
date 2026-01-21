@@ -10,88 +10,97 @@ namespace NiziKit.Skia.Avalonia;
 /// </summary>
 public sealed class DenOfIzPlatformGraphics : IPlatformGraphics
 {
-    private DenOfIzRenderTimer? _renderTimer;
+    private readonly DenOfIzSkiaGpu _skiaGpu;
+
+    public DenOfIzPlatformGraphics()
+    {
+        _skiaGpu = new DenOfIzSkiaGpu();
+    }
 
     public bool UsesSharedContext => true;
 
     public IPlatformGraphicsContext GetSharedContext()
-        => new DenOfIzGraphicsContext();
+    {
+        Console.WriteLine("[DEBUG] GetSharedContext called");
+        return _skiaGpu;
+    }
 
     public IPlatformGraphicsContext CreateContext()
-        => GetSharedContext();
+    {
+        Console.WriteLine("[DEBUG] CreateContext called");
+        return _skiaGpu;
+    }
 
     public bool UsesContexts => true;
 
-    internal void TriggerRenderTick(TimeSpan elapsed)
-    {
-        _renderTimer?.TriggerTick(elapsed);
-    }
-
-    internal void SetRenderTimer(DenOfIzRenderTimer timer)
-    {
-        _renderTimer = timer;
-    }
+    /// <summary>
+    /// Gets the shared ISkiaGpu instance.
+    /// </summary>
+    public DenOfIzSkiaGpu SkiaGpu => _skiaGpu;
 }
 
 /// <summary>
-/// Graphics context wrapper for Avalonia.
+/// Skia GPU implementation for DenOfIz - serves as both IPlatformGraphicsContext and ISkiaGpu.
 /// </summary>
-internal sealed class DenOfIzGraphicsContext : IPlatformGraphicsContext
+public sealed class DenOfIzSkiaGpu : IPlatformGraphicsContext, ISkiaGpu
 {
-    public bool IsLost => false;
+    private bool _isDisposed;
 
-    public IDisposable EnsureCurrent()
-        => new EmptyDisposable();
+    // IPlatformGraphicsContext implementation
+    public bool IsLost => _isDisposed;
+
+    public IDisposable EnsureCurrent() => EmptyDisposable.Instance;
 
     public object? TryGetFeature(Type featureType)
     {
+        Console.WriteLine($"[DEBUG] TryGetFeature called for: {featureType.Name}");
         if (featureType == typeof(ISkiaGpu))
         {
-            return new DenOfIzSkiaGpu();
+            Console.WriteLine("[DEBUG] Returning ISkiaGpu (this)");
+            return this;
         }
         return null;
     }
 
-    public void Dispose() { }
-
-    private sealed class EmptyDisposable : IDisposable
-    {
-        public void Dispose() { }
-    }
-}
-
-/// <summary>
-/// Skia GPU interface for Avalonia integration.
-/// </summary>
-internal sealed class DenOfIzSkiaGpu : ISkiaGpu
-{
-    public bool IsLost => false;
-
-    public IDisposable EnsureCurrent() => new EmptyDisposable();
-
-    public object? TryGetFeature(Type featureType) => null;
-
+    // ISkiaGpu implementation
     public ISkiaGpuRenderTarget? TryCreateRenderTarget(IEnumerable<object> surfaces)
     {
+        Console.WriteLine("[DEBUG] TryCreateRenderTarget called");
         foreach (var surface in surfaces)
         {
+            Console.WriteLine($"[DEBUG] Surface type: {surface.GetType().Name}");
             if (surface is DenOfIzSkiaSurface denOfIzSurface)
             {
+                Console.WriteLine("[DEBUG] Found DenOfIzSkiaSurface, creating render target");
                 return new DenOfIzSkiaGpuRenderTarget(denOfIzSurface);
             }
         }
+        Console.WriteLine("[DEBUG] No suitable surface found");
         return null;
     }
 
-    public ISkiaSurface? TryCreateSurface(PixelSize size, ISkiaGpuRenderSession session)
+    public ISkiaSurface? TryCreateSurface(PixelSize size, ISkiaGpuRenderSession? session)
     {
         return null;
     }
 
-    public void Dispose() { }
+    /// <summary>
+    /// Creates a surface for rendering. Called by TopLevelImpl.
+    /// </summary>
+    public DenOfIzSkiaSurface CreateSurface(PixelSize size, double scaling)
+    {
+        Console.WriteLine($"[DEBUG] CreateSurface called: {size.Width}x{size.Height} @ {scaling}x");
+        return new DenOfIzSkiaSurface(size, scaling);
+    }
+
+    public void Dispose()
+    {
+        _isDisposed = true;
+    }
 
     private sealed class EmptyDisposable : IDisposable
     {
+        public static readonly EmptyDisposable Instance = new();
         public void Dispose() { }
     }
 }
@@ -112,6 +121,7 @@ internal sealed class DenOfIzSkiaGpuRenderTarget : ISkiaGpuRenderTarget
 
     public ISkiaGpuRenderSession BeginRenderingSession()
     {
+        Console.WriteLine("[DEBUG] BeginRenderingSession called");
         return new DenOfIzSkiaGpuRenderSession(_surface);
     }
 

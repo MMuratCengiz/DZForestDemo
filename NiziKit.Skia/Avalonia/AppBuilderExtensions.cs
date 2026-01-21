@@ -1,5 +1,4 @@
 using Avalonia;
-using Avalonia.Headless;
 
 namespace NiziKit.Skia.Avalonia;
 
@@ -14,17 +13,12 @@ public static class AppBuilderExtensions
     /// </summary>
     public static AppBuilder UseDenOfIz(this AppBuilder builder)
     {
-        // Initialize our platform resources first
-        DenOfIzPlatform.EnsureInitialized();
+        // Initialize platform before anything else
+        DenOfIzPlatform.Initialize();
 
-        // Use headless platform for dispatcher/compositor setup
-        // then override with our GPU-accelerated services
         return builder
+            .UseStandardRuntimePlatformSubsystem()
             .UseSkia()
-            .UseHeadless(new AvaloniaHeadlessPlatformOptions
-            {
-                UseHeadlessDrawing = false // We'll do our own GPU rendering
-            })
-            .AfterSetup(_ => DenOfIzPlatform.CompleteInitialization());
+            .UseWindowingSubsystem(DenOfIzPlatform.InitializeWindowing);
     }
 }

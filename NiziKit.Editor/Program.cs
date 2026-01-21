@@ -9,8 +9,8 @@ internal static class Program
         Game.Run<EditorGame>(new GameDesc
         {
             Title = "NiziKit Editor",
-            Width = 1920,
-            Height = 1080
+            Width = 2560,
+            Height = 1440
         });
     }
 }

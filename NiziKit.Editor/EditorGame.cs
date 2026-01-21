@@ -24,6 +24,7 @@ public sealed class EditorGame : Game
 
     private uint _width;
     private uint _height;
+    private double _scaling = 1.0;
 
     public EditorGame(GameDesc? desc = null) : base(desc)
     {
@@ -50,8 +51,13 @@ public sealed class EditorGame : Game
         _sceneColor = CycledTexture.ColorAttachment("SceneColor");
 
         // Create Avalonia top-level for rendering
-        _topLevel = new DenOfIzTopLevel((int)_width, (int)_height, 1.0);
+        // Use scaling=1.0 - we render at physical pixel resolution
+        // Avalonia will use the full canvas size
+        _scaling = 1.0;
+        Console.WriteLine($"[EditorGame] GraphicsContext size: {_width}x{_height}, scaling: {_scaling}");
+        _topLevel = new DenOfIzTopLevel((int)_width, (int)_height, _scaling);
         _topLevel.Content = new EditorMainView();
+        Console.WriteLine($"[EditorGame] TopLevel created, Content type: {_topLevel.Content?.GetType().Name}");
     }
 
     protected override void Update(float dt)
@@ -84,7 +90,7 @@ public sealed class EditorGame : Game
 
     protected override void OnEvent(ref Event ev)
     {
-        // Forward mouse events to Avalonia
+        // Forward mouse events to Avalonia (coordinates are in physical pixels, matching our canvas)
         if (ev.Type == EventType.MouseMotion)
         {
             _topLevel.InjectMouseMove(ev.MouseMotion.X, ev.MouseMotion.Y);
@@ -145,7 +151,7 @@ public sealed class EditorGame : Game
         _height = height;
 
         _sceneColor = CycledTexture.ColorAttachment("SceneColor");
-        _topLevel.Resize((int)width, (int)height);
+        _topLevel.Resize((int)width, (int)height, _scaling);
     }
 
     private static Avalonia.Input.MouseButton MapMouseButton(DenOfIz.MouseButton button)
