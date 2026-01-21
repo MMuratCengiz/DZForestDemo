@@ -6,7 +6,6 @@
              x:DataType="vm:EditorViewModel">
 
     <ScrollViewer VerticalScrollBarVisibility="Auto"
-                  HorizontalScrollBarVisibility="Disabled"
                   Padding="8">
         <StackPanel>
             <StackPanel IsVisible="{Binding !HasSelection}"

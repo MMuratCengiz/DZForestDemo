@@ -148,10 +148,12 @@ public sealed class AssetPack : IDisposable
         Name = definition.Name;
         Version = definition.Version;
 
-        await LoadTexturesAsync(definition.Textures, ct);
-        await LoadShadersAsync(definition.Shaders, ct);
-        await LoadMaterialsAsync(definition.Materials, ct);
-        await LoadModelsAsync(definition.Models, ct);
+        await Task.WhenAll(
+            LoadTexturesAsync(definition.Textures, ct),
+            LoadShadersAsync(definition.Shaders, ct),
+            LoadMaterialsAsync(definition.Materials, ct),
+            LoadModelsAsync(definition.Models, ct)
+        );
     }
 
     private void LoadTextures(Dictionary<string, string> textureDefs)

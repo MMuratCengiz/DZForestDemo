@@ -32,37 +32,6 @@
             </Border>
         </Grid>
 
-        <!-- Pack Selector Panel (inline, shown when clicking) -->
-        <Border x:Name="PackSelectorPanel"
-                IsVisible="False"
-                Background="{DynamicResource SurfaceBrush}"
-                BorderBrush="{DynamicResource PanelBorderBrush}"
-                BorderThickness="1"
-                CornerRadius="{DynamicResource EditorControlCornerRadius}"
-                Padding="10"
-                Margin="80,0,0,0"
-                MaxHeight="280">
-            <StackPanel Spacing="8">
-                <TextBox x:Name="PackSearchBox"
-                         Watermark="Search packs..."
-                         FontSize="{DynamicResource EditorFontSizeSmall}"/>
-                <ScrollViewer MaxHeight="200" HorizontalScrollBarVisibility="Disabled">
-                    <ItemsControl x:Name="PackItemsControl">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Button Classes="ghost"
-                                        HorizontalAlignment="Stretch"
-                                        HorizontalContentAlignment="Left"
-                                        Padding="8,6"
-                                        Content="{Binding}"
-                                        FontSize="{DynamicResource EditorFontSizeSmall}"/>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </StackPanel>
-        </Border>
-
         <!-- Asset Selection -->
         <Grid ColumnDefinitions="80,*">
             <TextBlock Grid.Column="0"
@@ -92,35 +61,30 @@
             </Border>
         </Grid>
 
-        <!-- Asset Selector Panel (inline, shown when clicking) -->
-        <Border x:Name="AssetSelectorPanel"
-                IsVisible="False"
-                Background="{DynamicResource SurfaceBrush}"
-                BorderBrush="{DynamicResource PanelBorderBrush}"
-                BorderThickness="1"
-                CornerRadius="{DynamicResource EditorControlCornerRadius}"
-                Padding="10"
-                Margin="80,0,0,0"
-                MaxHeight="280">
-            <StackPanel Spacing="8">
-                <TextBox x:Name="AssetSearchBox"
-                         Watermark="Search assets..."
-                         FontSize="{DynamicResource FontSizeSmall}"/>
-                <ScrollViewer MaxHeight="200" HorizontalScrollBarVisibility="Disabled">
-                    <ItemsControl x:Name="AssetItemsControl">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Button Classes="ghost"
-                                        HorizontalAlignment="Stretch"
-                                        HorizontalContentAlignment="Left"
-                                        Padding="8,6"
-                                        Content="{Binding}"
-                                        FontSize="{DynamicResource EditorFontSizeSmall}"/>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </StackPanel>
-        </Border>
+        <!-- Popup for selection (shared between pack and asset) -->
+        <Popup x:Name="SelectorPopup"
+               IsLightDismissEnabled="True"
+               PlacementMode="Bottom"
+               WindowManagerAddShadowHint="True">
+            <Border Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource PanelBorderBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{DynamicResource EditorControlCornerRadius}"
+                    Padding="8"
+                    MinWidth="200"
+                    MaxWidth="300"
+                    MaxHeight="320">
+                <StackPanel Spacing="8">
+                    <TextBox x:Name="SearchBox"
+                             Watermark="Search..."
+                             FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                    <ScrollViewer MaxHeight="250"
+                                  HorizontalScrollBarVisibility="Disabled"
+                                  VerticalScrollBarVisibility="Auto">
+                        <ItemsControl x:Name="ItemsControl"/>
+                    </ScrollViewer>
+                </StackPanel>
+            </Border>
+        </Popup>
     </StackPanel>
 </UserControl>

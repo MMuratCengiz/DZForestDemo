@@ -1,11 +1,10 @@
 using System.Numerics;
-using NiziKit.Core;
 using NiziKit.Physics;
 
 namespace NiziKit.Components;
 
 [NiziComponent]
-public partial class CameraComponent : ICameraProvider
+public partial class CameraComponent
 {
     private float _aspectRatio = 16f / 9f;
 
@@ -34,7 +33,7 @@ public partial class CameraComponent : ICameraProvider
         set => _aspectRatio = value;
     }
 
-    bool ICameraProvider.IsActive => IsActiveCamera && (Owner?.IsActive ?? false);
+    public bool IsActive => IsActiveCamera && (Owner?.IsActive ?? false);
 
     public Vector3 WorldPosition => Owner?.WorldPosition ?? Vector3.Zero;
 

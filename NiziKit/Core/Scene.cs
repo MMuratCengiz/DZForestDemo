@@ -15,11 +15,17 @@ public abstract class Scene(string name = "Scene") : IDisposable
     public IReadOnlyList<GameObject> RootObjects => _rootObjects;
     private readonly Dictionary<Type, List<GameObject>> _objectsByType = new();
 
-    private readonly List<ICameraProvider> _cameras = [];
+    private readonly List<CameraComponent> _cameras = [];
 
     public abstract void Load();
 
-    public void RegisterCamera(ICameraProvider camera)
+    public virtual Task LoadAsync(CancellationToken ct = default)
+    {
+        Load();
+        return Task.CompletedTask;
+    }
+
+    public void RegisterCamera(CameraComponent camera)
     {
         if (!_cameras.Contains(camera))
         {
@@ -27,14 +33,14 @@ public abstract class Scene(string name = "Scene") : IDisposable
         }
     }
 
-    public void UnregisterCamera(ICameraProvider camera)
+    public void UnregisterCamera(CameraComponent camera)
     {
         _cameras.Remove(camera);
     }
 
-    public ICameraProvider? GetActiveCamera()
+    public CameraComponent? GetActiveCamera()
     {
-        ICameraProvider? best = null;
+        CameraComponent? best = null;
         var bestPriority = int.MinValue;
 
         foreach (var cam in _cameras)
@@ -49,7 +55,7 @@ public abstract class Scene(string name = "Scene") : IDisposable
         return best;
     }
 
-    public IReadOnlyList<ICameraProvider> GetAllCameras() => _cameras;
+    public IReadOnlyList<CameraComponent> GetAllCameras() => _cameras;
 
     internal void UpdateCameras(float deltaTime)
     {

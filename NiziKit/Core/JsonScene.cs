@@ -30,6 +30,21 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         LoadObjects(sceneData.Objects);
     }
 
+    public override async Task LoadAsync(CancellationToken ct = default)
+    {
+        SourcePath = jsonPath;
+        var json = await Content.ReadTextAsync(jsonPath, ct);
+        var sceneData = SceneJson.FromJson(json);
+
+        Name = sceneData.Name;
+
+        await LoadAssetPacksAsync(sceneData.AssetPacks, ct);
+        LoadCamera(sceneData.Camera);
+        LoadCameras(sceneData.Cameras);
+        LoadLights(sceneData.Lights);
+        LoadObjects(sceneData.Objects);
+    }
+
     private void LoadAssetPacks(List<string>? packs)
     {
         if (packs == null)
@@ -45,6 +60,19 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
                 _loadedPacks.Add(pack);
             }
         }
+    }
+
+    private async Task LoadAssetPacksAsync(List<string>? packs, CancellationToken ct)
+    {
+        if (packs == null)
+        {
+            return;
+        }
+
+        var packsToLoad = packs.Where(p => !AssetPacks.AssetPacks.IsLoaded(p)).ToList();
+        var loadTasks = packsToLoad.Select(p => AssetPack.LoadAsync(p, ct));
+        var loadedPacks = await Task.WhenAll(loadTasks);
+        _loadedPacks.AddRange(loadedPacks);
     }
 
     private void LoadCamera(CameraJson? cameraData)

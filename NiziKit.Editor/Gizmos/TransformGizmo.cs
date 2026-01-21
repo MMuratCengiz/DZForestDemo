@@ -72,7 +72,7 @@ public class TransformGizmo
         }
     }
 
-    public float GetGizmoScale(ICameraProvider camera)
+    public float GetGizmoScale(CameraComponent camera)
     {
         if (_target == null)
         {
@@ -94,7 +94,7 @@ public class TransformGizmo
         return 1f;
     }
 
-    public void UpdateHover(Ray ray, ICameraProvider camera)
+    public void UpdateHover(Ray ray, CameraComponent camera)
     {
         if (_target == null || IsDragging)
         {
@@ -105,7 +105,7 @@ public class TransformGizmo
         HoveredAxis = GetHitAxis(ray, scale);
     }
 
-    public bool BeginDrag(Ray ray, ICameraProvider camera)
+    public bool BeginDrag(Ray ray, CameraComponent camera)
     {
         if (_target == null)
         {
@@ -150,7 +150,7 @@ public class TransformGizmo
         return true;
     }
 
-    public void UpdateDrag(Ray ray, ICameraProvider camera)
+    public void UpdateDrag(Ray ray, CameraComponent camera)
     {
         if (_target == null || ActiveAxis == GizmoAxis.None)
         {

@@ -64,7 +64,7 @@ public sealed class GizmoPass : IDisposable
         _vertices.Clear();
     }
 
-    public void BuildGizmoGeometry(ICameraProvider camera)
+    public void BuildGizmoGeometry(CameraComponent camera)
     {
         var target = Gizmo.Target;
         if (target == null)

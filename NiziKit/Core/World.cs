@@ -32,6 +32,21 @@ public class World : IDisposable
         }
     }
 
+    public static Task LoadSceneAsync(Scene scene, CancellationToken ct = default) => Instance._LoadSceneAsync(scene, ct);
+
+    public static async Task LoadSceneAsync(string scenePath, CancellationToken ct = default)
+    {
+        if (scenePath.EndsWith(".niziscene.json", StringComparison.OrdinalIgnoreCase) ||
+            scenePath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+        {
+            await LoadSceneAsync(new JsonScene(scenePath), ct);
+        }
+        else
+        {
+            throw new ArgumentException($"Unsupported scene format: {scenePath}. Expected .niziscene.json");
+        }
+    }
+
     public static T? FindObjectOfType<T>() where T : GameObject
     {
         return CurrentScene?.GetObjectsOfType<T>().FirstOrDefault();
@@ -142,6 +157,18 @@ public class World : IDisposable
 
         _currentScene = scene;
         scene.Load();
+    }
+
+    private async Task _LoadSceneAsync(Scene scene, CancellationToken ct)
+    {
+        _currentScene?.Dispose();
+        foreach (var listener in _worldEventListeners)
+        {
+            listener.SceneReset();
+        }
+
+        _currentScene = scene;
+        await scene.LoadAsync(ct);
     }
 
     private void _OnGameObjectCreated(GameObject go)
