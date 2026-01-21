@@ -1,4 +1,6 @@
+using DenOfIz;
 using NiziKit.Application;
+using NiziKit.Graphics;
 
 namespace NiziKit.Editor;
 
@@ -10,7 +12,14 @@ internal static class Program
         {
             Title = "NiziKit Editor",
             Width = 2560,
-            Height = 1440
+            Height = 1440,
+            Graphics = new GraphicsDesc
+            {
+                ApiPreference = new APIPreference
+                {
+                    Windows = APIPreferenceWindows.Vulkan
+                }
+            }
         });
     }
 }

@@ -32,53 +32,39 @@ public sealed class EditorGame : Game
 
     protected override void Load(Game game)
     {
-        // Initialize Skia context for GPU rendering
         _skiaContext = new SkiaContext();
 
-        // Initialize Avalonia with DenOfIz platform
         _avaloniaApp = AppBuilder.Configure<EditorApp>()
             .UseDenOfIz()
             .SetupWithoutStarting()
             .Instance!;
 
-        // Create render frame
         _renderFrame = new RenderFrame();
 
         _width = GraphicsContext.Width;
         _height = GraphicsContext.Height;
 
-        // Create render target
         _sceneColor = CycledTexture.ColorAttachment("SceneColor");
 
-        // Create Avalonia top-level for rendering
-        // Use scaling=1.0 - we render at physical pixel resolution
-        // Avalonia will use the full canvas size
         _scaling = 1.0;
-        Console.WriteLine($"[EditorGame] GraphicsContext size: {_width}x{_height}, scaling: {_scaling}");
         _topLevel = new DenOfIzTopLevel((int)_width, (int)_height, _scaling);
         _topLevel.Content = new EditorMainView();
-        Console.WriteLine($"[EditorGame] TopLevel created, Content type: {_topLevel.Content?.GetType().Name}");
     }
 
     protected override void Update(float dt)
     {
-        // Pump Avalonia dispatcher and render tick
         DenOfIzPlatform.TriggerRenderTick(TimeSpan.FromSeconds(dt));
         Dispatcher.UIThread.RunJobs();
 
-        // Render Avalonia UI
         _topLevel.Render();
 
-        // Render frame
         _renderFrame.BeginFrame();
 
-        // Clear the scene color
         var pass = _renderFrame.BeginGraphicsPass();
         pass.SetRenderTarget(0, _sceneColor, LoadOp.Clear);
         pass.Begin();
         pass.End();
 
-        // Blit Avalonia texture to scene
         if (_topLevel.Texture != null)
         {
             _renderFrame.AlphaBlit(_topLevel.Texture, _sceneColor);
@@ -90,7 +76,6 @@ public sealed class EditorGame : Game
 
     protected override void OnEvent(ref Event ev)
     {
-        // Forward mouse events to Avalonia (coordinates are in physical pixels, matching our canvas)
         if (ev.Type == EventType.MouseMotion)
         {
             _topLevel.InjectMouseMove(ev.MouseMotion.X, ev.MouseMotion.Y);
@@ -107,7 +92,6 @@ public sealed class EditorGame : Game
         }
         else if (ev.Type == EventType.MouseWheel)
         {
-            // MouseWheel doesn't have mouse position, use 0,0 as fallback
             _topLevel.InjectMouseWheel(0, 0, ev.MouseWheel.X, ev.MouseWheel.Y);
         }
         else if (ev.Type == EventType.KeyDown)
@@ -141,7 +125,9 @@ public sealed class EditorGame : Game
     private void OnResize(uint width, uint height)
     {
         if (_width == width && _height == height)
+        {
             return;
+        }
 
         GraphicsContext.WaitIdle();
 
@@ -167,7 +153,6 @@ public sealed class EditorGame : Game
 
     private static Key MapKey(KeyCode keyCode)
     {
-        // Map common keys - this can be expanded as needed
         return keyCode switch
         {
             KeyCode.A => Key.A,
@@ -239,13 +224,24 @@ public sealed class EditorGame : Game
         var result = RawInputModifiers.None;
 
         if ((mod & KeyMod.Shift) != 0)
+        {
             result |= RawInputModifiers.Shift;
+        }
+
         if ((mod & KeyMod.Ctrl) != 0)
+        {
             result |= RawInputModifiers.Control;
+        }
+
         if ((mod & KeyMod.Alt) != 0)
+        {
             result |= RawInputModifiers.Alt;
+        }
+
         if ((mod & KeyMod.Gui) != 0)
+        {
             result |= RawInputModifiers.Meta;
+        }
 
         return result;
     }

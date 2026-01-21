@@ -88,7 +88,8 @@
       "Bash(tree:*)",
       "WebFetch(domain:docs.avaloniaui.net)",
       "WebFetch(domain:api-docs.avaloniaui.net)",
-      "WebFetch(domain:api.github.com)"
+      "WebFetch(domain:api.github.com)",
+      "Bash(git stash:*)"
     ]
   }
 }

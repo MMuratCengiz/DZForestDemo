@@ -17,19 +17,10 @@ public class EditorMainView : UserControl
             ColumnDefinitions = new ColumnDefinitions("200,*,300"),
             Children =
             {
-                // Top menu bar
                 CreateMenuBar(),
-
-                // Left panel - Scene hierarchy
                 CreateLeftPanel(),
-
-                // Center - Viewport placeholder
                 CreateCenterPanel(),
-
-                // Right panel - Inspector
                 CreateRightPanel(),
-
-                // Bottom - Status bar
                 CreateStatusBar()
             }
         };
