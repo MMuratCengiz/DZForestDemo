@@ -188,6 +188,24 @@ public class GameObject(string name = "GameObject")
         return false;
     }
 
+    public bool RemoveComponent(IComponent component)
+    {
+        var index = _components.IndexOf(component);
+        if (index < 0)
+        {
+            return false;
+        }
+
+        _components.RemoveAt(index);
+        component.Owner = null;
+        if (IsInWorld)
+        {
+            World.OnComponentRemoved(this, component);
+        }
+
+        return true;
+    }
+
     public void NotifyComponentChanged(IComponent component)
     {
         if (IsInWorld)

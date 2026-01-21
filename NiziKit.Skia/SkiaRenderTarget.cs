@@ -87,6 +87,10 @@ public sealed class SkiaRenderTarget : IDisposable
                 $"GRContext backend: {_grContext.Backend}, BackendRenderTarget backend: {_backendRenderTarget.Backend}, " +
                 $"BackendRenderTarget valid: {_backendRenderTarget.IsValid}");
         }
+
+        _surface.Canvas.Clear(SKColors.Transparent);
+        _surface.Flush();
+        _grContext.Flush();
     }
 
     private GRBackendRenderTarget CreateBackendRenderTarget(NativeTextureHandles handles, Format format,

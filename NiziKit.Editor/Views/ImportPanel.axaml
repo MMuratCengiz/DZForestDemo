@@ -1,0 +1,108 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NiziKit.Editor.ViewModels"
+             xmlns:views="using:NiziKit.Editor.Views"
+             x:Class="NiziKit.Editor.Views.ImportPanel"
+             x:DataType="vm:ImportViewModel">
+
+    <Grid RowDefinitions="Auto,*,Auto,Auto" Margin="16">
+        <TextBlock Grid.Row="0"
+                   Text="Import Assets"
+                   Classes="header"
+                   Margin="0,0,0,12"/>
+
+        <Border Grid.Row="1"
+                Classes="panel-section"
+                Margin="0,0,0,12">
+            <Grid RowDefinitions="Auto,*">
+                <TextBlock Grid.Row="0"
+                           Text="Source"
+                           Classes="label"
+                           Margin="0,0,0,8"/>
+                <views:FileBrowserGrid Grid.Row="1"
+                                       DataContext="{Binding FileBrowser}"
+                                       MinHeight="250"/>
+            </Grid>
+        </Border>
+
+        <Border Grid.Row="2"
+                Classes="panel-section"
+                Margin="0,0,0,12">
+            <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="Auto,*,Auto,*">
+                <TextBlock Grid.Row="0" Grid.Column="0"
+                           Text="Type:"
+                           Classes="label"
+                           VerticalAlignment="Center"
+                           Margin="0,0,8,8"/>
+                <StackPanel Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3"
+                            Orientation="Horizontal"
+                            Spacing="16"
+                            Margin="0,0,0,8">
+                    <RadioButton Content="Models"
+                                 IsChecked="{Binding ImportType, Converter={x:Static vm:ImportTypeConverter.Instance}, ConverterParameter={x:Static vm:ImportType.Models}}"
+                                 GroupName="ImportType"/>
+                    <RadioButton Content="Textures"
+                                 IsChecked="{Binding ImportType, Converter={x:Static vm:ImportTypeConverter.Instance}, ConverterParameter={x:Static vm:ImportType.Textures}}"
+                                 GroupName="ImportType"/>
+                    <RadioButton Content="Both"
+                                 IsChecked="{Binding ImportType, Converter={x:Static vm:ImportTypeConverter.Instance}, ConverterParameter={x:Static vm:ImportType.Both}}"
+                                 GroupName="ImportType"/>
+                </StackPanel>
+
+                <TextBlock Grid.Row="1" Grid.Column="0"
+                           Text="Scale:"
+                           Classes="label"
+                           VerticalAlignment="Center"
+                           Margin="0,0,8,8"/>
+                <TextBox Grid.Row="1" Grid.Column="1"
+                         Text="{Binding ModelScale}"
+                         Width="80"
+                         HorizontalAlignment="Left"
+                         Margin="0,0,0,8"/>
+
+                <CheckBox Grid.Row="1" Grid.Column="2" Grid.ColumnSpan="2"
+                          Content="Generate Mips"
+                          IsChecked="{Binding GenerateMips}"
+                          VerticalAlignment="Center"
+                          Margin="16,0,0,8"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0"
+                           Text="Output:"
+                           Classes="label"
+                           VerticalAlignment="Center"
+                           Margin="0,0,8,0"/>
+                <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3"
+                         Text="{Binding OutputDirectory}"
+                         Watermark="Assets/..."/>
+            </Grid>
+        </Border>
+
+        <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto">
+            <StackPanel Grid.Column="0"
+                        VerticalAlignment="Center"
+                        Spacing="4">
+                <TextBlock Text="{Binding ProgressText}"
+                           Classes="label"
+                           IsVisible="{Binding ProgressText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                <ProgressBar Value="{Binding Progress}"
+                             Maximum="100"
+                             Height="4"
+                             IsVisible="{Binding IsImporting}"/>
+            </StackPanel>
+
+            <Button Grid.Column="1"
+                    Content="Cancel"
+                    Command="{Binding CancelCommand}"
+                    Margin="0,0,12,0"
+                    MinWidth="100"
+                    Padding="16,8"/>
+            <Button Grid.Column="2"
+                    Content="Import"
+                    Classes="primary"
+                    Command="{Binding ImportCommand}"
+                    IsEnabled="{Binding !IsImporting}"
+                    MinWidth="100"
+                    Padding="16,8"/>
+        </Grid>
+    </Grid>
+</UserControl>

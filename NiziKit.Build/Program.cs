@@ -15,3 +15,5 @@ exporter.Export(new Present(shaderSourceDir));
 var defaultShaderOffline = new DefaultShader(shaderSourceDir);
 exporter.Export(defaultShaderOffline);
 exporter.Export(defaultShaderOffline, new Dictionary<string, string?> { ["SKINNED"] = null });
+
+exporter.Export(new GizmoShader(shaderSourceDir));

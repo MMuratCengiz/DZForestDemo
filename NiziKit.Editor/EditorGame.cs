@@ -1,14 +1,12 @@
+using System.Numerics;
 using Avalonia;
-using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Input.Raw;
-using Avalonia.Threading;
 using DenOfIz;
 using NiziKit.Application;
+using NiziKit.Components;
 using NiziKit.Core;
+using NiziKit.Editor.Gizmos;
 using NiziKit.Graphics;
-using NiziKit.Graphics.Renderer;
-using NiziKit.Graphics.Resources;
 using NiziKit.Skia;
 using NiziKit.Skia.Avalonia;
 
@@ -16,15 +14,20 @@ namespace NiziKit.Editor;
 
 public sealed class EditorGame : Game
 {
-    private RenderFrame _renderFrame = null!;
-    private CycledTexture _sceneColor = null!;
+    private EditorRenderer _renderer = null!;
     private DenOfIzTopLevel _topLevel = null!;
     private Avalonia.Application _avaloniaApp = null!;
     private SkiaContext _skiaContext = null!;
+    private CameraObject _editorCamera = null!;
 
     private uint _width;
     private uint _height;
     private double _scaling = 1.0;
+    private float _lastMouseX;
+    private float _lastMouseY;
+    private bool _mouseOverUi;
+    private bool _textInputActive;
+    private bool _gizmoDragging;
 
     public EditorGame(GameDesc? desc = null) : base(desc)
     {
@@ -39,66 +42,116 @@ public sealed class EditorGame : Game
             .SetupWithoutStarting()
             .Instance!;
 
-        _renderFrame = new RenderFrame();
-
         _width = GraphicsContext.Width;
         _height = GraphicsContext.Height;
-
-        _sceneColor = CycledTexture.ColorAttachment("SceneColor");
 
         _scaling = 1.0;
         _topLevel = new DenOfIzTopLevel((int)_width, (int)_height, _scaling);
         _topLevel.Content = new EditorMainView();
+
+        _renderer = new EditorRenderer(_topLevel);
+
+        _editorCamera = new CameraObject("EditorCamera");
+        _editorCamera.LocalPosition = new Vector3(0, 15, -15);
+        var controller = new CameraController { MoveSpeed = 10f };
+        _editorCamera.AddComponent(controller);
+        controller.SetPositionAndLookAt(new Vector3(0, 15, -15), Vector3.Zero, immediate: true);
+        _editorCamera.SetAspectRatio(_width, _height);
+        _renderer.Camera = _editorCamera;
+
+        _topLevel.TextInputActiveChanged += OnTextInputActiveChanged;
+
+        if (!string.IsNullOrEmpty(Editor.Config.InitialScene))
+        {
+            World.LoadScene(Editor.Config.InitialScene);
+        }
+        if (_topLevel.Content is EditorMainView mainView)
+        {
+            mainView.Initialize();
+            _renderer.EditorViewModel = mainView.ViewModel;
+        }
     }
 
     protected override void Update(float dt)
     {
-        DenOfIzPlatform.TriggerRenderTick(TimeSpan.FromSeconds(dt));
-        Dispatcher.UIThread.RunJobs();
+        _editorCamera.Update(dt);
 
-        _topLevel.Render();
-
-        _renderFrame.BeginFrame();
-
-        var pass = _renderFrame.BeginGraphicsPass();
-        pass.SetRenderTarget(0, _sceneColor, LoadOp.Clear);
-        pass.Begin();
-        pass.End();
-
-        if (_topLevel.Texture != null)
+        if (!_mouseOverUi && !_gizmoDragging)
         {
-            _renderFrame.AlphaBlit(_topLevel.Texture, _sceneColor);
+            UpdateGizmoHover();
         }
 
-        _renderFrame.Submit();
-        _renderFrame.Present(_sceneColor);
+        _renderer.Render(dt);
+    }
+
+    private void UpdateGizmoHover()
+    {
+        var gizmoPass = _renderer.GizmoPass;
+        if (gizmoPass == null)
+        {
+            return;
+        }
+
+        var ray = _editorCamera.ScreenPointToRay(_lastMouseX, _lastMouseY, _width, _height);
+        gizmoPass.Gizmo.UpdateHover(ray, _editorCamera);
     }
 
     protected override void OnEvent(ref Event ev)
     {
         if (ev.Type == EventType.MouseMotion)
         {
+            _lastMouseX = ev.MouseMotion.X;
+            _lastMouseY = ev.MouseMotion.Y;
+            _mouseOverUi = _topLevel.HitTest(_lastMouseX, _lastMouseY);
             _topLevel.InjectMouseMove(ev.MouseMotion.X, ev.MouseMotion.Y);
+
+            if (_gizmoDragging)
+            {
+                HandleGizmoDrag();
+            }
         }
         else if (ev.Type == EventType.MouseButtonDown)
         {
             var button = MapMouseButton(ev.MouseButton.Button);
             _topLevel.InjectMouseDown(ev.MouseButton.X, ev.MouseButton.Y, button);
+
+            if (!_mouseOverUi && ev.MouseButton.Button == DenOfIz.MouseButton.Left)
+            {
+                if (TryBeginGizmoDrag())
+                {
+                    return;
+                }
+            }
         }
         else if (ev.Type == EventType.MouseButtonUp)
         {
             var button = MapMouseButton(ev.MouseButton.Button);
             _topLevel.InjectMouseUp(ev.MouseButton.X, ev.MouseButton.Y, button);
+
+            if (ev.MouseButton.Button == DenOfIz.MouseButton.Left && _gizmoDragging)
+            {
+                EndGizmoDrag();
+            }
         }
         else if (ev.Type == EventType.MouseWheel)
         {
-            _topLevel.InjectMouseWheel(0, 0, ev.MouseWheel.X, ev.MouseWheel.Y);
+            _topLevel.InjectMouseWheel(_lastMouseX, _lastMouseY, ev.MouseWheel.X, ev.MouseWheel.Y);
         }
         else if (ev.Type == EventType.KeyDown)
         {
             var key = MapKey(ev.Key.KeyCode);
             var modifiers = MapModifiers((KeyMod)ev.Key.Mod);
             _topLevel.InjectKeyDown(key, modifiers);
+
+            if (!_textInputActive)
+            {
+                HandleGizmoModeKey(ev.Key.KeyCode);
+            }
+
+            if (ev.Key.KeyCode == KeyCode.Escape && _gizmoDragging)
+            {
+                CancelGizmoDrag();
+            }
         }
         else if (ev.Type == EventType.KeyUp)
         {
@@ -120,6 +173,77 @@ public sealed class EditorGame : Game
             var height = (uint)ev.Window.Data2;
             OnResize(width, height);
         }
+
+        if (!UiWantsInput && !_gizmoDragging)
+        {
+            _editorCamera.HandleEvent(in ev);
+        }
+    }
+
+    private bool TryBeginGizmoDrag()
+    {
+        var gizmoPass = _renderer.GizmoPass;
+        if (gizmoPass == null)
+        {
+            return false;
+        }
+
+        var ray = _editorCamera.ScreenPointToRay(_lastMouseX, _lastMouseY, _width, _height);
+        if (gizmoPass.Gizmo.BeginDrag(ray, _editorCamera))
+        {
+            _gizmoDragging = true;
+            return true;
+        }
+
+        return false;
+    }
+
+    private void HandleGizmoDrag()
+    {
+        var gizmoPass = _renderer.GizmoPass;
+        if (gizmoPass == null)
+        {
+            return;
+        }
+
+        var ray = _editorCamera.ScreenPointToRay(_lastMouseX, _lastMouseY, _width, _height);
+        gizmoPass.Gizmo.UpdateDrag(ray, _editorCamera);
+    }
+
+    private void EndGizmoDrag()
+    {
+        var gizmoPass = _renderer.GizmoPass;
+        gizmoPass?.Gizmo.EndDrag();
+        _gizmoDragging = false;
+    }
+
+    private void CancelGizmoDrag()
+    {
+        var gizmoPass = _renderer.GizmoPass;
+        gizmoPass?.Gizmo.CancelDrag();
+        _gizmoDragging = false;
+    }
+
+    private void HandleGizmoModeKey(KeyCode keyCode)
+    {
+        var gizmoPass = _renderer.GizmoPass;
+        if (gizmoPass == null)
+        {
+            return;
+        }
+
+        switch (keyCode)
+        {
+            case KeyCode.W:
+                gizmoPass.Gizmo.Mode = GizmoMode.Translate;
+                break;
+            case KeyCode.E:
+                gizmoPass.Gizmo.Mode = GizmoMode.Rotate;
+                break;
+            case KeyCode.R:
+                gizmoPass.Gizmo.Mode = GizmoMode.Scale;
+                break;
+        }
     }
 
     private void OnResize(uint width, uint height)
@@ -131,14 +255,28 @@ public sealed class EditorGame : Game
 
         GraphicsContext.WaitIdle();
 
-        _sceneColor.Dispose();
-
         _width = width;
         _height = height;
 
-        _sceneColor = CycledTexture.ColorAttachment("SceneColor");
+        _editorCamera.SetAspectRatio(width, height);
+        _renderer.OnResize(width, height);
         _topLevel.Resize((int)width, (int)height, _scaling);
     }
+
+    private void OnTextInputActiveChanged(bool active)
+    {
+        _textInputActive = active;
+        if (active)
+        {
+            InputSystem.StartTextInput();
+        }
+        else
+        {
+            InputSystem.StopTextInput();
+        }
+    }
+
+    private bool UiWantsInput => _mouseOverUi || _textInputActive;
 
     private static Avalonia.Input.MouseButton MapMouseButton(DenOfIz.MouseButton button)
     {
@@ -250,8 +388,8 @@ public sealed class EditorGame : Game
     {
         GraphicsContext.WaitIdle();
 
-        _sceneColor.Dispose();
-        _renderFrame.Dispose();
+        _topLevel.TextInputActiveChanged -= OnTextInputActiveChanged;
+        _renderer.Dispose();
         _skiaContext.Dispose();
     }
 }

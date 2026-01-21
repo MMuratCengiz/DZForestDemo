@@ -325,7 +325,7 @@ public partial class RenderFrame : IDisposable
         }
     }
 
-    public void Present(CycledTexture sourceTexture)
+    public void Present(Texture sourceTexture)
     {
         var commandList = _presentCommandLists[_currentFrame];
         var semaphore = _presentSemaphores[_currentFrame];
@@ -353,6 +353,11 @@ public partial class RenderFrame : IDisposable
             new ReadOnlySpan<Semaphore>(_submitSignalSemaphores, 0, 1));
 
         GraphicsContext.SwapChain.Present((uint)_currentFrame);
+    }
+    
+    public void Present(CycledTexture sourceTexture)
+    {
+        Present(sourceTexture[GraphicsContext.FrameIndex]);
     }
 
     public void Dispose()

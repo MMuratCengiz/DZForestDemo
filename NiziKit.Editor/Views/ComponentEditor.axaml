@@ -1,0 +1,18 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NiziKit.Editor.ViewModels"
+             xmlns:views="using:NiziKit.Editor.Views"
+             x:Class="NiziKit.Editor.Views.ComponentEditor"
+             x:DataType="vm:ComponentViewModel">
+
+    <StackPanel Spacing="8">
+        <!-- Dynamic property display based on component type -->
+        <ContentControl Content="{Binding}">
+            <ContentControl.ContentTemplate>
+                <DataTemplate x:DataType="vm:ComponentViewModel">
+                    <views:GenericComponentView/>
+                </DataTemplate>
+            </ContentControl.ContentTemplate>
+        </ContentControl>
+    </StackPanel>
+</UserControl>

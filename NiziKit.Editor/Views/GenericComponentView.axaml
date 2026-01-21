@@ -1,0 +1,8 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NiziKit.Editor.ViewModels"
+             x:Class="NiziKit.Editor.Views.GenericComponentView"
+             x:DataType="vm:ComponentViewModel">
+
+    <ItemsControl x:Name="PropertiesControl"/>
+</UserControl>

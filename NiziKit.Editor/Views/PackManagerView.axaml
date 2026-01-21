@@ -1,0 +1,255 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NiziKit.Editor.ViewModels"
+             x:Class="NiziKit.Editor.Views.PackManagerView"
+             x:DataType="vm:PackManagerViewModel">
+
+    <Grid ColumnDefinitions="200,*">
+        <Border Grid.Column="0"
+                Classes="panel-section"
+                Margin="0,0,8,0">
+            <Grid RowDefinitions="Auto,*,Auto">
+                <TextBlock Grid.Row="0"
+                           Text="Packs"
+                           Classes="section-header"/>
+
+                <ListBox Grid.Row="1"
+                         ItemsSource="{Binding Packs}"
+                         SelectedItem="{Binding SelectedPack}"
+                         Background="Transparent"
+                         Margin="0,8,0,0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="vm:PackInfo">
+                            <StackPanel Spacing="2">
+                                <TextBlock Text="{Binding Name}"
+                                           FontWeight="Medium"/>
+                                <TextBlock Text="{Binding Version}"
+                                           Classes="muted"
+                                           FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <StackPanel Grid.Row="2"
+                            Orientation="Horizontal"
+                            Spacing="4"
+                            Margin="0,8,0,0">
+                    <Button Content="New"
+                            Command="{Binding NewPackCommand}"
+                            Classes="ghost"
+                            Padding="8,4"/>
+                    <Button Content="Refresh"
+                            Command="{Binding RefreshPacksCommand}"
+                            Classes="ghost"
+                            Padding="8,4"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <Border Grid.Column="1"
+                Classes="panel-section"
+                IsVisible="{Binding IsEditing}">
+            <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                          VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="12">
+                    <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*,Auto,Auto">
+                        <TextBlock Grid.Row="0" Grid.Column="0"
+                                   Text="Name:"
+                                   Classes="label"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,12,8"/>
+                        <TextBox Grid.Row="0" Grid.Column="1"
+                                 Text="{Binding PackName}"
+                                 Margin="0,0,16,8"/>
+
+                        <TextBlock Grid.Row="0" Grid.Column="2"
+                                   Text="Version:"
+                                   Classes="label"
+                                   VerticalAlignment="Center"
+                                   Margin="0,0,12,8"/>
+                        <TextBox Grid.Row="0" Grid.Column="3"
+                                 Text="{Binding PackVersion}"
+                                 Width="100"
+                                 Margin="0,0,0,8"/>
+                    </Grid>
+
+                    <Border Classes="separator"/>
+
+                    <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0"
+                                       Text="Textures"
+                                       Classes="section-header"
+                                       Margin="0"/>
+                            <Button Grid.Column="1"
+                                    Content="+"
+                                    Command="{Binding AddTextureCommand}"
+                                    Classes="ghost"
+                                    Padding="8,2"/>
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding Textures}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:PackAssetEntry">
+                                    <Grid ColumnDefinitions="*,2*,Auto" Margin="0,0,0,4">
+                                        <TextBox Grid.Column="0"
+                                                 Text="{Binding Key}"
+                                                 Watermark="Key"
+                                                 Margin="0,0,4,0"/>
+                                        <TextBox Grid.Column="1"
+                                                 Text="{Binding Path}"
+                                                 Watermark="Path"
+                                                 Margin="0,0,4,0"/>
+                                        <Button Grid.Column="2"
+                                                Content="X"
+                                                Command="{Binding $parent[ItemsControl].DataContext.RemoveTextureCommand}"
+                                                CommandParameter="{Binding}"
+                                                Classes="ghost danger"
+                                                Padding="6,2"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <Border Classes="separator"/>
+
+                    <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0"
+                                       Text="Materials"
+                                       Classes="section-header"
+                                       Margin="0"/>
+                            <Button Grid.Column="1"
+                                    Content="+"
+                                    Command="{Binding AddMaterialCommand}"
+                                    Classes="ghost"
+                                    Padding="8,2"/>
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding Materials}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:PackAssetEntry">
+                                    <Grid ColumnDefinitions="*,2*,Auto" Margin="0,0,0,4">
+                                        <TextBox Grid.Column="0"
+                                                 Text="{Binding Key}"
+                                                 Watermark="Key"
+                                                 Margin="0,0,4,0"/>
+                                        <TextBox Grid.Column="1"
+                                                 Text="{Binding Path}"
+                                                 Watermark="Path"
+                                                 Margin="0,0,4,0"/>
+                                        <Button Grid.Column="2"
+                                                Content="X"
+                                                Command="{Binding $parent[ItemsControl].DataContext.RemoveMaterialCommand}"
+                                                CommandParameter="{Binding}"
+                                                Classes="ghost danger"
+                                                Padding="6,2"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <Border Classes="separator"/>
+
+                    <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0"
+                                       Text="Models"
+                                       Classes="section-header"
+                                       Margin="0"/>
+                            <Button Grid.Column="1"
+                                    Content="+"
+                                    Command="{Binding AddModelCommand}"
+                                    Classes="ghost"
+                                    Padding="8,2"/>
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding Models}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:PackAssetEntry">
+                                    <Grid ColumnDefinitions="*,2*,Auto" Margin="0,0,0,4">
+                                        <TextBox Grid.Column="0"
+                                                 Text="{Binding Key}"
+                                                 Watermark="Key"
+                                                 Margin="0,0,4,0"/>
+                                        <TextBox Grid.Column="1"
+                                                 Text="{Binding Path}"
+                                                 Watermark="Path"
+                                                 Margin="0,0,4,0"/>
+                                        <Button Grid.Column="2"
+                                                Content="X"
+                                                Command="{Binding $parent[ItemsControl].DataContext.RemoveModelCommand}"
+                                                CommandParameter="{Binding}"
+                                                Classes="ghost danger"
+                                                Padding="6,2"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <Border Classes="separator"/>
+
+                    <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Grid.Column="0"
+                                       Text="Shaders"
+                                       Classes="section-header"
+                                       Margin="0"/>
+                            <Button Grid.Column="1"
+                                    Content="+"
+                                    Command="{Binding AddShaderCommand}"
+                                    Classes="ghost"
+                                    Padding="8,2"/>
+                        </Grid>
+                        <ItemsControl ItemsSource="{Binding Shaders}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:PackAssetEntry">
+                                    <Grid ColumnDefinitions="*,2*,Auto" Margin="0,0,0,4">
+                                        <TextBox Grid.Column="0"
+                                                 Text="{Binding Key}"
+                                                 Watermark="Key"
+                                                 Margin="0,0,4,0"/>
+                                        <TextBox Grid.Column="1"
+                                                 Text="{Binding Path}"
+                                                 Watermark="Path"
+                                                 Margin="0,0,4,0"/>
+                                        <Button Grid.Column="2"
+                                                Content="X"
+                                                Command="{Binding $parent[ItemsControl].DataContext.RemoveShaderCommand}"
+                                                CommandParameter="{Binding}"
+                                                Classes="ghost danger"
+                                                Padding="6,2"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <Border Classes="separator"/>
+
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0"
+                                   Text="{Binding StatusMessage}"
+                                   Classes="label"
+                                   VerticalAlignment="Center"/>
+                        <Button Grid.Column="1"
+                                Content="Save Pack"
+                                Command="{Binding SavePackCommand}"
+                                Classes="primary"
+                                MinWidth="100"/>
+                    </Grid>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <Border Grid.Column="1"
+                Classes="panel-section"
+                IsVisible="{Binding !IsEditing}">
+            <TextBlock Text="Select a pack or create a new one"
+                       Classes="muted"
+                       HorizontalAlignment="Center"
+                       VerticalAlignment="Center"/>
+        </Border>
+    </Grid>
+</UserControl>

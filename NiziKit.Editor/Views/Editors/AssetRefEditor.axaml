@@ -1,0 +1,124 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="NiziKit.Editor.Views.Editors.AssetRefEditor">
+
+    <StackPanel Spacing="6">
+        <!-- Pack Selection -->
+        <Grid ColumnDefinitions="80,*">
+            <TextBlock Grid.Column="0"
+                       Text="Pack"
+                       Classes="label"
+                       VerticalAlignment="Center"/>
+            <Border Grid.Column="1"
+                    x:Name="PackSelectorHost"
+                    Background="{DynamicResource SurfaceDarkBrush}"
+                    CornerRadius="{DynamicResource EditorControlCornerRadius}"
+                    Padding="8,6"
+                    Cursor="Hand">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0"
+                               x:Name="PackDisplayText"
+                               Text="(None)"
+                               FontSize="{DynamicResource EditorFontSizeSmall}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"/>
+                    <PathIcon Grid.Column="1"
+                              Data="M7,10L12,15L17,10H7Z"
+                              Width="10" Height="10"
+                              Foreground="{DynamicResource TextMutedBrush}"
+                              Margin="6,0,0,0"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Pack Selector Panel (inline, shown when clicking) -->
+        <Border x:Name="PackSelectorPanel"
+                IsVisible="False"
+                Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource PanelBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="{DynamicResource EditorControlCornerRadius}"
+                Padding="10"
+                MaxHeight="280">
+            <StackPanel Spacing="8">
+                <TextBox x:Name="PackSearchBox"
+                         Watermark="Search packs..."
+                         FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                <ScrollViewer MaxHeight="200" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl x:Name="PackItemsControl">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Classes="ghost"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Left"
+                                        Padding="8,6"
+                                        Content="{Binding}"
+                                        FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </StackPanel>
+        </Border>
+
+        <!-- Asset Selection -->
+        <Grid ColumnDefinitions="80,*">
+            <TextBlock Grid.Column="0"
+                       Text="Asset"
+                       Classes="label"
+                       VerticalAlignment="Center"/>
+            <Border Grid.Column="1"
+                    x:Name="AssetSelectorHost"
+                    Background="{DynamicResource SurfaceDarkBrush}"
+                    CornerRadius="{DynamicResource EditorControlCornerRadius}"
+                    Padding="8,6"
+                    Cursor="Hand">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Grid.Column="0"
+                               x:Name="AssetDisplayText"
+                               Text="(None)"
+                               FontSize="{DynamicResource EditorFontSizeSmall}"
+                               Foreground="{DynamicResource TextPrimaryBrush}"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"/>
+                    <PathIcon Grid.Column="1"
+                              Data="M7,10L12,15L17,10H7Z"
+                              Width="10" Height="10"
+                              Foreground="{DynamicResource TextMutedBrush}"
+                              Margin="6"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Asset Selector Panel (inline, shown when clicking) -->
+        <Border x:Name="AssetSelectorPanel"
+                IsVisible="False"
+                Background="{DynamicResource SurfaceBrush}"
+                BorderBrush="{DynamicResource PanelBorderBrush}"
+                BorderThickness="1"
+                CornerRadius="{DynamicResource EditorControlCornerRadius}"
+                Padding="10"
+                MaxHeight="280">
+            <StackPanel Spacing="8">
+                <TextBox x:Name="AssetSearchBox"
+                         Watermark="Search assets..."
+                         FontSize="{DynamicResource FontSizeSmall}"/>
+                <ScrollViewer MaxHeight="200" HorizontalScrollBarVisibility="Disabled">
+                    <ItemsControl x:Name="AssetItemsControl">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Button Classes="ghost"
+                                        HorizontalAlignment="Stretch"
+                                        HorizontalContentAlignment="Left"
+                                        Padding="8,6"
+                                        Content="{Binding}"
+                                        FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>

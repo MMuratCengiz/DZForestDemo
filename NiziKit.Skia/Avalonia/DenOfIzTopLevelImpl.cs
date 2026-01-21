@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Input.Raw;
+using Avalonia.Input.TextInput;
 using Avalonia.Platform;
 using Avalonia.Rendering.Composition;
 using AvaloniaMouseButton = Avalonia.Input.MouseButton;
@@ -15,16 +16,19 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
     private IInputRoot? _inputRoot;
     private readonly MouseDevice _mouseDevice = new();
     private DenOfIzSkiaSurface? _surface;
+    private readonly DenOfIzTextInputMethod _textInputMethod;
+
+    public event Action<bool>? TextInputActiveChanged;
 
     public DenOfIzTopLevelImpl()
     {
+        _textInputMethod = new DenOfIzTextInputMethod(this);
     }
 
     public void SetSurface(DenOfIzSkiaSurface? surface)
     {
         _surface = surface;
     }
-
 
     public double DesktopScaling => _scaling;
 
@@ -48,7 +52,8 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
     public Action? Closed { get; set; }
     public Action? LostFocus { get; set; }
 
-    public WindowTransparencyLevel TransparencyLevel => WindowTransparencyLevel.None;
+    public WindowTransparencyLevel TransparencyLevel => _transparencyLevel;
+    private WindowTransparencyLevel _transparencyLevel = WindowTransparencyLevel.Transparent;
 
     public AcrylicPlatformCompensationLevels AcrylicCompensationLevels => new(1, 1, 1);
 
@@ -254,6 +259,11 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
 
     public void SetTransparencyLevelHint(IReadOnlyList<WindowTransparencyLevel> transparencyLevels)
     {
+        if (transparencyLevels.Count > 0)
+        {
+            _transparencyLevel = transparencyLevels[0];
+            TransparencyLevelChanged?.Invoke(_transparencyLevel);
+        }
     }
 
     public void SetFrameThemeVariant(PlatformThemeVariant themeVariant)
@@ -261,11 +271,51 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
     }
 
     public object? TryGetFeature(Type featureType)
-        => null;
+    {
+        if (featureType == typeof(ITextInputMethodImpl))
+        {
+            return _textInputMethod;
+        }
+        return null;
+    }
+
+    internal void OnTextInputActiveChanged(bool active)
+    {
+        TextInputActiveChanged?.Invoke(active);
+    }
 
     public void TriggerPaint()
     {
         Paint?.Invoke(new Rect(0, 0, _clientSize.Width, _clientSize.Height));
+    }
+}
+
+internal sealed class DenOfIzTextInputMethod : ITextInputMethodImpl
+{
+    private readonly DenOfIzTopLevelImpl _owner;
+    private TextInputMethodClient? _client;
+
+    public DenOfIzTextInputMethod(DenOfIzTopLevelImpl owner)
+    {
+        _owner = owner;
+    }
+
+    public void SetClient(TextInputMethodClient? client)
+    {
+        _client = client;
+        _owner.OnTextInputActiveChanged(client != null);
+    }
+
+    public void SetCursorRect(Rect rect)
+    {
+    }
+
+    public void SetOptions(TextInputOptions options)
+    {
+    }
+
+    public void Reset()
+    {
     }
 }
 

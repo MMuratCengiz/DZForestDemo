@@ -96,7 +96,9 @@ internal sealed class DenOfIzCursor(StandardCursorType cursorType) : ICursorImpl
 internal sealed class DenOfIzClipboard : IClipboard
 {
     private string? _text;
+#pragma warning disable CS0618 // IDataObject is obsolete
     private IDataObject? _data;
+#pragma warning restore CS0618
 
     public Task ClearAsync()
     {
@@ -111,11 +113,13 @@ internal sealed class DenOfIzClipboard : IClipboard
     public Task<string?> GetTextAsync()
         => Task.FromResult(_text);
 
+#pragma warning disable CS0618 // IDataObject is obsolete
     public Task SetDataObjectAsync(IDataObject data)
     {
         _data = data;
         return Task.CompletedTask;
     }
+#pragma warning restore CS0618
 
     public Task SetTextAsync(string? text)
     {
@@ -125,6 +129,26 @@ internal sealed class DenOfIzClipboard : IClipboard
 
     public Task<string[]> GetFormatsAsync()
         => Task.FromResult(Array.Empty<string>());
+
+    public Task SetDataAsync(IAsyncDataTransfer? data)
+        => Task.CompletedTask;
+
+    public Task FlushAsync()
+        => Task.CompletedTask;
+
+    public Task<IAsyncDataTransfer?> TryGetDataAsync()
+        => Task.FromResult<IAsyncDataTransfer?>(null);
+
+#pragma warning disable CS0618 // IDataObject is obsolete
+    public Task<IDataObject?> TryGetInProcessDataObjectAsync()
+        => Task.FromResult<IDataObject?>(null);
+
+    public Task<IAsyncDataTransfer?> TryGetInProcessDataAsync()
+        => Task.FromResult<IAsyncDataTransfer?>(null);
+#pragma warning restore CS0618
+
+    public Task<(bool Success, object? Value)> TryGetInProcessDataAsync(string format)
+        => Task.FromResult<(bool Success, object? Value)>((false, null));
 }
 
 internal sealed class DenOfIzPlatformSettings : IPlatformSettings

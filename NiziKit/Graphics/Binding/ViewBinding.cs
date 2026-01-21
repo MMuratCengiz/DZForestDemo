@@ -37,20 +37,23 @@ public class ViewBinding : ShaderBinding<ViewData>
 
     protected override void OnUpdate(ViewData target)
     {
-        var camera = BuildCamera(target.Scene, target.DeltaTime, target.TotalTime);
+        var camera = BuildCamera(target);
         var lights = BuildLights(target.Scene);
 
         _cameraBuffer.Write(in camera);
         _lightBuffer.Write(in lights);
     }
 
-    private static GpuCamera BuildCamera(Scene scene, float deltaTime, float totalTime)
+    private static GpuCamera BuildCamera(ViewData viewData)
     {
-        var cam = scene.MainCamera;
+        var cam = viewData.Camera ?? viewData.Scene.MainCamera;
         if (cam == null)
         {
             return default;
         }
+
+        var deltaTime = viewData.DeltaTime;
+        var totalTime = viewData.TotalTime;
 
         Matrix4x4.Invert(cam.ViewProjectionMatrix, out var invVp);
         return new GpuCamera

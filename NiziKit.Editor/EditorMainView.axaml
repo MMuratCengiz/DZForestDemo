@@ -1,0 +1,90 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NiziKit.Editor.ViewModels"
+             xmlns:views="using:NiziKit.Editor.Views"
+             xmlns:dock="using:Dock.Avalonia.Controls"
+             xmlns:docking="using:NiziKit.Editor.Docking"
+             x:Class="NiziKit.Editor.EditorMainView"
+             x:DataType="vm:EditorViewModel"
+             Background="Transparent">
+
+    <UserControl.Resources>
+        <views:BoolToForegroundConverter x:Key="BoolToForegroundConverter"/>
+    </UserControl.Resources>
+
+    <Panel>
+        <Grid RowDefinitions="Auto,*">
+            <Border Grid.Row="0"
+                    Background="#C0181818"
+                    Padding="4,2">
+                <Menu Background="Transparent">
+                    <MenuItem Header="File">
+                        <MenuItem Header="Save Scene" Command="{Binding SaveSceneCommand}" InputGesture="Ctrl+S"/>
+                    </MenuItem>
+                    <MenuItem Header="Edit">
+                        <MenuItem Header="New Object" Command="{Binding NewObjectCommand}"/>
+                        <MenuItem Header="New Child" Command="{Binding NewChildObjectCommand}"
+                                  IsEnabled="{Binding HasSelection}"/>
+                        <Separator/>
+                        <MenuItem Header="Duplicate" Command="{Binding DuplicateObjectCommand}"
+                                  IsEnabled="{Binding HasSelection}"/>
+                        <MenuItem Header="Delete" Command="{Binding DeleteObjectCommand}"
+                                  IsEnabled="{Binding HasSelection}"/>
+                    </MenuItem>
+                    <MenuItem Header="Assets">
+                        <MenuItem Header="Import..." Command="{Binding OpenImportPanelCommand}"/>
+                        <Separator/>
+                        <MenuItem Header="Refresh" Command="{Binding RefreshAssetsCommand}"/>
+                    </MenuItem>
+                </Menu>
+            </Border>
+
+            <dock:DockControl Grid.Row="1"
+                              Layout="{Binding DockLayout}"
+                              InitializeLayout="True"
+                              InitializeFactory="True">
+                <dock:DockControl.DataTemplates>
+                    <DataTemplate DataType="docking:SceneTreeToolViewModel">
+                        <views:SceneTreeView DataContext="{Binding EditorViewModel}"/>
+                    </DataTemplate>
+                    <DataTemplate DataType="docking:InspectorToolViewModel">
+                        <views:ComponentsPanel DataContext="{Binding EditorViewModel}"/>
+                    </DataTemplate>
+                    <DataTemplate DataType="docking:AssetBrowserToolViewModel">
+                        <views:AssetBrowserView DataContext="{Binding EditorViewModel.AssetBrowserViewModel}"/>
+                    </DataTemplate>
+                    <DataTemplate DataType="docking:PackManagerToolViewModel">
+                        <views:PackManagerView DataContext="{Binding EditorViewModel.PackManagerViewModel}"/>
+                    </DataTemplate>
+                </dock:DockControl.DataTemplates>
+            </dock:DockControl>
+        </Grid>
+
+        <Border IsVisible="{Binding IsImportPanelOpen}"
+                Background="#D0000000">
+            <Border Background="#FF1E1E1E"
+                    BorderBrush="#60FFFFFF"
+                    BorderThickness="1"
+                    CornerRadius="8"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Width="1400"
+                    Height="900">
+                <Grid RowDefinitions="Auto,*">
+                    <Button Grid.Row="0"
+                            Content="X"
+                            Command="{Binding CloseImportPanelCommand}"
+                            Classes="ghost"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            Margin="8"
+                            Padding="8,4"
+                            ZIndex="100"/>
+
+                    <views:ImportPanel Grid.Row="0" Grid.RowSpan="2"
+                                       DataContext="{Binding ImportViewModel}"/>
+                </Grid>
+            </Border>
+        </Border>
+    </Panel>
+</UserControl>

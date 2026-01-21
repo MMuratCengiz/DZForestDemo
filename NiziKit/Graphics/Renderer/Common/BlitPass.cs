@@ -128,7 +128,7 @@ public class BlitPass : IDisposable
             var blendDesc = new BlendDesc
             {
                 Enable = true,
-                SrcBlend = Blend.SrcAlpha,
+                SrcBlend = Blend.One,
                 DstBlend = Blend.InvSrcAlpha,
                 BlendOp = BlendOp.Add,
                 SrcBlendAlpha = Blend.One,

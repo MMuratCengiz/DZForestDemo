@@ -1,0 +1,120 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NiziKit.Editor.ViewModels"
+             xmlns:services="using:NiziKit.Editor.Services"
+             x:Class="NiziKit.Editor.Views.FileBrowserGrid"
+             x:DataType="vm:FileBrowserViewModel">
+
+    <Grid RowDefinitions="Auto,*">
+        <Border Grid.Row="0"
+                Background="#18FFFFFF"
+                Padding="8,6"
+                Margin="0,0,0,4">
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <Button Grid.Column="0"
+                        Classes="ghost"
+                        Command="{Binding NavigateUpCommand}"
+                        IsEnabled="{Binding CanNavigateUp}"
+                        Padding="6"
+                        VerticalAlignment="Center">
+                    <PathIcon Data="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"
+                              Width="16" Height="16"/>
+                </Button>
+
+                <ItemsControl Grid.Column="1"
+                              ItemsSource="{Binding BreadcrumbParts}"
+                              Margin="8,0"
+                              VerticalAlignment="Center">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="2"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:BreadcrumbItem">
+                            <StackPanel Orientation="Horizontal">
+                                <Button Classes="ghost"
+                                        Content="{Binding Name}"
+                                        Command="{Binding $parent[ItemsControl].DataContext.NavigateToCommand}"
+                                        CommandParameter="{Binding Path}"
+                                        Padding="4,2"
+                                        FontSize="{DynamicResource FileBrowserCellFontSize}"/>
+                                <TextBlock Text=">"
+                                           VerticalAlignment="Center"
+                                           Margin="2,0"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           FontSize="{DynamicResource FileBrowserCellFontSize}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <ComboBox Grid.Column="2"
+                          SelectedIndex="{Binding FilterIndex}"
+                          MinWidth="120"
+                          FontSize="{DynamicResource EditorFontSizeSmall}">
+                    <ComboBoxItem Content="All"/>
+                    <ComboBoxItem Content="Models"/>
+                    <ComboBoxItem Content="Textures"/>
+                    <ComboBoxItem Content="Materials"/>
+                    <ComboBoxItem Content="Scenes"/>
+                    <ComboBoxItem Content="Packs"/>
+                </ComboBox>
+            </Grid>
+        </Border>
+
+        <ListBox Grid.Row="1"
+                 x:Name="FileGrid"
+                 ItemsSource="{Binding Entries}"
+                 SelectedItem="{Binding SelectedEntry}"
+                 Background="Transparent"
+                 SelectionMode="Single"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+            <ListBox.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <WrapPanel Orientation="Horizontal"/>
+                </ItemsPanelTemplate>
+            </ListBox.ItemsPanel>
+            <ListBox.ItemTemplate>
+                <DataTemplate x:DataType="services:FileEntry">
+                    <Border Width="{DynamicResource FileBrowserCellSize}"
+                            Height="{DynamicResource FileBrowserCellSize}"
+                            Margin="4"
+                            Padding="8"
+                            CornerRadius="4"
+                            Background="Transparent">
+                        <StackPanel HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Spacing="8">
+                            <PathIcon Data="{Binding IconData}"
+                                      Width="{DynamicResource FileBrowserIconSize}"
+                                      Height="{DynamicResource FileBrowserIconSize}"
+                                      Foreground="{DynamicResource TextSecondaryBrush}"/>
+                            <TextBlock Text="{Binding Name}"
+                                       TextTrimming="CharacterEllipsis"
+                                       TextAlignment="Center"
+                                       MaxWidth="160"
+                                       FontSize="{DynamicResource FileBrowserCellFontSize}"
+                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       ToolTip.Tip="{Binding Name}"/>
+                        </StackPanel>
+                    </Border>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+            <ListBox.Styles>
+                <Style Selector="ListBoxItem">
+                    <Setter Property="Padding" Value="0"/>
+                    <Setter Property="Background" Value="Transparent"/>
+                    <Setter Property="CornerRadius" Value="4"/>
+                    <Setter Property="Margin" Value="2"/>
+                </Style>
+                <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+                    <Setter Property="Background" Value="#20FFFFFF"/>
+                </Style>
+                <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+                    <Setter Property="Background" Value="{DynamicResource SelectionColor}"/>
+                </Style>
+            </ListBox.Styles>
+        </ListBox>
+    </Grid>
+</UserControl>

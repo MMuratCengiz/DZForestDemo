@@ -1,8 +1,13 @@
 using Avalonia;
+using Avalonia.Controls;
 using Avalonia.Controls.Embedding;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Media;
 using Avalonia.Skia.Helpers;
+using Avalonia.VisualTree;
 using DenOfIz;
+using SkiaSharp;
 using AvaloniaMouseButton = Avalonia.Input.MouseButton;
 
 namespace NiziKit.Skia.Avalonia;
@@ -20,6 +25,12 @@ public sealed class DenOfIzTopLevel : EmbeddableControlRoot
     public int PixelWidth => _surface?.Width ?? 0;
 
     public int PixelHeight => _surface?.Height ?? 0;
+
+    public event Action<bool>? TextInputActiveChanged
+    {
+        add => _impl.TextInputActiveChanged += value;
+        remove => _impl.TextInputActiveChanged -= value;
+    }
 
     public DenOfIzTopLevel(int width, int height, double scaling = 1.0)
         : this(new DenOfIzTopLevelImpl())
@@ -39,6 +50,7 @@ public sealed class DenOfIzTopLevel : EmbeddableControlRoot
     {
         _impl = impl;
         Background = null;
+        TransparencyLevelHint = [WindowTransparencyLevel.Transparent, WindowTransparencyLevel.None];
     }
 
     private void SetRenderSize(int width, int height, double scaling)
@@ -86,7 +98,7 @@ public sealed class DenOfIzTopLevel : EmbeddableControlRoot
         }
 
         var canvas = _surface.RenderTarget.Canvas;
-        canvas.Clear(SkiaSharp.SKColors.Transparent);
+        canvas.DrawColor(SKColors.Transparent, SKBlendMode.Src);
 
         DrawingContextHelper.RenderAsync(canvas, this).GetAwaiter().GetResult();
         _surface.RenderTarget.Flush();
@@ -128,5 +140,41 @@ public sealed class DenOfIzTopLevel : EmbeddableControlRoot
     public void InjectTextInput(string text)
     {
         _impl.InjectTextInput(text);
+    }
+
+    public bool HitTest(double x, double y)
+    {
+        var point = new Point(x, y);
+        var hit = this.InputHitTest(point);
+        
+        if (hit == null || hit == this)
+        {
+            return false;
+        }
+
+        var current = hit as Visual;
+        while (current != null && current != this)
+        {
+            if (current is Button or TextBox or ComboBox or ListBox or TreeView
+                or ScrollViewer or MenuItem or Menu or ToggleButton or CheckBox
+                or Slider or ScrollBar)
+            {
+                return true;
+            }
+
+            if (current is Border border && border.Background is SolidColorBrush brush && brush.Color.A > 0)
+            {
+                return true;
+            }
+
+            if (current is Panel panel && panel.Background is SolidColorBrush panelBrush && panelBrush.Color.A > 0)
+            {
+                return true;
+            }
+
+            current = current.GetVisualParent() as Visual;
+        }
+
+        return false;
     }
 }

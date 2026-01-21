@@ -21,6 +21,22 @@ public static class Content
         }
     }
 
+    public static void Initialize(string assetsPath)
+    {
+        lock (Lock)
+        {
+            var fullPath = Path.GetFullPath(assetsPath);
+            _basePath = fullPath;
+            _provider = new FileContentProvider(fullPath);
+
+            var manifestPath = Path.Combine(fullPath, "manifest.json");
+            if (File.Exists(manifestPath))
+            {
+                Manifest = AssetManifest.FromJson(File.ReadAllText(manifestPath));
+            }
+        }
+    }
+
     public static ValueTask<Stream> OpenAsync(string path, CancellationToken ct = default)
     {
         EnsureInitialized();

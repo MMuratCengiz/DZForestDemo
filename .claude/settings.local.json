@@ -89,7 +89,12 @@
       "WebFetch(domain:docs.avaloniaui.net)",
       "WebFetch(domain:api-docs.avaloniaui.net)",
       "WebFetch(domain:api.github.com)",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "WebFetch(domain:theme.xaml.live)",
+      "WebFetch(domain:amwx.github.io)",
+      "WebFetch(domain:docs.irihi.tech)",
+      "WebFetch(domain:gist.github.com)",
+      "WebFetch(domain:wieslawsoltes.github.io)"
     ]
   }
 }

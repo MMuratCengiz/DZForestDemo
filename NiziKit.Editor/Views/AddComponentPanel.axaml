@@ -1,0 +1,40 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NiziKit.Editor.ViewModels"
+             x:Class="NiziKit.Editor.Views.AddComponentPanel"
+             x:DataType="vm:GameObjectViewModel">
+
+    <Border Classes="panel"
+            CornerRadius="{DynamicResource EditorControlCornerRadius}"
+            Padding="8"
+            Margin="0,8,0,0">
+        <StackPanel Spacing="4">
+            <TextBlock Text="Add Component"
+                       Classes="header"
+                       Margin="0,0,0,8"/>
+
+            <ScrollViewer MaxHeight="250"
+                          VerticalScrollBarVisibility="Auto">
+                <ItemsControl x:Name="ComponentTypesList">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Button Content="{Binding Name}"
+                                    HorizontalAlignment="Stretch"
+                                    HorizontalContentAlignment="Left"
+                                    Padding="8,6"
+                                    Margin="0,2"
+                                    Click="OnComponentTypeClicked"/>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <Button Content="Cancel"
+                    HorizontalAlignment="Stretch"
+                    HorizontalContentAlignment="Center"
+                    Padding="8,6"
+                    Margin="0,8,0,0"
+                    Command="{Binding ToggleAddComponentPanelCommand}"/>
+        </StackPanel>
+    </Border>
+</UserControl>
