@@ -100,6 +100,45 @@ public sealed class GraphicsContext : IDisposable
         _instance = this;
     }
 
+    /// <summary>
+    /// Creates a headless GraphicsContext without a SwapChain.
+    /// Use this for offscreen rendering, editor applications, or compute-only workloads.
+    /// </summary>
+    public GraphicsContext(GraphicsDesc? desc = null)
+    {
+        desc ??= new GraphicsDesc();
+
+        _numFrames = desc.NumFrames;
+        _backBufferFormat = desc.BackBufferFormat;
+        _depthBufferFormat = desc.DepthBufferFormat;
+
+        _graphicsApi = new GraphicsApi(desc.ApiPreference);
+        _logicalDevice = _graphicsApi.CreateAndLoadOptimalLogicalDevice(new LogicalDeviceDesc
+        {
+#if DEBUG
+            EnableValidationLayers = true
+#endif
+        });
+
+        _graphicsQueue = _logicalDevice.CreateCommandQueue(new CommandQueueDesc { QueueType = QueueType.Graphics });
+        _computeQueue = _logicalDevice.CreateCommandQueue(new CommandQueueDesc { QueueType = QueueType.Compute });
+        _copyQueue = _logicalDevice.CreateCommandQueue(new CommandQueueDesc { QueueType = QueueType.Copy });
+
+        _width = 0;
+        _height = 0;
+        _swapChain = null!;
+
+        _uniformBufferArena = new UniformBufferArena(_logicalDevice);
+        _bindGroupLayoutStore = new BindGroupLayoutStore(_logicalDevice);
+        _rootSignatureStore = new RootSignatureStore(_logicalDevice, _bindGroupLayoutStore);
+        _instance = this;
+    }
+
+    /// <summary>
+    /// Returns true if this context has a SwapChain for presenting to a window.
+    /// </summary>
+    public static bool HasSwapChain => Instance._swapChain != null;
+
     private void _Resize(uint width, uint height)
     {
         if (width == 0 || height == 0)
@@ -138,11 +177,12 @@ public sealed class GraphicsContext : IDisposable
         _uniformBufferArena.Dispose();
         _rootSignatureStore.Dispose();
         _bindGroupLayoutStore.Dispose();
-        _swapChain.Dispose();
+        _swapChain?.Dispose();
         _copyQueue.Dispose();
         _computeQueue.Dispose();
         _graphicsQueue.Dispose();
         _logicalDevice.Dispose();
         GraphicsApi.ReportLiveObjects();
+        _instance = null;
     }
 }

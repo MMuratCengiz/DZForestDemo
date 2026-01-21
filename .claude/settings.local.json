@@ -83,7 +83,11 @@
       "Bash(else)",
       "Bash(fi)",
       "Bash(done)",
-      "Bash(python -m py_compile:*)"
+      "Bash(python -m py_compile:*)",
+      "Bash(git -C /Users/muratcengiz/RiderProjects/DZForestDemo status --porcelain)",
+      "Bash(tree:*)",
+      "WebFetch(domain:docs.avaloniaui.net)",
+      "WebFetch(domain:api-docs.avaloniaui.net)"
     ]
   }
 }

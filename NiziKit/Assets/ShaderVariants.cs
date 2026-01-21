@@ -4,23 +4,29 @@ public static class ShaderVariants
 {
     private const char Separator = '_';
 
-    public static class Keys
+    public static string EncodeName(string baseName, params string[] defines)
     {
-        public const string Skinned = "SKINNED";
-    }
-
-    public static string EncodeName(string baseName, IReadOnlyDictionary<string, string?>? variants)
-    {
-        if (variants == null || variants.Count == 0)
+        if (defines.Length == 0)
         {
             return baseName;
         }
 
-        var sortedKeys = variants.Keys.OrderBy(k => k, StringComparer.Ordinal).ToList();
-        return baseName + Separator + string.Join(Separator, sortedKeys);
+        var sorted = defines.OrderBy(k => k, StringComparer.Ordinal);
+        return baseName + Separator + string.Join(Separator, sorted);
     }
 
-    public static Dictionary<string, string?> FromKeys(params string[] keys)
+    public static string EncodeName(string baseName, IReadOnlyDictionary<string, string?>? defines)
+    {
+        if (defines == null || defines.Count == 0)
+        {
+            return baseName;
+        }
+
+        var sorted = defines.Keys.OrderBy(k => k, StringComparer.Ordinal);
+        return baseName + Separator + string.Join(Separator, sorted);
+    }
+
+    public static Dictionary<string, string?> ToDefines(params string[] keys)
     {
         var dict = new Dictionary<string, string?>();
         foreach (var key in keys)
@@ -30,7 +36,13 @@ public static class ShaderVariants
         return dict;
     }
 
-    public static Dictionary<string, string?> Skinned() => FromKeys(Keys.Skinned);
-
-    public static Dictionary<string, string?> Static() => new();
+    public static Dictionary<string, string?> ToDefines(IEnumerable<string> keys)
+    {
+        var dict = new Dictionary<string, string?>();
+        foreach (var key in keys)
+        {
+            dict[key] = null;
+        }
+        return dict;
+    }
 }

@@ -36,7 +36,7 @@ public sealed class Assets : IDisposable
         var defaultShader = new DefaultShader();
         _shaderStore.Register("Builtin/Shaders/Default", defaultShader.StaticVariant);
         _shaderStore.Register(
-            ShaderVariants.EncodeName("Builtin/Shaders/Default", ShaderVariants.Skinned()),
+            ShaderVariants.EncodeName("Builtin/Shaders/Default", "SKINNED"),
             defaultShader.SkinnedVariant);
         _materialCache["Builtin/Materials/Default"] = new DefaultMaterial(_shaderStore);
 
