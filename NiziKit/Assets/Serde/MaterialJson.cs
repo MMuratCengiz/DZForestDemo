@@ -26,8 +26,8 @@ public sealed class MaterialJson
     [JsonPropertyName("shader")]
     public string Shader { get; set; } = string.Empty;
 
-    [JsonPropertyName("variants")]
-    public List<string>? Variants { get; set; }
+    [JsonPropertyName("variant")]
+    public string? Variant { get; set; }
 
     [JsonPropertyName("textures")]
     public TexturesJson Textures { get; set; } = new();
@@ -48,13 +48,5 @@ public sealed class MaterialJson
 
     public string ToJson() => JsonSerializer.Serialize(this, NiziJsonSerializationOptions.Default);
 
-    public ReadOnlySpan<string> GetVariants()
-    {
-        if (Variants == null || Variants.Count == 0)
-        {
-            return new ReadOnlySpan<string>();
-        }
-
-        return Variants.ToArray();
-    }
+    public string? GetVariant() => Variant;
 }

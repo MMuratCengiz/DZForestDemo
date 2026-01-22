@@ -74,11 +74,11 @@ public class ShaderBuilder
         return new ShaderProgram(programDesc);
     }
 
-    public ShaderProgram CompileFromJson(ShaderProgramJson shaderJson, string basePath)
+    public ShaderProgram CompileFromJson(ShaderProgramJson shaderJson, string basePath, string? variantName = null)
     {
         var stages = new List<ShaderStageDesc>();
 
-        foreach (var stageJson in shaderJson.Stages)
+        foreach (var stageJson in shaderJson.GetStages(variantName))
         {
             var stagePath = Path.IsPathRooted(stageJson.Path)
                 ? stageJson.Path
@@ -92,7 +92,7 @@ public class ShaderBuilder
                 EntryPoint = StringView.Create(stageJson.EntryPoint)
             };
 
-            var mergedDefines = shaderJson.GetDefinesForStage(stageJson);
+            var mergedDefines = shaderJson.GetDefinesForStage(stageJson, variantName);
             if (mergedDefines is { Count: > 0 })
             {
                 stageDesc.Defines = CreateDefinesArray(mergedDefines);
@@ -117,10 +117,10 @@ public class ShaderBuilder
             ShaderStages = stagesArray
         };
 
-        var pipelineType = shaderJson.DetectPipelineType();
+        var pipelineType = shaderJson.DetectPipelineType(variantName);
         if (pipelineType == PipelineType.RayTracing)
         {
-            programDesc.RayTracing = shaderJson.ToShaderRayTracingDesc();
+            programDesc.RayTracing = shaderJson.ToShaderRayTracingDesc(variantName);
         }
 
         return new ShaderProgram(programDesc);
@@ -378,9 +378,10 @@ public class ShaderBuilder
     public Task<ShaderProgram> CompileFromJsonAsync(
         ShaderProgramJson shaderJson,
         string basePath,
+        string? variantName = null,
         CancellationToken ct = default)
     {
-        return Task.Run(() => CompileFromJson(shaderJson, basePath), ct);
+        return Task.Run(() => CompileFromJson(shaderJson, basePath, variantName), ct);
     }
 
     private static string ResolvePath(string shaderPath)

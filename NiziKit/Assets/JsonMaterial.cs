@@ -16,7 +16,7 @@ public sealed class JsonMaterial : Material
         _json = json;
         _basePath = basePath;
         Name = json.Name;
-        Variants = json.GetVariants().ToArray();
+        Variant = json.GetVariant();
     }
 
     public new GpuShader? GpuShader
@@ -89,7 +89,7 @@ public sealed class JsonMaterial : Material
         }
         else
         {
-            _lazyShader = Assets.LoadShaderFromJson(ResolvePath(_json.Shader));
+            _lazyShader = Assets.LoadShaderFromJson(ResolvePath(_json.Shader), Variant);
         }
 
         base.GpuShader = _lazyShader;
@@ -140,7 +140,7 @@ public sealed class JsonMaterial : Material
         }
         else
         {
-            _lazyShader = await Assets.LoadShaderFromJsonAsync(ResolvePath(_json.Shader), ct);
+            _lazyShader = await Assets.LoadShaderFromJsonAsync(ResolvePath(_json.Shader), Variant, ct);
         }
 
         base.GpuShader = _lazyShader;

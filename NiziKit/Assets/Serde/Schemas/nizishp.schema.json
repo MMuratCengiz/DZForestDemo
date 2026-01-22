@@ -3,45 +3,105 @@
   "$id": "https://nizikit.dev/schemas/nizishp.schema.json",
   "title": "NiziKit Shader Program",
   "type": "object",
-  "required": ["name", "stages"],
+  "required": ["name"],
   "properties": {
     "name": {
       "type": "string"
     },
+    "base": {
+      "$ref": "#/$defs/shaderVariant",
+      "description": "Base shader configuration shared across all variants"
+    },
+    "variants": {
+      "type": "array",
+      "description": "Named shader variants that override the base configuration",
+      "items": {
+        "$ref": "#/$defs/shaderVariant"
+      }
+    },
     "type": {
       "type": "string",
-      "enum": ["graphics", "compute", "rayTracing", "mesh"]
+      "enum": ["graphics", "compute", "rayTracing", "mesh"],
+      "description": "Legacy: pipeline type (use base.type for new format)"
     },
     "stages": {
       "type": "array",
       "minItems": 1,
       "items": {
         "$ref": "#/$defs/shaderStage"
-      }
+      },
+      "description": "Legacy: shader stages (use base.stages for new format)"
     },
     "defines": {
       "type": "object",
       "additionalProperties": {
         "type": "string"
-      }
+      },
+      "description": "Legacy: shader defines (use base.defines for new format)"
     },
     "rayTracing": {
-      "$ref": "#/$defs/shaderRayTracingDesc"
+      "$ref": "#/$defs/shaderRayTracingDesc",
+      "description": "Legacy: ray tracing config (use base.rayTracing for new format)"
     },
     "pipeline": {
-      "$ref": "#/$defs/graphicsPipeline"
+      "$ref": "#/$defs/graphicsPipeline",
+      "description": "Legacy: graphics pipeline (use base.pipeline for new format)"
     },
     "computePipeline": {
-      "$ref": "#/$defs/computePipeline"
+      "$ref": "#/$defs/computePipeline",
+      "description": "Legacy: compute pipeline (use base.computePipeline for new format)"
     },
     "rayTracingPipeline": {
-      "$ref": "#/$defs/rayTracingPipeline"
+      "$ref": "#/$defs/rayTracingPipeline",
+      "description": "Legacy: ray tracing pipeline (use base.rayTracingPipeline for new format)"
     },
     "meshPipeline": {
-      "$ref": "#/$defs/meshPipeline"
+      "$ref": "#/$defs/meshPipeline",
+      "description": "Legacy: mesh pipeline (use base.meshPipeline for new format)"
     }
   },
   "$defs": {
+    "shaderVariant": {
+      "type": "object",
+      "description": "Shader variant configuration. All fields are optional when used as an override in the variants array.",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Variant name used to select this variant from a material"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["graphics", "compute", "rayTracing", "mesh"]
+        },
+        "stages": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/shaderStage"
+          }
+        },
+        "defines": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "rayTracing": {
+          "$ref": "#/$defs/shaderRayTracingDesc"
+        },
+        "pipeline": {
+          "$ref": "#/$defs/graphicsPipeline"
+        },
+        "computePipeline": {
+          "$ref": "#/$defs/computePipeline"
+        },
+        "rayTracingPipeline": {
+          "$ref": "#/$defs/rayTracingPipeline"
+        },
+        "meshPipeline": {
+          "$ref": "#/$defs/meshPipeline"
+        }
+      }
+    },
     "shaderStage": {
       "type": "object",
       "required": ["stage", "path"],

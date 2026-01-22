@@ -67,8 +67,8 @@ public sealed class Assets : IDisposable
     public static Material? GetMaterial(string name) => Instance._GetMaterial(name);
     public static Material LoadMaterial(string path) => Instance._LoadMaterial(path);
     public static Task<Material> LoadMaterialAsync(string path, CancellationToken ct = default) => Instance._LoadMaterialAsync(path, ct);
-    public static GpuShader LoadShaderFromJson(string path) => Instance._LoadShaderFromJson(path);
-    public static Task<GpuShader> LoadShaderFromJsonAsync(string path, CancellationToken ct = default) => Instance._LoadShaderFromJsonAsync(path, ct);
+    public static GpuShader LoadShaderFromJson(string path, string? variant = null) => Instance._LoadShaderFromJson(path, variant);
+    public static Task<GpuShader> LoadShaderFromJsonAsync(string path, string? variant = null, CancellationToken ct = default) => Instance._LoadShaderFromJsonAsync(path, variant, ct);
     public static Mesh CreateBox(float width, float height, float depth) => Instance._CreateBox(width, height, depth);
     public static Mesh CreateSphere(float diameter, uint tessellation = 16) => Instance._CreateSphere(diameter, tessellation);
     public static Mesh CreateQuad(float width, float height) => Instance._CreateQuad(width, height);
@@ -528,11 +528,12 @@ public sealed class Assets : IDisposable
         return _materialCache[fullPath];
     }
 
-    private GpuShader _LoadShaderFromJson(string path)
+    private GpuShader _LoadShaderFromJson(string path, string? variant = null)
     {
         var fullPath = Content.ResolvePath(path);
+        var cacheKey = string.IsNullOrEmpty(variant) ? fullPath : $"{fullPath}_{variant}";
 
-        var existingShader = _shaderStore[fullPath];
+        var existingShader = _shaderStore[cacheKey];
         if (existingShader != null)
         {
             return existingShader;
@@ -540,7 +541,7 @@ public sealed class Assets : IDisposable
 
         lock (_shaderLoadLock)
         {
-            existingShader = _shaderStore[fullPath];
+            existingShader = _shaderStore[cacheKey];
             if (existingShader != null)
             {
                 return existingShader;
@@ -550,9 +551,9 @@ public sealed class Assets : IDisposable
             var shaderJson = ShaderProgramJson.FromJson(json);
 
             var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;
-            var pipelineType = shaderJson.DetectPipelineType();
+            var pipelineType = shaderJson.DetectPipelineType(variant);
 
-            var program = _shaderBuilder.CompileFromJson(shaderJson, basePath);
+            var program = _shaderBuilder.CompileFromJson(shaderJson, basePath, variant);
 
             GpuShader shader;
             switch (pipelineType)
@@ -564,16 +565,17 @@ public sealed class Assets : IDisposable
                 case PipelineType.RayTracing:
                     var rtPipelineDesc = new RayTracingPipelineDesc
                     {
-                        HitGroups = shaderJson.ToHitGroupDescArray()
+                        HitGroups = shaderJson.ToHitGroupDescArray(variant)
                     };
-                    var explicitIndices = shaderJson.GetExplicitLocalRootSignatureIndices();
+                    var explicitIndices = shaderJson.GetExplicitLocalRootSignatureIndices(variant);
                     shader = GpuShader.RayTracing(program, rtPipelineDesc, ownsProgram: false, explicitIndices);
                     break;
 
                 case PipelineType.Mesh:
                     var meshPipelineDesc = shaderJson.ToMeshPipelineDesc(
                         GraphicsContext.BackBufferFormat,
-                        GraphicsContext.DepthBufferFormat);
+                        GraphicsContext.DepthBufferFormat,
+                        variant);
                     shader = GpuShader.Mesh(program, meshPipelineDesc, ownsProgram: false);
                     break;
 
@@ -581,21 +583,23 @@ public sealed class Assets : IDisposable
                 default:
                     var graphicsPipelineDesc = shaderJson.ToGraphicsPipelineDesc(
                         GraphicsContext.BackBufferFormat,
-                        GraphicsContext.DepthBufferFormat);
+                        GraphicsContext.DepthBufferFormat,
+                        variant);
                     shader = GpuShader.Graphics(program, graphicsPipelineDesc, ownsProgram: false);
                     break;
             }
 
-            _shaderStore.Register(fullPath, shader);
+            _shaderStore.Register(cacheKey, shader);
             return shader;
         }
     }
 
-    private async Task<GpuShader> _LoadShaderFromJsonAsync(string path, CancellationToken ct = default)
+    private async Task<GpuShader> _LoadShaderFromJsonAsync(string path, string? variant = null, CancellationToken ct = default)
     {
         var fullPath = Content.ResolvePath(path);
+        var cacheKey = string.IsNullOrEmpty(variant) ? fullPath : $"{fullPath}_{variant}";
 
-        var existingShader = _shaderStore[fullPath];
+        var existingShader = _shaderStore[cacheKey];
         if (existingShader != null)
         {
             return existingShader;
@@ -605,9 +609,9 @@ public sealed class Assets : IDisposable
         var shaderJson = ShaderProgramJson.FromJson(json);
 
         var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;
-        var pipelineType = shaderJson.DetectPipelineType();
+        var pipelineType = shaderJson.DetectPipelineType(variant);
 
-        var program = await _shaderBuilder.CompileFromJsonAsync(shaderJson, basePath, ct);
+        var program = await _shaderBuilder.CompileFromJsonAsync(shaderJson, basePath, variant, ct);
 
         GpuShader shader;
         switch (pipelineType)
@@ -619,16 +623,17 @@ public sealed class Assets : IDisposable
             case PipelineType.RayTracing:
                 var rtPipelineDesc = new RayTracingPipelineDesc
                 {
-                    HitGroups = shaderJson.ToHitGroupDescArray()
+                    HitGroups = shaderJson.ToHitGroupDescArray(variant)
                 };
-                var explicitIndicesAsync = shaderJson.GetExplicitLocalRootSignatureIndices();
+                var explicitIndicesAsync = shaderJson.GetExplicitLocalRootSignatureIndices(variant);
                 shader = GpuShader.RayTracing(program, rtPipelineDesc, ownsProgram: false, explicitIndicesAsync);
                 break;
 
             case PipelineType.Mesh:
                 var meshPipelineDesc = shaderJson.ToMeshPipelineDesc(
                     GraphicsContext.BackBufferFormat,
-                    GraphicsContext.DepthBufferFormat);
+                    GraphicsContext.DepthBufferFormat,
+                    variant);
                 shader = GpuShader.Mesh(program, meshPipelineDesc, ownsProgram: false);
                 break;
 
@@ -636,12 +641,13 @@ public sealed class Assets : IDisposable
             default:
                 var graphicsPipelineDesc = shaderJson.ToGraphicsPipelineDesc(
                     GraphicsContext.BackBufferFormat,
-                    GraphicsContext.DepthBufferFormat);
+                    GraphicsContext.DepthBufferFormat,
+                    variant);
                 shader = GpuShader.Graphics(program, graphicsPipelineDesc, ownsProgram: false);
                 break;
         }
 
-        _shaderStore.Register(fullPath, shader);
+        _shaderStore.Register(cacheKey, shader);
         return shader;
     }
 

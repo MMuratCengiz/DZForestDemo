@@ -201,7 +201,7 @@ public sealed class AssetPack : IDisposable
     {
         var tasks = shaderDefs.Select(async kvp =>
         {
-            var shader = await Assets.Assets.LoadShaderFromJsonAsync(kvp.Value, ct);
+            var shader = await Assets.Assets.LoadShaderFromJsonAsync(kvp.Value, null, ct);
             return (kvp.Key, shader);
         });
 

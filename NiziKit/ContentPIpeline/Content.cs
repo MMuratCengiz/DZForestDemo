@@ -154,11 +154,11 @@ public static class Content
     public static Task<Assets.Material> LoadMaterialAsync(string path, CancellationToken ct = default)
         => Assets.Assets.LoadMaterialAsync(path, ct);
 
-    public static GpuShader LoadShader(string path)
-        => Assets.Assets.LoadShaderFromJson(path);
+    public static GpuShader LoadShader(string path, string? variant = null)
+        => Assets.Assets.LoadShaderFromJson(path, variant);
 
-    public static Task<GpuShader> LoadShaderAsync(string path, CancellationToken ct = default)
-        => Assets.Assets.LoadShaderFromJsonAsync(path, ct);
+    public static Task<GpuShader> LoadShaderAsync(string path, string? variant = null, CancellationToken ct = default)
+        => Assets.Assets.LoadShaderFromJsonAsync(path, variant, ct);
 
     private static void EnsureInitialized()
     {

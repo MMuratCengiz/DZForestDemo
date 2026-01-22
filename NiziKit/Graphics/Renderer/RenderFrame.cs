@@ -1,5 +1,4 @@
 using DenOfIz;
-using NiziKit.Graphics.Graph;
 using NiziKit.Graphics.Resources;
 using Semaphore = DenOfIz.Semaphore;
 using RenderPass = NiziKit.Graphics.Renderer.Pass.RenderPass;

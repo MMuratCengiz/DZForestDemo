@@ -334,9 +334,9 @@ public sealed class MeshPipelineJson
 
 #endregion
 
-#region Main Shader Program
+#region Shader Variant
 
-public sealed class ShaderProgramJson
+public sealed class ShaderVariantJson
 {
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
@@ -345,7 +345,48 @@ public sealed class ShaderProgramJson
     public PipelineType? Type { get; set; }
 
     [JsonPropertyName("stages")]
-    public List<ShaderStageJson> Stages { get; set; } = [];
+    public List<ShaderStageJson>? Stages { get; set; }
+
+    [JsonPropertyName("defines")]
+    public Dictionary<string, string>? Defines { get; set; }
+
+    [JsonPropertyName("rayTracing")]
+    public ShaderRayTracingDescJson? RayTracing { get; set; }
+
+    [JsonPropertyName("pipeline")]
+    public GraphicsPipelineJson? Pipeline { get; set; }
+
+    [JsonPropertyName("computePipeline")]
+    public ComputePipelineJson? ComputePipeline { get; set; }
+
+    [JsonPropertyName("rayTracingPipeline")]
+    public RayTracingPipelineJson? RayTracingPipeline { get; set; }
+
+    [JsonPropertyName("meshPipeline")]
+    public MeshPipelineJson? MeshPipeline { get; set; }
+}
+
+#endregion
+
+#region Main Shader Program
+
+public sealed class ShaderProgramJson
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("base")]
+    public ShaderVariantJson? Base { get; set; }
+
+    [JsonPropertyName("variants")]
+    public List<ShaderVariantJson>? Variants { get; set; }
+
+    // Legacy fields for backwards compatibility (flat format)
+    [JsonPropertyName("type")]
+    public PipelineType? Type { get; set; }
+
+    [JsonPropertyName("stages")]
+    public List<ShaderStageJson>? Stages { get; set; }
 
     [JsonPropertyName("defines")]
     public Dictionary<string, string>? Defines { get; set; }
@@ -375,14 +416,137 @@ public sealed class ShaderProgramJson
 
     public string ToJson() => JsonSerializer.Serialize(this, NiziJsonSerializationOptions.Default);
 
-    public PipelineType DetectPipelineType()
+    /// <summary>
+    /// Gets the effective variant for compilation. If a variant name is specified, merges base with the named variant.
+    /// If no variant is specified, returns the base or the legacy flat format.
+    /// </summary>
+    public ShaderVariantJson GetEffectiveVariant(string? variantName = null)
     {
-        if (Type.HasValue)
+        // If using new format with base
+        if (Base != null)
         {
-            return Type.Value;
+            var result = CloneVariant(Base);
+            result.Name = Name;
+
+            if (!string.IsNullOrEmpty(variantName) && Variants != null)
+            {
+                var variant = Variants.FirstOrDefault(v =>
+                    string.Equals(v.Name, variantName, StringComparison.OrdinalIgnoreCase));
+                if (variant != null)
+                {
+                    MergeVariant(result, variant);
+                }
+            }
+
+            return result;
         }
 
-        foreach (var stage in Stages)
+        // Legacy flat format - convert to variant
+        return new ShaderVariantJson
+        {
+            Name = Name,
+            Type = Type,
+            Stages = Stages,
+            Defines = Defines,
+            RayTracing = RayTracing,
+            Pipeline = Pipeline,
+            ComputePipeline = ComputePipeline,
+            RayTracingPipeline = RayTracingPipeline,
+            MeshPipeline = MeshPipeline
+        };
+    }
+
+    /// <summary>
+    /// Gets all variant names defined in this shader program.
+    /// </summary>
+    public IEnumerable<string> GetVariantNames()
+    {
+        if (Variants == null)
+        {
+            return [];
+        }
+
+        return Variants.Select(v => v.Name).Where(n => !string.IsNullOrEmpty(n));
+    }
+
+    private static ShaderVariantJson CloneVariant(ShaderVariantJson source)
+    {
+        return new ShaderVariantJson
+        {
+            Name = source.Name,
+            Type = source.Type,
+            Stages = source.Stages?.ToList(),
+            Defines = source.Defines != null ? new Dictionary<string, string>(source.Defines) : null,
+            RayTracing = source.RayTracing,
+            Pipeline = source.Pipeline,
+            ComputePipeline = source.ComputePipeline,
+            RayTracingPipeline = source.RayTracingPipeline,
+            MeshPipeline = source.MeshPipeline
+        };
+    }
+
+    private static void MergeVariant(ShaderVariantJson target, ShaderVariantJson overlay)
+    {
+        if (overlay.Type.HasValue)
+        {
+            target.Type = overlay.Type;
+        }
+
+        if (overlay.Stages != null && overlay.Stages.Count > 0)
+        {
+            target.Stages = overlay.Stages;
+        }
+
+        if (overlay.Defines != null && overlay.Defines.Count > 0)
+        {
+            target.Defines ??= new Dictionary<string, string>();
+            foreach (var (key, value) in overlay.Defines)
+            {
+                target.Defines[key] = value;
+            }
+        }
+
+        if (overlay.RayTracing != null)
+        {
+            target.RayTracing = overlay.RayTracing;
+        }
+
+        if (overlay.Pipeline != null)
+        {
+            target.Pipeline = overlay.Pipeline;
+        }
+
+        if (overlay.ComputePipeline != null)
+        {
+            target.ComputePipeline = overlay.ComputePipeline;
+        }
+
+        if (overlay.RayTracingPipeline != null)
+        {
+            target.RayTracingPipeline = overlay.RayTracingPipeline;
+        }
+
+        if (overlay.MeshPipeline != null)
+        {
+            target.MeshPipeline = overlay.MeshPipeline;
+        }
+    }
+
+    public PipelineType DetectPipelineType(string? variantName = null)
+    {
+        var variant = GetEffectiveVariant(variantName);
+
+        if (variant.Type.HasValue)
+        {
+            return variant.Type.Value;
+        }
+
+        if (variant.Stages == null)
+        {
+            return PipelineType.Graphics;
+        }
+
+        foreach (var stage in variant.Stages)
         {
             switch (stage.Stage)
             {
@@ -406,19 +570,21 @@ public sealed class ShaderProgramJson
         return PipelineType.Graphics;
     }
 
-    public Dictionary<string, string?>? GetDefines()
+    public Dictionary<string, string?>? GetDefines(string? variantName = null)
     {
-        if (Defines == null || Defines.Count == 0)
+        var variant = GetEffectiveVariant(variantName);
+
+        if (variant.Defines == null || variant.Defines.Count == 0)
         {
             return null;
         }
 
-        return Defines.ToDictionary(kv => kv.Key, kv => (string?)kv.Value);
+        return variant.Defines.ToDictionary(kv => kv.Key, kv => (string?)kv.Value);
     }
 
-    public Dictionary<string, string?>? GetDefinesForStage(ShaderStageJson stage)
+    public Dictionary<string, string?>? GetDefinesForStage(ShaderStageJson stage, string? variantName = null)
     {
-        var globalDefines = GetDefines();
+        var globalDefines = GetDefines(variantName);
         if (stage.Defines == null || stage.Defines.Count == 0)
         {
             return globalDefines;
@@ -433,13 +599,19 @@ public sealed class ShaderProgramJson
         return merged.Count > 0 ? merged : null;
     }
 
-    public (string? vertexPath, string? pixelPath, string? computePath) GetStagePaths()
+    public List<ShaderStageJson> GetStages(string? variantName = null)
+    {
+        var variant = GetEffectiveVariant(variantName);
+        return variant.Stages ?? [];
+    }
+
+    public (string? vertexPath, string? pixelPath, string? computePath) GetStagePaths(string? variantName = null)
     {
         string? vertexPath = null;
         string? pixelPath = null;
         string? computePath = null;
 
-        foreach (var stage in Stages)
+        foreach (var stage in GetStages(variantName))
         {
             switch (stage.Stage)
             {
@@ -458,20 +630,21 @@ public sealed class ShaderProgramJson
         return (vertexPath, pixelPath, computePath);
     }
 
-    public IEnumerable<ShaderStageJson> GetStagesOfType(ShaderStageFlagBits type)
-        => Stages.Where(s => s.Stage == type);
+    public IEnumerable<ShaderStageJson> GetStagesOfType(ShaderStageFlagBits type, string? variantName = null)
+        => GetStages(variantName).Where(s => s.Stage == type);
 
-    public (string? path, string entryPoint) GetStageInfo(ShaderStageFlagBits type)
+    public (string? path, string entryPoint) GetStageInfo(ShaderStageFlagBits type, string? variantName = null)
     {
-        var stage = Stages.FirstOrDefault(s => s.Stage == type);
+        var stage = GetStages(variantName).FirstOrDefault(s => s.Stage == type);
         return stage != null ? (stage.Path, stage.EntryPoint) : (null, "main");
     }
 
     #region Conversion to Native Descriptors
 
-    public GraphicsPipelineDesc ToGraphicsPipelineDesc(Format backBufferFormat, Format depthBufferFormat)
+    public GraphicsPipelineDesc ToGraphicsPipelineDesc(Format backBufferFormat, Format depthBufferFormat, string? variantName = null)
     {
-        var pipeline = Pipeline ?? new GraphicsPipelineJson();
+        var variant = GetEffectiveVariant(variantName);
+        var pipeline = variant.Pipeline ?? new GraphicsPipelineJson();
 
         var blendDesc = ConvertBlendDesc(pipeline.Blend);
         var renderTarget = new RenderTargetDesc
@@ -506,9 +679,10 @@ public sealed class ShaderProgramJson
         };
     }
 
-    public GraphicsPipelineDesc ToMeshPipelineDesc(Format backBufferFormat, Format depthBufferFormat)
+    public GraphicsPipelineDesc ToMeshPipelineDesc(Format backBufferFormat, Format depthBufferFormat, string? variantName = null)
     {
-        var pipeline = MeshPipeline ?? new MeshPipelineJson();
+        var variant = GetEffectiveVariant(variantName);
+        var pipeline = variant.MeshPipeline ?? new MeshPipelineJson();
 
         var blendDesc = ConvertBlendDesc(pipeline.Blend);
         var renderTarget = new RenderTargetDesc
@@ -539,25 +713,27 @@ public sealed class ShaderProgramJson
         };
     }
 
-    public ShaderRayTracingDesc ToShaderRayTracingDesc()
+    public ShaderRayTracingDesc ToShaderRayTracingDesc(string? variantName = null)
     {
-        if (RayTracing != null)
+        var variant = GetEffectiveVariant(variantName);
+
+        if (variant.RayTracing != null)
         {
             return new ShaderRayTracingDesc
             {
-                MaxNumPayloadBytes = RayTracing.MaxPayloadBytes,
-                MaxNumAttributeBytes = RayTracing.MaxAttributeBytes,
-                MaxRecursionDepth = RayTracing.MaxRecursionDepth
+                MaxNumPayloadBytes = variant.RayTracing.MaxPayloadBytes,
+                MaxNumAttributeBytes = variant.RayTracing.MaxAttributeBytes,
+                MaxRecursionDepth = variant.RayTracing.MaxRecursionDepth
             };
         }
 
-        if (RayTracingPipeline != null)
+        if (variant.RayTracingPipeline != null)
         {
             return new ShaderRayTracingDesc
             {
-                MaxNumPayloadBytes = RayTracingPipeline.MaxPayloadBytes,
-                MaxNumAttributeBytes = RayTracingPipeline.MaxAttributeBytes,
-                MaxRecursionDepth = RayTracingPipeline.MaxRecursionDepth
+                MaxNumPayloadBytes = variant.RayTracingPipeline.MaxPayloadBytes,
+                MaxNumAttributeBytes = variant.RayTracingPipeline.MaxAttributeBytes,
+                MaxRecursionDepth = variant.RayTracingPipeline.MaxRecursionDepth
             };
         }
 
@@ -569,14 +745,16 @@ public sealed class ShaderProgramJson
         };
     }
 
-    public HitGroupDescArray ToHitGroupDescArray()
+    public HitGroupDescArray ToHitGroupDescArray(string? variantName = null)
     {
-        if (RayTracingPipeline == null || RayTracingPipeline.HitGroups.Count == 0)
+        var variant = GetEffectiveVariant(variantName);
+
+        if (variant.RayTracingPipeline == null || variant.RayTracingPipeline.HitGroups.Count == 0)
         {
             return HitGroupDescArray.Create([]);
         }
 
-        var hitGroups = RayTracingPipeline.HitGroups.Select(hg => new HitGroupDesc
+        var hitGroups = variant.RayTracingPipeline.HitGroups.Select(hg => new HitGroupDesc
         {
             Name = StringView.Intern(hg.Name),
             IntersectionShaderIndex = hg.IntersectionShaderIndex,
@@ -588,14 +766,16 @@ public sealed class ShaderProgramJson
         return HitGroupDescArray.Create(hitGroups);
     }
 
-    public int[]? GetExplicitLocalRootSignatureIndices()
+    public int[]? GetExplicitLocalRootSignatureIndices(string? variantName = null)
     {
-        if (RayTracingPipeline == null || RayTracingPipeline.HitGroups.Count == 0)
+        var variant = GetEffectiveVariant(variantName);
+
+        if (variant.RayTracingPipeline == null || variant.RayTracingPipeline.HitGroups.Count == 0)
         {
             return null;
         }
 
-        var indices = RayTracingPipeline.HitGroups
+        var indices = variant.RayTracingPipeline.HitGroups
             .Select(hg => hg.LocalRootSignatureIndex)
             .ToArray();
 
