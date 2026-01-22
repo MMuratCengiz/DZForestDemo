@@ -24,9 +24,11 @@ public sealed class GizmoShaders : IDisposable
     private readonly RootSignature _rootSignature;
     private readonly InputLayout _inputLayout;
     private readonly BindGroupLayout _bindGroupLayout;
-    private readonly Pipeline _pipeline;
+    private readonly Pipeline _trianglePipeline;
+    private readonly Pipeline _linePipeline;
 
-    public Pipeline Pipeline => _pipeline;
+    public Pipeline TrianglePipeline => _trianglePipeline;
+    public Pipeline LinePipeline => _linePipeline;
     public RootSignature RootSignature => _rootSignature;
     public BindGroupLayout BindGroupLayout => _bindGroupLayout;
 
@@ -66,7 +68,31 @@ public sealed class GizmoShaders : IDisposable
 
         using var renderTargets = RenderTargetDescArray.Create([renderTarget]);
 
-        var pipelineDesc = new PipelineDesc
+        var trianglePipelineDesc = new PipelineDesc
+        {
+            RootSignature = _rootSignature,
+            InputLayout = _inputLayout,
+            ShaderProgram = _program,
+            BindPoint = BindPoint.Graphics,
+            Graphics = new GraphicsPipelineDesc
+            {
+                PrimitiveTopology = PrimitiveTopology.Triangle,
+                CullMode = CullMode.None,
+                FillMode = FillMode.Solid,
+                DepthTest = new DepthTest
+                {
+                    Enable = false,
+                    CompareOp = CompareOp.Always,
+                    Write = false
+                },
+                RenderTargets = renderTargets,
+                DepthStencilAttachmentFormat = GraphicsContext.DepthBufferFormat
+            }
+        };
+
+        _trianglePipeline = GraphicsContext.Device.CreatePipeline(trianglePipelineDesc);
+
+        var linePipelineDesc = new PipelineDesc
         {
             RootSignature = _rootSignature,
             InputLayout = _inputLayout,
@@ -88,12 +114,13 @@ public sealed class GizmoShaders : IDisposable
             }
         };
 
-        _pipeline = GraphicsContext.Device.CreatePipeline(pipelineDesc);
+        _linePipeline = GraphicsContext.Device.CreatePipeline(linePipelineDesc);
     }
 
     public void Dispose()
     {
-        _pipeline.Dispose();
+        _trianglePipeline.Dispose();
+        _linePipeline.Dispose();
         _inputLayout.Dispose();
         _rootSignature.Dispose();
         _bindGroupLayout.Dispose();

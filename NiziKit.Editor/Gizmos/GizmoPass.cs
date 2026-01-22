@@ -14,16 +14,20 @@ namespace NiziKit.Editor.Gizmos;
 
 public sealed class GizmoPass : IDisposable
 {
-    private const int MaxVertices = 16384;
+    private const int MaxTriangleVertices = 32768;
+    private const int MaxLineVertices = 1024;
 
     private readonly GizmoShaders _shaders;
-    private readonly Buffer[] _vertexBuffers;
-    private readonly IntPtr[] _vertexBufferPtrs;
+    private readonly Buffer[] _triangleVertexBuffers;
+    private readonly IntPtr[] _triangleVertexBufferPtrs;
+    private readonly Buffer[] _lineVertexBuffers;
+    private readonly IntPtr[] _lineVertexBufferPtrs;
     private readonly MappedBuffer<GizmoConstants> _constantBuffer;
     private readonly BindGroup[] _bindGroups;
     private readonly Texture?[] _boundDepthTextures;
 
-    private readonly List<GizmoVertex> _vertices = new(MaxVertices);
+    private readonly List<GizmoVertex> _triangleVertices = new(MaxTriangleVertices);
+    private readonly List<GizmoVertex> _lineVertices = new(MaxLineVertices);
 
     public TransformGizmo Gizmo { get; } = new();
 
@@ -32,23 +36,35 @@ public sealed class GizmoPass : IDisposable
         _shaders = new GizmoShaders();
 
         var numFrames = (int)GraphicsContext.NumFrames;
-        _vertexBuffers = new Buffer[numFrames];
-        _vertexBufferPtrs = new IntPtr[numFrames];
+        _triangleVertexBuffers = new Buffer[numFrames];
+        _triangleVertexBufferPtrs = new IntPtr[numFrames];
+        _lineVertexBuffers = new Buffer[numFrames];
+        _lineVertexBufferPtrs = new IntPtr[numFrames];
         _bindGroups = new BindGroup[numFrames];
         _boundDepthTextures = new Texture?[numFrames];
 
-        var vertexBufferSize = (uint)(Marshal.SizeOf<GizmoVertex>() * MaxVertices);
+        var triangleBufferSize = (uint)(Marshal.SizeOf<GizmoVertex>() * MaxTriangleVertices);
+        var lineBufferSize = (uint)(Marshal.SizeOf<GizmoVertex>() * MaxLineVertices);
 
         for (var i = 0; i < numFrames; i++)
         {
-            _vertexBuffers[i] = GraphicsContext.Device.CreateBuffer(new BufferDesc
+            _triangleVertexBuffers[i] = GraphicsContext.Device.CreateBuffer(new BufferDesc
             {
-                NumBytes = vertexBufferSize,
+                NumBytes = triangleBufferSize,
                 Usage = (uint)BufferUsageFlagBits.Vertex,
                 HeapType = HeapType.CpuGpu,
-                DebugName = StringView.Create($"GizmoVertexBuffer_{i}")
+                DebugName = StringView.Create($"GizmoTriangleVertexBuffer_{i}")
             });
-            _vertexBufferPtrs[i] = _vertexBuffers[i].MapMemory();
+            _triangleVertexBufferPtrs[i] = _triangleVertexBuffers[i].MapMemory();
+
+            _lineVertexBuffers[i] = GraphicsContext.Device.CreateBuffer(new BufferDesc
+            {
+                NumBytes = lineBufferSize,
+                Usage = (uint)BufferUsageFlagBits.Vertex,
+                HeapType = HeapType.CpuGpu,
+                DebugName = StringView.Create($"GizmoLineVertexBuffer_{i}")
+            });
+            _lineVertexBufferPtrs[i] = _lineVertexBuffers[i].MapMemory();
 
             _bindGroups[i] = GraphicsContext.Device.CreateBindGroup(new BindGroupDesc
             {
@@ -61,7 +77,8 @@ public sealed class GizmoPass : IDisposable
 
     public void BeginFrame()
     {
-        _vertices.Clear();
+        _triangleVertices.Clear();
+        _lineVertices.Clear();
     }
 
     public void BuildGizmoGeometry(CameraComponent camera)
@@ -79,13 +96,13 @@ public sealed class GizmoPass : IDisposable
         switch (Gizmo.Mode)
         {
             case GizmoMode.Translate:
-                GizmoGeometry.BuildTranslateGizmo(_vertices, origin, rotation, scale, Gizmo.HoveredAxis, Gizmo.ActiveAxis);
+                GizmoGeometry.BuildTranslateGizmo(_triangleVertices, origin, rotation, scale, Gizmo.HoveredAxis, Gizmo.ActiveAxis);
                 break;
             case GizmoMode.Rotate:
-                GizmoGeometry.BuildRotateGizmo(_vertices, origin, rotation, scale, Gizmo.HoveredAxis, Gizmo.ActiveAxis);
+                GizmoGeometry.BuildRotateGizmo(_triangleVertices, origin, rotation, scale, Gizmo.HoveredAxis, Gizmo.ActiveAxis);
                 break;
             case GizmoMode.Scale:
-                GizmoGeometry.BuildScaleGizmo(_vertices, origin, rotation, scale, Gizmo.HoveredAxis, Gizmo.ActiveAxis);
+                GizmoGeometry.BuildScaleGizmo(_triangleVertices, origin, rotation, scale, Gizmo.HoveredAxis, Gizmo.ActiveAxis);
                 break;
         }
     }
@@ -103,42 +120,71 @@ public sealed class GizmoPass : IDisposable
             obj.WorldMatrix,
             GizmoGeometry.SelectionBoxColor);
 
-        if (_vertices.Count + boxVerts.Length > MaxVertices)
+        if (_lineVertices.Count + boxVerts.Length > MaxLineVertices)
         {
             return;
         }
 
-        _vertices.AddRange(boxVerts);
+        _lineVertices.AddRange(boxVerts);
     }
 
     public void Render(GraphicsPass pass, ViewData viewData, CycledTexture sceneDepth)
     {
-        if (_vertices.Count == 0)
+        if (_triangleVertices.Count == 0 && _lineVertices.Count == 0)
         {
             return;
         }
 
         var frameIndex = GraphicsContext.FrameIndex;
 
-        UploadVertices(frameIndex);
         UpdateConstants(viewData);
         UpdateBindGroup(frameIndex, sceneDepth[frameIndex]);
 
-        pass.BindPipeline(_shaders.Pipeline);
-        pass.Bind(_bindGroups[frameIndex]);
-        pass.BindVertexBuffer(_vertexBuffers[frameIndex], 0, (uint)Marshal.SizeOf<GizmoVertex>());
-        pass.Draw((uint)_vertices.Count, 1, 0, 0);
+        var vertexStride = (uint)Marshal.SizeOf<GizmoVertex>();
+
+        // Render filled triangles (gizmo geometry)
+        if (_triangleVertices.Count > 0)
+        {
+            UploadTriangleVertices(frameIndex);
+            pass.BindPipeline(_shaders.TrianglePipeline);
+            pass.Bind(_bindGroups[frameIndex]);
+            pass.BindVertexBuffer(_triangleVertexBuffers[frameIndex], 0, vertexStride);
+            pass.Draw((uint)_triangleVertices.Count, 1, 0, 0);
+        }
+
+        // Render lines (selection box)
+        if (_lineVertices.Count > 0)
+        {
+            UploadLineVertices(frameIndex);
+            pass.BindPipeline(_shaders.LinePipeline);
+            pass.Bind(_bindGroups[frameIndex]);
+            pass.BindVertexBuffer(_lineVertexBuffers[frameIndex], 0, vertexStride);
+            pass.Draw((uint)_lineVertices.Count, 1, 0, 0);
+        }
     }
 
-    private void UploadVertices(int frameIndex)
+    private void UploadTriangleVertices(int frameIndex)
     {
-        var size = Marshal.SizeOf<GizmoVertex>() * _vertices.Count;
+        var size = Marshal.SizeOf<GizmoVertex>() * _triangleVertices.Count;
         unsafe
         {
-            var span = CollectionsMarshal.AsSpan(_vertices);
+            var span = CollectionsMarshal.AsSpan(_triangleVertices);
             fixed (GizmoVertex* src = span)
             {
-                System.Buffer.MemoryCopy(src, (void*)_vertexBufferPtrs[frameIndex], size, size);
+                System.Buffer.MemoryCopy(src, (void*)_triangleVertexBufferPtrs[frameIndex], size, size);
+            }
+        }
+    }
+
+    private void UploadLineVertices(int frameIndex)
+    {
+        var size = Marshal.SizeOf<GizmoVertex>() * _lineVertices.Count;
+        unsafe
+        {
+            var span = CollectionsMarshal.AsSpan(_lineVertices);
+            fixed (GizmoVertex* src = span)
+            {
+                System.Buffer.MemoryCopy(src, (void*)_lineVertexBufferPtrs[frameIndex], size, size);
             }
         }
     }
@@ -181,7 +227,13 @@ public sealed class GizmoPass : IDisposable
 
     public void Dispose()
     {
-        foreach (var buffer in _vertexBuffers)
+        foreach (var buffer in _triangleVertexBuffers)
+        {
+            buffer.UnmapMemory();
+            buffer.Dispose();
+        }
+
+        foreach (var buffer in _lineVertexBuffers)
         {
             buffer.UnmapMemory();
             buffer.Dispose();

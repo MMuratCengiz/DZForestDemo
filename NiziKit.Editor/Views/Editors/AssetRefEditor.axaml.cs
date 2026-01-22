@@ -140,6 +140,8 @@ public partial class AssetRefEditor : UserControl
             return;
         }
 
+        var textPrimaryBrush = GetResourceBrush("TextPrimaryBrush") ?? Brushes.White;
+
         var items = new List<Button>();
         foreach (var pack in packs)
         {
@@ -150,7 +152,7 @@ public partial class AssetRefEditor : UserControl
                 HorizontalContentAlignment = HorizontalAlignment.Left,
                 Padding = new Thickness(8, 6),
                 Background = Brushes.Transparent,
-                Foreground = new SolidColorBrush(Color.Parse("#EEEEEE")),
+                Foreground = textPrimaryBrush,
                 BorderThickness = new Thickness(0),
                 Tag = pack
             };
@@ -158,6 +160,22 @@ public partial class AssetRefEditor : UserControl
             items.Add(button);
         }
         _packItemsControl.ItemsSource = items;
+    }
+
+    private IBrush? GetResourceBrush(string key)
+    {
+        if (this.TryFindResource(key, this.ActualThemeVariant, out var resource))
+        {
+            if (resource is IBrush brush)
+            {
+                return brush;
+            }
+            if (resource is Color color)
+            {
+                return new SolidColorBrush(color);
+            }
+        }
+        return null;
     }
 
     private void OnPackItemClicked(object? sender, RoutedEventArgs e)

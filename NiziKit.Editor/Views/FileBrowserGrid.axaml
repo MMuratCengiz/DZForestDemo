@@ -7,7 +7,7 @@
 
     <Grid RowDefinitions="Auto,*">
         <Border Grid.Row="0"
-                Background="#18FFFFFF"
+                Background="{DynamicResource SubtleBackgroundBrush}"
                 Padding="8,6"
                 Margin="0,0,0,4">
             <Grid ColumnDefinitions="Auto,*,Auto">
@@ -119,7 +119,7 @@
                     <Setter Property="Margin" Value="2"/>
                 </Style>
                 <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
-                    <Setter Property="Background" Value="#20FFFFFF"/>
+                    <Setter Property="Background" Value="{DynamicResource HoverBackgroundBrush}"/>
                 </Style>
                 <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
                     <Setter Property="Background" Value="{DynamicResource SelectionColor}"/>

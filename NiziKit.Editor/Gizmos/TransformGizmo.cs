@@ -79,19 +79,9 @@ public class TransformGizmo
             return 1f;
         }
 
-        var meshComponent = _target.GetComponent<MeshComponent>();
-        if (meshComponent?.Mesh != null)
-        {
-            var bounds = meshComponent.Mesh.Bounds;
-            var size = bounds.Max - bounds.Min;
-            var maxExtent = MathF.Max(size.X, MathF.Max(size.Y, size.Z));
-            var objectScale = _target.LocalScale;
-            var avgScale = (objectScale.X + objectScale.Y + objectScale.Z) / 3f;
-            var scale = maxExtent * avgScale * 0.6f;
-            return Math.Clamp(scale, MinGizmoScale, MaxGizmoScale);
-        }
-
-        return 1f;
+        var cameraDistance = Vector3.Distance(camera.WorldPosition, _target.WorldPosition);
+        var distanceScale = cameraDistance * 0.15f;
+        return Math.Clamp(distanceScale, MinGizmoScale, MaxGizmoScale);
     }
 
     public void UpdateHover(Ray ray, CameraComponent camera)

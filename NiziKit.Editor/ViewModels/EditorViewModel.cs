@@ -1,11 +1,8 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Dock.Model.Controls;
-using Dock.Model.Core;
 using NiziKit.Components;
 using NiziKit.Core;
-using NiziKit.Editor.Docking;
 using NiziKit.Editor.Services;
 
 namespace NiziKit.Editor.ViewModels;
@@ -32,12 +29,6 @@ public partial class EditorViewModel : ObservableObject
             IsImportPanelOpen = false;
         };
         ImportViewModel.ImportCancelled += () => IsImportPanelOpen = false;
-
-        var factory = new EditorDockFactory(this);
-        var layout = factory.CreateLayout();
-        factory.InitLayout(layout);
-        DockLayout = layout;
-        DockFactory = factory;
     }
 
     [ObservableProperty]
@@ -63,6 +54,13 @@ public partial class EditorViewModel : ObservableObject
     [ObservableProperty]
     private bool _isImportPanelOpen;
 
+    // Bottom panel states
+    [ObservableProperty]
+    private bool _isAssetBrowserOpen;
+
+    [ObservableProperty]
+    private bool _isPackManagerOpen;
+
     // Asset Picker state
     [ObservableProperty]
     private bool _isAssetPickerOpen;
@@ -77,11 +75,6 @@ public partial class EditorViewModel : ObservableObject
     private string? _assetPickerCurrentAssetName;
 
     private Action<AssetInfo?>? _assetPickerCallback;
-
-    [ObservableProperty]
-    private IRootDock? _dockLayout;
-
-    public IFactory? DockFactory { get; private set; }
 
     public void LoadFromCurrentScene()
     {
@@ -217,6 +210,18 @@ public partial class EditorViewModel : ObservableObject
     private void CloseImportPanel()
     {
         IsImportPanelOpen = false;
+    }
+
+    [RelayCommand]
+    private void CloseAssetBrowser()
+    {
+        IsAssetBrowserOpen = false;
+    }
+
+    [RelayCommand]
+    private void ClosePackManager()
+    {
+        IsPackManagerOpen = false;
     }
 
     public void OpenAssetPicker(AssetRefType assetType, string? currentPack, string? currentAssetName, Action<AssetInfo?> callback)

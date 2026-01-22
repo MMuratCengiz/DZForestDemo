@@ -52,19 +52,19 @@
                 <Grid ColumnDefinitions="*,*,*" Margin="0,0,0,12">
                     <views:DraggableValueEditor Grid.Column="0"
                                                 Label="X"
-                                                LabelColor="#E06060"
+                                                LabelColor="{DynamicResource AxisXBrush}"
                                                 Value="{Binding PositionX}"
                                                 DragSensitivity="0.05"
                                                 Margin="0,0,4,0" />
                     <views:DraggableValueEditor Grid.Column="1"
                                                 Label="Y"
-                                                LabelColor="#60E060"
+                                                LabelColor="{DynamicResource AxisYBrush}"
                                                 Value="{Binding PositionY}"
                                                 DragSensitivity="0.05"
                                                 Margin="0,0,4,0" />
                     <views:DraggableValueEditor Grid.Column="2"
                                                 Label="Z"
-                                                LabelColor="#6060E0"
+                                                LabelColor="{DynamicResource AxisZBrush}"
                                                 Value="{Binding PositionZ}"
                                                 DragSensitivity="0.05" />
                 </Grid>
@@ -73,21 +73,21 @@
                 <Grid ColumnDefinitions="*,*,*" Margin="0,0,0,12">
                     <views:DraggableValueEditor Grid.Column="0"
                                                 Label="X"
-                                                LabelColor="#E06060"
+                                                LabelColor="{DynamicResource AxisXBrush}"
                                                 Value="{Binding RotationX}"
                                                 DragSensitivity="0.5"
                                                 StringFormat="F1"
                                                 Margin="0,0,4,0" />
                     <views:DraggableValueEditor Grid.Column="1"
                                                 Label="Y"
-                                                LabelColor="#60E060"
+                                                LabelColor="{DynamicResource AxisYBrush}"
                                                 Value="{Binding RotationY}"
                                                 DragSensitivity="0.5"
                                                 StringFormat="F1"
                                                 Margin="0,0,4,0" />
                     <views:DraggableValueEditor Grid.Column="2"
                                                 Label="Z"
-                                                LabelColor="#6060E0"
+                                                LabelColor="{DynamicResource AxisZBrush}"
                                                 Value="{Binding RotationZ}"
                                                 DragSensitivity="0.5"
                                                 StringFormat="F1" />
@@ -97,19 +97,19 @@
                 <Grid ColumnDefinitions="*,*,*" Margin="0,0,0,16">
                     <views:DraggableValueEditor Grid.Column="0"
                                                 Label="X"
-                                                LabelColor="#E06060"
+                                                LabelColor="{DynamicResource AxisXBrush}"
                                                 Value="{Binding ScaleX}"
                                                 DragSensitivity="0.01"
                                                 Margin="0,0,4,0" />
                     <views:DraggableValueEditor Grid.Column="1"
                                                 Label="Y"
-                                                LabelColor="#60E060"
+                                                LabelColor="{DynamicResource AxisYBrush}"
                                                 Value="{Binding ScaleY}"
                                                 DragSensitivity="0.01"
                                                 Margin="0,0,4,0" />
                     <views:DraggableValueEditor Grid.Column="2"
                                                 Label="Z"
-                                                LabelColor="#6060E0"
+                                                LabelColor="{DynamicResource AxisZBrush}"
                                                 Value="{Binding ScaleZ}"
                                                 DragSensitivity="0.01" />
                 </Grid>

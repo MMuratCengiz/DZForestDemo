@@ -14,7 +14,6 @@
             <TextBlock x:Name="LabelText"
                        Text="X"
                        FontWeight="SemiBold"
-                       FontSize="{DynamicResource EditorFontSizeSmall}"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"/>
         </Border>
@@ -25,7 +24,6 @@
                  CornerRadius="0,3,3,0"
                  BorderThickness="0"
                  Padding="8,6"
-                 MinWidth="50"
-                 FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                 MinWidth="50"/>
     </Grid>
 </UserControl>

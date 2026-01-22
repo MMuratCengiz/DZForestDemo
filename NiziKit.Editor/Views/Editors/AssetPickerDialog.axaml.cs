@@ -158,6 +158,10 @@ public partial class AssetPickerDialog : UserControl
         var iconData = GetIconForAssetType(_assetType);
         var isSelected = asset.Name == _initialAssetName;
 
+        var selectionBrush = GetResourceBrush("SelectionColor") ?? Brushes.Transparent;
+        var textSecondaryBrush = GetResourceBrush("TextSecondaryBrush") ?? Brushes.Gray;
+        var textPrimaryBrush = GetResourceBrush("TextPrimaryBrush") ?? Brushes.White;
+
         var border = new Border
         {
             Width = 176,
@@ -165,7 +169,7 @@ public partial class AssetPickerDialog : UserControl
             Margin = new Thickness(4),
             Padding = new Thickness(12),
             CornerRadius = new CornerRadius(4),
-            Background = isSelected ? new SolidColorBrush(Color.Parse("#40569CD6")) : Brushes.Transparent,
+            Background = isSelected ? selectionBrush : Brushes.Transparent,
             Cursor = new Cursor(StandardCursorType.Hand),
             Tag = asset
         };
@@ -182,7 +186,7 @@ public partial class AssetPickerDialog : UserControl
             Data = PathGeometry.Parse(iconData),
             Width = 56,
             Height = 56,
-            Foreground = new SolidColorBrush(Color.Parse("#AAAAAA"))
+            Foreground = textSecondaryBrush
         };
 
         var text = new TextBlock
@@ -192,13 +196,8 @@ public partial class AssetPickerDialog : UserControl
             TextAlignment = TextAlignment.Center,
             MaxWidth = 152,
             MaxHeight = 48,
-            Foreground = new SolidColorBrush(Color.Parse("#EEEEEE"))
+            Foreground = textPrimaryBrush
         };
-        // Use dynamic resource for font size
-        if (this.TryFindResource("EditorFontSizeSmall", this.ActualThemeVariant, out var fontSize) && fontSize is double size)
-        {
-            text.FontSize = size;
-        }
         ToolTip.SetTip(text, asset.Name);
 
         stack.Children.Add(icon);
@@ -229,9 +228,25 @@ public partial class AssetPickerDialog : UserControl
         }
 
         // Select this item
-        border.Background = new SolidColorBrush(Color.Parse("#40569CD6"));
+        border.Background = GetResourceBrush("SelectionColor") ?? Brushes.Transparent;
         _selectedAsset = asset;
         UpdateSelectionText();
+    }
+
+    private IBrush? GetResourceBrush(string key)
+    {
+        if (this.TryFindResource(key, this.ActualThemeVariant, out var resource))
+        {
+            if (resource is IBrush brush)
+            {
+                return brush;
+            }
+            if (resource is Color color)
+            {
+                return new SolidColorBrush(color);
+            }
+        }
+        return null;
     }
 
     private void OnAssetItemDoubleTapped(AssetInfo asset)

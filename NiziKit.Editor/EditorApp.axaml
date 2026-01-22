@@ -1,8 +1,6 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:semi="https://irihi.tech/semi"
-             xmlns:dockThemes="clr-namespace:Dock.Avalonia.Themes.Fluent;assembly=Dock.Avalonia.Themes.Fluent"
-             xmlns:dock="clr-namespace:Dock.Avalonia.Controls;assembly=Dock.Avalonia"
              xmlns:views="using:NiziKit.Editor.Views"
              x:Class="NiziKit.Editor.EditorApp"
              RequestedThemeVariant="Dark">
@@ -10,33 +8,57 @@
     <Application.Resources>
         <views:BoolToForegroundConverter x:Key="BoolToForegroundConverter"/>
 
+        <!-- Panel Colors -->
         <Color x:Key="PanelBackgroundColor">#E6202020</Color>
         <Color x:Key="PanelBackgroundSolidColor">#202020</Color>
         <Color x:Key="PanelBorderColor">#40FFFFFF</Color>
+
+        <!-- Surface Colors -->
         <Color x:Key="SurfaceColor">#2D2D2D</Color>
         <Color x:Key="SurfaceLightColor">#383838</Color>
         <Color x:Key="SurfaceDarkColor">#1A1A1A</Color>
 
+        <!-- Text Colors -->
         <Color x:Key="TextPrimaryColor">#EEEEEE</Color>
         <Color x:Key="TextSecondaryColor">#A0A0A0</Color>
         <Color x:Key="TextMutedColor">#707070</Color>
         <Color x:Key="TextDisabledColor">#505050</Color>
 
+        <!-- Accent Colors -->
         <Color x:Key="AccentColor">#3A8EC9</Color>
         <Color x:Key="AccentHoverColor">#4DA3DE</Color>
         <Color x:Key="AccentPressedColor">#2D7AB3</Color>
         <Color x:Key="SelectionColor">#40428BCA</Color>
 
+        <!-- State Colors -->
         <Color x:Key="DangerColor">#C75450</Color>
         <Color x:Key="DangerHoverColor">#D96662</Color>
+        <Color x:Key="DangerBackgroundColor">#C0401818</Color>
         <Color x:Key="WarningColor">#D4A03A</Color>
         <Color x:Key="SuccessColor">#5A9A68</Color>
 
+        <!-- Axis Colors -->
         <Color x:Key="AxisXColor">#E05555</Color>
         <Color x:Key="AxisYColor">#55CC55</Color>
         <Color x:Key="AxisZColor">#5588EE</Color>
 
+        <!-- Interactive State Colors -->
+        <Color x:Key="HoverBackgroundColor">#20FFFFFF</Color>
+        <Color x:Key="PressedBackgroundColor">#10FFFFFF</Color>
+        <Color x:Key="SubtleBackgroundColor">#18FFFFFF</Color>
+        <Color x:Key="SeparatorColor">#30FFFFFF</Color>
+        <Color x:Key="SplitterHoverColor">#50FFFFFF</Color>
+
+        <!-- Modal/Overlay Colors -->
+        <Color x:Key="ModalOverlayColor">#D0000000</Color>
+        <Color x:Key="ModalBackgroundColor">#FF1E1E1E</Color>
+        <Color x:Key="ModalBorderColor">#60FFFFFF</Color>
+        <Color x:Key="OverlayBackgroundColor">#C0000000</Color>
+        <Color x:Key="DialogBackgroundColor">#E0202020</Color>
+
+        <!-- Brushes -->
         <SolidColorBrush x:Key="PanelBackgroundBrush" Color="{StaticResource PanelBackgroundColor}"/>
+        <SolidColorBrush x:Key="PanelBackgroundSolidBrush" Color="{StaticResource PanelBackgroundSolidColor}"/>
         <SolidColorBrush x:Key="PanelBorderBrush" Color="{StaticResource PanelBorderColor}"/>
         <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
         <SolidColorBrush x:Key="SurfaceLightBrush" Color="{StaticResource SurfaceLightColor}"/>
@@ -46,65 +68,63 @@
         <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}"/>
         <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
         <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}"/>
+        <SolidColorBrush x:Key="DangerBackgroundBrush" Color="{StaticResource DangerBackgroundColor}"/>
 
+        <!-- Interactive State Brushes -->
+        <SolidColorBrush x:Key="HoverBackgroundBrush" Color="{StaticResource HoverBackgroundColor}"/>
+        <SolidColorBrush x:Key="PressedBackgroundBrush" Color="{StaticResource PressedBackgroundColor}"/>
+        <SolidColorBrush x:Key="SubtleBackgroundBrush" Color="{StaticResource SubtleBackgroundColor}"/>
+        <SolidColorBrush x:Key="SeparatorBrush" Color="{StaticResource SeparatorColor}"/>
+        <SolidColorBrush x:Key="SplitterHoverBrush" Color="{StaticResource SplitterHoverColor}"/>
+
+        <!-- Modal Brushes -->
+        <SolidColorBrush x:Key="ModalOverlayBrush" Color="{StaticResource ModalOverlayColor}"/>
+        <SolidColorBrush x:Key="ModalBackgroundBrush" Color="{StaticResource ModalBackgroundColor}"/>
+        <SolidColorBrush x:Key="ModalBorderBrush" Color="{StaticResource ModalBorderColor}"/>
+        <SolidColorBrush x:Key="OverlayBackgroundBrush" Color="{StaticResource OverlayBackgroundColor}"/>
+        <SolidColorBrush x:Key="DialogBackgroundBrush" Color="{StaticResource DialogBackgroundColor}"/>
+
+        <!-- Axis Brushes -->
+        <SolidColorBrush x:Key="AxisXBrush" Color="{StaticResource AxisXColor}"/>
+        <SolidColorBrush x:Key="AxisYBrush" Color="{StaticResource AxisYColor}"/>
+        <SolidColorBrush x:Key="AxisZBrush" Color="{StaticResource AxisZColor}"/>
+
+        <!-- Corner Radii -->
         <CornerRadius x:Key="EditorPanelCornerRadius">6</CornerRadius>
         <CornerRadius x:Key="EditorControlCornerRadius">3</CornerRadius>
         <CornerRadius x:Key="EditorButtonCornerRadius">3</CornerRadius>
 
+        <!-- Padding/Margins -->
         <Thickness x:Key="EditorPanelPadding">14</Thickness>
         <Thickness x:Key="EditorControlPadding">8,5</Thickness>
         <Thickness x:Key="EditorSectionSpacing">0,0,0,16</Thickness>
 
-        <x:Double x:Key="EditorScenePanelWidth">400</x:Double>
-        <x:Double x:Key="EditorComponentsPanelWidth">400</x:Double>
+        <x:Double x:Key="EditorFontSizeSmall">18</x:Double>
+        <x:Double x:Key="EditorFontSizeNormal">20</x:Double>
+        <x:Double x:Key="EditorFontSizeMedium">22</x:Double>
+        <x:Double x:Key="EditorFontSizeLarge">24</x:Double>
+        <x:Double x:Key="EditorFontSizeHeader">26</x:Double>
+
+        <!-- Panel Sizes -->
+        <x:Double x:Key="EditorScenePanelWidth">380</x:Double>
+        <x:Double x:Key="EditorInspectorPanelWidth">420</x:Double>
         <x:Double x:Key="EditorPanelOpacity">0.92</x:Double>
+        <x:Double x:Key="EditorTaskbarHeight">48</x:Double>
 
-        <x:Double x:Key="EditorFontSizeSmall">24</x:Double>
-        <x:Double x:Key="EditorFontSizeNormal">26</x:Double>
-        <x:Double x:Key="EditorFontSizeLarge">28</x:Double>
-        <x:Double x:Key="EditorFontSizeHeader">30</x:Double>
-
+        <!-- File Browser -->
         <x:Double x:Key="FileBrowserCellSize">180</x:Double>
         <x:Double x:Key="FileBrowserIconSize">72</x:Double>
-        <x:Double x:Key="FileBrowserCellFontSize">24</x:Double>
-
-        <x:Double x:Key="DockFontSizeNormal">26</x:Double>
-        <x:Double x:Key="DockDragPreviewFontSize">24</x:Double>
-        <x:Double x:Key="TabStripItemMinHeight">56</x:Double>
-        <x:Double x:Key="DockSplitterSize">2</x:Double>
-        <SolidColorBrush x:Key="DockThemeBackgroundBrush" Color="{StaticResource SurfaceColor}"/>
-        <SolidColorBrush x:Key="DockThemeForegroundBrush" Color="{StaticResource TextPrimaryColor}"/>
-        <SolidColorBrush x:Key="DockThemeBorderLowBrush" Color="#50FFFFFF"/>
-        <SolidColorBrush x:Key="DockThemeControlBackgroundBrush" Color="{StaticResource SurfaceDarkColor}"/>
-        <SolidColorBrush x:Key="DockApplicationAccentBrushLow" Color="{StaticResource TextMutedColor}"/>
-        <SolidColorBrush x:Key="DockApplicationAccentBrushMed" Color="{StaticResource SurfaceLightColor}"/>
-        <SolidColorBrush x:Key="DockApplicationAccentBrushHigh" Color="{StaticResource TextMutedColor}"/>
-        <SolidColorBrush x:Key="DockApplicationAccentForegroundBrush" Color="{StaticResource TextPrimaryColor}"/>
-        <SolidColorBrush x:Key="DockApplicationAccentBrushIndicator" Color="{StaticResource TextMutedColor}"/>
+        <x:Double x:Key="FileBrowserCellFontSize">18</x:Double>
     </Application.Resources>
 
     <Application.Styles>
         <semi:SemiTheme />
-        <dockThemes:DockFluentTheme />
-
-        <Styles>
-            <Styles.Resources>
-                <SolidColorBrush x:Key="DockThemeBackgroundBrush" Color="{StaticResource SurfaceColor}"/>
-                <SolidColorBrush x:Key="DockThemeForegroundBrush" Color="{StaticResource TextPrimaryColor}"/>
-                <SolidColorBrush x:Key="DockThemeBorderLowBrush" Color="#50FFFFFF"/>
-                <SolidColorBrush x:Key="DockThemeControlBackgroundBrush" Color="{StaticResource SurfaceDarkColor}"/>
-                <SolidColorBrush x:Key="DockApplicationAccentBrushLow" Color="{StaticResource AccentColor}"/>
-                <SolidColorBrush x:Key="DockApplicationAccentBrushMed" Color="{StaticResource SurfaceLightColor}"/>
-                <SolidColorBrush x:Key="DockApplicationAccentBrushHigh" Color="{StaticResource AccentHoverColor}"/>
-                <SolidColorBrush x:Key="DockApplicationAccentForegroundBrush" Color="{StaticResource TextPrimaryColor}"/>
-                <SolidColorBrush x:Key="DockApplicationAccentBrushIndicator" Color="{StaticResource AccentColor}"/>
-            </Styles.Resources>
-        </Styles>
 
         <Style Selector=":is(TopLevel)">
             <Setter Property="Background" Value="Transparent"/>
         </Style>
 
+        <!-- Base font size for all templated controls -->
         <Style Selector="TemplatedControl">
             <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
         </Style>
@@ -132,7 +152,7 @@
         </Style>
 
         <Style Selector="TextBlock.section-header">
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
+            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeMedium}"/>
             <Setter Property="FontWeight" Value="Medium"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
             <Setter Property="Margin" Value="0,0,0,8"/>
@@ -145,6 +165,7 @@
         </Style>
 
         <Style Selector="TextBlock.muted">
+            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeSmall}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}"/>
         </Style>
 
@@ -156,28 +177,32 @@
         </Style>
 
         <Style Selector="TreeViewItem">
+            <Setter Property="Padding" Value="4,4"/>
             <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
-            <Setter Property="Padding" Value="4,3"/>
+        </Style>
+
+        <Style Selector="ListBoxItem">
+            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
         </Style>
 
         <Style Selector="MenuItem">
             <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
         </Style>
 
-        <Style Selector="Expander">
+        <Style Selector="ComboBoxItem">
             <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
         </Style>
 
         <Style Selector="TextBox">
+            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
             <Setter Property="CornerRadius" Value="{DynamicResource EditorControlCornerRadius}"/>
             <Setter Property="Padding" Value="{DynamicResource EditorControlPadding}"/>
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
         </Style>
 
         <Style Selector="Button">
+            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
             <Setter Property="CornerRadius" Value="{DynamicResource EditorButtonCornerRadius}"/>
             <Setter Property="Padding" Value="12,6"/>
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
         </Style>
 
         <Style Selector="Button.primary">
@@ -195,10 +220,24 @@
             <Setter Property="BorderThickness" Value="0"/>
         </Style>
         <Style Selector="Button.ghost:pointerover">
-            <Setter Property="Background" Value="#20FFFFFF"/>
+            <Setter Property="Background" Value="{DynamicResource HoverBackgroundBrush}"/>
         </Style>
         <Style Selector="Button.ghost:pressed">
-            <Setter Property="Background" Value="#10FFFFFF"/>
+            <Setter Property="Background" Value="{DynamicResource PressedBackgroundBrush}"/>
+        </Style>
+
+        <Style Selector="ToggleButton.taskbar-button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="12,8"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="ToggleButton.taskbar-button:pointerover">
+            <Setter Property="Background" Value="{DynamicResource HoverBackgroundBrush}"/>
+        </Style>
+        <Style Selector="ToggleButton.taskbar-button:checked">
+            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="White"/>
         </Style>
 
         <Style Selector="ToggleButton.collapse">
@@ -233,7 +272,7 @@
 
         <Style Selector="Border.separator">
             <Setter Property="Height" Value="1"/>
-            <Setter Property="Background" Value="#30FFFFFF"/>
+            <Setter Property="Background" Value="{DynamicResource SeparatorBrush}"/>
             <Setter Property="Margin" Value="0,10"/>
         </Style>
 
@@ -257,11 +296,11 @@
         </Style>
 
         <Style Selector="GridSplitter">
-            <Setter Property="Background" Value="#30FFFFFF"/>
+            <Setter Property="Background" Value="{DynamicResource SeparatorBrush}"/>
         </Style>
 
         <Style Selector="GridSplitter:pointerover">
-            <Setter Property="Background" Value="#50FFFFFF"/>
+            <Setter Property="Background" Value="{DynamicResource SplitterHoverBrush}"/>
         </Style>
 
         <Style Selector="Border.file-tile">
@@ -270,7 +309,7 @@
         </Style>
 
         <Style Selector="Border.file-tile:pointerover">
-            <Setter Property="Background" Value="#20FFFFFF"/>
+            <Setter Property="Background" Value="{DynamicResource HoverBackgroundBrush}"/>
         </Style>
 
         <Style Selector="Border.file-tile.selected">
@@ -283,82 +322,6 @@
             <Setter Property="Background" Value="{DynamicResource SurfaceDarkBrush}"/>
             <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
             <Setter Property="CornerRadius" Value="2"/>
-        </Style>
-
-        <Style Selector="RadioButton">
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
-        </Style>
-
-        <Style Selector="CheckBox">
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
-        </Style>
-
-        <Style Selector="dock|ToolControl">
-            <Setter Property="Background" Value="{DynamicResource PanelBackgroundBrush}"/>
-        </Style>
-
-        <Style Selector="dock|ToolControl /template/ Border">
-            <Setter Property="Background" Value="{DynamicResource SurfaceDarkBrush}"/>
-        </Style>
-
-        <Style Selector="dock|ToolTabStripItem">
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
-            <Setter Property="Padding" Value="16,8"/>
-            <Setter Property="Background" Value="{DynamicResource SurfaceDarkBrush}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
-        </Style>
-
-        <Style Selector="dock|ToolTabStripItem /template/ Border">
-            <Setter Property="Background" Value="{DynamicResource SurfaceDarkBrush}"/>
-        </Style>
-
-        <Style Selector="dock|ToolTabStripItem:selected">
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
-        </Style>
-
-        <Style Selector="dock|ToolTabStripItem:selected /template/ Border">
-            <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
-        </Style>
-
-        <Style Selector="dock|ToolTabStripItem:pointerover">
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
-            <Setter Property="Background" Value="{DynamicResource SurfaceLightBrush}"/>
-        </Style>
-
-        <Style Selector="dock|DocumentTabStripItem">
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
-            <Setter Property="Padding" Value="16,8"/>
-        </Style>
-
-        <Style Selector="dock|DockControl">
-            <Setter Property="Background" Value="Transparent"/>
-        </Style>
-
-        <Style Selector="dock|RootDockControl">
-            <Setter Property="Background" Value="Transparent"/>
-        </Style>
-
-        <Style Selector="dock|ProportionalDockControl">
-            <Setter Property="Background" Value="Transparent"/>
-        </Style>
-
-        <Style Selector="ProportionalStackPanelSplitter">
-            <Setter Property="Background" Value="#40FFFFFF"/>
-        </Style>
-
-        <Style Selector="ProportionalStackPanelSplitter:pointerover">
-            <Setter Property="Background" Value="{DynamicResource AccentBrush}"/>
-        </Style>
-
-        <Style Selector="ProportionalStackPanelSplitter:horizontal">
-            <Setter Property="MinHeight" Value="2"/>
-            <Setter Property="Cursor" Value="SizeNorthSouth"/>
-        </Style>
-
-        <Style Selector="ProportionalStackPanelSplitter:vertical">
-            <Setter Property="MinWidth" Value="2"/>
-            <Setter Property="Cursor" Value="SizeWestEast"/>
         </Style>
     </Application.Styles>
 

@@ -9,7 +9,7 @@
     <Grid ColumnDefinitions="160,*">
         <!-- Left: Pack List -->
         <Border Grid.Column="0"
-                Background="#18FFFFFF"
+                Background="{DynamicResource SubtleBackgroundBrush}"
                 Padding="8"
                 Margin="0,0,4,0">
             <Grid RowDefinitions="Auto,*,Auto">
@@ -26,11 +26,9 @@
                         <DataTemplate x:DataType="vm:PackInfo">
                             <StackPanel Spacing="1" Margin="4,2">
                                 <TextBlock Text="{Binding Name}"
-                                           FontWeight="Medium"
-                                           FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                                           FontWeight="Medium"/>
                                 <TextBlock Text="{Binding Version}"
-                                           Classes="muted"
-                                           FontSize="20"/>
+                                           Classes="muted"/>
                             </StackPanel>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
@@ -49,8 +47,7 @@
                     <Button Content="New"
                             Command="{Binding NewPackCommand}"
                             Classes="ghost"
-                            Padding="8,4"
-                            FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                            Padding="8,4"/>
                     <Button Command="{Binding RefreshPacksCommand}"
                             Classes="ghost"
                             Padding="6,4">
@@ -65,15 +62,14 @@
         <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto" IsVisible="{Binding IsEditing}">
             <!-- Header: Pack Info -->
             <Border Grid.Row="0"
-                    Background="#18FFFFFF"
+                    Background="{DynamicResource SubtleBackgroundBrush}"
                     Padding="12,8"
                     Margin="0,0,0,4">
                 <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
                     <TextBox Grid.Column="0"
                              Text="{Binding PackName}"
                              Watermark="Pack Name"
-                             MinWidth="200"
-                             FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                             MinWidth="200"/>
 
                     <StackPanel Grid.Column="2"
                                 Orientation="Horizontal"
@@ -84,8 +80,7 @@
                                    VerticalAlignment="Center"/>
                         <TextBox Text="{Binding PackVersion}"
                                  Watermark="1.0.0"
-                                 Width="80"
-                                 FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                                 Width="80"/>
                     </StackPanel>
 
                     <Button Grid.Column="4"
@@ -93,8 +88,7 @@
                             Command="{Binding SavePackCommand}"
                             Classes="primary"
                             Padding="16,6"
-                            Margin="12,0,0,0"
-                            FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                            Margin="12,0,0,0"/>
                 </Grid>
             </Border>
 
@@ -103,7 +97,6 @@
                         SelectedIndex="{Binding SelectedTabIndex}">
                 <TabControl.Styles>
                     <Style Selector="TabItem">
-                        <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeSmall}"/>
                         <Setter Property="Padding" Value="16,8"/>
                     </Style>
                 </TabControl.Styles>
@@ -126,7 +119,7 @@
                                                 Margin="4"
                                                 Padding="8"
                                                 CornerRadius="4"
-                                                Background="#20FFFFFF">
+                                                Background="{DynamicResource HoverBackgroundBrush}">
                                             <Grid RowDefinitions="*,Auto,Auto">
                                                 <PathIcon Grid.Row="0"
                                                           Data="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"
@@ -138,13 +131,11 @@
                                                            Text="{Binding Key}"
                                                            TextTrimming="CharacterEllipsis"
                                                            TextAlignment="Center"
-                                                           FontSize="20"
                                                            ToolTip.Tip="{Binding Key}"
                                                            Margin="0,4,0,0"/>
                                                 <Button Grid.Row="2"
                                                         Content="Remove"
                                                         Classes="ghost"
-                                                        FontSize="18"
                                                         Padding="4,2"
                                                         HorizontalAlignment="Center"
                                                         Command="{Binding $parent[ItemsControl].DataContext.RemoveTextureCommand}"
@@ -161,8 +152,7 @@
                                     Margin="8">
                             <Button Content="+ Add Texture"
                                     Command="{Binding BrowseTextureCommand}"
-                                    Classes="ghost"
-                                    FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                                    Classes="ghost"/>
                         </StackPanel>
                     </Grid>
                 </TabItem>
@@ -185,7 +175,7 @@
                                                 Margin="4"
                                                 Padding="8"
                                                 CornerRadius="4"
-                                                Background="#20FFFFFF"
+                                                Background="{DynamicResource HoverBackgroundBrush}"
                                                 DoubleTapped="OnAssetCardDoubleTapped"
                                                 Tag="{Binding}">
                                             <Grid RowDefinitions="*,Auto,Auto">
@@ -199,13 +189,11 @@
                                                            Text="{Binding Key}"
                                                            TextTrimming="CharacterEllipsis"
                                                            TextAlignment="Center"
-                                                           FontSize="20"
                                                            ToolTip.Tip="{Binding Key}"
                                                            Margin="0,4,0,0"/>
                                                 <Button Grid.Row="2"
                                                         Content="Remove"
                                                         Classes="ghost"
-                                                        FontSize="18"
                                                         Padding="4,2"
                                                         HorizontalAlignment="Center"
                                                         Command="{Binding $parent[ItemsControl].DataContext.RemoveMaterialCommand}"
@@ -222,12 +210,10 @@
                                     Margin="8">
                             <Button Content="+ Add Material"
                                     Command="{Binding BrowseMaterialCommand}"
-                                    Classes="ghost"
-                                    FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                                    Classes="ghost"/>
                             <Button Content="+ Create New"
                                     Command="{Binding CreateMaterialCommand}"
-                                    Classes="ghost"
-                                    FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                                    Classes="ghost"/>
                         </StackPanel>
                     </Grid>
                 </TabItem>
@@ -250,7 +236,7 @@
                                                 Margin="4"
                                                 Padding="8"
                                                 CornerRadius="4"
-                                                Background="#20FFFFFF">
+                                                Background="{DynamicResource HoverBackgroundBrush}">
                                             <Grid RowDefinitions="*,Auto,Auto">
                                                 <PathIcon Grid.Row="0"
                                                           Data="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
@@ -262,13 +248,11 @@
                                                            Text="{Binding Key}"
                                                            TextTrimming="CharacterEllipsis"
                                                            TextAlignment="Center"
-                                                           FontSize="20"
                                                            ToolTip.Tip="{Binding Key}"
                                                            Margin="0,4,0,0"/>
                                                 <Button Grid.Row="2"
                                                         Content="Remove"
                                                         Classes="ghost"
-                                                        FontSize="18"
                                                         Padding="4,2"
                                                         HorizontalAlignment="Center"
                                                         Command="{Binding $parent[ItemsControl].DataContext.RemoveModelCommand}"
@@ -285,8 +269,7 @@
                                     Margin="8">
                             <Button Content="+ Add Model"
                                     Command="{Binding BrowseModelCommand}"
-                                    Classes="ghost"
-                                    FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                                    Classes="ghost"/>
                         </StackPanel>
                     </Grid>
                 </TabItem>
@@ -309,7 +292,7 @@
                                                 Margin="4"
                                                 Padding="8"
                                                 CornerRadius="4"
-                                                Background="#20FFFFFF"
+                                                Background="{DynamicResource HoverBackgroundBrush}"
                                                 DoubleTapped="OnAssetCardDoubleTapped"
                                                 Tag="{Binding}">
                                             <Grid RowDefinitions="*,Auto,Auto">
@@ -323,13 +306,11 @@
                                                            Text="{Binding Key}"
                                                            TextTrimming="CharacterEllipsis"
                                                            TextAlignment="Center"
-                                                           FontSize="20"
                                                            ToolTip.Tip="{Binding Key}"
                                                            Margin="0,4,0,0"/>
                                                 <Button Grid.Row="2"
                                                         Content="Remove"
                                                         Classes="ghost"
-                                                        FontSize="18"
                                                         Padding="4,2"
                                                         HorizontalAlignment="Center"
                                                         Command="{Binding $parent[ItemsControl].DataContext.RemoveShaderCommand}"
@@ -346,12 +327,10 @@
                                     Margin="8">
                             <Button Content="+ Add Shader"
                                     Command="{Binding BrowseShaderCommand}"
-                                    Classes="ghost"
-                                    FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                                    Classes="ghost"/>
                             <Button Content="+ Create New"
                                     Command="{Binding CreateShaderCommand}"
-                                    Classes="ghost"
-                                    FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                                    Classes="ghost"/>
                         </StackPanel>
                     </Grid>
                 </TabItem>
@@ -359,12 +338,11 @@
 
             <!-- Status Bar -->
             <Border Grid.Row="2"
-                    Background="#10FFFFFF"
+                    Background="{DynamicResource PressedBackgroundBrush}"
                     Padding="12,6"
                     IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                 <TextBlock Text="{Binding StatusMessage}"
-                           Classes="muted"
-                           FontSize="20"/>
+                           Classes="muted"/>
             </Border>
         </Grid>
 
@@ -386,8 +364,8 @@
 
     <!-- File Browser Overlay -->
     <Border IsVisible="{Binding IsFileBrowserOpen}"
-            Background="#C0000000">
-        <Border Background="#E0202020"
+            Background="{DynamicResource OverlayBackgroundBrush}">
+        <Border Background="{DynamicResource DialogBackgroundBrush}"
                 CornerRadius="8"
                 BorderBrush="{DynamicResource PanelBorderBrush}"
                 BorderThickness="1"
@@ -411,7 +389,6 @@
                             Margin="0,12,0,0">
                     <Button Content="Cancel"
                             Command="{Binding CloseFileBrowserCommand}"
-                            FontSize="{DynamicResource EditorFontSizeSmall}"
                             Padding="16,8"/>
                 </StackPanel>
             </Grid>
@@ -420,8 +397,8 @@
 
     <!-- Asset Editor Overlay -->
     <Border IsVisible="{Binding IsAssetEditorOpen}"
-            Background="#C0000000">
-        <Border Background="#E0202020"
+            Background="{DynamicResource OverlayBackgroundBrush}">
+        <Border Background="{DynamicResource DialogBackgroundBrush}"
                 CornerRadius="8"
                 BorderBrush="{DynamicResource PanelBorderBrush}"
                 BorderThickness="1"
@@ -442,27 +419,27 @@
                             Spacing="12">
                     <Grid ColumnDefinitions="100,*">
                         <TextBlock Text="Name" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1" Text="{Binding EditingAssetName}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingAssetName}"/>
                     </Grid>
                     <Grid ColumnDefinitions="100,*">
                         <TextBlock Text="Shader" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1" Text="{Binding EditingAssetShader}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingAssetShader}"/>
                     </Grid>
                     <Grid ColumnDefinitions="100,*">
                         <TextBlock Text="Albedo" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1" Text="{Binding EditingAssetAlbedo}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingAssetAlbedo}"/>
                     </Grid>
                     <Grid ColumnDefinitions="100,*">
                         <TextBlock Text="Normal" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1" Text="{Binding EditingAssetNormal}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingAssetNormal}"/>
                     </Grid>
                     <Grid ColumnDefinitions="100,*">
                         <TextBlock Text="Metallic" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1" Text="{Binding EditingAssetMetallic}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingAssetMetallic}"/>
                     </Grid>
                     <Grid ColumnDefinitions="100,*">
                         <TextBlock Text="Roughness" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1" Text="{Binding EditingAssetRoughness}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingAssetRoughness}"/>
                     </Grid>
                 </StackPanel>
 
@@ -472,19 +449,19 @@
                             Spacing="12">
                     <Grid ColumnDefinitions="100,*">
                         <TextBlock Text="Name" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1" Text="{Binding EditingShaderName}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingShaderName}"/>
                     </Grid>
                     <Grid ColumnDefinitions="100,*">
                         <TextBlock Text="Type" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1" Text="{Binding EditingShaderType}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingShaderType}"/>
                     </Grid>
                     <Grid ColumnDefinitions="100,*">
                         <TextBlock Text="Vertex Path" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1" Text="{Binding EditingShaderVertexPath}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingShaderVertexPath}"/>
                     </Grid>
                     <Grid ColumnDefinitions="100,*">
                         <TextBlock Text="Pixel Path" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1" Text="{Binding EditingShaderPixelPath}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingShaderPixelPath}"/>
                     </Grid>
                 </StackPanel>
 
@@ -495,12 +472,10 @@
                             Margin="0,16,0,0">
                     <Button Content="Cancel"
                             Command="{Binding CloseAssetEditorCommand}"
-                            FontSize="{DynamicResource EditorFontSizeSmall}"
                             Padding="16,8"/>
                     <Button Content="Save"
                             Command="{Binding SaveAssetEditorCommand}"
                             Classes="primary"
-                            FontSize="{DynamicResource EditorFontSizeSmall}"
                             Padding="16,8"/>
                 </StackPanel>
             </Grid>
