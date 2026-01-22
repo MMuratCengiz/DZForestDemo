@@ -21,7 +21,7 @@ public sealed class Assets : IDisposable
     private readonly ConcurrentDictionary<string, Mesh> _meshCache = new();
     private readonly ConcurrentDictionary<string, Material> _materialCache = new();
     private readonly ShaderStore _shaderStore = new();
-    private ShaderBuilder? _shaderBuilder;
+    private readonly ShaderBuilder _shaderBuilder = new();
 
     private readonly List<Mesh> _meshList = [];
     private readonly List<Texture2d> _textureList = [];
@@ -348,29 +348,19 @@ public sealed class Assets : IDisposable
             return cached;
         }
 
-        lock (GraphicsContext.GpuLock)
+        var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
+        if (diskCached != null)
         {
-            cached = _shaderStore.GetProgram(cacheKey);
-            if (cached != null)
-            {
-                return cached;
-            }
-
-            var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
-            if (diskCached != null)
-            {
-                _shaderStore.RegisterProgram(cacheKey, diskCached);
-                return diskCached;
-            }
-
-            _shaderBuilder ??= new ShaderBuilder();
-            var program = _shaderBuilder.CompileGraphics(vsFullPath, psFullPath, defines: defines);
-
-            _shaderStore.SaveToDisk(cacheKey, program);
-            _shaderStore.RegisterProgram(cacheKey, program);
-
-            return program;
+            _shaderStore.RegisterProgram(cacheKey, diskCached);
+            return diskCached;
         }
+
+        var program = _shaderBuilder.CompileGraphics(vsFullPath, psFullPath, defines: defines);
+
+        _shaderStore.SaveToDisk(cacheKey, program);
+        _shaderStore.RegisterProgram(cacheKey, program);
+
+        return program;
     }
 
     private ShaderProgram _LoadComputeProgram(string computePath, Dictionary<string, string?>? defines)
@@ -385,29 +375,19 @@ public sealed class Assets : IDisposable
             return cached;
         }
 
-        lock (GraphicsContext.GpuLock)
+        var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
+        if (diskCached != null)
         {
-            cached = _shaderStore.GetProgram(cacheKey);
-            if (cached != null)
-            {
-                return cached;
-            }
-
-            var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
-            if (diskCached != null)
-            {
-                _shaderStore.RegisterProgram(cacheKey, diskCached);
-                return diskCached;
-            }
-
-            _shaderBuilder ??= new ShaderBuilder();
-            var program = _shaderBuilder.CompileCompute(csFullPath, defines: defines);
-
-            _shaderStore.SaveToDisk(cacheKey, program);
-            _shaderStore.RegisterProgram(cacheKey, program);
-
-            return program;
+            _shaderStore.RegisterProgram(cacheKey, diskCached);
+            return diskCached;
         }
+
+        var program = _shaderBuilder.CompileCompute(csFullPath, defines: defines);
+
+        _shaderStore.SaveToDisk(cacheKey, program);
+        _shaderStore.RegisterProgram(cacheKey, program);
+
+        return program;
     }
 
     private GpuShader _LoadShader(string vertexPath, string pixelPath, GraphicsPipelineDesc pipelineDesc, Dictionary<string, string?>? defines)
@@ -436,7 +416,6 @@ public sealed class Assets : IDisposable
             return diskCached;
         }
 
-        _shaderBuilder ??= new ShaderBuilder();
         var program = await _shaderBuilder.CompileGraphicsAsync(vsFullPath, psFullPath, defines: defines, ct: ct);
 
         _shaderStore.SaveToDisk(cacheKey, program);
@@ -464,7 +443,6 @@ public sealed class Assets : IDisposable
             return diskCached;
         }
 
-        _shaderBuilder ??= new ShaderBuilder();
         var program = await _shaderBuilder.CompileComputeAsync(csFullPath, defines: defines, ct: ct);
 
         _shaderStore.SaveToDisk(cacheKey, program);
@@ -566,18 +544,7 @@ public sealed class Assets : IDisposable
         var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;
         var pipelineType = shaderJson.DetectPipelineType();
 
-        ShaderProgram program;
-        lock (GraphicsContext.GpuLock)
-        {
-            existingShader = _shaderStore[fullPath];
-            if (existingShader != null)
-            {
-                return existingShader;
-            }
-
-            _shaderBuilder ??= new ShaderBuilder();
-            program = _shaderBuilder.CompileFromJson(shaderJson, basePath);
-        }
+        var program = _shaderBuilder.CompileFromJson(shaderJson, basePath);
 
         GpuShader shader;
         switch (pipelineType)
@@ -631,7 +598,6 @@ public sealed class Assets : IDisposable
         var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;
         var pipelineType = shaderJson.DetectPipelineType();
 
-        _shaderBuilder ??= new ShaderBuilder();
         var program = await _shaderBuilder.CompileFromJsonAsync(shaderJson, basePath, ct);
 
         GpuShader shader;

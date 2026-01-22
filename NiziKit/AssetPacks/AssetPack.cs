@@ -140,7 +140,10 @@ public sealed class AssetPack : IDisposable
 
         Parallel.Invoke(
             () => LoadTextures(definition.Textures),
-            () => LoadShaders(definition.Shaders),
+            () => LoadShaders(definition.Shaders)
+        );
+
+        Parallel.Invoke(
             () => LoadMaterials(definition.Materials),
             () => LoadModels(definition.Models)
         );
@@ -153,7 +156,10 @@ public sealed class AssetPack : IDisposable
 
         await Task.WhenAll(
             LoadTexturesAsync(definition.Textures, ct),
-            LoadShadersAsync(definition.Shaders, ct),
+            LoadShadersAsync(definition.Shaders, ct)
+        );
+
+        await Task.WhenAll(
             LoadMaterialsAsync(definition.Materials, ct),
             LoadModelsAsync(definition.Models, ct)
         );

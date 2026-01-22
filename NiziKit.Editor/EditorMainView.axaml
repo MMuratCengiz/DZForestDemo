@@ -62,7 +62,8 @@
         </Grid>
 
         <Border IsVisible="{Binding IsImportPanelOpen}"
-                Background="#D0000000">
+                Background="#D0000000"
+                ZIndex="1000">
             <Border Background="#FF1E1E1E"
                     BorderBrush="#60FFFFFF"
                     BorderThickness="1"
