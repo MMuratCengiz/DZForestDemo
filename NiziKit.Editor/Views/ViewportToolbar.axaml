@@ -1,0 +1,163 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NiziKit.Editor.ViewModels"
+             x:Class="NiziKit.Editor.Views.ViewportToolbar"
+             x:DataType="vm:EditorViewModel">
+
+    <Border Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
+            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            CornerRadius="6"
+            Padding="8,4"
+            Opacity="0.95">
+        <StackPanel Orientation="Horizontal" Spacing="4">
+            <!-- 2D/3D Toggle -->
+            <Button Command="{Binding Toggle2DModeCommand}"
+                    ToolTip.Tip="Toggle 2D/3D Mode"
+                    Classes="toolbar-button">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <PathIcon Width="16" Height="16">
+                        <PathIcon.Data>
+                            <Binding Path="Is2DMode">
+                                <Binding.Converter>
+                                    <x:Static Member="vm:ViewportToolbarConverters.Is2DToIconConverter"/>
+                                </Binding.Converter>
+                            </Binding>
+                        </PathIcon.Data>
+                    </PathIcon>
+                    <TextBlock Text="{Binding ProjectionModeText}"
+                               FontSize="{DynamicResource EditorFontSizeSmall}"
+                               VerticalAlignment="Center"
+                               MinWidth="24"/>
+                </StackPanel>
+            </Button>
+
+            <!-- Separator -->
+            <Border Width="1" Height="20" Background="{DynamicResource DividerStrokeColorDefaultBrush}" Margin="4,0"/>
+
+            <!-- View Preset Dropdown -->
+            <DropDownButton ToolTip.Tip="View Preset" Classes="toolbar-button">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <PathIcon Data="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"
+                              Width="16" Height="16"/>
+                    <TextBlock Text="{Binding ViewPresetText}"
+                               FontSize="{DynamicResource EditorFontSizeSmall}"
+                               VerticalAlignment="Center"
+                               MinWidth="40"/>
+                </StackPanel>
+                <DropDownButton.Flyout>
+                    <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                        <MenuItem Header="Perspective" Command="{Binding SetViewPresetCommand}" CommandParameter="Free"/>
+                        <Separator/>
+                        <MenuItem Header="Top" Command="{Binding SetViewPresetCommand}" CommandParameter="Top"/>
+                        <MenuItem Header="Bottom" Command="{Binding SetViewPresetCommand}" CommandParameter="Bottom"/>
+                        <MenuItem Header="Front" Command="{Binding SetViewPresetCommand}" CommandParameter="Front"/>
+                        <MenuItem Header="Back" Command="{Binding SetViewPresetCommand}" CommandParameter="Back"/>
+                        <MenuItem Header="Right" Command="{Binding SetViewPresetCommand}" CommandParameter="Right"/>
+                        <MenuItem Header="Left" Command="{Binding SetViewPresetCommand}" CommandParameter="Left"/>
+                    </MenuFlyout>
+                </DropDownButton.Flyout>
+            </DropDownButton>
+
+            <!-- Separator -->
+            <Border Width="1" Height="20" Background="{DynamicResource DividerStrokeColorDefaultBrush}" Margin="4,0"/>
+
+            <!-- Gizmo Mode Display -->
+            <Border Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
+                    CornerRadius="4"
+                    Padding="8,4">
+                <TextBlock Text="{Binding GizmoModeText}"
+                           FontSize="{DynamicResource EditorFontSizeSmall}"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+            </Border>
+
+            <!-- Separator -->
+            <Border Width="1" Height="20" Background="{DynamicResource DividerStrokeColorDefaultBrush}" Margin="4,0"/>
+
+            <!-- Statistics Toggle -->
+            <ToggleButton IsChecked="{Binding ShowStatistics, Mode=TwoWay}"
+                          ToolTip.Tip="Toggle Statistics"
+                          Classes="toolbar-toggle">
+                <PathIcon Data="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"
+                          Width="16" Height="16"/>
+            </ToggleButton>
+
+            <!-- Statistics Display -->
+            <Border IsVisible="{Binding ShowStatistics}"
+                    Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
+                    CornerRadius="4"
+                    Padding="8,4"
+                    Margin="4,0,0,0">
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="FPS:"
+                                   FontSize="{DynamicResource EditorFontSizeSmall}"
+                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding Fps, StringFormat={}{0:F0}}"
+                                   FontSize="{DynamicResource EditorFontSizeSmall}"
+                                   VerticalAlignment="Center"
+                                   Width="36"
+                                   TextAlignment="Right">
+                            <TextBlock.Foreground>
+                                <Binding Path="Fps">
+                                    <Binding.Converter>
+                                        <x:Static Member="vm:ViewportToolbarConverters.FpsToColorConverter"/>
+                                    </Binding.Converter>
+                                </Binding>
+                            </TextBlock.Foreground>
+                        </TextBlock>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock Text="Frame:"
+                                   FontSize="{DynamicResource EditorFontSizeSmall}"
+                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Text="{Binding FrameTime, StringFormat={}{0:F2}ms}"
+                                   FontSize="{DynamicResource EditorFontSizeSmall}"
+                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                   VerticalAlignment="Center"
+                                   Width="64"
+                                   TextAlignment="Right"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </Border>
+
+    <UserControl.Styles>
+        <Style Selector="Button.toolbar-button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="Button.toolbar-button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+        </Style>
+
+        <Style Selector="DropDownButton.toolbar-button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="DropDownButton.toolbar-button:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+        </Style>
+
+        <Style Selector="ToggleButton.toolbar-toggle">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="ToggleButton.toolbar-toggle:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}"/>
+        </Style>
+        <Style Selector="ToggleButton.toolbar-toggle:checked /template/ ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AccentFillColorDefaultBrush}"/>
+        </Style>
+    </UserControl.Styles>
+</UserControl>

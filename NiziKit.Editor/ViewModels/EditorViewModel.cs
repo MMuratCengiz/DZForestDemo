@@ -1,11 +1,24 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using NiziKit.Application.Timing;
 using NiziKit.Components;
 using NiziKit.Core;
+using NiziKit.Editor.Gizmos;
 using NiziKit.Editor.Services;
 
 namespace NiziKit.Editor.ViewModels;
+
+public enum ViewPreset
+{
+    Free,
+    Top,
+    Bottom,
+    Front,
+    Back,
+    Right,
+    Left
+}
 
 public partial class EditorViewModel : ObservableObject
 {
@@ -251,6 +264,106 @@ public partial class EditorViewModel : ObservableObject
     private void RefreshAssets()
     {
         AssetBrowserViewModel.Refresh();
+    }
+
+    // Viewport and Statistics properties
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Is3DMode))]
+    [NotifyPropertyChangedFor(nameof(ProjectionModeText))]
+    private bool _is2DMode;
+
+    public bool Is3DMode => !Is2DMode;
+
+    public string ProjectionModeText => Is2DMode ? "2D" : "3D";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ViewPresetText))]
+    private ViewPreset _currentViewPreset = ViewPreset.Free;
+
+    public string ViewPresetText => CurrentViewPreset switch
+    {
+        ViewPreset.Free => "Persp",
+        ViewPreset.Top => "Top",
+        ViewPreset.Bottom => "Bottom",
+        ViewPreset.Front => "Front",
+        ViewPreset.Back => "Back",
+        ViewPreset.Right => "Right",
+        ViewPreset.Left => "Left",
+        _ => "Free"
+    };
+
+    [ObservableProperty]
+    private bool _showStatistics = true;
+
+    [ObservableProperty]
+    private float _fps;
+
+    [ObservableProperty]
+    private float _frameTime;
+
+    [ObservableProperty]
+    private string _gizmoModeText = "Move (W)";
+
+    private float _statsUpdateTimer;
+    private const float StatsUpdateInterval = 1.0f;
+
+    public event Action? ViewPresetChanged;
+    public event Action? ProjectionModeChanged;
+
+    public void UpdateStatistics()
+    {
+        _statsUpdateTimer += Time.DeltaTime;
+        if (_statsUpdateTimer >= StatsUpdateInterval)
+        {
+            _statsUpdateTimer = 0f;
+            Fps = Time.FramesPerSecond;
+            FrameTime = Time.DeltaTime * 1000f;
+        }
+    }
+
+    public void UpdateGizmoModeText(GizmoMode mode)
+    {
+        GizmoModeText = mode switch
+        {
+            GizmoMode.Translate => "Move (W)",
+            GizmoMode.Rotate => "Rotate (E)",
+            GizmoMode.Scale => "Scale (R)",
+            _ => "Move (W)"
+        };
+    }
+
+    [RelayCommand]
+    private void Toggle2DMode()
+    {
+        Is2DMode = !Is2DMode;
+        if (Is2DMode && CurrentViewPreset == ViewPreset.Free)
+        {
+            CurrentViewPreset = ViewPreset.Top;
+        }
+        ProjectionModeChanged?.Invoke();
+    }
+
+    [RelayCommand]
+    private void SetViewPreset(string preset)
+    {
+        CurrentViewPreset = preset switch
+        {
+            "Free" => ViewPreset.Free,
+            "Top" => ViewPreset.Top,
+            "Bottom" => ViewPreset.Bottom,
+            "Front" => ViewPreset.Front,
+            "Back" => ViewPreset.Back,
+            "Right" => ViewPreset.Right,
+            "Left" => ViewPreset.Left,
+            _ => ViewPreset.Free
+        };
+        ViewPresetChanged?.Invoke();
+    }
+
+    [RelayCommand]
+    private void ToggleStatistics()
+    {
+        ShowStatistics = !ShowStatistics;
     }
 
     private GameObjectViewModel? FindParent(GameObjectViewModel target)

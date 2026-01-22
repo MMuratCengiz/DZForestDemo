@@ -6,7 +6,7 @@
         <!-- Draggable Label -->
         <Border Grid.Column="0"
                 x:Name="DragLabel"
-                Background="{DynamicResource SurfaceDarkBrush}"
+                Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
                 CornerRadius="3,0,0,3"
                 Padding="10,6"
                 Cursor="SizeWestEast"

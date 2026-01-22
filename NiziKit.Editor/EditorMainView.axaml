@@ -15,7 +15,7 @@
         <Grid RowDefinitions="Auto,*,Auto">
             <!-- Menu Bar -->
             <Border Grid.Row="0"
-                    Background="{DynamicResource SurfaceDarkBrush}"
+                    Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
                     Padding="4,2">
                 <Menu Background="Transparent">
                     <MenuItem Header="File">
@@ -57,7 +57,13 @@
                 </Border>
 
                 <!-- Center: Viewport (empty/transparent for game rendering) -->
-                <Panel Grid.Column="1" Background="Transparent"/>
+                <Panel Grid.Column="1" Background="Transparent">
+                    <!-- Viewport Toolbar - floating top center -->
+                    <views:ViewportToolbar HorizontalAlignment="Center"
+                                           VerticalAlignment="Top"
+                                           Margin="0,8,0,0"
+                                           DataContext="{Binding}"/>
+                </Panel>
 
                 <!-- Right Panel: Inspector -->
                 <Border Grid.Column="2"
@@ -77,8 +83,8 @@
 
             <!-- Bottom Taskbar -->
             <Border Grid.Row="2"
-                    Background="{DynamicResource SurfaceDarkBrush}"
-                    BorderBrush="{DynamicResource PanelBorderBrush}"
+                    Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                     BorderThickness="0,1,0,0"
                     Height="{DynamicResource EditorTaskbarHeight}">
                 <!-- Centered taskbar buttons -->
@@ -116,9 +122,9 @@
         <Border IsVisible="{Binding IsAssetBrowserOpen}"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Bottom"
-                Margin="392,0,432,48">
-            <Border Background="{DynamicResource PanelBackgroundSolidBrush}"
-                    BorderBrush="{DynamicResource PanelBorderBrush}"
+                Margin="392,0,432,52">
+            <Border Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="8,8,0,0"
                     Height="600">
@@ -145,9 +151,9 @@
         <Border IsVisible="{Binding IsPackManagerOpen}"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Bottom"
-                Margin="392,0,432,48">
-            <Border Background="{DynamicResource PanelBackgroundSolidBrush}"
-                    BorderBrush="{DynamicResource PanelBorderBrush}"
+                Margin="392,0,432,52">
+            <Border Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="8,8,0,0"
                     Height="600">
@@ -172,10 +178,10 @@
 
         <!-- Import Panel Modal -->
         <Border IsVisible="{Binding IsImportPanelOpen}"
-                Background="{DynamicResource ModalOverlayBrush}"
+                Background="#C0000000"
                 ZIndex="1000">
-            <Border Background="{DynamicResource ModalBackgroundBrush}"
-                    BorderBrush="{DynamicResource ModalBorderBrush}"
+            <Border Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                     BorderThickness="1"
                     CornerRadius="8"
                     HorizontalAlignment="Center"
@@ -201,7 +207,7 @@
 
         <!-- Asset Picker Overlay -->
         <Border IsVisible="{Binding IsAssetPickerOpen}"
-                Background="{DynamicResource ModalOverlayBrush}">
+                Background="#C0000000">
             <editors:AssetPickerDialog x:Name="AssetPickerDialog"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>

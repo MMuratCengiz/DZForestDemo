@@ -7,15 +7,14 @@
 
     <Grid RowDefinitions="Auto,*">
         <Border Grid.Row="0"
-                Background="{DynamicResource SubtleBackgroundBrush}"
+                Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
                 Padding="8,6"
                 Margin="0,0,0,4">
             <Grid ColumnDefinitions="Auto,*,Auto">
                 <Button Grid.Column="0"
-                        Classes="ghost"
                         Command="{Binding NavigateUpCommand}"
                         IsEnabled="{Binding CanNavigateUp}"
-                        Padding="6"
+                        Padding="8"
                         VerticalAlignment="Center">
                     <PathIcon Data="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"
                               Width="16" Height="16"/>
@@ -35,13 +34,12 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:BreadcrumbItem">
                                 <StackPanel Orientation="Horizontal">
-                                    <Button Classes="ghost"
-                                            Content="{Binding Name}"
+                                    <Button Content="{Binding Name}"
                                             Command="{Binding $parent[ItemsControl].DataContext.NavigateToCommand}"
                                             CommandParameter="{Binding Path}"
-                                            Padding="4,2"
+                                            Padding="6,4"
                                             MaxWidth="150"
-                                            FontSize="{DynamicResource FileBrowserCellFontSize}">
+                                            FontSize="{DynamicResource EditorFontSizeSmall}">
                                         <Button.Styles>
                                             <Style Selector="Button > ContentPresenter > TextBlock">
                                                 <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
@@ -51,8 +49,8 @@
                                     <TextBlock Text=">"
                                                VerticalAlignment="Center"
                                                Margin="2,0"
-                                               Foreground="{DynamicResource TextMutedBrush}"
-                                               FontSize="{DynamicResource FileBrowserCellFontSize}"/>
+                                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                               FontSize="{DynamicResource EditorFontSizeSmall}"/>
                                 </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -99,32 +97,18 @@
                             <PathIcon Data="{Binding IconData}"
                                       Width="{DynamicResource FileBrowserIconSize}"
                                       Height="{DynamicResource FileBrowserIconSize}"
-                                      Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                      Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             <TextBlock Text="{Binding Name}"
                                        TextTrimming="CharacterEllipsis"
                                        TextAlignment="Center"
                                        MaxWidth="160"
-                                       FontSize="{DynamicResource FileBrowserCellFontSize}"
-                                       Foreground="{DynamicResource TextPrimaryBrush}"
+                                       FontSize="{DynamicResource EditorFontSizeSmall}"
+                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                        ToolTip.Tip="{Binding Name}"/>
                         </StackPanel>
                     </Border>
                 </DataTemplate>
             </ListBox.ItemTemplate>
-            <ListBox.Styles>
-                <Style Selector="ListBoxItem">
-                    <Setter Property="Padding" Value="0"/>
-                    <Setter Property="Background" Value="Transparent"/>
-                    <Setter Property="CornerRadius" Value="4"/>
-                    <Setter Property="Margin" Value="2"/>
-                </Style>
-                <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
-                    <Setter Property="Background" Value="{DynamicResource HoverBackgroundBrush}"/>
-                </Style>
-                <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
-                    <Setter Property="Background" Value="{DynamicResource SelectionColor}"/>
-                </Style>
-            </ListBox.Styles>
         </ListBox>
     </Grid>
 </UserControl>

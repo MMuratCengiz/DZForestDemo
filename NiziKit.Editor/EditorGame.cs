@@ -77,6 +77,12 @@ public sealed class EditorGame : Game
         {
             mainView.Initialize();
             _renderer.EditorViewModel = mainView.ViewModel;
+
+            if (mainView.ViewModel != null)
+            {
+                mainView.ViewModel.ViewPresetChanged += OnViewPresetChanged;
+                mainView.ViewModel.ProjectionModeChanged += OnProjectionModeChanged;
+            }
         }
     }
 
@@ -88,6 +94,8 @@ public sealed class EditorGame : Game
         {
             UpdateGizmoHover();
         }
+
+        _renderer.EditorViewModel?.UpdateStatistics();
 
         _renderer.Render(dt);
     }
@@ -263,6 +271,8 @@ public sealed class EditorGame : Game
                 gizmoPass.Gizmo.Mode = GizmoMode.Scale;
                 break;
         }
+
+        _renderer.EditorViewModel?.UpdateGizmoModeText(gizmoPass.Gizmo.Mode);
     }
 
     private void TrySelectMeshAtCursor()
@@ -368,6 +378,73 @@ public sealed class EditorGame : Game
 
         var cameraPosition = targetPosition - directionToTarget * distance;
         _editorController.SetPositionAndLookAt(cameraPosition, targetPosition, immediate: false);
+    }
+
+    private void OnViewPresetChanged()
+    {
+        var vm = _renderer.EditorViewModel;
+        if (vm == null)
+        {
+            return;
+        }
+
+        var preset = vm.CurrentViewPreset;
+        var target = Vector3.Zero;
+        var distance = 20f;
+
+        // Get position and direction based on preset
+        var (position, rotation) = preset switch
+        {
+            ViewModels.ViewPreset.Top => (new Vector3(0, distance, 0), Quaternion.CreateFromYawPitchRoll(0, MathF.PI / 2, 0)),
+            ViewModels.ViewPreset.Bottom => (new Vector3(0, -distance, 0), Quaternion.CreateFromYawPitchRoll(0, -MathF.PI / 2, 0)),
+            ViewModels.ViewPreset.Front => (new Vector3(0, 0, -distance), Quaternion.Identity),
+            ViewModels.ViewPreset.Back => (new Vector3(0, 0, distance), Quaternion.CreateFromYawPitchRoll(MathF.PI, 0, 0)),
+            ViewModels.ViewPreset.Right => (new Vector3(distance, 0, 0), Quaternion.CreateFromYawPitchRoll(-MathF.PI / 2, 0, 0)),
+            ViewModels.ViewPreset.Left => (new Vector3(-distance, 0, 0), Quaternion.CreateFromYawPitchRoll(MathF.PI / 2, 0, 0)),
+            _ => (new Vector3(0, 15, -15), Quaternion.Identity) // Free/Perspective
+        };
+
+        // For orthographic presets, set orthographic mode
+        if (preset != ViewModels.ViewPreset.Free)
+        {
+            _editorCamera.ProjectionType = ProjectionType.Orthographic;
+            _editorCamera.OrthographicSize = 10f;
+            vm.Is2DMode = true;
+        }
+        else
+        {
+            _editorCamera.ProjectionType = ProjectionType.Perspective;
+            vm.Is2DMode = false;
+        }
+
+        _editorController.SetPositionAndLookAt(position, target, immediate: true);
+    }
+
+    private void OnProjectionModeChanged()
+    {
+        var vm = _renderer.EditorViewModel;
+        if (vm == null)
+        {
+            return;
+        }
+
+        if (vm.Is2DMode)
+        {
+            _editorCamera.ProjectionType = ProjectionType.Orthographic;
+            _editorCamera.OrthographicSize = 10f;
+
+            // Switch to Top view if currently in Free mode
+            if (vm.CurrentViewPreset == ViewModels.ViewPreset.Free)
+            {
+                vm.CurrentViewPreset = ViewModels.ViewPreset.Top;
+                OnViewPresetChanged();
+            }
+        }
+        else
+        {
+            _editorCamera.ProjectionType = ProjectionType.Perspective;
+            vm.CurrentViewPreset = ViewModels.ViewPreset.Free;
+        }
     }
 
     private void OnResize(uint width, uint height)
@@ -511,6 +588,12 @@ public sealed class EditorGame : Game
     protected override void OnShutdown()
     {
         GraphicsContext.WaitIdle();
+
+        if (_renderer.EditorViewModel != null)
+        {
+            _renderer.EditorViewModel.ViewPresetChanged -= OnViewPresetChanged;
+            _renderer.EditorViewModel.ProjectionModeChanged -= OnProjectionModeChanged;
+        }
 
         _topLevel.TextInputActiveChanged -= OnTextInputActiveChanged;
         _renderer.Dispose();

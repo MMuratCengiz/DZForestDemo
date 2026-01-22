@@ -2,9 +2,9 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="NiziKit.Editor.Views.Editors.AssetPickerDialog">
 
-    <Border Background="{DynamicResource DialogBackgroundBrush}"
+    <Border Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
             CornerRadius="8"
-            BorderBrush="{DynamicResource PanelBorderBrush}"
+            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
             BorderThickness="1"
             Padding="24"
             Width="1200"
@@ -22,13 +22,11 @@
                 <TextBox Grid.Column="0"
                          x:Name="SearchBox"
                          Watermark="Search..."
-                         FontSize="{DynamicResource EditorFontSizeSmall}"
                          VerticalContentAlignment="Center"
                          Height="52"
                          Margin="0,0,12,0"/>
                 <ComboBox Grid.Column="1"
                           x:Name="PackComboBox"
-                          FontSize="{DynamicResource EditorFontSizeSmall}"
                           VerticalContentAlignment="Center"
                           VerticalAlignment="Stretch"
                           MinWidth="180"/>
@@ -36,7 +34,7 @@
 
             <!-- Asset Grid -->
             <Border Grid.Row="2"
-                    Background="{DynamicResource SurfaceDarkBrush}"
+                    Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
                     CornerRadius="4"
                     Padding="8">
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled"
@@ -57,21 +55,17 @@
                            x:Name="SelectionText"
                            Text=""
                            Classes="muted"
-                           FontSize="{DynamicResource EditorFontSizeSmall}"
                            VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis"/>
                 <Button Grid.Column="1"
                         x:Name="CancelButton"
                         Content="Cancel"
-                        FontSize="{DynamicResource EditorFontSizeSmall}"
                         Margin="0,0,12,0"
                         MinWidth="100"
                         Padding="16,10"/>
                 <Button Grid.Column="2"
                         x:Name="SelectButton"
                         Content="Select"
-                        Classes="primary"
-                        FontSize="{DynamicResource EditorFontSizeSmall}"
                         MinWidth="100"
                         Padding="16,10"/>
             </Grid>
