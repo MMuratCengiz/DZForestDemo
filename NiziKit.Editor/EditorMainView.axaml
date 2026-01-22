@@ -3,6 +3,7 @@
              xmlns:vm="using:NiziKit.Editor.ViewModels"
              xmlns:views="using:NiziKit.Editor.Views"
              xmlns:editors="using:NiziKit.Editor.Views.Editors"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
              x:Class="NiziKit.Editor.EditorMainView"
              x:DataType="vm:EditorViewModel"
              Background="Transparent">
@@ -15,7 +16,7 @@
         <Grid RowDefinitions="Auto,*,Auto">
             <!-- Menu Bar -->
             <Border Grid.Row="0"
-                    Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
+                    Background="{StaticResource EditorPanelBackground}"
                     Padding="4,2">
                 <Menu Background="Transparent">
                     <MenuItem Header="File">
@@ -43,14 +44,17 @@
             <Grid Grid.Row="1" ColumnDefinitions="380,*,420">
                 <!-- Left Panel: Scene Tree -->
                 <Border Grid.Column="0"
-                        Classes="panel"
-                        Margin="8,8,4,8"
-                        Opacity="{DynamicResource EditorPanelOpacity}">
+                        Background="{StaticResource EditorPanelBackground}"
+                        BorderBrush="{StaticResource EditorPanelBorder}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="16"
+                        Margin="8,8,4,8">
                     <Grid RowDefinitions="Auto,*">
                         <TextBlock Grid.Row="0"
                                    Text="Scene"
-                                   Classes="section-header"
-                                   Margin="0,0,0,8"/>
+                                   Theme="{StaticResource SubtitleTextBlockStyle}"
+                                   Margin="0,0,0,12"/>
                         <views:SceneTreeView Grid.Row="1"
                                              DataContext="{Binding}"/>
                     </Grid>
@@ -58,7 +62,6 @@
 
                 <!-- Center: Viewport (empty/transparent for game rendering) -->
                 <Panel Grid.Column="1" Background="Transparent">
-                    <!-- Viewport Toolbar - floating top center -->
                     <views:ViewportToolbar HorizontalAlignment="Center"
                                            VerticalAlignment="Top"
                                            Margin="0,8,0,0"
@@ -67,14 +70,17 @@
 
                 <!-- Right Panel: Inspector -->
                 <Border Grid.Column="2"
-                        Classes="panel"
-                        Margin="4,8,8,8"
-                        Opacity="{DynamicResource EditorPanelOpacity}">
+                        Background="{StaticResource EditorPanelBackground}"
+                        BorderBrush="{StaticResource EditorPanelBorder}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Padding="16"
+                        Margin="4,8,8,8">
                     <Grid RowDefinitions="Auto,*">
                         <TextBlock Grid.Row="0"
                                    Text="Inspector"
-                                   Classes="section-header"
-                                   Margin="0,0,0,8"/>
+                                   Theme="{StaticResource SubtitleTextBlockStyle}"
+                                   Margin="0,0,0,12"/>
                         <views:ComponentsPanel Grid.Row="1"
                                                DataContext="{Binding}"/>
                     </Grid>
@@ -83,123 +89,142 @@
 
             <!-- Bottom Taskbar -->
             <Border Grid.Row="2"
-                    Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
-                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                    Background="{StaticResource EditorPanelBackground}"
+                    BorderBrush="{StaticResource EditorPanelBorder}"
                     BorderThickness="0,1,0,0"
-                    Height="{DynamicResource EditorTaskbarHeight}">
-                <!-- Centered taskbar buttons -->
+                    Height="60">
                 <StackPanel Orientation="Horizontal"
-                            Spacing="8"
+                            Spacing="12"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center">
-                    <ToggleButton x:Name="AssetBrowserToggle"
-                                  IsChecked="{Binding IsAssetBrowserOpen, Mode=TwoWay}"
-                                  Classes="taskbar-button">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <PathIcon Data="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"
-                                      Width="24" Height="24"/>
-                            <TextBlock Text="Assets"
-                                       FontSize="{DynamicResource EditorFontSizeMedium}"
-                                       VerticalAlignment="Center"/>
+                    <ToggleButton IsChecked="{Binding IsAssetBrowserOpen, Mode=TwoWay}"
+                                  Padding="20,10">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <ui:SymbolIcon Symbol="Folder" FontSize="24"/>
+                            <TextBlock Text="Assets" VerticalAlignment="Center"/>
                         </StackPanel>
                     </ToggleButton>
-                    <ToggleButton x:Name="PackManagerToggle"
-                                  IsChecked="{Binding IsPackManagerOpen, Mode=TwoWay}"
-                                  Classes="taskbar-button">
-                        <StackPanel Orientation="Horizontal" Spacing="10">
-                            <PathIcon Data="M3 3h8v8H3V3zm0 10h8v8H3v-8zm10-10h8v8h-8V3zm0 10h8v8h-8v-8z"
-                                      Width="24" Height="24"/>
-                            <TextBlock Text="Packs"
-                                       FontSize="{DynamicResource EditorFontSizeMedium}"
-                                       VerticalAlignment="Center"/>
+                    <ToggleButton IsChecked="{Binding IsPackManagerOpen, Mode=TwoWay}"
+                                  Padding="20,10">
+                        <StackPanel Orientation="Horizontal" Spacing="12">
+                            <ui:SymbolIcon Symbol="AllApps" FontSize="24"/>
+                            <TextBlock Text="Packs" VerticalAlignment="Center"/>
                         </StackPanel>
                     </ToggleButton>
                 </StackPanel>
             </Border>
         </Grid>
 
-        <!-- Asset Browser Popup Panel - positioned between side panels -->
+        <!-- Asset Browser Popup Panel -->
         <Border IsVisible="{Binding IsAssetBrowserOpen}"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Bottom"
-                Margin="392,0,432,52">
-            <Border Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
-                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                Margin="392,0,432,60">
+            <Border Background="{StaticResource EditorPanelBackground}"
+                    BorderBrush="{StaticResource EditorPanelBorder}"
                     BorderThickness="1"
                     CornerRadius="8,8,0,0"
                     Height="600">
-                <Grid RowDefinitions="Auto,*">
-                    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="16,12">
-                        <TextBlock Text="Asset Browser"
-                                   Classes="section-header"
-                                   VerticalAlignment="Center"
-                                   Margin="0"/>
-                        <Button Grid.Column="1"
-                                Content="X"
-                                Command="{Binding CloseAssetBrowserCommand}"
-                                Classes="ghost"
-                                Padding="8,4"/>
-                    </Grid>
-                    <views:AssetBrowserView Grid.Row="1"
+                <Grid RowDefinitions="Auto,Auto,*">
+                    <!-- Title Bar -->
+                    <Border Grid.Row="0"
+                            Background="{StaticResource EditorPanelSecondaryBackground}"
+                            CornerRadius="8,8,0,0"
+                            Padding="20,16">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Asset Browser"
+                                           Theme="{StaticResource SubtitleTextBlockStyle}"
+                                           VerticalAlignment="Center"/>
+                                <Button Grid.Column="1"
+                                        Command="{Binding CloseAssetBrowserCommand}"
+                                        ToolTip.Tip="Close"
+                                        Padding="8">
+                                    <ui:SymbolIcon Symbol="Dismiss" FontSize="18"/>
+                                </Button>
+                            </Grid>
+                        </Border>
+                        <!-- Separator -->
+                        <Border Grid.Row="1" Height="1" Background="{DynamicResource DividerStrokeColorDefaultBrush}"/>
+                        <!-- Content -->
+                    <views:AssetBrowserView Grid.Row="2"
                                             DataContext="{Binding AssetBrowserViewModel}"
-                                            Margin="8,0,8,8"/>
+                                            Margin="16"/>
                 </Grid>
             </Border>
         </Border>
 
-        <!-- Pack Manager Popup Panel - positioned between side panels -->
+        <!-- Pack Manager Popup Panel -->
         <Border IsVisible="{Binding IsPackManagerOpen}"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Bottom"
-                Margin="392,0,432,52">
-            <Border Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
-                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                Margin="392,0,432,60">
+            <Border Background="{StaticResource EditorPanelBackground}"
+                    BorderBrush="{StaticResource EditorPanelBorder}"
                     BorderThickness="1"
                     CornerRadius="8,8,0,0"
                     Height="600">
-                <Grid RowDefinitions="Auto,*">
-                    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="16,12">
-                        <TextBlock Text="Pack Manager"
-                                   Classes="section-header"
-                                   VerticalAlignment="Center"
-                                   Margin="0"/>
-                        <Button Grid.Column="1"
-                                Content="X"
-                                Command="{Binding ClosePackManagerCommand}"
-                                Classes="ghost"
-                                Padding="8,4"/>
-                    </Grid>
-                    <views:PackManagerView Grid.Row="1"
+                <Grid RowDefinitions="Auto,Auto,*">
+                    <!-- Title Bar -->
+                    <Border Grid.Row="0"
+                            Background="{StaticResource EditorPanelSecondaryBackground}"
+                            CornerRadius="8,8,0,0"
+                            Padding="20,16">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Text="Pack Manager"
+                                           Theme="{StaticResource SubtitleTextBlockStyle}"
+                                           VerticalAlignment="Center"/>
+                                <Button Grid.Column="1"
+                                        Command="{Binding ClosePackManagerCommand}"
+                                        ToolTip.Tip="Close"
+                                        Padding="8">
+                                    <ui:SymbolIcon Symbol="Dismiss" FontSize="18"/>
+                                </Button>
+                            </Grid>
+                        </Border>
+                        <!-- Separator -->
+                        <Border Grid.Row="1" Height="1" Background="{DynamicResource DividerStrokeColorDefaultBrush}"/>
+                        <!-- Content -->
+                        <views:PackManagerView Grid.Row="2"
                                            DataContext="{Binding PackManagerViewModel}"
-                                           Margin="8,0,8,8"/>
+                                           Margin="16"/>
                 </Grid>
             </Border>
         </Border>
 
         <!-- Import Panel Modal -->
         <Border IsVisible="{Binding IsImportPanelOpen}"
-                Background="#C0000000"
+                Background="#60000000"
                 ZIndex="1000">
-            <Border Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
-                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+            <Border Background="{StaticResource EditorPanelBackground}"
+                    BorderBrush="{StaticResource EditorPanelBorder}"
                     BorderThickness="1"
                     CornerRadius="8"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Width="1400"
                     Height="900">
-                <Grid RowDefinitions="Auto,*">
-                    <Button Grid.Row="0"
-                            Content="X"
-                            Command="{Binding CloseImportPanelCommand}"
-                            Classes="ghost"
-                            HorizontalAlignment="Right"
-                            VerticalAlignment="Top"
-                            Margin="8"
-                            Padding="8,4"
-                            ZIndex="100"/>
-
-                    <views:ImportPanel Grid.Row="0" Grid.RowSpan="2"
+                <Grid RowDefinitions="Auto,Auto,*">
+                    <!-- Title Bar -->
+                    <Border Grid.Row="0"
+                            Background="{StaticResource EditorPanelSecondaryBackground}"
+                            CornerRadius="8,8,0,0"
+                            Padding="24,16">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="Import Assets"
+                                       Theme="{StaticResource SubtitleTextBlockStyle}"
+                                       VerticalAlignment="Center"/>
+                            <Button Grid.Column="1"
+                                    Command="{Binding CloseImportPanelCommand}"
+                                    ToolTip.Tip="Close"
+                                    Padding="8">
+                                <ui:SymbolIcon Symbol="Dismiss" FontSize="18"/>
+                            </Button>
+                        </Grid>
+                    </Border>
+                    <!-- Separator -->
+                    <Border Grid.Row="1" Height="1" Background="{DynamicResource DividerStrokeColorDefaultBrush}"/>
+                    <!-- Content -->
+                    <views:ImportPanel Grid.Row="2"
                                        DataContext="{Binding ImportViewModel}"/>
                 </Grid>
             </Border>
@@ -207,7 +232,7 @@
 
         <!-- Asset Picker Overlay -->
         <Border IsVisible="{Binding IsAssetPickerOpen}"
-                Background="#C0000000">
+                Background="#60000000">
             <editors:AssetPickerDialog x:Name="AssetPickerDialog"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>

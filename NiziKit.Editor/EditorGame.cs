@@ -96,6 +96,7 @@ public sealed class EditorGame : Game
         }
 
         _renderer.EditorViewModel?.UpdateStatistics();
+        _renderer.EditorViewModel?.UpdateAnimationPreviews(dt);
 
         _renderer.Render(dt);
     }

@@ -6,6 +6,7 @@ using NiziKit.Components;
 using NiziKit.Core;
 using NiziKit.Editor.Gizmos;
 using NiziKit.Editor.Services;
+using NiziKit.Editor.Views.Editors;
 
 namespace NiziKit.Editor.ViewModels;
 
@@ -25,6 +26,7 @@ public partial class EditorViewModel : ObservableObject
     private readonly EditorSceneService _sceneService;
     private readonly AssetBrowserService _assetBrowserService;
     private readonly AssetFileService _assetFileService;
+    private readonly List<AnimationPreviewEditor> _animationPreviewEditors = [];
 
     public EditorViewModel()
     {
@@ -42,6 +44,27 @@ public partial class EditorViewModel : ObservableObject
             IsImportPanelOpen = false;
         };
         ImportViewModel.ImportCancelled += () => IsImportPanelOpen = false;
+    }
+
+    public void RegisterAnimationPreview(AnimationPreviewEditor editor)
+    {
+        if (!_animationPreviewEditors.Contains(editor))
+        {
+            _animationPreviewEditors.Add(editor);
+        }
+    }
+
+    public void UnregisterAnimationPreview(AnimationPreviewEditor editor)
+    {
+        _animationPreviewEditors.Remove(editor);
+    }
+
+    public void UpdateAnimationPreviews(float deltaTime)
+    {
+        foreach (var editor in _animationPreviewEditors)
+        {
+            editor.Update(deltaTime);
+        }
     }
 
     [ObservableProperty]
@@ -305,7 +328,7 @@ public partial class EditorViewModel : ObservableObject
     private string _gizmoModeText = "Move (W)";
 
     private float _statsUpdateTimer;
-    private const float StatsUpdateInterval = 0.25f;
+    private const float StatsUpdateInterval = 0.1f;
 
     public event Action? ViewPresetChanged;
     public event Action? ProjectionModeChanged;

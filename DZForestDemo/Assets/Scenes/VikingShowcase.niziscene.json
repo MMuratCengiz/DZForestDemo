@@ -3,26 +3,33 @@
   "assetPacks": [
     "Packs/Viking"
   ],
-  "camera": {
-    "name": "Main Camera",
-    "position": [
-      0,
-      0,
-      -74
-    ],
-    "rotation": [
-      0,
-      0,
-      0
-    ],
-    "fieldOfView": 0.785398,
-    "nearPlane": 0.1,
-    "farPlane": 1000,
-    "controller": {
-      "moveSpeed": 10,
-      "lookSensitivity": 0.003
+  "cameras": [
+    {
+      "name": "Main Camera",
+      "position": [
+        0,
+        -1.8294251,
+        -5.16711
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "fieldOfView": 0.785398,
+      "nearPlane": 0.1,
+      "farPlane": 1000,
+      "projectionType": "perspective",
+      "orthographicSize": 5,
+      "priority": 0,
+      "isActive": true,
+      "controller": {
+        "type": "freefly",
+        "moveSpeed": 10,
+        "lookSensitivity": 0.003
+      }
     }
-  },
+  ],
   "lights": [],
   "objects": [
     {
@@ -124,9 +131,9 @@
         16.022827
       ],
       "rotation": [
-        24.009842,
-        18.548395,
-        81.3158
+        0.61022276,
+        29.994371,
+        77.50184
       ],
       "scale": [
         1,
@@ -831,6 +838,36 @@
         {
           "type": "material",
           "material": "viking:VikingRealmAlt"
+        }
+      ],
+      "children": []
+    },
+    {
+      "name": "Fox",
+      "active": true,
+      "position": [
+        -2.8303068,
+        0,
+        -2.5645638
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "components": [
+        {
+          "type": "mesh",
+          "mesh": "viking:Fox"
+        },
+        {
+          "type": "material",
+          "material": "viking:FoxMat"
         }
       ],
       "children": []

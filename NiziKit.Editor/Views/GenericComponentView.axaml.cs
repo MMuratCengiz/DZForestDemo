@@ -6,6 +6,7 @@ using Avalonia.Markup.Xaml;
 using NiziKit.Components;
 using NiziKit.Editor.Services;
 using NiziKit.Editor.ViewModels;
+using NiziKit.Editor.Views.Editors;
 
 namespace NiziKit.Editor.Views;
 
@@ -14,6 +15,9 @@ public partial class GenericComponentView : UserControl
     private ItemsControl? _propertiesControl;
     private AssetBrowserService? _assetBrowser;
     private EditorViewModel? _editorViewModel;
+    private AnimationPreviewEditor? _animationPreviewEditor;
+
+    public AnimationPreviewEditor? AnimationPreviewEditor => _animationPreviewEditor;
 
     public GenericComponentView()
     {
@@ -47,6 +51,17 @@ public partial class GenericComponentView : UserControl
 
         var items = new List<Control>();
         var type = component.GetType();
+
+        if (component is AnimatorComponent animatorComponent)
+        {
+            _animationPreviewEditor = new AnimationPreviewEditor();
+            _animationPreviewEditor.SetAnimatorComponent(animatorComponent, _editorViewModel);
+            items.Add(_animationPreviewEditor);
+        }
+        else
+        {
+            _animationPreviewEditor = null;
+        }
         var typeName = type.Name;
         var displayName = typeName.EndsWith("Component") ? typeName[..^9] : typeName;
 

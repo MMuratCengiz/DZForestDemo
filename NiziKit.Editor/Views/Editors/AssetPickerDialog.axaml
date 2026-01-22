@@ -1,42 +1,50 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
              x:Class="NiziKit.Editor.Views.Editors.AssetPickerDialog">
 
-    <Border Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
+    <Border Background="{StaticResource EditorPanelBackground}"
             CornerRadius="8"
-            BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+            BorderBrush="{StaticResource EditorPanelBorder}"
             BorderThickness="1"
-            Padding="24"
             Width="1200"
             Height="800">
-        <Grid RowDefinitions="Auto,Auto,*,Auto">
-            <!-- Header -->
-            <TextBlock Grid.Row="0"
-                       x:Name="HeaderText"
-                       Text="Select Asset"
-                       Classes="header"
-                       Margin="0,0,0,16"/>
+        <Grid RowDefinitions="Auto,Auto,Auto,*,Auto">
+            <!-- Title Bar -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource EditorPanelSecondaryBackground}"
+                    CornerRadius="8,8,0,0"
+                    Padding="24,16">
+                <TextBlock x:Name="HeaderText"
+                           Text="Select Asset"
+                           Theme="{StaticResource SubtitleTextBlockStyle}"/>
+            </Border>
+
+            <!-- Separator -->
+            <Border Grid.Row="1" Height="1" Background="{DynamicResource DividerStrokeColorDefaultBrush}"/>
 
             <!-- Search and Pack Filter -->
-            <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
-                <TextBox Grid.Column="0"
-                         x:Name="SearchBox"
-                         Watermark="Search..."
-                         VerticalContentAlignment="Center"
-                         Height="52"
-                         Margin="0,0,12,0"/>
-                <ComboBox Grid.Column="1"
-                          x:Name="PackComboBox"
-                          VerticalContentAlignment="Center"
-                          VerticalAlignment="Stretch"
-                          MinWidth="180"/>
-            </Grid>
+            <Border Grid.Row="2"
+                    Padding="24,16">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBox Grid.Column="0"
+                             x:Name="SearchBox"
+                             Watermark="Search assets..."
+                             VerticalContentAlignment="Center"
+                             Margin="0,0,16,0"/>
+                    <ComboBox Grid.Column="1"
+                              x:Name="PackComboBox"
+                              VerticalContentAlignment="Center"
+                              MinWidth="200"/>
+                </Grid>
+            </Border>
 
             <!-- Asset Grid -->
-            <Border Grid.Row="2"
-                    Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
-                    CornerRadius="4"
-                    Padding="8">
+            <Border Grid.Row="3"
+                    Background="{StaticResource EditorPanelSecondaryBackground}"
+                    Margin="24,0,24,16"
+                    CornerRadius="{DynamicResource ControlCornerRadius}"
+                    Padding="12">
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                               VerticalScrollBarVisibility="Auto">
                     <ItemsControl x:Name="AssetItemsControl">
@@ -49,26 +57,32 @@
                 </ScrollViewer>
             </Border>
 
-            <!-- Buttons -->
-            <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto" Margin="0,16,0,0">
-                <TextBlock Grid.Column="0"
-                           x:Name="SelectionText"
-                           Text=""
-                           Classes="muted"
-                           VerticalAlignment="Center"
-                           TextTrimming="CharacterEllipsis"/>
-                <Button Grid.Column="1"
-                        x:Name="CancelButton"
-                        Content="Cancel"
-                        Margin="0,0,12,0"
-                        MinWidth="100"
-                        Padding="16,10"/>
-                <Button Grid.Column="2"
-                        x:Name="SelectButton"
-                        Content="Select"
-                        MinWidth="100"
-                        Padding="16,10"/>
-            </Grid>
+            <!-- Action Bar -->
+            <Border Grid.Row="4"
+                    Background="{StaticResource EditorPanelSecondaryBackground}"
+                    CornerRadius="0,0,8,8"
+                    Padding="24,16">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                    <TextBlock Grid.Column="0"
+                               x:Name="SelectionText"
+                               Text=""
+                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                               VerticalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"/>
+                    <Button Grid.Column="1"
+                            x:Name="CancelButton"
+                            Content="Cancel"
+                            Margin="0,0,12,0"
+                            MinWidth="120"
+                            Padding="20,12"/>
+                    <Button Grid.Column="2"
+                            x:Name="SelectButton"
+                            Content="Select"
+                            MinWidth="120"
+                            Padding="20,12"
+                            Classes="accent"/>
+                </Grid>
+            </Border>
         </Grid>
     </Border>
 </UserControl>

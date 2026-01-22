@@ -2,33 +2,36 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:NiziKit.Editor.ViewModels"
              xmlns:services="using:NiziKit.Editor.Services"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
              x:Class="NiziKit.Editor.Views.FileBrowserGrid"
              x:DataType="vm:FileBrowserViewModel">
 
     <Grid RowDefinitions="Auto,*">
+        <!-- Toolbar -->
         <Border Grid.Row="0"
                 Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
-                Padding="8,6"
-                Margin="0,0,0,4">
+                CornerRadius="{DynamicResource ControlCornerRadius}"
+                Padding="12,8"
+                Margin="0,0,0,8">
             <Grid ColumnDefinitions="Auto,*,Auto">
                 <Button Grid.Column="0"
                         Command="{Binding NavigateUpCommand}"
                         IsEnabled="{Binding CanNavigateUp}"
-                        Padding="8"
+                        Padding="10"
+                        ToolTip.Tip="Go up"
                         VerticalAlignment="Center">
-                    <PathIcon Data="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"
-                              Width="16" Height="16"/>
+                    <ui:SymbolIcon Symbol="ChevronUp" FontSize="18"/>
                 </Button>
 
                 <ScrollViewer Grid.Column="1"
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Disabled"
-                              Margin="8,0">
+                              Margin="12,0">
                     <ItemsControl ItemsSource="{Binding BreadcrumbParts}"
                                   VerticalAlignment="Center">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal" Spacing="2"/>
+                                <StackPanel Orientation="Horizontal" Spacing="4"/>
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
@@ -37,20 +40,18 @@
                                     <Button Content="{Binding Name}"
                                             Command="{Binding $parent[ItemsControl].DataContext.NavigateToCommand}"
                                             CommandParameter="{Binding Path}"
-                                            Padding="6,4"
-                                            MaxWidth="150"
-                                            FontSize="{DynamicResource EditorFontSizeSmall}">
+                                            Padding="10,6"
+                                            MaxWidth="180">
                                         <Button.Styles>
                                             <Style Selector="Button > ContentPresenter > TextBlock">
                                                 <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
                                             </Style>
                                         </Button.Styles>
                                     </Button>
-                                    <TextBlock Text=">"
+                                    <TextBlock Text="/"
                                                VerticalAlignment="Center"
-                                               Margin="2,0"
-                                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                               FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                                               Margin="4,0"
+                                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
                                 </StackPanel>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
@@ -59,9 +60,8 @@
 
                 <ComboBox Grid.Column="2"
                           SelectedIndex="{Binding FilterIndex}"
-                          MinWidth="120"
-                          FontSize="{DynamicResource EditorFontSizeSmall}">
-                    <ComboBoxItem Content="All"/>
+                          MinWidth="140">
+                    <ComboBoxItem Content="All Files"/>
                     <ComboBoxItem Content="Models"/>
                     <ComboBoxItem Content="Textures"/>
                     <ComboBoxItem Content="Materials"/>
@@ -71,6 +71,7 @@
             </Grid>
         </Border>
 
+        <!-- File Grid -->
         <ListBox Grid.Row="1"
                  x:Name="FileGrid"
                  ItemsSource="{Binding Entries}"
@@ -85,24 +86,23 @@
             </ListBox.ItemsPanel>
             <ListBox.ItemTemplate>
                 <DataTemplate x:DataType="services:FileEntry">
-                    <Border Width="{DynamicResource FileBrowserCellSize}"
-                            Height="{DynamicResource FileBrowserCellSize}"
-                            Margin="4"
-                            Padding="8"
-                            CornerRadius="4"
+                    <Border Width="120"
+                            Height="120"
+                            Margin="6"
+                            Padding="12"
+                            CornerRadius="{DynamicResource ControlCornerRadius}"
                             Background="Transparent">
                         <StackPanel HorizontalAlignment="Center"
                                     VerticalAlignment="Center"
-                                    Spacing="8">
+                                    Spacing="10">
                             <PathIcon Data="{Binding IconData}"
-                                      Width="{DynamicResource FileBrowserIconSize}"
-                                      Height="{DynamicResource FileBrowserIconSize}"
+                                      Width="40"
+                                      Height="40"
                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
                             <TextBlock Text="{Binding Name}"
                                        TextTrimming="CharacterEllipsis"
                                        TextAlignment="Center"
-                                       MaxWidth="160"
-                                       FontSize="{DynamicResource EditorFontSizeSmall}"
+                                       MaxWidth="100"
                                        Foreground="{DynamicResource TextFillColorPrimaryBrush}"
                                        ToolTip.Tip="{Binding Name}"/>
                         </StackPanel>

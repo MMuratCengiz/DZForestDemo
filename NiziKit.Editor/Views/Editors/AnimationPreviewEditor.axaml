@@ -1,0 +1,112 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="NiziKit.Editor.Views.Editors.AnimationPreviewEditor">
+
+    <Border Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
+            CornerRadius="4"
+            Padding="8"
+            Margin="0,4">
+        <StackPanel Spacing="8">
+            <!-- Preview Viewport -->
+            <Border x:Name="PreviewBorder"
+                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                    CornerRadius="4"
+                    Height="200"
+                    ClipToBounds="True">
+                <Grid>
+                    <!-- Placeholder when no preview is available -->
+                    <TextBlock x:Name="PlaceholderText"
+                               Text="Animation Preview"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+
+                    <!-- Preview image will be rendered here -->
+                    <Image x:Name="PreviewImage"
+                           Stretch="Uniform"
+                           IsVisible="False"/>
+                </Grid>
+            </Border>
+
+            <!-- Animation Selection -->
+            <Grid ColumnDefinitions="Auto,*">
+                <TextBlock Text="Animation"
+                           VerticalAlignment="Center"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           Margin="0,0,8,0"/>
+                <ComboBox x:Name="AnimationComboBox"
+                          Grid.Column="1"
+                          Height="32"
+                          SelectionChanged="OnAnimationSelectionChanged"/>
+            </Grid>
+
+            <!-- Timeline -->
+            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,4">
+                <TextBlock x:Name="CurrentTimeText"
+                           Text="0:00"
+                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                           VerticalAlignment="Center"
+                           MinWidth="35"/>
+                <Slider x:Name="TimelineSlider"
+                        Grid.Column="1"
+                        Minimum="0"
+                        Maximum="1"
+                        Value="0"
+                        Margin="8,0"
+                        ValueChanged="OnTimelineValueChanged"/>
+                <TextBlock x:Name="DurationText"
+                           Grid.Column="2"
+                           Text="0:00"
+                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                           VerticalAlignment="Center"
+                           MinWidth="35"
+                           TextAlignment="Right"/>
+            </Grid>
+
+            <!-- Playback Controls -->
+            <StackPanel Orientation="Horizontal"
+                        HorizontalAlignment="Center"
+                        Spacing="4">
+                <Button x:Name="StopButton"
+                        Content="&#x23F9;"
+                        Width="32"
+                        Height="28"
+                        Click="OnStopClicked"
+                        ToolTip.Tip="Stop"/>
+                <Button x:Name="PlayPauseButton"
+                        Content="&#x25B6;"
+                        Width="40"
+                        Height="28"
+                        Click="OnPlayPauseClicked"
+                        ToolTip.Tip="Play/Pause"/>
+                <ToggleButton x:Name="LoopButton"
+                              Content="&#x1F501;"
+                              Width="32"
+                              Height="28"
+                              IsChecked="True"
+                              ToolTip.Tip="Loop"/>
+            </StackPanel>
+
+            <!-- Speed Control -->
+            <Grid ColumnDefinitions="Auto,*,Auto">
+                <TextBlock Text="Speed"
+                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                           VerticalAlignment="Center"/>
+                <Slider x:Name="SpeedSlider"
+                        Grid.Column="1"
+                        Minimum="0.1"
+                        Maximum="2"
+                        Value="1"
+                        Margin="8,0"
+                        ValueChanged="OnSpeedValueChanged"/>
+                <TextBlock x:Name="SpeedText"
+                           Grid.Column="2"
+                           Text="1.0x"
+                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                           VerticalAlignment="Center"
+                           MinWidth="30"
+                           TextAlignment="Right"/>
+            </Grid>
+        </StackPanel>
+    </Border>
+</UserControl>

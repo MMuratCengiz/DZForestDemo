@@ -6,7 +6,8 @@
   },
   "shaders": {},
   "materials": {
-    "VikingRealmAlt": "Materials/VikingScene.nizimat.json"
+    "VikingRealmAlt": "Materials/VikingScene.nizimat.json",
+    "FoxMat": "Materials/Fox.nizimat.json"
   },
   "models": {
     "characters": "Synty/Models/VikingRealm/FBX/VikingRealm_Characters.glb",
@@ -29,6 +30,7 @@
     "bush": "Synty/Models/VikingRealm/FBX/SM_Env_Bush_Berries_01.glb",
     "torch": "Synty/Models/VikingRealm/FBX/SM_Prop_Torch_01.glb",
     "firepit": "Synty/Models/VikingRealm/FBX/SM_Prop_Fire_Pit_01.glb",
-    "flag": "Synty/Models/VikingRealm/FBX/SM_Prop_Flag_01.glb"
+    "flag": "Synty/Models/VikingRealm/FBX/SM_Prop_Flag_01.glb",
+    "Fox": "Models/Fox.glb"
   }
 }

@@ -8,158 +8,69 @@
     <Application.Resources>
         <views:BoolToForegroundConverter x:Key="BoolToForegroundConverter"/>
 
-        <!-- Editor-specific colors (axis, etc.) -->
+        <!-- Only truly editor-specific colors -->
         <Color x:Key="AxisXColor">#E05555</Color>
         <Color x:Key="AxisYColor">#55CC55</Color>
         <Color x:Key="AxisZColor">#5588EE</Color>
-        <Color x:Key="DangerBackgroundColor">#40C75450</Color>
 
         <SolidColorBrush x:Key="AxisXBrush" Color="{StaticResource AxisXColor}"/>
         <SolidColorBrush x:Key="AxisYBrush" Color="{StaticResource AxisYColor}"/>
         <SolidColorBrush x:Key="AxisZBrush" Color="{StaticResource AxisZColor}"/>
-        <SolidColorBrush x:Key="DangerBackgroundBrush" Color="{StaticResource DangerBackgroundColor}"/>
 
-        <!-- Panel styling -->
-        <x:Double x:Key="EditorPanelOpacity">0.92</x:Double>
-        <CornerRadius x:Key="EditorPanelCornerRadius">8</CornerRadius>
-        <CornerRadius x:Key="EditorControlCornerRadius">4</CornerRadius>
-        <Thickness x:Key="EditorPanelPadding">16</Thickness>
-
-        <!-- Font sizes -->
-        <x:Double x:Key="EditorFontSizeSmall">18</x:Double>
-        <x:Double x:Key="EditorFontSizeNormal">20</x:Double>
-        <x:Double x:Key="EditorFontSizeMedium">22</x:Double>
-        <x:Double x:Key="EditorFontSizeLarge">24</x:Double>
-        <x:Double x:Key="EditorFontSizeHeader">26</x:Double>
-
-        <!-- Layout sizes -->
-        <x:Double x:Key="EditorTaskbarHeight">52</x:Double>
-        <x:Double x:Key="FileBrowserCellSize">180</x:Double>
-        <x:Double x:Key="FileBrowserIconSize">72</x:Double>
+        <!-- Editor panel backgrounds with 75% opacity (0xBF = 191/255 = 0.75) -->
+        <SolidColorBrush x:Key="EditorPanelBackground" Color="#BF2D2D2D"/>
+        <SolidColorBrush x:Key="EditorPanelSecondaryBackground" Color="#BF252525"/>
+        <SolidColorBrush x:Key="EditorPanelBorder" Color="#BF3D3D3D"/>
     </Application.Resources>
 
     <Application.Styles>
         <sty:FluentAvaloniaTheme />
 
-        <!-- Transparent top level for game overlay -->
+        <!-- Transparent background for game overlay -->
         <Style Selector=":is(TopLevel)">
             <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="FontSize" Value="18"/>
         </Style>
 
-        <!-- Base font size -->
-        <Style Selector="TemplatedControl">
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
+        <!-- Base font size for all controls -->
+        <Style Selector="TextBlock">
+            <Setter Property="FontSize" Value="18"/>
         </Style>
-
-        <!-- Panel styling -->
-        <Style Selector="Border.panel">
-            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="{DynamicResource EditorPanelCornerRadius}"/>
-            <Setter Property="Padding" Value="{DynamicResource EditorPanelPadding}"/>
-        </Style>
-
-        <Style Selector="Border.panel-section">
-            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorSecondaryBrush}"/>
-            <Setter Property="CornerRadius" Value="{DynamicResource EditorControlCornerRadius}"/>
-            <Setter Property="Padding" Value="12"/>
-            <Setter Property="Margin" Value="0,0,0,8"/>
-        </Style>
-
-        <!-- Text styles using Fluent theme brushes -->
-        <Style Selector="TextBlock.header">
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeHeader}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
-            <Setter Property="Margin" Value="0,0,0,12"/>
-        </Style>
-
-        <Style Selector="TextBlock.section-header">
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeMedium}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
-            <Setter Property="Margin" Value="0,0,0,8"/>
-        </Style>
-
-        <Style Selector="TextBlock.label">
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeSmall}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
-
-        <Style Selector="TextBlock.muted">
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeSmall}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}"/>
-        </Style>
-
-        <Style Selector="TextBlock.component-name">
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
-            <Setter Property="FontWeight" Value="SemiBold"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}"/>
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
-
-        <!-- Control font sizes -->
-        <Style Selector="TreeViewItem">
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
-        </Style>
-
-        <Style Selector="ListBoxItem">
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
-        </Style>
-
-        <Style Selector="MenuItem">
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
-        </Style>
-
-        <Style Selector="ComboBoxItem">
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
-        </Style>
-
         <Style Selector="TextBox">
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
+            <Setter Property="FontSize" Value="18"/>
         </Style>
-
         <Style Selector="Button">
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
+            <Setter Property="FontSize" Value="18"/>
         </Style>
-
+        <Style Selector="ToggleButton">
+            <Setter Property="FontSize" Value="18"/>
+        </Style>
+        <Style Selector="ComboBox">
+            <Setter Property="FontSize" Value="18"/>
+        </Style>
+        <Style Selector="ComboBoxItem">
+            <Setter Property="FontSize" Value="18"/>
+        </Style>
+        <Style Selector="MenuItem">
+            <Setter Property="FontSize" Value="18"/>
+        </Style>
         <Style Selector="TabItem">
-            <Setter Property="FontSize" Value="{DynamicResource EditorFontSizeNormal}"/>
+            <Setter Property="FontSize" Value="18"/>
         </Style>
-
-        <!-- Ghost button style -->
-        <Style Selector="Button.ghost">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
+        <Style Selector="TreeViewItem">
+            <Setter Property="FontSize" Value="18"/>
         </Style>
-
-        <!-- Taskbar button style -->
-        <Style Selector="ToggleButton.taskbar-button">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="16,10"/>
-            <Setter Property="CornerRadius" Value="4"/>
+        <Style Selector="ListBoxItem">
+            <Setter Property="FontSize" Value="18"/>
         </Style>
-
-        <!-- Collapse toggle button -->
-        <Style Selector="ToggleButton.collapse">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="4"/>
-            <Setter Property="Opacity" Value="0.7"/>
+        <Style Selector="CheckBox">
+            <Setter Property="FontSize" Value="18"/>
         </Style>
-        <Style Selector="ToggleButton.collapse:pointerover">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="Opacity" Value="1"/>
+        <Style Selector="RadioButton">
+            <Setter Property="FontSize" Value="18"/>
         </Style>
-
-        <!-- Separator -->
-        <Style Selector="Border.separator">
-            <Setter Property="Height" Value="1"/>
-            <Setter Property="Background" Value="{DynamicResource DividerStrokeColorDefaultBrush}"/>
-            <Setter Property="Margin" Value="0,12"/>
+        <Style Selector="Label">
+            <Setter Property="FontSize" Value="18"/>
         </Style>
     </Application.Styles>
 
