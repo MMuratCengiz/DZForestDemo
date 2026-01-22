@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Markup.Xaml;
+using NiziKit.Animation;
 using NiziKit.Components;
 using NiziKit.Editor.Services;
 using NiziKit.Editor.ViewModels;
@@ -52,10 +53,10 @@ public partial class GenericComponentView : UserControl
         var items = new List<Control>();
         var type = component.GetType();
 
-        if (component is AnimatorComponent animatorComponent)
+        if (component is Animator animator)
         {
             _animationPreviewEditor = new AnimationPreviewEditor();
-            _animationPreviewEditor.SetAnimatorComponent(animatorComponent, _editorViewModel);
+            _animationPreviewEditor.SetAnimator(animator, _editorViewModel);
             items.Add(_animationPreviewEditor);
         }
         else

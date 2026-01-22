@@ -1,7 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
-using NiziKit.Components;
+using NiziKit.Animation;
 using NiziKit.Editor.Animation;
 using NiziKit.Editor.ViewModels;
 
@@ -10,7 +10,7 @@ namespace NiziKit.Editor.Views.Editors;
 public partial class AnimationPreviewEditor : UserControl
 {
     private AnimationPreviewRenderer? _previewRenderer;
-    private AnimatorComponent? _animatorComponent;
+    private Animator? _animator;
     private EditorViewModel? _editorViewModel;
     private bool _isDraggingTimeline;
     private SkiaTextureView? _textureView;
@@ -22,9 +22,9 @@ public partial class AnimationPreviewEditor : UserControl
         InitializeComponent();
     }
 
-    public void SetAnimatorComponent(AnimatorComponent? animator, EditorViewModel? editorViewModel = null)
+    public void SetAnimator(Animator? animator, EditorViewModel? editorViewModel = null)
     {
-        _animatorComponent = animator;
+        _animator = animator;
         _editorViewModel = editorViewModel;
 
         if (animator == null)

@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Text.Json;
+using NiziKit.Animation;
 using NiziKit.Assets.Serde;
 using NiziKit.Components;
 using NiziKit.ContentPipeline;
@@ -252,7 +253,7 @@ public class EditorSceneService
                 json.Properties["material"] = JsonSerializer.SerializeToElement(matComp.Material.Name ?? "unknown");
             }
         }
-        else if (component is AnimatorComponent animComp)
+        else if (component is Animator animComp)
         {
             if (!string.IsNullOrEmpty(animComp.SkeletonRef))
             {

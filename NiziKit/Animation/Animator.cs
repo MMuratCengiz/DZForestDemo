@@ -12,13 +12,23 @@ public class AnimatorEventArgs : EventArgs
     public int LayerIndex { get; init; }
 }
 
-public class Animator : IComponent, IDisposable
+[NiziComponent(TypeName = "animator")]
+public partial class Animator : IDisposable
 {
     private const int MaxBones = 256;
     private const int MaxTransitionsPerFrame = 8;
 
-    public GameObject? Owner { get; set; }
-    public Skeleton? Skeleton { get; set; }
+    [AssetRef(AssetRefType.Skeleton, "skeleton")]
+    public partial Skeleton? Skeleton { get; set; }
+
+    [HideInInspector]
+    public string? SkeletonRef { get; set; }
+
+    [AnimationSelector("Skeleton")]
+    [JsonProperty("defaultAnimation")]
+    public partial string? DefaultAnimation { get; set; }
+
+    [DontSerialize]
     public AnimatorController? Controller { get; set; }
 
     public event EventHandler<AnimatorEventArgs>? StateCompleted;
@@ -53,9 +63,42 @@ public class Animator : IComponent, IDisposable
 
     public void Initialize()
     {
-        if (Controller == null || Skeleton == null)
+        if (Skeleton == null)
         {
             return;
+        }
+
+        if (Controller == null)
+        {
+            var controller = new AnimatorController { Name = "Auto" };
+
+            for (var i = 0; i < Skeleton.AnimationCount; i++)
+            {
+                var animName = Skeleton.AnimationNames[i];
+
+                Assets.Animation? clip;
+                try
+                {
+                    clip = Skeleton.GetAnimation((uint)i);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"[Animator] Skipping animation '{animName}': {ex.Message}");
+                    continue;
+                }
+
+                var state = controller.AddState(animName);
+                state.Clip = clip;
+                state.LoopMode = AnimationLoopMode.Loop;
+
+                if (controller.BaseLayer.DefaultState == null ||
+                    (DefaultAnimation != null && animName.Equals(DefaultAnimation, StringComparison.OrdinalIgnoreCase)))
+                {
+                    controller.BaseLayer.DefaultState = state;
+                }
+            }
+
+            Controller = controller;
         }
 
         _parameters = Controller.CloneParameters();

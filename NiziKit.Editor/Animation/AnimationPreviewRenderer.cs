@@ -30,7 +30,6 @@ public class AnimationPreviewRenderer : IDisposable
     private bool _needsRender;
 
     private GameObject? _previewTarget;
-    private AnimatorComponent? _animatorComponent;
     private Animator? _previewAnimator;
     private string? _currentAnimation;
     private bool _isPlaying;
@@ -87,25 +86,11 @@ public class AnimationPreviewRenderer : IDisposable
     public void SetPreviewTarget(GameObject? gameObject)
     {
         _previewTarget = gameObject;
-        _animatorComponent = gameObject?.GetComponent<AnimatorComponent>();
+        _previewAnimator = gameObject?.GetComponent<Animator>();
 
-        if (_animatorComponent != null)
+        if (_previewAnimator != null)
         {
-            _previewAnimator = _animatorComponent.Animator;
             PositionCameraForTarget();
-        }
-        else
-        {
-            var animator = gameObject?.GetComponent<Animator>();
-            if (animator != null)
-            {
-                _previewAnimator = animator;
-                PositionCameraForTarget();
-            }
-            else
-            {
-                _previewAnimator = null;
-            }
         }
 
         _currentAnimation = null;
@@ -142,12 +127,12 @@ public class AnimationPreviewRenderer : IDisposable
 
     public IReadOnlyList<string> GetAvailableAnimations()
     {
-        if (_animatorComponent?.Skeleton == null)
+        if (_previewAnimator?.Skeleton == null)
         {
             return Array.Empty<string>();
         }
 
-        return _animatorComponent.Skeleton.AnimationNames;
+        return _previewAnimator.Skeleton.AnimationNames;
     }
 
     public void PlayAnimation(string animationName)
