@@ -67,7 +67,9 @@ public partial class FileBrowserViewModel : ObservableObject
         get
         {
             if (string.IsNullOrEmpty(CurrentPath))
+            {
                 return false;
+            }
 
             var parent = Directory.GetParent(CurrentPath);
             return parent != null;
@@ -85,7 +87,6 @@ public partial class FileBrowserViewModel : ObservableObject
                 return parts;
             }
 
-            // Build full path from root
             var pathSegments = new List<(string Name, string FullPath)>();
             var current = CurrentPath;
 
@@ -94,7 +95,6 @@ public partial class FileBrowserViewModel : ObservableObject
                 var name = Path.GetFileName(current);
                 if (string.IsNullOrEmpty(name))
                 {
-                    // This is a root like "C:\" or "/"
                     name = current;
                 }
                 pathSegments.Add((name, current));
@@ -103,7 +103,6 @@ public partial class FileBrowserViewModel : ObservableObject
                 current = parent?.FullName;
             }
 
-            // Reverse to get root-first order
             pathSegments.Reverse();
 
             foreach (var (name, fullPath) in pathSegments)

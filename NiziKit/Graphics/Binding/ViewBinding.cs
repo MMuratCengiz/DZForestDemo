@@ -46,7 +46,7 @@ public class ViewBinding : ShaderBinding<ViewData>
 
     private static GpuCamera BuildCamera(ViewData viewData)
     {
-        var cam = viewData.Camera ?? viewData.Scene.MainCamera;
+        var cam = viewData.Camera ?? viewData.Scene.GetActiveCamera();
         if (cam == null)
         {
             return default;

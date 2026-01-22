@@ -19,7 +19,9 @@ public sealed class EditorGame : Game
     private DenOfIzTopLevel _topLevel = null!;
     private Avalonia.Application _avaloniaApp = null!;
     private SkiaContext _skiaContext = null!;
-    private CameraObject _editorCamera = null!;
+    private GameObject _editorCameraObject = null!;
+    private CameraComponent _editorCamera = null!;
+    private FreeFlyController _editorController = null!;
 
     private uint _width;
     private uint _height;
@@ -52,11 +54,16 @@ public sealed class EditorGame : Game
 
         _renderer = new EditorRenderer(_topLevel);
 
-        _editorCamera = new CameraObject("EditorCamera");
-        _editorCamera.LocalPosition = new Vector3(0, 15, -15);
-        var controller = new CameraController { MoveSpeed = 10f };
-        _editorCamera.AddComponent(controller);
-        controller.SetPositionAndLookAt(new Vector3(0, 15, -15), Vector3.Zero, immediate: true);
+        _editorCameraObject = new GameObject("EditorCamera");
+        _editorCameraObject.LocalPosition = new Vector3(0, 15, -15);
+
+        _editorCamera = _editorCameraObject.AddComponent<CameraComponent>();
+        _editorCamera.Priority = 1000;
+
+        _editorController = _editorCameraObject.AddComponent<FreeFlyController>();
+        _editorController.MoveSpeed = 10f;
+        _editorController.SetPositionAndLookAt(new Vector3(0, 15, -15), Vector3.Zero, immediate: true);
+
         _editorCamera.SetAspectRatio(_width, _height);
         _renderer.Camera = _editorCamera;
 
@@ -75,7 +82,7 @@ public sealed class EditorGame : Game
 
     protected override void Update(float dt)
     {
-        _editorCamera.Update(dt);
+        _editorController.UpdateCamera(dt);
 
         if (!_mouseOverUi && !_gizmoDragging)
         {
@@ -184,7 +191,7 @@ public sealed class EditorGame : Game
 
         if (!UiWantsInput && !_gizmoDragging)
         {
-            _editorCamera.HandleEvent(in ev);
+            _editorController.HandleEvent(in ev);
         }
     }
 
@@ -328,12 +335,6 @@ public sealed class EditorGame : Game
             return;
         }
 
-        var controller = _editorCamera.GetComponent<CameraController>();
-        if (controller == null)
-        {
-            return;
-        }
-
         var targetPosition = selected.WorldPosition;
         var distance = 5f;
 
@@ -351,18 +352,18 @@ public sealed class EditorGame : Game
             targetPosition = Vector3.Transform(center, selected.WorldMatrix);
         }
 
-        var directionToTarget = targetPosition - _editorCamera.LocalPosition;
+        var directionToTarget = targetPosition - _editorCameraObject.LocalPosition;
         if (directionToTarget.LengthSquared() > 0.001f)
         {
             directionToTarget = Vector3.Normalize(directionToTarget);
         }
         else
         {
-            directionToTarget = controller.Forward;
+            directionToTarget = _editorController.Forward;
         }
 
         var cameraPosition = targetPosition - directionToTarget * distance;
-        controller.SetPositionAndLookAt(cameraPosition, targetPosition, immediate: false);
+        _editorController.SetPositionAndLookAt(cameraPosition, targetPosition, immediate: false);
     }
 
     private void OnResize(uint width, uint height)

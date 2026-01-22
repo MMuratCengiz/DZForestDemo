@@ -19,10 +19,11 @@
                     Margin="0,0,0,12" />
                 <TextBlock Text="Select an object to edit"
                            Classes="muted"
-                           HorizontalAlignment="Center" />
+                           HorizontalAlignment="Center" 
+                           FontSize="{DynamicResource EditorFontSizeSmall}"/>
             </StackPanel>
 
-            <StackPanel IsVisible="{Binding HasSelection}"
+            <StackPanel IsVisible="{Binding DataContext.HasSelection, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         DataContext="{Binding SelectedGameObject}">
 
                 <Border Background="{DynamicResource SurfaceBrush}"

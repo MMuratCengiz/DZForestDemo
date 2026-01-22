@@ -16,6 +16,7 @@
         <PackageReference Include="Avalonia.Skia" Version="11.3.7" />
         <PackageReference Include="DenOfIzGraphics" Version="0.7.1-alpha" />
         <PackageReference Include="SkiaSharp" Version="3.119.2-preview.1" />
+        <PackageReference Include="SkiaSharp.NativeAssets.Linux" Version="3.119.2-preview.1" />
     </ItemGroup>
 
     <ItemGroup>

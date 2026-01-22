@@ -262,17 +262,26 @@ public static class PropertyEditorRegistry
 
     private static Control CreateAssetRefEditor(PropertyEditorContext context, AssetRefAttribute assetRefAttr)
     {
+        var refPropertyName = context.Property.Name + "Ref";
+        var refProperty = context.Instance.GetType().GetProperty(refPropertyName);
+
         return new Views.Editors.AssetRefEditor
         {
             AssetType = assetRefAttr.AssetType,
             AssetBrowser = context.AssetBrowser,
             CurrentAsset = context.Property.GetValue(context.Instance),
             IsReadOnly = !context.Property.CanWrite,
-            OnAssetChanged = newAsset =>
+            OnAssetChanged = (newAsset, assetRef) =>
             {
                 if (context.Property.CanWrite)
                 {
                     context.Property.SetValue(context.Instance, newAsset);
+
+                    if (refProperty != null && refProperty.CanWrite)
+                    {
+                        refProperty.SetValue(context.Instance, assetRef);
+                    }
+
                     context.OnValueChanged();
                 }
             }

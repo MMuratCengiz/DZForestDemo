@@ -20,7 +20,6 @@ public class EditorSceneService
             LocalScale = original.LocalScale
         };
 
-        // Clone components - we'll need to handle this per component type
         foreach (var component in original.Components)
         {
             var clonedComponent = CloneComponent(component);
@@ -30,7 +29,6 @@ public class EditorSceneService
             }
         }
 
-        // Clone children recursively
         foreach (var child in original.Children)
         {
             var childClone = CloneGameObject(child);
@@ -42,13 +40,10 @@ public class EditorSceneService
 
     private IComponent? CloneComponent(IComponent component)
     {
-        // For now, create new instances based on type
-        // This is a simplified clone that works for basic components
         var type = component.GetType();
 
         if (Activator.CreateInstance(type) is IComponent newComponent)
         {
-            // Copy public properties
             foreach (var prop in type.GetProperties())
             {
                 if (prop.CanRead && prop.CanWrite && prop.Name != "Owner")
@@ -60,7 +55,6 @@ public class EditorSceneService
                     }
                     catch
                     {
-                        // Skip properties that can't be copied
                     }
                 }
             }
@@ -99,20 +93,24 @@ public class EditorSceneService
             Objects = []
         };
 
-        // Convert camera if present
-        if (scene.MainCamera != null)
+        var cameras = scene.GetAllCameras();
+        if (cameras.Count > 0)
         {
-            json.Camera = ConvertCameraToJson(scene.MainCamera);
+            json.Cameras = [];
+            foreach (var cam in cameras)
+            {
+                if (cam is CameraComponent cameraComponent)
+                {
+                    json.Cameras.Add(ConvertCameraComponentToJson(cameraComponent));
+                }
+            }
         }
 
-        // Convert lights
         json.Lights = [];
 
-        // Convert regular objects
         foreach (var obj in scene.RootObjects)
         {
-            // Skip camera and light objects
-            if (obj is CameraObject || IsLightObject(obj))
+            if (HasCameraComponent(obj) || IsLightObject(obj))
             {
                 continue;
             }
@@ -123,33 +121,61 @@ public class EditorSceneService
         return json;
     }
 
+    private static bool HasCameraComponent(GameObject obj)
+    {
+        return obj.GetComponent<CameraComponent>() != null;
+    }
+
     private static bool IsLightObject(GameObject obj)
     {
         var typeName = obj.GetType().Name;
         return typeName.Contains("Light");
     }
 
-    private CameraJson ConvertCameraToJson(CameraObject camera)
+    private CameraJson ConvertCameraComponentToJson(CameraComponent camera)
     {
-        var euler = QuaternionToEuler(camera.LocalRotation);
+        var owner = camera.Owner;
+        if (owner == null)
+        {
+            return new CameraJson();
+        }
+
+        var euler = QuaternionToEuler(owner.LocalRotation);
 
         var json = new CameraJson
         {
-            Name = camera.Name,
-            Position = [camera.LocalPosition.X, camera.LocalPosition.Y, camera.LocalPosition.Z],
+            Name = owner.Name,
+            Position = [owner.LocalPosition.X, owner.LocalPosition.Y, owner.LocalPosition.Z],
             Rotation = [euler.X, euler.Y, euler.Z],
             FieldOfView = camera.FieldOfView,
             NearPlane = camera.NearPlane,
-            FarPlane = camera.FarPlane
+            FarPlane = camera.FarPlane,
+            ProjectionType = camera.ProjectionType == ProjectionType.Orthographic ? "orthographic" : "perspective",
+            OrthographicSize = camera.OrthographicSize,
+            Priority = camera.Priority,
+            IsActive = camera.IsActiveCamera
         };
 
-        var controller = camera.GetComponent<CameraController>();
-        if (controller != null)
+        var freeFly = owner.GetComponent<FreeFlyController>();
+        if (freeFly != null)
         {
             json.Controller = new CameraControllerJson
             {
-                MoveSpeed = controller.MoveSpeed,
-                LookSensitivity = controller.LookSensitivity
+                Type = "freefly",
+                MoveSpeed = freeFly.MoveSpeed,
+                LookSensitivity = freeFly.LookSensitivity
+            };
+        }
+
+        var orbit = owner.GetComponent<OrbitController>();
+        if (orbit != null)
+        {
+            json.Controller = new CameraControllerJson
+            {
+                Type = "orbit",
+                LookSensitivity = orbit.LookSensitivity,
+                OrbitTarget = [orbit.OrbitTarget.X, orbit.OrbitTarget.Y, orbit.OrbitTarget.Z],
+                OrbitDistance = orbit.OrbitDistance
             };
         }
 
@@ -257,7 +283,6 @@ public class EditorSceneService
                     }
                     catch
                     {
-                        // Skip
                     }
                 }
             }
@@ -279,7 +304,6 @@ public class EditorSceneService
         var cosy_cosp = 1 - 2 * (q.Y * q.Y + q.Z * q.Z);
         var yaw = MathF.Atan2(siny_cosp, cosy_cosp);
 
-        // Convert to degrees
         return new Vector3(roll, pitch, yaw) * (180f / MathF.PI);
     }
 
@@ -298,7 +322,6 @@ public class EditorSceneService
 
     private static string GetScenesDirectory()
     {
-        // Use the Content system's base path
         var basePath = Path.GetDirectoryName(Content.ResolvePath("dummy")) ?? ".";
         return basePath;
     }

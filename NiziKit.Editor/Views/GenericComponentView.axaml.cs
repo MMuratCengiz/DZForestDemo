@@ -49,9 +49,23 @@ public partial class GenericComponentView : UserControl
         var typeName = type.Name;
         var displayName = typeName.EndsWith("Component") ? typeName[..^9] : typeName;
 
+        var assetRefProperties = new HashSet<string>();
+        foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        {
+            if (prop.GetCustomAttribute<AssetRefAttribute>() != null)
+            {
+                assetRefProperties.Add(prop.Name + "Ref");
+            }
+        }
+
         foreach (var prop in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
             if (prop.Name == "Owner" || !prop.CanRead)
+            {
+                continue;
+            }
+
+            if (assetRefProperties.Contains(prop.Name))
             {
                 continue;
             }

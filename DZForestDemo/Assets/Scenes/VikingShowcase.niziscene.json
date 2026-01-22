@@ -8,7 +8,7 @@
     "position": [
       0,
       0,
-      -67.000336
+      -74
     ],
     "rotation": [
       0,
@@ -124,9 +124,9 @@
         16.022827
       ],
       "rotation": [
-        -13.050758,
-        27.253696,
-        74.16161
+        24.009842,
+        18.548395,
+        81.3158
       ],
       "scale": [
         1,
@@ -736,7 +736,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "viking:rock/0"
+          "mesh": "viking:characters/SM_Chr_Warrior_Female_02"
         },
         {
           "type": "material",

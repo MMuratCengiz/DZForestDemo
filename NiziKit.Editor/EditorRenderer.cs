@@ -1,6 +1,7 @@
 using Avalonia.Threading;
 using DenOfIz;
 using NiziKit.Application.Timing;
+using NiziKit.Components;
 using NiziKit.Core;
 using NiziKit.Editor.Gizmos;
 using NiziKit.Editor.ViewModels;
@@ -34,7 +35,7 @@ public class EditorRenderer : IRenderer
 
     public GizmoPass? GizmoPass => _gizmoPass;
 
-    public CameraObject? Camera
+    public CameraComponent? Camera
     {
         get => _viewData.Camera;
         set => _viewData.Camera = value;

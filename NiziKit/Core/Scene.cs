@@ -15,9 +15,97 @@ public abstract class Scene(string name = "Scene") : IDisposable
     public IReadOnlyList<GameObject> RootObjects => _rootObjects;
     private readonly Dictionary<Type, List<GameObject>> _objectsByType = new();
 
-    public CameraObject? MainCamera { get; set; }
+    private readonly List<CameraComponent> _cameras = [];
 
     public abstract void Load();
+
+    public virtual Task LoadAsync(CancellationToken ct = default)
+    {
+        Load();
+        return Task.CompletedTask;
+    }
+
+    public void RegisterCamera(CameraComponent camera)
+    {
+        if (!_cameras.Contains(camera))
+        {
+            _cameras.Add(camera);
+        }
+    }
+
+    public void UnregisterCamera(CameraComponent camera)
+    {
+        _cameras.Remove(camera);
+    }
+
+    public CameraComponent? GetActiveCamera()
+    {
+        CameraComponent? best = null;
+        var bestPriority = int.MinValue;
+
+        foreach (var cam in _cameras)
+        {
+            if (cam.IsActive && cam.Priority > bestPriority)
+            {
+                best = cam;
+                bestPriority = cam.Priority;
+            }
+        }
+
+        return best;
+    }
+
+    public IReadOnlyList<CameraComponent> GetAllCameras() => _cameras;
+
+    internal void UpdateCameras(float deltaTime)
+    {
+        foreach (var cam in _cameras)
+        {
+            if (cam is CameraComponent cameraComponent && cameraComponent.Owner != null)
+            {
+                var freeFly = cameraComponent.Owner.GetComponent<FreeFlyController>();
+                if (freeFly != null)
+                {
+                    freeFly.UpdateCamera(deltaTime);
+                    continue;
+                }
+
+                var orbit = cameraComponent.Owner.GetComponent<OrbitController>();
+                orbit?.UpdateCamera(deltaTime);
+            }
+        }
+    }
+
+    internal bool HandleCameraEvent(in DenOfIz.Event ev)
+    {
+        foreach (var cam in _cameras)
+        {
+            if (cam is CameraComponent cameraComponent && cameraComponent.Owner != null)
+            {
+                var freeFly = cameraComponent.Owner.GetComponent<FreeFlyController>();
+                if (freeFly?.HandleEvent(in ev) == true)
+                {
+                    return true;
+                }
+
+                var orbit = cameraComponent.Owner.GetComponent<OrbitController>();
+                if (orbit?.HandleEvent(in ev) == true)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    internal void OnCameraResize(uint width, uint height)
+    {
+        foreach (var cam in _cameras)
+        {
+            cam.SetAspectRatio(width, height);
+        }
+    }
 
     internal void ProcessGameObjectLifecycle()
     {
@@ -176,7 +264,7 @@ public abstract class Scene(string name = "Scene") : IDisposable
         }
         _rootObjects.Clear();
         _objectsByType.Clear();
-        MainCamera = null;
+        _cameras.Clear();
     }
 
     public GameObject CreateObject(string name = "SceneObject")
