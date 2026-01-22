@@ -1,4 +1,4 @@
-﻿{
+{
   "$schema": "../../../NiziKit/Assets/Serde/Schemas/nizimat.schema.json",
   "name": "VikingRealmAlt",
   "shader": "../Shaders/VikingScene.nizishp.json",

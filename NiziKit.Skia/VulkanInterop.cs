@@ -8,6 +8,7 @@ public static class VulkanInterop
     public const uint VK_IMAGE_TILING_OPTIMAL = 0;
     public const uint VK_SHARING_MODE_EXCLUSIVE = 0;
     public const uint VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL = 2;
+    public const uint VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL = 5;
     public const uint VK_IMAGE_USAGE_TRANSFER_SRC_BIT = 0x00000001;
     public const uint VK_IMAGE_USAGE_TRANSFER_DST_BIT = 0x00000002;
     public const uint VK_IMAGE_USAGE_SAMPLED_BIT = 0x00000004;

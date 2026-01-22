@@ -16,7 +16,8 @@ struct VSOutput
 VSOutput VSMain(VSInput input)
 {
     VSOutput output;
-    output.Position = mul(float4(input.Position, 1.0), ViewProjection);
+    float4 worldPos = mul(float4(input.Position, 1.0), ModelMatrix);
+    output.Position = mul(worldPos, ViewProjection);
     output.Position.z -= DepthBias;
     output.Color = input.Color;
     output.Depth = output.Position.z / output.Position.w;

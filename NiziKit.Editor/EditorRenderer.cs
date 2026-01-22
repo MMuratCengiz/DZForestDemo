@@ -3,6 +3,7 @@ using DenOfIz;
 using NiziKit.Application.Timing;
 using NiziKit.Components;
 using NiziKit.Core;
+using NiziKit.Editor.Animation;
 using NiziKit.Editor.Gizmos;
 using NiziKit.Editor.ViewModels;
 using NiziKit.Graphics;
@@ -68,6 +69,7 @@ public class EditorRenderer : IRenderer
 
         RenderScene();
         RenderGizmos();
+        RenderAnimationPreview();
 
         DenOfIzPlatform.TriggerRenderTick(TimeSpan.FromSeconds(dt));
         Dispatcher.UIThread.RunJobs();
@@ -149,6 +151,19 @@ public class EditorRenderer : IRenderer
         _gizmoPass.Render(pass, _viewData, _sceneDepth);
 
         pass.End();
+    }
+
+    private void RenderAnimationPreview()
+    {
+        if (_editorViewModel == null)
+        {
+            return;
+        }
+
+        foreach (var renderer in _editorViewModel.GetActivePreviewRenderers())
+        {
+            renderer.Render(_renderFrame);
+        }
     }
 
     public void OnResize(uint width, uint height)

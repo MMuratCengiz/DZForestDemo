@@ -10,6 +10,7 @@ namespace NiziKit.Editor.Gizmos;
 public struct GizmoConstants
 {
     public Matrix4x4 ViewProjection;
+    public Matrix4x4 ModelMatrix;
     public Vector3 CameraPosition;
     public float DepthBias;
     public Vector4 SelectionColor;

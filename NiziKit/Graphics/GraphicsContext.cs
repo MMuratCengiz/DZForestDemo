@@ -30,7 +30,6 @@ public sealed class GraphicsContext : IDisposable
     public static UniformBufferArena UniformBufferArena => Instance._uniformBufferArena;
     public static BindGroupLayoutStore BindGroupLayoutStore => Instance._bindGroupLayoutStore;
     public static RootSignatureStore RootSignatureStore => Instance._rootSignatureStore;
-
     public static void Resize(uint width, uint height) => Instance._Resize(width, height);
     public static void BeginFrame() => Instance._BeginFrame();
     public static void WaitIdle() => Instance._WaitIdle();

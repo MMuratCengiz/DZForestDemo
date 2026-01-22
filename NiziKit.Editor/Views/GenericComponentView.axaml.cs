@@ -86,6 +86,11 @@ public partial class GenericComponentView : UserControl
                 continue;
             }
 
+            if (!ShouldShowProperty(prop))
+            {
+                continue;
+            }
+
             var skipLabel = prop.Name == displayName;
             var control = CreatePropertyControl(component, prop, skipLabel);
             if (control != null)
@@ -95,6 +100,35 @@ public partial class GenericComponentView : UserControl
         }
 
         _propertiesControl.ItemsSource = items;
+    }
+
+    private static bool ShouldShowProperty(PropertyInfo prop)
+    {
+        if (prop.GetCustomAttribute<DontSerializeAttribute>() != null)
+        {
+            return false;
+        }
+
+        if (prop.GetCustomAttribute<HideInInspectorAttribute>() != null)
+        {
+            return false;
+        }
+
+        if (prop.PropertyType.IsByRefLike)
+        {
+            return false;
+        }
+
+        var hasSerializeAttr = prop.GetCustomAttribute<SerializeFieldAttribute>() != null;
+        var hasJsonAttr = prop.GetCustomAttribute<JsonPropertyAttribute>() != null;
+        var hasAssetRef = prop.GetCustomAttribute<AssetRefAttribute>() != null;
+
+        if (hasSerializeAttr || hasJsonAttr || hasAssetRef)
+        {
+            return true;
+        }
+
+        return prop.CanWrite && prop.GetSetMethod() != null;
     }
 
     private Control? CreatePropertyControl(IComponent component, PropertyInfo prop, bool skipLabel = false)
@@ -121,6 +155,10 @@ public partial class GenericComponentView : UserControl
         };
 
         var editor = PropertyEditorRegistry.CreateEditor(context);
+        if (editor == null)
+        {
+            return null;
+        }
 
         if (prop.PropertyType == typeof(bool) && !skipLabel)
         {

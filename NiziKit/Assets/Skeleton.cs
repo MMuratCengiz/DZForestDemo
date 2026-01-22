@@ -15,6 +15,7 @@ public class Skeleton : IDisposable
     private BinaryContainer? _skeletonData;
     private readonly Dictionary<string, Animation> _animations = new();
     private IReadOnlyList<string>? _animationNames;
+    private byte[]? _sourceBytes;
 
     public IReadOnlyList<string> AnimationNames => _animationNames ??= _exporter?.GetAnimationNames() ?? [];
     public uint AnimationCount => _exporter?.NumAnimations ?? 0;
@@ -75,7 +76,8 @@ public class Skeleton : IDisposable
             RootJointIndices = [0],
             OzzSkeleton = ozzSkeleton,
             _exporter = exporter,
-            _skeletonData = skeletonData
+            _skeletonData = skeletonData,
+            _sourceBytes = gltfBytes
         };
     }
 
@@ -86,20 +88,16 @@ public class Skeleton : IDisposable
             return cached;
         }
 
-        if (_exporter == null)
+        var names = AnimationNames;
+        for (int i = 0; i < names.Count; i++)
         {
-            throw new InvalidOperationException("Skeleton has been finalized, no new animations can be loaded");
+            if (names[i] == animationName)
+            {
+                return GetAnimation((uint)i);
+            }
         }
 
-        var animationData = _exporter.BuildAnimation(animationName);
-        if (animationData == null)
-        {
-            throw new InvalidOperationException($"Animation '{animationName}' not found in skeleton '{Name}'");
-        }
-
-        var animation = CreateAnimation(animationData, animationName);
-        _animations[animationName] = animation;
-        return animation;
+        throw new InvalidOperationException($"Animation '{animationName}' not found in skeleton '{Name}'");
     }
 
     public Animation GetAnimation(uint animationIndex)
@@ -111,8 +109,32 @@ public class Skeleton : IDisposable
                 $"Animation index {animationIndex} out of range (skeleton has {names.Count} animations)");
         }
 
-        var name = names[(int)animationIndex];
-        return GetAnimation(name);
+        var animationName = names[(int)animationIndex];
+        if (_animations.TryGetValue(animationName, out var cached))
+        {
+            return cached;
+        }
+
+        if (_sourceBytes == null)
+        {
+            throw new InvalidOperationException("Skeleton has been finalized, no new animations can be loaded");
+        }
+
+        using var exporter = new OzzExporterRuntime();
+        if (!exporter.LoadFromMemory(_sourceBytes))
+        {
+            throw new InvalidOperationException($"Failed to reload glTF for animation: {animationName}");
+        }
+
+        var animationData = exporter.BuildAnimation(animationIndex);
+        if (animationData == null)
+        {
+            throw new InvalidOperationException($"Animation '{animationName}' (index {animationIndex}) failed to build for skeleton '{Name}'");
+        }
+
+        var animation = CreateAnimation(animationData, animationName);
+        _animations[animationName] = animation;
+        return animation;
     }
 
     private Animation CreateAnimation(BinaryContainer animationData, string name)

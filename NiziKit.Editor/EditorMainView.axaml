@@ -18,7 +18,7 @@
             <Border Grid.Row="0"
                     Background="{StaticResource EditorPanelBackground}"
                     Padding="4,2">
-                <Menu Background="Transparent">
+                <Menu>
                     <MenuItem Header="File">
                         <MenuItem Header="Save Scene" Command="{Binding SaveSceneCommand}" InputGesture="Ctrl+S"/>
                     </MenuItem>
@@ -97,26 +97,19 @@
                             Spacing="12"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center">
-                    <ToggleButton IsChecked="{Binding IsAssetBrowserOpen, Mode=TwoWay}"
+                    <ToggleButton IsChecked="{Binding IsContentBrowserOpen, Mode=TwoWay}"
                                   Padding="20,10">
                         <StackPanel Orientation="Horizontal" Spacing="12">
                             <ui:SymbolIcon Symbol="Folder" FontSize="24"/>
-                            <TextBlock Text="Assets" VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </ToggleButton>
-                    <ToggleButton IsChecked="{Binding IsPackManagerOpen, Mode=TwoWay}"
-                                  Padding="20,10">
-                        <StackPanel Orientation="Horizontal" Spacing="12">
-                            <ui:SymbolIcon Symbol="AllApps" FontSize="24"/>
-                            <TextBlock Text="Packs" VerticalAlignment="Center"/>
+                            <TextBlock Text="Content" VerticalAlignment="Center"/>
                         </StackPanel>
                     </ToggleButton>
                 </StackPanel>
             </Border>
         </Grid>
 
-        <!-- Asset Browser Popup Panel -->
-        <Border IsVisible="{Binding IsAssetBrowserOpen}"
+        <!-- Content Browser Popup Panel -->
+        <Border IsVisible="{Binding IsContentBrowserOpen}"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Bottom"
                 Margin="392,0,432,60">
@@ -131,64 +124,32 @@
                             Background="{StaticResource EditorPanelSecondaryBackground}"
                             CornerRadius="8,8,0,0"
                             Padding="20,16">
-                            <Grid ColumnDefinitions="*,Auto">
-                                <TextBlock Text="Asset Browser"
-                                           Theme="{StaticResource SubtitleTextBlockStyle}"
-                                           VerticalAlignment="Center"/>
-                                <Button Grid.Column="1"
-                                        Command="{Binding CloseAssetBrowserCommand}"
-                                        ToolTip.Tip="Close"
-                                        Padding="8">
-                                    <ui:SymbolIcon Symbol="Dismiss" FontSize="18"/>
-                                </Button>
-                            </Grid>
-                        </Border>
-                        <!-- Separator -->
-                        <Border Grid.Row="1" Height="1" Background="{DynamicResource DividerStrokeColorDefaultBrush}"/>
-                        <!-- Content -->
-                    <views:AssetBrowserView Grid.Row="2"
-                                            DataContext="{Binding AssetBrowserViewModel}"
-                                            Margin="16"/>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <TextBlock Text="Content Browser"
+                                       Theme="{StaticResource SubtitleTextBlockStyle}"
+                                       VerticalAlignment="Center"/>
+                            <Button Grid.Column="1"
+                                    Command="{Binding CloseContentBrowserCommand}"
+                                    ToolTip.Tip="Close"
+                                    Padding="8">
+                                <ui:SymbolIcon Symbol="Dismiss" FontSize="18"/>
+                            </Button>
+                        </Grid>
+                    </Border>
+                    <!-- Separator -->
+                    <Border Grid.Row="1" Height="1" Background="{DynamicResource DividerStrokeColorDefaultBrush}"/>
+                    <!-- Content -->
+                    <views:ContentBrowserView Grid.Row="2"
+                                              DataContext="{Binding ContentBrowserViewModel}"/>
                 </Grid>
             </Border>
         </Border>
 
-        <!-- Pack Manager Popup Panel -->
-        <Border IsVisible="{Binding IsPackManagerOpen}"
-                HorizontalAlignment="Stretch"
-                VerticalAlignment="Bottom"
-                Margin="392,0,432,60">
-            <Border Background="{StaticResource EditorPanelBackground}"
-                    BorderBrush="{StaticResource EditorPanelBorder}"
-                    BorderThickness="1"
-                    CornerRadius="8,8,0,0"
-                    Height="600">
-                <Grid RowDefinitions="Auto,Auto,*">
-                    <!-- Title Bar -->
-                    <Border Grid.Row="0"
-                            Background="{StaticResource EditorPanelSecondaryBackground}"
-                            CornerRadius="8,8,0,0"
-                            Padding="20,16">
-                            <Grid ColumnDefinitions="*,Auto">
-                                <TextBlock Text="Pack Manager"
-                                           Theme="{StaticResource SubtitleTextBlockStyle}"
-                                           VerticalAlignment="Center"/>
-                                <Button Grid.Column="1"
-                                        Command="{Binding ClosePackManagerCommand}"
-                                        ToolTip.Tip="Close"
-                                        Padding="8">
-                                    <ui:SymbolIcon Symbol="Dismiss" FontSize="18"/>
-                                </Button>
-                            </Grid>
-                        </Border>
-                        <!-- Separator -->
-                        <Border Grid.Row="1" Height="1" Background="{DynamicResource DividerStrokeColorDefaultBrush}"/>
-                        <!-- Content -->
-                        <views:PackManagerView Grid.Row="2"
-                                           DataContext="{Binding PackManagerViewModel}"
-                                           Margin="16"/>
-                </Grid>
-            </Border>
+        <!-- Asset Editor Overlay -->
+        <Border IsVisible="{Binding ContentBrowserViewModel.IsAssetEditorOpen}"
+                Background="#60000000"
+                ZIndex="500">
+            <editors:AssetEditorDialog DataContext="{Binding ContentBrowserViewModel}"/>
         </Border>
 
         <!-- Import Panel Modal -->

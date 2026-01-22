@@ -16,6 +16,9 @@ public class GraphicsPass(CommandList commandList) : RenderPass(commandList)
     private Texture? _depthTexture;
     private Texture? _stencilTexture;
 
+    private uint _rtWidth;
+    private uint _rtHeight;
+
     private int _rtCount;
     private bool _hasDepth;
     private bool _hasStencil;
@@ -56,6 +59,12 @@ public class GraphicsPass(CommandList commandList) : RenderPass(commandList)
         {
             _rtCount = slot + 1;
         }
+
+        if (slot == 0)
+        {
+            _rtWidth = renderTarget.Width;
+            _rtHeight = renderTarget.Height;
+        }
     }
 
     public void SetDepthTarget(CycledTexture depthTarget, LoadOp loadOp = LoadOp.DontCare, StoreOp storeOp = StoreOp.Store)
@@ -71,6 +80,12 @@ public class GraphicsPass(CommandList commandList) : RenderPass(commandList)
             StoreOp = storeOp,
         };
         _hasDepth = true;
+
+        if (_rtWidth == 0 || _rtHeight == 0)
+        {
+            _rtWidth = depthTarget.Width;
+            _rtHeight = depthTarget.Height;
+        }
     }
 
     public void SetStencilTarget(CycledTexture stencilTarget, LoadOp loadOp = LoadOp.DontCare, StoreOp storeOp = StoreOp.Store)
@@ -109,6 +124,8 @@ public class GraphicsPass(CommandList commandList) : RenderPass(commandList)
     public override void Reset()
     {
         _rtCount = 0;
+        _rtWidth = 0;
+        _rtHeight = 0;
         _hasDepth = false;
         _hasStencil = false;
         _hasViewport = false;
@@ -180,13 +197,15 @@ public class GraphicsPass(CommandList commandList) : RenderPass(commandList)
 
         _commandList.BeginRendering(renderingDesc);
 
+        var (defaultWidth, defaultHeight) = GetDefaultViewportSize();
+
         if (_hasViewport)
         {
             _commandList.BindViewport(_viewportX, _viewportY, _viewportWidth, _viewportHeight);
         }
         else
         {
-            _commandList.BindViewport(0, 0, GraphicsContext.Width, GraphicsContext.Height);
+            _commandList.BindViewport(0, 0, defaultWidth, defaultHeight);
         }
 
         if (_hasScissor)
@@ -195,13 +214,23 @@ public class GraphicsPass(CommandList commandList) : RenderPass(commandList)
         }
         else
         {
-            _commandList.BindScissorRect(0, 0, GraphicsContext.Width, GraphicsContext.Height);
+            _commandList.BindScissorRect(0, 0, defaultWidth, defaultHeight);
         }
     }
 
     protected override void EndInternal()
     {
         _commandList.EndRendering();
+    }
+
+    private (float width, float height) GetDefaultViewportSize()
+    {
+        if (_rtWidth > 0 && _rtHeight > 0)
+        {
+            return (_rtWidth, _rtHeight);
+        }
+
+        return (GraphicsContext.Width, GraphicsContext.Height);
     }
 
     public void BindVertexBuffer(DenOfIz.Buffer buffer, ulong offset, uint stride, uint slot = 0)

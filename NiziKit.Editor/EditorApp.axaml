@@ -17,60 +17,59 @@
         <SolidColorBrush x:Key="AxisYBrush" Color="{StaticResource AxisYColor}"/>
         <SolidColorBrush x:Key="AxisZBrush" Color="{StaticResource AxisZColor}"/>
 
-        <!-- Editor panel backgrounds with 75% opacity (0xBF = 191/255 = 0.75) -->
-        <SolidColorBrush x:Key="EditorPanelBackground" Color="#BF2D2D2D"/>
-        <SolidColorBrush x:Key="EditorPanelSecondaryBackground" Color="#BF252525"/>
-        <SolidColorBrush x:Key="EditorPanelBorder" Color="#BF3D3D3D"/>
+        <!-- Editor panel backgrounds - fully opaque for proper input handling -->
+        <SolidColorBrush x:Key="EditorPanelBackground" Color="#FF2D2D2D"/>
+        <SolidColorBrush x:Key="EditorPanelSecondaryBackground" Color="#FF252525"/>
+        <SolidColorBrush x:Key="EditorPanelBorder" Color="#FF3D3D3D"/>
     </Application.Resources>
 
     <Application.Styles>
         <sty:FluentAvaloniaTheme />
 
-        <!-- Transparent background for game overlay -->
+        <!-- Base TopLevel style - no transparent background to ensure proper input handling -->
         <Style Selector=":is(TopLevel)">
-            <Setter Property="Background" Value="Transparent"/>
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="20"/>
         </Style>
 
         <!-- Base font size for all controls -->
         <Style Selector="TextBlock">
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="20"/>
         </Style>
         <Style Selector="TextBox">
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="20"/>
         </Style>
         <Style Selector="Button">
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="20"/>
         </Style>
         <Style Selector="ToggleButton">
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="20"/>
         </Style>
         <Style Selector="ComboBox">
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="20"/>
         </Style>
         <Style Selector="ComboBoxItem">
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="20"/>
         </Style>
         <Style Selector="MenuItem">
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="20"/>
         </Style>
         <Style Selector="TabItem">
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="20"/>
         </Style>
         <Style Selector="TreeViewItem">
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="20"/>
         </Style>
         <Style Selector="ListBoxItem">
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="20"/>
         </Style>
         <Style Selector="CheckBox">
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="20"/>
         </Style>
         <Style Selector="RadioButton">
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="20"/>
         </Style>
         <Style Selector="Label">
-            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontSize" Value="20"/>
         </Style>
     </Application.Styles>
 

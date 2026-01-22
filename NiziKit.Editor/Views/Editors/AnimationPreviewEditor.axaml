@@ -29,16 +29,9 @@
             </Border>
 
             <!-- Animation Selection -->
-            <Grid ColumnDefinitions="Auto,*">
-                <TextBlock Text="Animation"
-                           VerticalAlignment="Center"
-                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                           Margin="0,0,8,0"/>
-                <ComboBox x:Name="AnimationComboBox"
-                          Grid.Column="1"
-                          Height="32"
-                          SelectionChanged="OnAnimationSelectionChanged"/>
-            </Grid>
+            <ComboBox x:Name="AnimationComboBox"
+                      HorizontalAlignment="Stretch"
+                      SelectionChanged="OnAnimationSelectionChanged"/>
 
             <!-- Timeline -->
             <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,4">
@@ -68,21 +61,18 @@
                         HorizontalAlignment="Center"
                         Spacing="4">
                 <Button x:Name="StopButton"
-                        Content="&#x23F9;"
-                        Width="32"
-                        Height="28"
+                        Content="Stop"
+                        Padding="12,6"
                         Click="OnStopClicked"
                         ToolTip.Tip="Stop"/>
                 <Button x:Name="PlayPauseButton"
-                        Content="&#x25B6;"
-                        Width="40"
-                        Height="28"
+                        Content="Play"
+                        Padding="16,6"
                         Click="OnPlayPauseClicked"
                         ToolTip.Tip="Play/Pause"/>
                 <ToggleButton x:Name="LoopButton"
-                              Content="&#x1F501;"
-                              Width="32"
-                              Height="28"
+                              Content="Loop"
+                              Padding="12,6"
                               IsChecked="True"
                               ToolTip.Tip="Loop"/>
             </StackPanel>

@@ -55,7 +55,10 @@ public partial class AnimationPreviewEditor : UserControl
 
     private void SetupPreviewView()
     {
-        if (_textureView != null || _previewRenderer == null) return;
+        if (_textureView != null || _previewRenderer == null)
+        {
+            return;
+        }
 
         _textureView = new SkiaTextureView
         {
@@ -72,7 +75,10 @@ public partial class AnimationPreviewEditor : UserControl
 
     public void Update(float deltaTime)
     {
-        if (_previewRenderer == null) return;
+        if (_previewRenderer == null)
+        {
+            return;
+        }
 
         _previewRenderer.Update(deltaTime);
 
@@ -82,16 +88,21 @@ public partial class AnimationPreviewEditor : UserControl
             UpdateCurrentTimeText();
         }
 
-        _previewRenderer.Render();
         _textureView?.InvalidateVisual();
     }
 
     private void OnAnimationSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (_previewRenderer == null) return;
+        if (_previewRenderer == null)
+        {
+            return;
+        }
 
         var selectedAnimation = AnimationComboBox.SelectedItem as string;
-        if (string.IsNullOrEmpty(selectedAnimation)) return;
+        if (string.IsNullOrEmpty(selectedAnimation))
+        {
+            return;
+        }
 
         _previewRenderer.PlayAnimation(selectedAnimation);
         UpdateDurationText();
@@ -108,7 +119,10 @@ public partial class AnimationPreviewEditor : UserControl
 
     private void OnPlayPauseClicked(object? sender, RoutedEventArgs e)
     {
-        if (_previewRenderer == null) return;
+        if (_previewRenderer == null)
+        {
+            return;
+        }
 
         if (_previewRenderer.IsPlaying)
         {
@@ -131,7 +145,10 @@ public partial class AnimationPreviewEditor : UserControl
 
     private void OnStopClicked(object? sender, RoutedEventArgs e)
     {
-        if (_previewRenderer == null) return;
+        if (_previewRenderer == null)
+        {
+            return;
+        }
 
         _previewRenderer.Stop();
         TimelineSlider.Value = 0;
@@ -141,7 +158,10 @@ public partial class AnimationPreviewEditor : UserControl
 
     private void OnSpeedValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
     {
-        if (_previewRenderer == null) return;
+        if (_previewRenderer == null)
+        {
+            return;
+        }
 
         _previewRenderer.PlaybackSpeed = (float)SpeedSlider.Value;
         SpeedText.Text = $"{SpeedSlider.Value:F1}x";
@@ -149,12 +169,15 @@ public partial class AnimationPreviewEditor : UserControl
 
     private void UpdatePlayPauseButton()
     {
-        PlayPauseButton.Content = _previewRenderer?.IsPlaying == true ? "\u23F8" : "\u25B6";
+        PlayPauseButton.Content = _previewRenderer?.IsPlaying == true ? "Pause" : "Play";
     }
 
     private void UpdateDurationText()
     {
-        if (_previewRenderer == null) return;
+        if (_previewRenderer == null)
+        {
+            return;
+        }
 
         var duration = _previewRenderer.GetAnimationDuration();
         DurationText.Text = FormatTime(duration);
@@ -162,7 +185,10 @@ public partial class AnimationPreviewEditor : UserControl
 
     private void UpdateCurrentTimeText()
     {
-        if (_previewRenderer == null) return;
+        if (_previewRenderer == null)
+        {
+            return;
+        }
 
         var duration = _previewRenderer.GetAnimationDuration();
         var currentTime = (float)TimelineSlider.Value * duration;

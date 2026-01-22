@@ -1,0 +1,87 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:NiziKit.Editor.ViewModels"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
+             xmlns:editors="using:NiziKit.Editor.Views.Editors"
+             x:Class="NiziKit.Editor.Views.Editors.AssetEditorDialog"
+             x:DataType="vm:ContentBrowserViewModel">
+
+    <Border Background="{StaticResource EditorPanelBackground}"
+            BorderBrush="{StaticResource EditorPanelBorder}"
+            BorderThickness="1"
+            CornerRadius="8"
+            Width="750"
+            Height="650"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center">
+        <Grid RowDefinitions="Auto,Auto,*,Auto">
+            <!-- Title Bar -->
+            <Border Grid.Row="0"
+                    Background="{StaticResource EditorPanelSecondaryBackground}"
+                    CornerRadius="8,8,0,0"
+                    Padding="20,16">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Text="{Binding AssetEditorTitle}"
+                               Theme="{StaticResource SubtitleTextBlockStyle}"
+                               VerticalAlignment="Center"/>
+                    <Button Grid.Column="1"
+                            Command="{Binding CloseAssetEditorCommand}"
+                            ToolTip.Tip="Close"
+                            Padding="8">
+                        <ui:SymbolIcon Symbol="Dismiss" FontSize="18"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <!-- Separator -->
+            <Border Grid.Row="1" Height="1" Background="{DynamicResource DividerStrokeColorDefaultBrush}"/>
+
+            <!-- Content with Tab Control -->
+            <TabControl Grid.Row="2" Margin="16" x:Name="EditorTabs">
+                <!-- Form Editor Tab -->
+                <TabItem Header="Form">
+                    <editors:JsonFormEditor x:Name="FormEditor" Margin="8"/>
+                </TabItem>
+
+                <!-- JSON Editor Tab -->
+                <TabItem Header="JSON">
+                    <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                                  VerticalScrollBarVisibility="Auto"
+                                  Margin="8">
+                        <TextBox x:Name="JsonTextBox"
+                                 Text="{Binding EditingJson}"
+                                 AcceptsReturn="True"
+                                 AcceptsTab="True"
+                                 TextWrapping="NoWrap"
+                                 FontFamily="Consolas, Courier New, monospace"
+                                 MinHeight="400"/>
+                    </ScrollViewer>
+                </TabItem>
+            </TabControl>
+
+            <!-- Actions -->
+            <Border Grid.Row="3"
+                    Background="{StaticResource EditorPanelSecondaryBackground}"
+                    CornerRadius="0,0,8,8"
+                    Padding="16,12">
+                <Grid ColumnDefinitions="*,Auto,Auto">
+                    <TextBlock Grid.Column="0"
+                               Text="{Binding StatusMessage}"
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                               VerticalAlignment="Center"/>
+                    <Button Grid.Column="1"
+                            Content="Cancel"
+                            Command="{Binding CloseAssetEditorCommand}"
+                            Padding="20,10"
+                            Margin="0,0,8,0"/>
+                    <Button Grid.Column="2"
+                            Content="Save"
+                            Click="OnSaveClick"
+                            Padding="20,10"
+                            Classes="accent"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+
+</UserControl>

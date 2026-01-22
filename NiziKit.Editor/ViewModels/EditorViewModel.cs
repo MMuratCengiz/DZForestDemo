@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using NiziKit.Application.Timing;
 using NiziKit.Components;
 using NiziKit.Core;
+using NiziKit.Editor.Animation;
 using NiziKit.Editor.Gizmos;
 using NiziKit.Editor.Services;
 using NiziKit.Editor.Views.Editors;
@@ -36,6 +37,7 @@ public partial class EditorViewModel : ObservableObject
 
         AssetBrowserViewModel = new AssetBrowserViewModel();
         PackManagerViewModel = new PackManagerViewModel();
+        ContentBrowserViewModel = new ContentBrowserViewModel();
         ImportViewModel = new ImportViewModel();
 
         ImportViewModel.ImportCompleted += () =>
@@ -67,6 +69,17 @@ public partial class EditorViewModel : ObservableObject
         }
     }
 
+    public IEnumerable<Animation.AnimationPreviewRenderer> GetActivePreviewRenderers()
+    {
+        foreach (var editor in _animationPreviewEditors)
+        {
+            if (editor.PreviewRenderer?.NeedsRender == true)
+            {
+                yield return editor.PreviewRenderer;
+            }
+        }
+    }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection))]
     private GameObjectViewModel? _selectedGameObject;
@@ -85,6 +98,9 @@ public partial class EditorViewModel : ObservableObject
     private PackManagerViewModel _packManagerViewModel;
 
     [ObservableProperty]
+    private ContentBrowserViewModel _contentBrowserViewModel;
+
+    [ObservableProperty]
     private ImportViewModel _importViewModel;
 
     [ObservableProperty]
@@ -96,6 +112,9 @@ public partial class EditorViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isPackManagerOpen;
+
+    [ObservableProperty]
+    private bool _isContentBrowserOpen;
 
     // Asset Picker state
     [ObservableProperty]
@@ -258,6 +277,12 @@ public partial class EditorViewModel : ObservableObject
     private void ClosePackManager()
     {
         IsPackManagerOpen = false;
+    }
+
+    [RelayCommand]
+    private void CloseContentBrowser()
+    {
+        IsContentBrowserOpen = false;
     }
 
     public void OpenAssetPicker(AssetRefType assetType, string? currentPack, string? currentAssetName, Action<AssetInfo?> callback)

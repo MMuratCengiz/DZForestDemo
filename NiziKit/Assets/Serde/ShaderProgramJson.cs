@@ -578,7 +578,7 @@ public sealed class ShaderProgramJson
 
         var hitGroups = RayTracingPipeline.HitGroups.Select(hg => new HitGroupDesc
         {
-            Name = StringView.Create(hg.Name),
+            Name = StringView.Intern(hg.Name),
             IntersectionShaderIndex = hg.IntersectionShaderIndex,
             AnyHitShaderIndex = hg.AnyHitShaderIndex,
             ClosestHitShaderIndex = hg.ClosestHitShaderIndex,

@@ -35,15 +35,26 @@ public static class PropertyEditorRegistry
         TypeEditors[type] = factory;
     }
 
-    public static Control CreateEditor(PropertyEditorContext context)
+    public static Control? CreateEditor(PropertyEditorContext context)
     {
         var prop = context.Property;
         var propType = prop.PropertyType;
+
+        if (propType.IsByRefLike)
+        {
+            return null;
+        }
 
         var assetRefAttr = prop.GetCustomAttribute<AssetRefAttribute>();
         if (assetRefAttr != null)
         {
             return CreateAssetRefEditor(context, assetRefAttr);
+        }
+
+        var animationSelectorAttr = prop.GetCustomAttribute<AnimationSelectorAttribute>();
+        if (animationSelectorAttr != null)
+        {
+            return CreateAnimationSelectorEditor(context, animationSelectorAttr);
         }
 
         if (propType.IsEnum)
@@ -95,6 +106,33 @@ public static class PropertyEditorRegistry
     {
         var value = context.Property.GetValue(context.Instance);
         var floatValue = value != null ? (float)value : 0f;
+        var rangeAttr = context.Property.GetCustomAttribute<RangeAttribute>();
+
+        if (rangeAttr != null)
+        {
+            var slider = new Slider
+            {
+                Minimum = rangeAttr.Min,
+                Maximum = rangeAttr.Max,
+                Value = floatValue,
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            };
+
+            if (context.Property.CanWrite)
+            {
+                slider.ValueChanged += (s, e) =>
+                {
+                    context.Property.SetValue(context.Instance, (float)slider.Value);
+                    context.OnValueChanged();
+                };
+            }
+            else
+            {
+                slider.IsEnabled = false;
+            }
+
+            return slider;
+        }
 
         var editor = new Views.DraggableValueEditor
         {
@@ -275,6 +313,20 @@ public static class PropertyEditorRegistry
                     context.OnValueChanged();
                 }
             }
+        };
+    }
+
+    private static Control CreateAnimationSelectorEditor(PropertyEditorContext context, AnimationSelectorAttribute attr)
+    {
+        var skeletonProperty = context.Instance.GetType().GetProperty(attr.SkeletonPropertyName);
+
+        return new Views.Editors.AnimationSelectorEditor
+        {
+            Instance = context.Instance,
+            Property = context.Property,
+            SkeletonProperty = skeletonProperty,
+            IsReadOnly = !context.Property.CanWrite,
+            OnValueChanged = context.OnValueChanged
         };
     }
 

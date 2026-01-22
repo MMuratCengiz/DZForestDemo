@@ -10,13 +10,17 @@ public partial class AnimatorComponent
     [AssetRef(AssetRefType.Skeleton, "skeleton")]
     public partial Skeleton? Skeleton { get; set; }
 
+    [HideInInspector]
     public string? SkeletonRef { get; set; }
 
+    [AnimationSelector("Skeleton")]
     [JsonProperty("defaultAnimation")]
     public partial string? DefaultAnimation { get; set; }
 
+    [DontSerialize]
     public Animator Animator { get; } = new();
 
+    [DontSerialize]
     public ReadOnlySpan<Matrix4x4> BoneMatrices => Animator.BoneMatrices;
 
     public void Initialize()
@@ -31,8 +35,20 @@ public partial class AnimatorComponent
         for (var i = 0; i < Skeleton.AnimationCount; i++)
         {
             var animName = Skeleton.AnimationNames[i];
+
+            Assets.Animation? clip;
+            try
+            {
+                clip = Skeleton.GetAnimation((uint)i);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AnimatorComponent] Skipping animation '{animName}': {ex.Message}");
+                continue;
+            }
+
             var state = controller.AddState(animName);
-            state.Clip = Skeleton.GetAnimation((uint)i);
+            state.Clip = clip;
             state.LoopMode = AnimationLoopMode.Loop;
 
             if (controller.BaseLayer.DefaultState == null ||

@@ -4,6 +4,7 @@
 cbuffer GizmoConstants : register(b0, space4)
 {
     float4x4 ViewProjection;
+    float4x4 ModelMatrix;
     float3 CameraPosition;
     float DepthBias;
     float4 SelectionColor;

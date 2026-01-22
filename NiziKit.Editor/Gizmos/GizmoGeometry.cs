@@ -87,6 +87,14 @@ public static class GizmoGeometry
         BuildPlaneQuad(vertices, origin, axisY, axisZ, scale, GetAxisColor(GizmoAxis.YZ, hoveredAxis, activeAxis));
     }
 
+    public static void BuildTranslateGizmoLocal(
+        List<GizmoVertex> vertices,
+        GizmoAxis hoveredAxis,
+        GizmoAxis activeAxis)
+    {
+        BuildTranslateGizmo(vertices, Vector3.Zero, Quaternion.Identity, 1.0f, hoveredAxis, activeAxis);
+    }
+
     public static void BuildRotateGizmo(
         List<GizmoVertex> vertices,
         Vector3 origin,
@@ -102,6 +110,14 @@ public static class GizmoGeometry
         BuildRing(vertices, origin, axisX, scale, GetAxisColor(GizmoAxis.X, hoveredAxis, activeAxis));
         BuildRing(vertices, origin, axisY, scale, GetAxisColor(GizmoAxis.Y, hoveredAxis, activeAxis));
         BuildRing(vertices, origin, axisZ, scale, GetAxisColor(GizmoAxis.Z, hoveredAxis, activeAxis));
+    }
+
+    public static void BuildRotateGizmoLocal(
+        List<GizmoVertex> vertices,
+        GizmoAxis hoveredAxis,
+        GizmoAxis activeAxis)
+    {
+        BuildRotateGizmo(vertices, Vector3.Zero, Quaternion.Identity, 1.0f, hoveredAxis, activeAxis);
     }
 
     public static void BuildScaleGizmo(
@@ -121,6 +137,14 @@ public static class GizmoGeometry
         BuildScaleAxis(vertices, origin, axisZ, scale, GetAxisColor(GizmoAxis.Z, hoveredAxis, activeAxis));
 
         BuildFilledBox(vertices, origin, CenterBoxSize * scale, GetAxisColor(GizmoAxis.All, hoveredAxis, activeAxis));
+    }
+
+    public static void BuildScaleGizmoLocal(
+        List<GizmoVertex> vertices,
+        GizmoAxis hoveredAxis,
+        GizmoAxis activeAxis)
+    {
+        BuildScaleGizmo(vertices, Vector3.Zero, Quaternion.Identity, 1.0f, hoveredAxis, activeAxis);
     }
 
     private static void BuildArrow(List<GizmoVertex> vertices, Vector3 origin, Vector3 direction, float scale, Vector4 color)

@@ -263,11 +263,10 @@ public class AssetBrowserService
             var model = pack.Models[modelKey];
             if (model.Skeleton != null)
             {
-                var animCount = model.Skeleton.AnimationCount;
-                for (uint i = 0; i < animCount; i++)
+                var animNames = model.Skeleton.AnimationNames;
+                for (int i = 0; i < animNames.Count; i++)
                 {
-                    var anim = model.Skeleton.GetAnimation(i);
-                    var animName = string.IsNullOrEmpty(anim.Name) ? $"{modelKey}/{i}" : $"{modelKey}/{anim.Name}";
+                    var animName = string.IsNullOrEmpty(animNames[i]) ? $"{modelKey}/{i}" : $"{modelKey}/{animNames[i]}";
                     animations.Add(new AssetInfo { Name = animName, Pack = packName });
                 }
             }

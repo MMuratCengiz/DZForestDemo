@@ -8,8 +8,8 @@
       "name": "Main Camera",
       "position": [
         0,
-        -1.8294251,
-        -5.16711
+        0,
+        -10
       ],
       "rotation": [
         0,
@@ -131,9 +131,9 @@
         16.022827
       ],
       "rotation": [
-        0.61022276,
-        29.994371,
-        77.50184
+        -24.364086,
+        -18.06752,
+        81.269875
       ],
       "scale": [
         1,
@@ -856,9 +856,9 @@
         0
       ],
       "scale": [
-        1,
-        1,
-        1
+        0.01,
+        0.01,
+        0.01
       ],
       "components": [
         {
@@ -868,6 +868,11 @@
         {
           "type": "material",
           "material": "viking:FoxMat"
+        },
+        {
+          "type": "animator",
+          "skeleton": "viking:Fox",
+          "defaultAnimation": "Survey"
         }
       ],
       "children": []

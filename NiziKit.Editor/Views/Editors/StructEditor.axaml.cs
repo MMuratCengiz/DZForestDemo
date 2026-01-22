@@ -55,6 +55,11 @@ public partial class StructEditor : UserControl
                 continue;
             }
 
+            if (field.PropertyType.IsByRefLike)
+            {
+                continue;
+            }
+
             var panel = new StackPanel { Spacing = 4, Margin = new Thickness(0, 0, 0, 6) };
 
             var label = new TextBlock { Text = field.Name, Classes = { "label" } };
@@ -69,8 +74,12 @@ public partial class StructEditor : UserControl
             };
 
             var editor = PropertyEditorRegistry.CreateEditor(context);
-            panel.Children.Add(editor);
+            if (editor == null)
+            {
+                continue;
+            }
 
+            panel.Children.Add(editor);
             controls.Add(panel);
         }
 

@@ -165,7 +165,6 @@
                                                 Command="{Binding RemoveCommand}"
                                                 ToolTip.Tip="Remove Component">
                                             <ui:SymbolIcon Symbol="Delete"
-                                                           FontSize="16"
                                                            Foreground="#E05555"/>
                                         </Button>
                                     </Grid>
@@ -188,7 +187,6 @@
                         Command="{Binding ToggleAddComponentPanelCommand}">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <ui:SymbolIcon Symbol="Add"
-                                       FontSize="16"
                                        Foreground="{DynamicResource AccentFillColorDefaultBrush}"/>
                         <TextBlock Text="Add Component"
                                    Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>

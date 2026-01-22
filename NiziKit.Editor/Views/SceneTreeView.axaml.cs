@@ -1,9 +1,11 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Data.Converters;
 using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
 using Avalonia.Media;
+using FluentAvalonia.UI.Controls;
 using NiziKit.Editor.ViewModels;
 
 namespace NiziKit.Editor.Views;
@@ -15,10 +17,12 @@ public partial class SceneTreeView : UserControl
     private TextBlock? _deleteConfirmText;
     private Button? _cancelDeleteButton;
     private Button? _confirmDeleteButton;
+    private InlineContextMenu? _inlineMenu;
 
     public SceneTreeView()
     {
         InitializeComponent();
+        PointerPressed += OnViewPointerPressed;
     }
 
     private void InitializeComponent()
@@ -30,6 +34,7 @@ public partial class SceneTreeView : UserControl
         _deleteConfirmText = this.FindControl<TextBlock>("DeleteConfirmText");
         _cancelDeleteButton = this.FindControl<Button>("CancelDeleteButton");
         _confirmDeleteButton = this.FindControl<Button>("ConfirmDeleteButton");
+        _inlineMenu = this.FindControl<InlineContextMenu>("InlineMenu");
 
         KeyDown += OnKeyDown;
 
@@ -42,6 +47,58 @@ public partial class SceneTreeView : UserControl
         {
             _confirmDeleteButton.Click += OnConfirmDeleteClick;
         }
+    }
+
+    private void OnViewPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        var point = e.GetCurrentPoint(this);
+        if (point.Properties.IsLeftButtonPressed && _inlineMenu?.IsVisible == true)
+        {
+            _inlineMenu.Hide();
+        }
+    }
+
+    private void OnTreeViewPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        var point = e.GetCurrentPoint(this);
+        if (point.Properties.IsRightButtonPressed)
+        {
+            ShowContextMenu(point.Position);
+            e.Handled = true;
+        }
+    }
+
+    private void ShowContextMenu(Point position)
+    {
+        if (DataContext is not EditorViewModel vm || _inlineMenu == null)
+        {
+            return;
+        }
+
+        var items = new List<InlineMenuItem>
+        {
+            new()
+            {
+                Header = "New Object",
+                Icon = Symbol.Add,
+                Command = vm.NewObjectCommand
+            },
+            new()
+            {
+                Header = "New Child",
+                Icon = Symbol.Add,
+                Command = vm.NewChildObjectCommand
+            },
+            InlineMenuItem.Separator(),
+            new()
+            {
+                Header = "Delete",
+                Icon = Symbol.Delete,
+                Command = vm.DeleteObjectCommand
+            }
+        };
+
+        _inlineMenu.Show(position, items);
     }
 
     private void OnKeyDown(object? sender, KeyEventArgs e)

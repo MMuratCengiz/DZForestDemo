@@ -77,7 +77,6 @@ public class ShaderBuilder
     public ShaderProgram CompileFromJson(ShaderProgramJson shaderJson, string basePath)
     {
         var stages = new List<ShaderStageDesc>();
-        var globalDefines = shaderJson.GetDefines();
 
         foreach (var stageJson in shaderJson.Stages)
         {

@@ -38,11 +38,17 @@ public class SkiaTextureView : Control
 
     public override void Render(DrawingContext context)
     {
-        if (_sourceTexture == null) return;
+        if (_sourceTexture == null)
+        {
+            return;
+        }
 
         var width = (int)_sourceTexture.Width;
         var height = (int)_sourceTexture.Height;
-        if (width <= 0 || height <= 0) return;
+        if (width <= 0 || height <= 0)
+        {
+            return;
+        }
 
         var frameIndex = GraphicsContext.FrameIndex;
         var texture = _sourceTexture[frameIndex];
@@ -89,24 +95,39 @@ public class SkiaTextureView : Control
         public void Render(ImmediateDrawingContext context)
         {
             var leaseFeature = context.TryGetFeature<ISkiaSharpApiLeaseFeature>();
-            if (leaseFeature == null) return;
+            if (leaseFeature == null)
+            {
+                return;
+            }
 
             using var lease = leaseFeature.Lease();
             var canvas = lease.SkCanvas;
-            if (canvas == null) return;
+            if (canvas == null)
+            {
+                return;
+            }
 
             var backendTexture = CreateBackendTexture(_texture, _width, _height);
-            if (backendTexture == null) return;
+            if (backendTexture == null)
+            {
+                return;
+            }
+
+            var grContext = lease.GrContext ?? SkiaContext.GRContext;
 
             using (backendTexture)
-            using (var skImage = SKImage.FromTexture(
-                SkiaContext.GRContext,
-                backendTexture,
-                GRSurfaceOrigin.TopLeft,
-                SKColorType.Rgba8888,
-                SKAlphaType.Premul))
             {
-                if (skImage == null) return;
+                using var skImage = SKImage.FromTexture(
+                    grContext,
+                    backendTexture,
+                    GRSurfaceOrigin.TopLeft,
+                    SKColorType.Rgba8888,
+                    SKAlphaType.Premul);
+
+                if (skImage == null)
+                {
+                    return;
+                }
 
                 var srcRect = new SKRect(0, 0, _width, _height);
                 var destRect = new SKRect(
@@ -140,14 +161,18 @@ public class SkiaTextureView : Control
 
         private static GRBackendTexture CreateVulkanBackendTexture(NativeTextureHandles handles, int width, int height)
         {
+            var vkFormat = handles.VkFormat != 0 ? handles.VkFormat : VulkanInterop.FormatToVulkan(Format.R8G8B8A8Unorm);
+
             var vkImageInfo = new GRVkImageInfo
             {
                 Image = (ulong)handles.VkImage,
-                Format = handles.VkFormat != 0 ? handles.VkFormat : VulkanInterop.FormatToVulkan(Format.R8G8B8A8Unorm),
+                Format = vkFormat,
                 ImageLayout = handles.VkImageLayout,
                 ImageTiling = VulkanInterop.VK_IMAGE_TILING_OPTIMAL,
                 ImageUsageFlags = VulkanInterop.VK_IMAGE_USAGE_SAMPLED_BIT |
-                                  VulkanInterop.VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                                  VulkanInterop.VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
+                                  VulkanInterop.VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+                                  VulkanInterop.VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
                 SampleCount = 1,
                 LevelCount = 1,
                 CurrentQueueFamily = VulkanInterop.VK_QUEUE_FAMILY_IGNORED,

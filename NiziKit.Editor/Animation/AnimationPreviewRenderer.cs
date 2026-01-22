@@ -7,6 +7,7 @@ using NiziKit.Core;
 using NiziKit.Graphics;
 using NiziKit.Graphics.Binding;
 using NiziKit.Graphics.Binding.Data;
+using NiziKit.Graphics.Binding.Layout;
 using NiziKit.Graphics.Buffers;
 using NiziKit.Graphics.Renderer;
 using NiziKit.Graphics.Resources;
@@ -16,18 +17,17 @@ namespace NiziKit.Editor.Animation;
 public class AnimationPreviewRenderer : IDisposable
 {
     private const int DefaultPreviewSize = 256;
-    private const Format ColorFormat = Format.R8G8B8A8Unorm;
 
-    private readonly RenderFrame _renderFrame;
-    private readonly ViewData _viewData;
     private readonly PreviewCamera _previewCamera;
     private readonly PreviewDrawBinding _drawBinding;
+    private readonly PreviewViewBinding _viewBinding;
 
     private CycledTexture _colorTarget = null!;
     private CycledTexture _depthTarget = null!;
     private int _width;
     private int _height;
     private bool _disposed;
+    private bool _needsRender;
 
     private GameObject? _previewTarget;
     private AnimatorComponent? _animatorComponent;
@@ -41,6 +41,7 @@ public class AnimationPreviewRenderer : IDisposable
     public CycledTexture ColorTarget => _colorTarget;
     public Texture CurrentTexture => _colorTarget[GraphicsContext.FrameIndex];
     public bool IsPlaying => _isPlaying;
+    public bool NeedsRender => _needsRender && _previewTarget != null && _previewAnimator != null;
     public float PlaybackSpeed
     {
         get => _playbackSpeed;
@@ -52,23 +53,25 @@ public class AnimationPreviewRenderer : IDisposable
     {
         _width = width;
         _height = height;
-        _renderFrame = new RenderFrame();
-        _viewData = new ViewData();
         _previewCamera = new PreviewCamera();
         _drawBinding = new PreviewDrawBinding();
+        _viewBinding = new PreviewViewBinding();
 
         CreateRenderTargets();
     }
 
     private void CreateRenderTargets()
     {
-        _colorTarget = CycledTexture.ColorAttachment("AnimationPreviewColor", _width, _height, ColorFormat);
+        _colorTarget = CycledTexture.ColorAttachment("AnimationPreviewColor", _width, _height);
         _depthTarget = CycledTexture.DepthAttachment("AnimationPreviewDepth", _width, _height);
     }
 
     public void Resize(int width, int height)
     {
-        if (_width == width && _height == height) return;
+        if (_width == width && _height == height)
+        {
+            return;
+        }
 
         GraphicsContext.WaitIdle();
 
@@ -88,61 +91,52 @@ public class AnimationPreviewRenderer : IDisposable
 
         if (_animatorComponent != null)
         {
-            var skeleton = _animatorComponent.Skeleton;
-            if (skeleton != null)
-            {
-                _previewAnimator = new Animator();
-                var controller = CreatePreviewController(skeleton);
-                _previewAnimator.Skeleton = skeleton;
-                _previewAnimator.Controller = controller;
-                _previewAnimator.Initialize();
-
-                PositionCameraForTarget();
-            }
+            _previewAnimator = _animatorComponent.Animator;
+            PositionCameraForTarget();
         }
         else
         {
-            _previewAnimator = null;
+            var animator = gameObject?.GetComponent<Animator>();
+            if (animator != null)
+            {
+                _previewAnimator = animator;
+                PositionCameraForTarget();
+            }
+            else
+            {
+                _previewAnimator = null;
+            }
         }
 
         _currentAnimation = null;
         _isPlaying = false;
-    }
-
-    private AnimatorController CreatePreviewController(Skeleton skeleton)
-    {
-        var controller = new AnimatorController { Name = "Preview" };
-
-        for (var i = 0; i < skeleton.AnimationCount; i++)
-        {
-            var animName = skeleton.AnimationNames[i];
-            var state = controller.AddState(animName);
-            state.Clip = skeleton.GetAnimation((uint)i);
-            state.LoopMode = AnimationLoopMode.Loop;
-
-            if (controller.BaseLayer.DefaultState == null)
-            {
-                controller.BaseLayer.DefaultState = state;
-            }
-        }
-
-        return controller;
+        _needsRender = _previewTarget != null && _previewAnimator != null;
     }
 
     private void PositionCameraForTarget()
     {
-        if (_previewTarget == null) return;
+        if (_previewTarget == null)
+        {
+            return;
+        }
 
         var meshComponent = _previewTarget.GetComponent<MeshComponent>();
-        var bounds = meshComponent?.Mesh?.Bounds ?? new BoundingBox(Vector3.One * -1, Vector3.One);
+        var localBounds = meshComponent?.Mesh?.Bounds ?? new BoundingBox(Vector3.One * -1, Vector3.One);
 
-        var center = bounds.Center;
-        var size = bounds.Size;
-        var maxDim = Math.Max(Math.Max(size.X, size.Y), size.Z);
+        var worldMatrix = _previewTarget.WorldMatrix;
+        var worldCenter = Vector3.Transform(localBounds.Center, worldMatrix);
 
-        var distance = maxDim * 2.0f;
-        _previewCamera.Position = center + new Vector3(0, maxDim * 0.5f, -distance);
-        _previewCamera.Target = center;
+        var size = localBounds.Size;
+        var scale = _previewTarget.LocalScale;
+        var scaledSize = new Vector3(size.X * scale.X, size.Y * scale.Y, size.Z * scale.Z);
+        var maxDim = Math.Max(Math.Max(scaledSize.X, scaledSize.Y), scaledSize.Z);
+        maxDim = Math.Max(maxDim, 1f);
+
+        var distance = maxDim * 2.5f;
+        _previewCamera.Position = worldCenter + new Vector3(0, maxDim * 0.3f, -distance);
+        _previewCamera.Target = worldCenter;
+        _previewCamera.NearPlane = distance * 0.01f;
+        _previewCamera.FarPlane = distance * 10f;
         _previewCamera.SetAspectRatio(_width, _height);
     }
 
@@ -158,10 +152,14 @@ public class AnimationPreviewRenderer : IDisposable
 
     public void PlayAnimation(string animationName)
     {
-        if (_previewAnimator == null) return;
+        if (_previewAnimator == null)
+        {
+            return;
+        }
 
         _currentAnimation = animationName;
         _previewAnimator.Play(animationName);
+        _previewAnimator.Update(0);
         _isPlaying = true;
     }
 
@@ -201,60 +199,70 @@ public class AnimationPreviewRenderer : IDisposable
 
     public void Update(float deltaTime)
     {
-        if (_previewAnimator == null || !_isPlaying) return;
+        if (_previewAnimator == null || !_isPlaying)
+        {
+            return;
+        }
 
         _previewAnimator.Update(deltaTime * _playbackSpeed);
     }
 
-    public void Render()
+    public void Render(RenderFrame renderFrame)
     {
-        if (_previewTarget == null || _previewAnimator == null) return;
+        if (_previewTarget == null || _previewAnimator == null)
+        {
+            return;
+        }
 
         var meshComponent = _previewTarget.GetComponent<MeshComponent>();
         var materialComponent = _previewTarget.GetComponent<MaterialComponent>();
 
-        if (meshComponent?.Mesh == null || materialComponent?.Material == null) return;
+        if (meshComponent?.Mesh == null || materialComponent?.Material == null)
+        {
+            return;
+        }
 
-        _renderFrame.BeginFrame();
-
-        var pass = _renderFrame.BeginGraphicsPass();
+        var pass = renderFrame.BeginGraphicsPass();
         pass.SetRenderTarget(0, _colorTarget, LoadOp.Clear);
         pass.SetDepthTarget(_depthTarget, LoadOp.Clear);
         pass.Begin();
 
-        _viewData.Camera = _previewCamera.ToCameraComponent();
-        _viewData.DeltaTime = 0;
-        _viewData.TotalTime = 0;
-
-        pass.Bind<ViewBinding>(_viewData);
+        var cameraComponent = _previewCamera.ToCameraComponent();
+        _viewBinding.UpdateCamera(cameraComponent, _width, _height);
+        pass.Bind(_viewBinding.BindGroup);
 
         var material = materialComponent.Material;
         var gpuShader = material.GpuShader;
-        if (gpuShader != null)
+        if (gpuShader == null)
         {
-            pass.BindShader(gpuShader);
-            pass.Bind<MaterialBinding>(material);
-
-            _drawBinding.UpdateForPreview(_previewTarget, _previewAnimator);
-            pass.Bind(_drawBinding.BindGroup);
-            pass.DrawMesh(meshComponent.Mesh, 1);
+            pass.End();
+            return;
         }
 
-        pass.End();
+        pass.BindShader(gpuShader);
+        pass.Bind<MaterialBinding>(material);
 
-        _renderFrame.Submit();
+        _drawBinding.UpdateForPreview(_previewTarget, _previewAnimator);
+        pass.Bind(_drawBinding.BindGroup);
+        pass.DrawMesh(meshComponent.Mesh, 1);
+
+        pass.End();
     }
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
+
         _disposed = true;
 
         GraphicsContext.WaitIdle();
         _colorTarget.Dispose();
         _depthTarget.Dispose();
         _drawBinding.Dispose();
-        _renderFrame.Dispose();
+        _viewBinding.Dispose();
     }
 }
 
@@ -317,6 +325,82 @@ internal static class QuaternionHelper
             0, 0, 0, 1);
 
         return Quaternion.CreateFromRotationMatrix(m);
+    }
+}
+
+internal class PreviewViewBinding : IDisposable
+{
+    private readonly MappedBuffer<GpuCamera> _cameraBuffer;
+    private readonly MappedBuffer<LightConstants> _lightBuffer;
+    private readonly BindGroup[] _bindGroups;
+    private GpuCamera _cameraData;
+    private LightConstants _lightData;
+
+    public BindGroup BindGroup => _bindGroups[GraphicsContext.FrameIndex];
+
+    public PreviewViewBinding()
+    {
+        _cameraBuffer = new MappedBuffer<GpuCamera>(true, "PreviewViewBinding_Camera");
+        _lightBuffer = new MappedBuffer<LightConstants>(true, "PreviewViewBinding_Lights");
+
+        _lightData = new LightConstants
+        {
+            AmbientSkyColor = new Vector3(0.6f, 0.7f, 0.8f),
+            AmbientGroundColor = new Vector3(0.3f, 0.25f, 0.2f),
+            AmbientIntensity = 0.8f,
+            NumLights = 0,
+            NumShadows = 0
+        };
+
+        var numFrames = (int)GraphicsContext.NumFrames;
+        _bindGroups = new BindGroup[numFrames];
+
+        for (var i = 0; i < numFrames; i++)
+        {
+            _bindGroups[i] = GraphicsContext.Device.CreateBindGroup(new BindGroupDesc
+            {
+                Layout = GraphicsContext.BindGroupLayoutStore.Camera,
+            });
+
+            var bg = _bindGroups[i];
+            bg.BeginUpdate();
+            bg.Cbv(GpuCameraLayout.Camera.Binding, _cameraBuffer[i]);
+            bg.Cbv(GpuCameraLayout.Lights.Binding, _lightBuffer[i]);
+            bg.EndUpdate();
+        }
+    }
+
+    public void UpdateCamera(CameraComponent cam, int width, int height)
+    {
+        Matrix4x4.Invert(cam.ViewProjectionMatrix, out var invVp);
+
+        _cameraData = new GpuCamera
+        {
+            View = cam.ViewMatrix,
+            Projection = cam.ProjectionMatrix,
+            ViewProjection = cam.ViewProjectionMatrix,
+            InverseViewProjection = invVp,
+            CameraPosition = cam.WorldPosition,
+            CameraForward = cam.Forward,
+            ScreenSize = new Vector2(width, height),
+            NearPlane = cam.NearPlane,
+            FarPlane = cam.FarPlane,
+            Time = 0,
+            DeltaTime = 0
+        };
+
+        _cameraBuffer.Write(in _cameraData);
+        _lightBuffer.Write(in _lightData);
+    }
+
+    public void Dispose()
+    {
+        foreach (var bg in _bindGroups)
+        {
+            bg.Dispose();
+        }
+        _cameraBuffer.Dispose();
+        _lightBuffer.Dispose();
     }
 }
 

@@ -143,10 +143,12 @@ public class NiziComponentGenerator : IIncrementalGenerator
 
             var jsonPropAttr = property.GetAttributes()
                 .FirstOrDefault(a => a.AttributeClass?.Name == "JsonPropertyAttribute");
+            var serializeFieldAttr = property.GetAttributes()
+                .FirstOrDefault(a => a.AttributeClass?.Name == "SerializeFieldAttribute");
             var assetRefAttr = property.GetAttributes()
                 .FirstOrDefault(a => a.AttributeClass?.Name == "AssetRefAttribute");
 
-            if (jsonPropAttr != null || assetRefAttr != null)
+            if (jsonPropAttr != null || serializeFieldAttr != null || assetRefAttr != null)
             {
                 var propInfo = new PropertyInfo
                 {
@@ -158,6 +160,17 @@ public class NiziComponentGenerator : IIncrementalGenerator
                 if (jsonPropAttr != null && jsonPropAttr.ConstructorArguments.Length > 0)
                 {
                     propInfo.JsonName = jsonPropAttr.ConstructorArguments[0].Value as string;
+                }
+                else if (serializeFieldAttr != null)
+                {
+                    foreach (var namedArg in serializeFieldAttr.NamedArguments)
+                    {
+                        if (namedArg.Key == "Name" && namedArg.Value.Value is string name)
+                        {
+                            propInfo.JsonName = name;
+                        }
+                    }
+                    propInfo.JsonName ??= char.ToLower(property.Name[0]) + property.Name.Substring(1);
                 }
 
                 if (assetRefAttr != null)
