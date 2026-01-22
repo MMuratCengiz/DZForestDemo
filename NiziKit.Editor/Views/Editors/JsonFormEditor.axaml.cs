@@ -73,6 +73,22 @@ public class ParsedJsonSchema
         return null;
     }
 
+    public JsonNode? CreateDefaultForProperty(string propertyPath, string propertyName)
+    {
+        var parentSchema = NavigateToPath(propertyPath);
+        if (parentSchema?["properties"] is JsonObject props && props[propertyName] is JsonObject propDef)
+        {
+            var resolvedSchema = ResolveSchemaRef(propDef);
+            return CreateDefaultFromSchema(resolvedSchema);
+        }
+        return null;
+    }
+
+    public JsonObject? GetPropertySchema(string propertyPath)
+    {
+        return NavigateToPath(propertyPath);
+    }
+
     private JsonObject? NavigateToPath(string propertyPath)
     {
         if (_schemaRoot == null)
@@ -85,27 +101,26 @@ public class ParsedJsonSchema
             return _schemaRoot;
         }
 
-        var parts = propertyPath.Split('.');
+        var tokens = TokenizePath(propertyPath);
         JsonObject? current = _schemaRoot;
 
-        foreach (var part in parts)
+        foreach (var token in tokens)
         {
             if (current == null)
             {
                 return null;
             }
 
-            var props = current["properties"] as JsonObject;
-            if (props != null && props[part] is JsonObject propDef)
+            if (token.StartsWith("[") && token.EndsWith("]"))
             {
-                if (propDef["$ref"] is JsonValue refVal && refVal.TryGetValue<string>(out var refPath))
-                {
-                    current = ResolveRef(refPath);
-                }
-                else
-                {
-                    current = propDef;
-                }
+                current = GetArrayItemsSchema(current);
+                continue;
+            }
+
+            var props = current["properties"] as JsonObject;
+            if (props != null && props[token] is JsonObject propDef)
+            {
+                current = ResolveSchemaRef(propDef);
                 continue;
             }
 
@@ -115,71 +130,75 @@ public class ParsedJsonSchema
         return current;
     }
 
+    private static List<string> TokenizePath(string path)
+    {
+        var tokens = new List<string>();
+        var current = new System.Text.StringBuilder();
+
+        for (var i = 0; i < path.Length; i++)
+        {
+            var c = path[i];
+            if (c == '.')
+            {
+                if (current.Length > 0)
+                {
+                    tokens.Add(current.ToString());
+                    current.Clear();
+                }
+            }
+            else if (c == '[')
+            {
+                if (current.Length > 0)
+                {
+                    tokens.Add(current.ToString());
+                    current.Clear();
+                }
+                var endBracket = path.IndexOf(']', i);
+                if (endBracket > i)
+                {
+                    tokens.Add(path.Substring(i, endBracket - i + 1));
+                    i = endBracket;
+                }
+            }
+            else
+            {
+                current.Append(c);
+            }
+        }
+
+        if (current.Length > 0)
+        {
+            tokens.Add(current.ToString());
+        }
+
+        return tokens;
+    }
+
+    private JsonObject? GetArrayItemsSchema(JsonObject arraySchema)
+    {
+        if (arraySchema["items"] is JsonObject itemsDef)
+        {
+            return ResolveSchemaRef(itemsDef);
+        }
+        return null;
+    }
+
+    private JsonObject? ResolveSchemaRef(JsonObject schema)
+    {
+        if (schema["$ref"] is JsonValue refVal && refVal.TryGetValue<string>(out var refPath))
+        {
+            return ResolveRef(refPath);
+        }
+        return schema;
+    }
+
     private string[]? FindEnumForPath(string propertyPath)
     {
-        if (_schemaRoot == null)
-        {
-            return null;
-        }
-
-        var parts = propertyPath.Split('.');
-        JsonObject? current = _schemaRoot;
-
-        foreach (var part in parts)
-        {
-            if (current == null)
-            {
-                return null;
-            }
-
-            var props = current["properties"] as JsonObject;
-            if (props != null && props[part] is JsonObject propDef)
-            {
-                if (propDef["$ref"] is JsonValue refVal && refVal.TryGetValue<string>(out var refPath))
-                {
-                    current = ResolveRef(refPath);
-                }
-                else
-                {
-                    current = propDef;
-                }
-                continue;
-            }
-
-            if (current["items"] is JsonObject itemsDef)
-            {
-                if (itemsDef["$ref"] is JsonValue refVal && refVal.TryGetValue<string>(out var refPath))
-                {
-                    current = ResolveRef(refPath);
-                }
-                else
-                {
-                    current = itemsDef;
-                }
-
-                var itemProps = current?["properties"] as JsonObject;
-                if (itemProps != null && itemProps[part] is JsonObject itemPropDef)
-                {
-                    if (itemPropDef["$ref"] is JsonValue propRefVal && propRefVal.TryGetValue<string>(out var propRefPath))
-                    {
-                        current = ResolveRef(propRefPath);
-                    }
-                    else
-                    {
-                        current = itemPropDef;
-                    }
-                    continue;
-                }
-            }
-
-            return null;
-        }
-
-        if (current?["enum"] is JsonArray enumArr)
+        var propDef = NavigateToPath(propertyPath);
+        if (propDef?["enum"] is JsonArray enumArr)
         {
             return enumArr.Select(e => e?.ToString() ?? "").ToArray();
         }
-
         return null;
     }
 
@@ -206,6 +225,164 @@ public class ParsedJsonSchema
         }
 
         return current as JsonObject;
+    }
+
+    public bool HasAdditionalProperties(string propertyPath)
+    {
+        var propDef = NavigateToPath(propertyPath);
+        if (propDef == null)
+        {
+            return false;
+        }
+
+        if (propDef["additionalProperties"] is JsonObject)
+        {
+            return true;
+        }
+
+        if (propDef["additionalProperties"] is JsonValue val && val.TryGetValue<bool>(out var boolVal))
+        {
+            return boolVal;
+        }
+
+        return false;
+    }
+
+    public string? GetAdditionalPropertiesType(string propertyPath)
+    {
+        var propDef = NavigateToPath(propertyPath);
+        if (propDef?["additionalProperties"] is JsonObject addProps)
+        {
+            if (addProps["type"] is JsonValue typeVal && typeVal.TryGetValue<string>(out var typeStr))
+            {
+                return typeStr;
+            }
+        }
+
+        return null;
+    }
+
+    public JsonObject? GetArrayItemSchema(string propertyPath)
+    {
+        var propDef = NavigateToPath(propertyPath);
+        if (propDef == null)
+        {
+            return null;
+        }
+
+        if (propDef["items"] is JsonObject itemsDef)
+        {
+            if (itemsDef["$ref"] is JsonValue refVal && refVal.TryGetValue<string>(out var refPath))
+            {
+                return ResolveRef(refPath);
+            }
+            return itemsDef;
+        }
+
+        return null;
+    }
+
+    public JsonNode? CreateDefaultFromSchema(JsonObject? schema)
+    {
+        if (schema == null)
+        {
+            return null;
+        }
+
+        if (schema["type"] is JsonValue typeVal && typeVal.TryGetValue<string>(out var typeStr))
+        {
+            switch (typeStr)
+            {
+                case "string":
+                    if (schema["default"] is JsonValue defStr && defStr.TryGetValue<string>(out var defaultStr))
+                    {
+                        return defaultStr;
+                    }
+                    if (schema["enum"] is JsonArray enumArr && enumArr.Count > 0)
+                    {
+                        return enumArr[0]?.ToString() ?? "";
+                    }
+                    return "";
+                case "integer":
+                    if (schema["default"] is JsonValue defInt && defInt.TryGetValue<int>(out var defaultInt))
+                    {
+                        return defaultInt;
+                    }
+                    return 0;
+                case "number":
+                    if (schema["default"] is JsonValue defNum && defNum.TryGetValue<double>(out var defaultNum))
+                    {
+                        return defaultNum;
+                    }
+                    return 0.0;
+                case "boolean":
+                    if (schema["default"] is JsonValue defBool && defBool.TryGetValue<bool>(out var defaultBool))
+                    {
+                        return defaultBool;
+                    }
+                    return false;
+                case "array":
+                    return new JsonArray();
+                case "object":
+                    return CreateDefaultObject(schema);
+            }
+        }
+
+        if (schema["properties"] is JsonObject)
+        {
+            return CreateDefaultObject(schema);
+        }
+
+        return null;
+    }
+
+    private JsonObject CreateDefaultObject(JsonObject schema)
+    {
+        var result = new JsonObject();
+
+        if (schema["properties"] is JsonObject props)
+        {
+            var required = new HashSet<string>();
+            if (schema["required"] is JsonArray reqArr)
+            {
+                foreach (var req in reqArr)
+                {
+                    if (req?.ToString() is string reqStr)
+                    {
+                        required.Add(reqStr);
+                    }
+                }
+            }
+
+            foreach (var kvp in props)
+            {
+                if (!required.Contains(kvp.Key))
+                {
+                    continue;
+                }
+
+                JsonObject? propSchema = null;
+                if (kvp.Value is JsonObject propDef)
+                {
+                    if (propDef["$ref"] is JsonValue refVal && refVal.TryGetValue<string>(out var refPath))
+                    {
+                        propSchema = ResolveRef(refPath);
+                    }
+                    else
+                    {
+                        propSchema = propDef;
+                    }
+                }
+
+                var defaultValue = CreateDefaultFromSchema(propSchema);
+                if (defaultValue != null)
+                {
+                    result[kvp.Key] = defaultValue;
+                }
+            }
+        }
+
+        return result;
     }
 }
 
@@ -323,8 +500,16 @@ public partial class JsonFormEditor : UserControl
 
             if (kvp.Value is JsonObject childObj)
             {
-                var section = CreateObjectSection(kvp.Key, displayName, childObj, propertyPath);
-                container.Children.Add(section);
+                if (_schema?.HasAdditionalProperties(propertyPath) == true)
+                {
+                    var section = CreateDictionarySection(kvp.Key, displayName, childObj, obj, propertyPath);
+                    container.Children.Add(section);
+                }
+                else
+                {
+                    var section = CreateObjectSection(kvp.Key, displayName, childObj, propertyPath);
+                    container.Children.Add(section);
+                }
             }
             else if (kvp.Value is JsonArray arr)
             {
@@ -339,6 +524,62 @@ public partial class JsonFormEditor : UserControl
         }
     }
 
+    private void BuildFormFromJsonNodeWithSchema(JsonObject obj, Panel container, string pathPrefix)
+    {
+        var schemaProps = _schema?.GetObjectProperties(pathPrefix);
+        var existingKeys = obj.Select(kvp => kvp.Key).ToHashSet();
+
+        if (schemaProps != null && schemaProps.Length > 0)
+        {
+            foreach (var prop in schemaProps)
+            {
+                if (prop == "$schema")
+                {
+                    continue;
+                }
+
+                var displayName = FormatPropertyName(prop);
+                var propertyPath = string.IsNullOrEmpty(pathPrefix) ? prop : $"{pathPrefix}.{prop}";
+                var value = obj[prop];
+
+                if (value is JsonObject childObj)
+                {
+                    if (_schema?.HasAdditionalProperties(propertyPath) == true)
+                    {
+                        var section = CreateDictionarySection(prop, displayName, childObj, obj, propertyPath);
+                        container.Children.Add(section);
+                    }
+                    else
+                    {
+                        var section = CreateObjectSection(prop, displayName, childObj, propertyPath);
+                        container.Children.Add(section);
+                    }
+                }
+                else if (value is JsonArray arr)
+                {
+                    var section = CreateArraySection(prop, displayName, arr, obj, propertyPath);
+                    container.Children.Add(section);
+                }
+                else if (value != null)
+                {
+                    var row = CreatePropertyRow(displayName, CreateEditorForValue(prop, value, obj, propertyPath));
+                    container.Children.Add(row);
+                }
+            }
+
+            var missingProps = schemaProps.Where(p => !existingKeys.Contains(p)).ToList();
+            if (missingProps.Count > 0)
+            {
+                var addPropRow = CreateAddPropertyRow(obj, pathPrefix, missingProps);
+                container.Children.Add(addPropRow);
+            }
+        }
+        else
+        {
+            BuildFormFromJsonNode(obj, container, pathPrefix);
+        }
+    }
+
     private Control CreateObjectSection(string key, string displayName, JsonObject obj, string propertyPath)
     {
         var expander = new Expander
@@ -346,16 +587,19 @@ public partial class JsonFormEditor : UserControl
             Header = displayName,
             IsExpanded = true,
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            Margin = new Thickness(0, 4)
+            Margin = new Thickness(0, 4),
+            ContentTransition = null
         };
 
         var nestedPanel = new StackPanel
         {
             Spacing = 4,
-            Margin = new Thickness(8, 4)
+            Margin = new Thickness(0, 4)
         };
 
         var schemaProps = _schema?.GetObjectProperties(propertyPath);
+        var existingKeys = obj.Select(kvp => kvp.Key).ToHashSet();
+
         if (schemaProps != null && schemaProps.Length > 0)
         {
             foreach (var prop in schemaProps)
@@ -366,20 +610,35 @@ public partial class JsonFormEditor : UserControl
 
                 if (value is JsonObject childObj)
                 {
-                    var section = CreateObjectSection(prop, propDisplayName, childObj, propPath);
-                    nestedPanel.Children.Add(section);
+                    if (_schema?.HasAdditionalProperties(propPath) == true)
+                    {
+                        var section = CreateDictionarySection(prop, propDisplayName, childObj, obj, propPath);
+                        nestedPanel.Children.Add(section);
+                    }
+                    else
+                    {
+                        var section = CreateObjectSection(prop, propDisplayName, childObj, propPath);
+                        nestedPanel.Children.Add(section);
+                    }
                 }
                 else if (value is JsonArray arr)
                 {
                     var section = CreateArraySection(prop, propDisplayName, arr, obj, propPath);
                     nestedPanel.Children.Add(section);
                 }
-                else
+                else if (value != null)
                 {
                     var editor = CreateEditorForValue(prop, value, obj, propPath);
                     var row = CreatePropertyRow(propDisplayName, editor);
                     nestedPanel.Children.Add(row);
                 }
+            }
+
+            var missingProps = schemaProps.Where(p => !existingKeys.Contains(p)).ToList();
+            if (missingProps.Count > 0)
+            {
+                var addPropRow = CreateAddPropertyRow(obj, propertyPath, missingProps);
+                nestedPanel.Children.Add(addPropRow);
             }
         }
         else
@@ -389,6 +648,216 @@ public partial class JsonFormEditor : UserControl
 
         expander.Content = nestedPanel;
         return expander;
+    }
+
+    private Control CreateAddPropertyRow(JsonObject obj, string propertyPath, List<string> missingProps)
+    {
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
+            Margin = new Thickness(0, 8, 0, 0)
+        };
+
+        var labelBlock = new TextBlock
+        {
+            Text = "Add Property",
+            VerticalAlignment = VerticalAlignment.Center,
+            MinWidth = 120,
+            Margin = new Thickness(0, 0, 12, 0)
+        };
+        Grid.SetColumn(labelBlock, 0);
+        grid.Children.Add(labelBlock);
+
+        var comboBox = new ComboBox
+        {
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            ItemsSource = missingProps.Select(FormatPropertyName).ToList(),
+            PlaceholderText = "Select property..."
+        };
+        Grid.SetColumn(comboBox, 1);
+        grid.Children.Add(comboBox);
+
+        var addButton = new Button
+        {
+            Content = new SymbolIcon { Symbol = Symbol.Add, FontSize = 12 },
+            Padding = new Thickness(4),
+            Margin = new Thickness(4, 0, 0, 0)
+        };
+        ToolTip.SetTip(addButton, "Add");
+        addButton.IsEnabled = false;
+        Grid.SetColumn(addButton, 2);
+        grid.Children.Add(addButton);
+
+        comboBox.SelectionChanged += (s, e) =>
+        {
+            addButton.IsEnabled = comboBox.SelectedIndex >= 0;
+        };
+
+        addButton.Click += (s, e) =>
+        {
+            if (comboBox.SelectedIndex >= 0 && comboBox.SelectedIndex < missingProps.Count)
+            {
+                var propName = missingProps[comboBox.SelectedIndex];
+                var defaultValue = _schema?.CreateDefaultForProperty(propertyPath, propName);
+                obj[propName] = defaultValue ?? JsonValue.Create("");
+                ValueChanged?.Invoke();
+                RefreshForm();
+            }
+        };
+
+        return grid;
+    }
+
+    private Control CreateDictionarySection(string key, string displayName, JsonObject dictObj, JsonObject parent, string propertyPath)
+    {
+        var container = new StackPanel { Spacing = 4, Margin = new Thickness(0, 4) };
+
+        var headerGrid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            Margin = new Thickness(0, 4, 0, 4)
+        };
+
+        var headerText = new TextBlock
+        {
+            Text = displayName,
+            FontWeight = Avalonia.Media.FontWeight.SemiBold,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(headerText, 0);
+        headerGrid.Children.Add(headerText);
+
+        var addButton = new Button
+        {
+            Content = new SymbolIcon { Symbol = Symbol.Add, FontSize = 12 },
+            Padding = new Thickness(4)
+        };
+        ToolTip.SetTip(addButton, "Add Entry");
+        addButton.Click += (s, e) =>
+        {
+            var newKey = GenerateUniqueKey(dictObj, "NEW_KEY");
+            dictObj[newKey] = "";
+            ValueChanged?.Invoke();
+            RefreshForm();
+        };
+        Grid.SetColumn(addButton, 1);
+        headerGrid.Children.Add(addButton);
+
+        container.Children.Add(headerGrid);
+
+        var itemsPanel = new StackPanel { Spacing = 4 };
+
+        foreach (var kvp in dictObj.ToList())
+        {
+            var entryContainer = CreateDictionaryEntryEditor(dictObj, kvp.Key, kvp.Value);
+            itemsPanel.Children.Add(entryContainer);
+        }
+
+        container.Children.Add(itemsPanel);
+
+        return container;
+    }
+
+    private Control CreateDictionaryEntryEditor(JsonObject dictObj, string entryKey, JsonNode? entryValue)
+    {
+        var border = new Border
+        {
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(8),
+            Margin = new Thickness(0, 2)
+        };
+        if (Avalonia.Application.Current?.TryFindResource("CardStrokeColorDefaultBrush", out var brush) == true)
+        {
+            border.BorderBrush = brush as Avalonia.Media.IBrush;
+        }
+
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto")
+        };
+
+        var keyTextBox = new TextBox
+        {
+            Text = entryKey,
+            Width = 120,
+            Margin = new Thickness(0, 0, 8, 0),
+            Watermark = "Key"
+        };
+
+        var currentKey = entryKey;
+        keyTextBox.LostFocus += (s, e) =>
+        {
+            var newKey = keyTextBox.Text?.Trim() ?? "";
+            if (string.IsNullOrEmpty(newKey) || newKey == currentKey)
+            {
+                keyTextBox.Text = currentKey;
+                return;
+            }
+
+            if (dictObj.ContainsKey(newKey))
+            {
+                keyTextBox.Text = currentKey;
+                return;
+            }
+
+            var value = dictObj[currentKey];
+            dictObj.Remove(currentKey);
+            dictObj[newKey] = value?.DeepClone();
+            currentKey = newKey;
+            ValueChanged?.Invoke();
+        };
+        Grid.SetColumn(keyTextBox, 0);
+        grid.Children.Add(keyTextBox);
+
+        var valueTextBox = new TextBox
+        {
+            Text = entryValue?.ToString() ?? "",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Watermark = "Value"
+        };
+        valueTextBox.LostFocus += (s, e) =>
+        {
+            dictObj[currentKey] = valueTextBox.Text ?? "";
+            ValueChanged?.Invoke();
+        };
+        Grid.SetColumn(valueTextBox, 1);
+        grid.Children.Add(valueTextBox);
+
+        var removeButton = new Button
+        {
+            Content = new SymbolIcon { Symbol = Symbol.Remove, FontSize = 12 },
+            Padding = new Thickness(4),
+            VerticalAlignment = VerticalAlignment.Center,
+            Margin = new Thickness(8, 0, 0, 0)
+        };
+        ToolTip.SetTip(removeButton, "Remove");
+        removeButton.Click += (s, e) =>
+        {
+            dictObj.Remove(currentKey);
+            ValueChanged?.Invoke();
+            RefreshForm();
+        };
+        Grid.SetColumn(removeButton, 2);
+        grid.Children.Add(removeButton);
+
+        border.Child = grid;
+        return border;
+    }
+
+    private static string GenerateUniqueKey(JsonObject obj, string baseKey)
+    {
+        if (!obj.ContainsKey(baseKey))
+        {
+            return baseKey;
+        }
+
+        var counter = 1;
+        while (obj.ContainsKey($"{baseKey}_{counter}"))
+        {
+            counter++;
+        }
+        return $"{baseKey}_{counter}";
     }
 
     private Control CreateArraySection(string key, string displayName, JsonArray arr, JsonObject parent, string propertyPath)
@@ -418,7 +887,7 @@ public partial class JsonFormEditor : UserControl
         ToolTip.SetTip(addButton, "Add");
         addButton.Click += (s, e) =>
         {
-            AddArrayItem(arr, key);
+            AddArrayItem(arr, propertyPath);
             RefreshForm();
         };
         Grid.SetColumn(addButton, 1);
@@ -464,9 +933,20 @@ public partial class JsonFormEditor : UserControl
 
         if (item is JsonObject itemObj)
         {
+            var headerText = GetArrayItemHeader(itemObj, index);
+
+            var expander = new Expander
+            {
+                Header = headerText,
+                IsExpanded = false,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                ContentTransition = null
+            };
+
             var panel = new StackPanel { Spacing = 4 };
-            BuildFormFromJsonNode(itemObj, panel, propertyPath);
-            content = panel;
+            BuildFormFromJsonNodeWithSchema(itemObj, panel, propertyPath);
+            expander.Content = panel;
+            content = expander;
         }
         else
         {
@@ -497,6 +977,26 @@ public partial class JsonFormEditor : UserControl
         return border;
     }
 
+    private static string GetArrayItemHeader(JsonObject itemObj, int index)
+    {
+        string? identifier = null;
+
+        if (itemObj["name"] is JsonValue nameVal && nameVal.TryGetValue<string>(out var name) && !string.IsNullOrEmpty(name))
+        {
+            identifier = name;
+        }
+        else if (itemObj["stage"] is JsonValue stageVal && stageVal.TryGetValue<string>(out var stage) && !string.IsNullOrEmpty(stage))
+        {
+            identifier = stage;
+        }
+        else if (itemObj["type"] is JsonValue typeVal && typeVal.TryGetValue<string>(out var type) && !string.IsNullOrEmpty(type))
+        {
+            identifier = type;
+        }
+
+        return identifier != null ? $"[{index}] {identifier}" : $"Item {index}";
+    }
+
     private Control CreatePrimitiveArrayItemEditor(JsonArray arr, int index, JsonNode? item)
     {
         var textBox = new TextBox
@@ -513,8 +1013,20 @@ public partial class JsonFormEditor : UserControl
         return textBox;
     }
 
-    private void AddArrayItem(JsonArray arr, string key)
+    private void AddArrayItem(JsonArray arr, string propertyPath)
     {
+        var itemSchema = _schema?.GetArrayItemSchema(propertyPath);
+        if (itemSchema != null)
+        {
+            var newItem = _schema?.CreateDefaultFromSchema(itemSchema);
+            if (newItem != null)
+            {
+                arr.Add(newItem);
+                ValueChanged?.Invoke();
+                return;
+            }
+        }
+
         if (arr.Count > 0 && arr[0] is JsonObject existingObj)
         {
             var newObj = new JsonObject();
@@ -576,14 +1088,16 @@ public partial class JsonFormEditor : UserControl
     {
         var row = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("140,*"),
+            ColumnDefinitions = new ColumnDefinitions("Auto,*"),
             Margin = new Thickness(0, 2)
         };
 
         var labelBlock = new TextBlock
         {
             Text = label,
-            VerticalAlignment = VerticalAlignment.Center
+            VerticalAlignment = VerticalAlignment.Center,
+            MinWidth = 120,
+            Margin = new Thickness(0, 0, 12, 0)
         };
 
         Grid.SetColumn(labelBlock, 0);
@@ -727,7 +1241,7 @@ public partial class JsonFormEditor : UserControl
     {
         if (!Dispatcher.UIThread.CheckAccess())
         {
-            Dispatcher.UIThread.Post(RefreshForm);
+            Dispatcher.UIThread.Invoke(RefreshForm);
             return;
         }
 
