@@ -353,7 +353,8 @@ public partial class EditorViewModel : ObservableObject
     private string _gizmoModeText = "Move (W)";
 
     private float _statsUpdateTimer;
-    private const float StatsUpdateInterval = 0.1f;
+    private int _frameCountSinceLastUpdate;
+    private const float StatsUpdateInterval = 0.5f;
 
     public event Action? ViewPresetChanged;
     public event Action? ProjectionModeChanged;
@@ -361,11 +362,14 @@ public partial class EditorViewModel : ObservableObject
     public void UpdateStatistics()
     {
         _statsUpdateTimer += Time.DeltaTime;
+        _frameCountSinceLastUpdate++;
+
         if (_statsUpdateTimer >= StatsUpdateInterval)
         {
+            Fps = _frameCountSinceLastUpdate / _statsUpdateTimer;
+            FrameTime = _statsUpdateTimer / _frameCountSinceLastUpdate * 1000f;
             _statsUpdateTimer = 0f;
-            Fps = Time.FramesPerSecond;
-            FrameTime = Time.DeltaTime * 1000f;
+            _frameCountSinceLastUpdate = 0;
         }
     }
 
