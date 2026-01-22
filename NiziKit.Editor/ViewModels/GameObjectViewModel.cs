@@ -307,7 +307,7 @@ public partial class GameObjectViewModel : ObservableObject
         Children.Remove(child);
     }
 
-    public void AddComponent(NiziKit.Components.IComponent component)
+    public void AddComponent(IComponent component)
     {
         _gameObject.AddComponent(component);
         Components.Add(new ComponentViewModel(component, this));

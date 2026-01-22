@@ -3,6 +3,7 @@ using System.Runtime.InteropServices;
 using DenOfIz;
 using NiziKit.Assets.Serde;
 using NiziKit.Assets.Store;
+using NiziKit.ContentPipeline;
 using NiziKit.Graphics;
 
 namespace NiziKit.Assets;
@@ -38,9 +39,7 @@ public sealed class Assets : IDisposable
 
         var defaultShader = new DefaultShader();
         _shaderStore.Register("Builtin/Shaders/Default", defaultShader.StaticVariant);
-        _shaderStore.Register(
-            ShaderVariants.EncodeName("Builtin/Shaders/Default", "SKINNED"),
-            defaultShader.SkinnedVariant);
+        _shaderStore.Register("Builtin/Shaders/Default_SKINNED", defaultShader.SkinnedVariant);
         _materialCache["Builtin/Materials/Default"] = new DefaultMaterial(_shaderStore);
 
         _instance = this;
@@ -54,7 +53,7 @@ public sealed class Assets : IDisposable
     public static Task<Skeleton> LoadSkeletonAsync(string modelPath, CancellationToken ct = default) => Instance._LoadSkeletonAsync(modelPath, ct);
     public static void RegisterShader(string name, GpuShader shader) => Instance._RegisterShader(name, shader);
     public static GpuShader? GetShader(string name) => Instance._GetShader(name);
-    public static GpuShader? GetShader(string name, IReadOnlyDictionary<string, string?>? variants) => Instance._GetShader(name, variants);
+    public static GpuShader? GetShader(string name, ReadOnlySpan<string> variants) => Instance._GetShader(name, variants);
     public static ShaderProgram? GetShaderProgram(string name) => Instance._GetShaderProgram(name);
     public static void RegisterShaderProgram(string name, ShaderProgram program) => Instance._RegisterShaderProgram(name, program);
     public static ShaderProgram LoadShaderProgram(string vertexPath, string pixelPath, Dictionary<string, string?>? defines = null) => Instance._LoadShaderProgram(vertexPath, pixelPath, defines);
@@ -321,7 +320,7 @@ public sealed class Assets : IDisposable
         return _shaderStore[name];
     }
 
-    private GpuShader? _GetShader(string name, IReadOnlyDictionary<string, string?>? variants)
+    private GpuShader? _GetShader(string name, ReadOnlySpan<string> variants)
     {
         return _shaderStore.Get(name, variants);
     }
@@ -338,8 +337,8 @@ public sealed class Assets : IDisposable
 
     private ShaderProgram _LoadShaderProgram(string vertexPath, string pixelPath, Dictionary<string, string?>? defines)
     {
-        var vsFullPath = Path.IsPathRooted(vertexPath) ? vertexPath : ContentPipeline.Content.ResolvePath(vertexPath);
-        var psFullPath = Path.IsPathRooted(pixelPath) ? pixelPath : ContentPipeline.Content.ResolvePath(pixelPath);
+        var vsFullPath = Path.IsPathRooted(vertexPath) ? vertexPath : Content.ResolvePath(vertexPath);
+        var psFullPath = Path.IsPathRooted(pixelPath) ? pixelPath : Content.ResolvePath(pixelPath);
 
         var cacheKey = _shaderStore.ComputeCacheKey([vsFullPath, psFullPath], defines);
 
@@ -366,7 +365,7 @@ public sealed class Assets : IDisposable
 
     private ShaderProgram _LoadComputeProgram(string computePath, Dictionary<string, string?>? defines)
     {
-        var csFullPath = Path.IsPathRooted(computePath) ? computePath : ContentPipeline.Content.ResolvePath(computePath);
+        var csFullPath = Path.IsPathRooted(computePath) ? computePath : Content.ResolvePath(computePath);
 
         var cacheKey = _shaderStore.ComputeCacheKey([csFullPath], defines);
 
@@ -399,8 +398,8 @@ public sealed class Assets : IDisposable
 
     private async Task<ShaderProgram> _LoadShaderProgramAsync(string vertexPath, string pixelPath, Dictionary<string, string?>? defines, CancellationToken ct)
     {
-        var vsFullPath = Path.IsPathRooted(vertexPath) ? vertexPath : ContentPipeline.Content.ResolvePath(vertexPath);
-        var psFullPath = Path.IsPathRooted(pixelPath) ? pixelPath : ContentPipeline.Content.ResolvePath(pixelPath);
+        var vsFullPath = Path.IsPathRooted(vertexPath) ? vertexPath : Content.ResolvePath(vertexPath);
+        var psFullPath = Path.IsPathRooted(pixelPath) ? pixelPath : Content.ResolvePath(pixelPath);
 
         var cacheKey = _shaderStore.ComputeCacheKey([vsFullPath, psFullPath], defines);
 
@@ -427,7 +426,7 @@ public sealed class Assets : IDisposable
 
     private async Task<ShaderProgram> _LoadComputeProgramAsync(string computePath, Dictionary<string, string?>? defines, CancellationToken ct)
     {
-        var csFullPath = Path.IsPathRooted(computePath) ? computePath : ContentPipeline.Content.ResolvePath(computePath);
+        var csFullPath = Path.IsPathRooted(computePath) ? computePath : Content.ResolvePath(computePath);
 
         var cacheKey = _shaderStore.ComputeCacheKey([csFullPath], defines);
 
@@ -474,14 +473,14 @@ public sealed class Assets : IDisposable
 
     private Material _LoadMaterial(string path)
     {
-        var fullPath = ContentPipeline.Content.ResolvePath(path);
+        var fullPath = Content.ResolvePath(path);
 
         if (_materialCache.TryGetValue(fullPath, out var cached))
         {
             return cached;
         }
 
-        var json = ContentPipeline.Content.ReadText(path);
+        var json = Content.ReadText(path);
         var materialJson = MaterialJson.FromJson(json);
 
         var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;
@@ -503,14 +502,14 @@ public sealed class Assets : IDisposable
 
     private async Task<Material> _LoadMaterialAsync(string path, CancellationToken ct = default)
     {
-        var fullPath = ContentPipeline.Content.ResolvePath(path);
+        var fullPath = Content.ResolvePath(path);
 
         if (_materialCache.TryGetValue(fullPath, out var cached))
         {
             return cached;
         }
 
-        var json = await ContentPipeline.Content.ReadTextAsync(path, ct);
+        var json = await Content.ReadTextAsync(path, ct);
         var materialJson = MaterialJson.FromJson(json);
 
         var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;
@@ -531,7 +530,7 @@ public sealed class Assets : IDisposable
 
     private GpuShader _LoadShaderFromJson(string path)
     {
-        var fullPath = ContentPipeline.Content.ResolvePath(path);
+        var fullPath = Content.ResolvePath(path);
 
         var existingShader = _shaderStore[fullPath];
         if (existingShader != null)
@@ -547,7 +546,7 @@ public sealed class Assets : IDisposable
                 return existingShader;
             }
 
-            var json = ContentPipeline.Content.ReadText(path);
+            var json = Content.ReadText(path);
             var shaderJson = ShaderProgramJson.FromJson(json);
 
             var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;
@@ -594,7 +593,7 @@ public sealed class Assets : IDisposable
 
     private async Task<GpuShader> _LoadShaderFromJsonAsync(string path, CancellationToken ct = default)
     {
-        var fullPath = ContentPipeline.Content.ResolvePath(path);
+        var fullPath = Content.ResolvePath(path);
 
         var existingShader = _shaderStore[fullPath];
         if (existingShader != null)
@@ -602,7 +601,7 @@ public sealed class Assets : IDisposable
             return existingShader;
         }
 
-        var json = await ContentPipeline.Content.ReadTextAsync(path, ct);
+        var json = await Content.ReadTextAsync(path, ct);
         var shaderJson = ShaderProgramJson.FromJson(json);
 
         var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;

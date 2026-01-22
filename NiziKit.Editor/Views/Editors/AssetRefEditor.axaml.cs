@@ -164,7 +164,7 @@ public partial class AssetRefEditor : UserControl
 
     private IBrush? GetResourceBrush(string key)
     {
-        if (this.TryFindResource(key, this.ActualThemeVariant, out var resource))
+        if (this.TryFindResource(key, ActualThemeVariant, out var resource))
         {
             if (resource is IBrush brush)
             {

@@ -90,7 +90,7 @@ public partial class DraggableValueEditor : UserControl
         }
 
         // Update bindings
-        this.PropertyChanged += OnPropertyChanged;
+        PropertyChanged += OnPropertyChanged;
         UpdateDisplay();
     }
 
@@ -160,7 +160,7 @@ public partial class DraggableValueEditor : UserControl
         _isDragging = false;
     }
 
-    private void OnValueTextBoxLostFocus(object? sender, global::Avalonia.Interactivity.RoutedEventArgs e)
+    private void OnValueTextBoxLostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
     {
         TryParseAndSetValue();
     }

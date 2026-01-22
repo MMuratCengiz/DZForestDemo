@@ -5,7 +5,7 @@ namespace NiziKit.Physics;
 
 public static class Physics
 {
-    private static PhysicsWorld World => NiziKit.Core.World.PhysicsWorld;
+    private static PhysicsWorld World => Core.World.PhysicsWorld;
 
     public static Vector3 Gravity
     {

@@ -7,16 +7,16 @@ namespace NiziKit.Editor.ViewModels;
 
 public partial class ComponentViewModel : ObservableObject
 {
-    private readonly NiziKit.Components.IComponent _component;
+    private readonly IComponent _component;
     private readonly GameObjectViewModel _owner;
 
-    public ComponentViewModel(NiziKit.Components.IComponent component, GameObjectViewModel owner)
+    public ComponentViewModel(IComponent component, GameObjectViewModel owner)
     {
         _component = component;
         _owner = owner;
     }
 
-    public NiziKit.Components.IComponent Component => _component;
+    public IComponent Component => _component;
     public GameObjectViewModel Owner => _owner;
 
     public string TypeName => _component.GetType().Name;

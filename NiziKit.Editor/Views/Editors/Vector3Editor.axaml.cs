@@ -59,7 +59,7 @@ public partial class Vector3Editor : UserControl
             _zEditor.PropertyChanged += OnEditorValueChanged;
         }
 
-        this.PropertyChanged += OnThisPropertyChanged;
+        PropertyChanged += OnThisPropertyChanged;
         UpdateEditors();
     }
 

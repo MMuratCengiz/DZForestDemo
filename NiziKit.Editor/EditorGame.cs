@@ -398,17 +398,17 @@ public sealed class EditorGame : Game
         // Get position and direction based on preset
         var (position, rotation) = preset switch
         {
-            ViewModels.ViewPreset.Top => (new Vector3(0, distance, 0), Quaternion.CreateFromYawPitchRoll(0, MathF.PI / 2, 0)),
-            ViewModels.ViewPreset.Bottom => (new Vector3(0, -distance, 0), Quaternion.CreateFromYawPitchRoll(0, -MathF.PI / 2, 0)),
-            ViewModels.ViewPreset.Front => (new Vector3(0, 0, -distance), Quaternion.Identity),
-            ViewModels.ViewPreset.Back => (new Vector3(0, 0, distance), Quaternion.CreateFromYawPitchRoll(MathF.PI, 0, 0)),
-            ViewModels.ViewPreset.Right => (new Vector3(distance, 0, 0), Quaternion.CreateFromYawPitchRoll(-MathF.PI / 2, 0, 0)),
-            ViewModels.ViewPreset.Left => (new Vector3(-distance, 0, 0), Quaternion.CreateFromYawPitchRoll(MathF.PI / 2, 0, 0)),
+            ViewPreset.Top => (new Vector3(0, distance, 0), Quaternion.CreateFromYawPitchRoll(0, MathF.PI / 2, 0)),
+            ViewPreset.Bottom => (new Vector3(0, -distance, 0), Quaternion.CreateFromYawPitchRoll(0, -MathF.PI / 2, 0)),
+            ViewPreset.Front => (new Vector3(0, 0, -distance), Quaternion.Identity),
+            ViewPreset.Back => (new Vector3(0, 0, distance), Quaternion.CreateFromYawPitchRoll(MathF.PI, 0, 0)),
+            ViewPreset.Right => (new Vector3(distance, 0, 0), Quaternion.CreateFromYawPitchRoll(-MathF.PI / 2, 0, 0)),
+            ViewPreset.Left => (new Vector3(-distance, 0, 0), Quaternion.CreateFromYawPitchRoll(MathF.PI / 2, 0, 0)),
             _ => (new Vector3(0, 15, -15), Quaternion.Identity) // Free/Perspective
         };
 
         // For orthographic presets, set orthographic mode
-        if (preset != ViewModels.ViewPreset.Free)
+        if (preset != ViewPreset.Free)
         {
             _editorCamera.ProjectionType = ProjectionType.Orthographic;
             _editorCamera.OrthographicSize = 10f;
@@ -437,16 +437,16 @@ public sealed class EditorGame : Game
             _editorCamera.OrthographicSize = 10f;
 
             // Switch to Top view if currently in Free mode
-            if (vm.CurrentViewPreset == ViewModels.ViewPreset.Free)
+            if (vm.CurrentViewPreset == ViewPreset.Free)
             {
-                vm.CurrentViewPreset = ViewModels.ViewPreset.Top;
+                vm.CurrentViewPreset = ViewPreset.Top;
                 OnViewPresetChanged();
             }
         }
         else
         {
             _editorCamera.ProjectionType = ProjectionType.Perspective;
-            vm.CurrentViewPreset = ViewModels.ViewPreset.Free;
+            vm.CurrentViewPreset = ViewPreset.Free;
         }
     }
 

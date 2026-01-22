@@ -15,11 +15,9 @@
       "description": "Relative path to the shader program JSON file (.nizishp.json)"
     },
     "variants": {
-      "type": "object",
+      "type": "array",
       "description": "Shader variant defines to select specific shader permutations",
-      "additionalProperties": {
-        "type": "string"
-      }
+      "items": { "type": "string" }
     },
     "textures": {
       "$ref": "#/$defs/textures"

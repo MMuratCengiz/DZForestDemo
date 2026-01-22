@@ -16,7 +16,7 @@ public sealed class JsonMaterial : Material
         _json = json;
         _basePath = basePath;
         Name = json.Name;
-        Variants = json.GetVariants();
+        Variants = json.GetVariants().ToArray();
     }
 
     public new GpuShader? GpuShader

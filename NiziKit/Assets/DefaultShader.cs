@@ -6,7 +6,7 @@ namespace NiziKit.Assets;
 public class DefaultShader
 {
     public GpuShader StaticVariant { get; } = CreateVariant("DefaultShader");
-    public GpuShader SkinnedVariant { get; } = CreateVariant(ShaderVariants.EncodeName("DefaultShader", "SKINNED"));
+    public GpuShader SkinnedVariant { get; } = CreateVariant("DefaultShader_SKINNED");
 
     private static GpuShader CreateVariant(string shaderName)
     {

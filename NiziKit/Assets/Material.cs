@@ -10,7 +10,7 @@ public abstract class Material : IDisposable
     public Texture2d? Metallic { get; set; }
     public Texture2d? Roughness { get; set; }
     public GpuShader? GpuShader { get; set; }
-    public IReadOnlyDictionary<string, string?>? Variants { get; set; }
+    public string[]? Variants { get; set; }
 
     public virtual void Dispose()
     {

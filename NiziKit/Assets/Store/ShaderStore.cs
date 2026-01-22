@@ -28,16 +28,26 @@ public class ShaderStore : IDisposable
         _shaderCache.TryAdd(key, shader);
     }
 
-    public GpuShader? Get(string baseName, IReadOnlyDictionary<string, string?>? variants)
+    public GpuShader? Get(string baseName, ReadOnlySpan<string> variants)
     {
-        var fullName = ShaderVariants.EncodeName(baseName, variants);
+        var fullName = EncodeShaderName(baseName, variants);
         return _shaderCache.GetValueOrDefault(fullName);
     }
 
-    public bool Contains(string baseName, IReadOnlyDictionary<string, string?>? variants)
+    public bool Contains(string baseName, ReadOnlySpan<string> variants)
     {
-        var fullName = ShaderVariants.EncodeName(baseName, variants);
+        var fullName = EncodeShaderName(baseName, variants);
         return _shaderCache.ContainsKey(fullName);
+    }
+
+    private static string EncodeShaderName(string baseName, ReadOnlySpan<string> variants)
+    {
+        var newName = baseName;
+        foreach (var variant in variants)
+        {
+            newName += $"_{variant}";
+        }
+        return newName;
     }
 
     public ShaderProgram? GetProgram(string key)
