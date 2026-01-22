@@ -27,6 +27,7 @@ public class Game : IDisposable
             throw new InvalidOperationException("A game is already running. Only one game instance is allowed per process.");
         }
 
+        Log.Initialize();
         DenOfIzRuntime.Initialize();
         Engine.Init(new EngineDesc());
         using var game = (TGame)Activator.CreateInstance(typeof(TGame), desc)!;

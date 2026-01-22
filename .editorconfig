@@ -19,34 +19,9 @@ trim_trailing_whitespace = false
 
 [*.cs]
 
-# Remove linq warnings as they can be deadly in the hotpath
 dotnet_style_collection_initializer = true:silent
-csharp_style_prefer_collection_expression = true:silent
-dotnet_diagnostic.IDE0028.severity = none
-dotnet_diagnostic.IDE0305.severity = none
 
 csharp_preserve_single_line_statements = true
 csharp_preserve_single_line_blocks = true
 
 csharp_prefer_braces = true:warning
-
-dotnet_naming_rule.private_field.severity = suggestion
-dotnet_naming_rule.private_field.symbols = private_field
-dotnet_naming_rule.private_field.style = underscore_camel
-
-dotnet_naming_symbols.private_field.applicable_kinds = field
-dotnet_naming_symbols.private_field.applicable_accessibilities = private, internal
-
-dotnet_naming_style.underscore_camel.required_prefix = _
-dotnet_naming_style.underscore_camel.capitalization = camel_case
-
-dotnet_naming_rule.private_static_field.severity = suggestion
-dotnet_naming_rule.private_static_field.symbols = private_static_field
-dotnet_naming_rule.private_static_field.style = s_camel
-
-dotnet_naming_symbols.private_static_field.applicable_kinds = field
-dotnet_naming_symbols.private_static_field.applicable_accessibilities = private, internal
-dotnet_naming_symbols.private_static_field.required_modifiers = static
-
-dotnet_naming_style.s_camel.required_prefix = s_
-dotnet_naming_style.s_camel.capitalization = camel_case

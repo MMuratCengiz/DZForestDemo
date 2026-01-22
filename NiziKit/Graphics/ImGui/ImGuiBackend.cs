@@ -21,6 +21,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using DenOfIz;
 using ImGuiNET;
+using Microsoft.Extensions.Logging;
+using NiziKit.Core;
 using Buffer = DenOfIz.Buffer;
 
 namespace NiziKit.Graphics.ImGui;
@@ -74,6 +76,7 @@ internal class ImGuiFrameData
 
 public class ImGuiBackend : IDisposable
 {
+    private static readonly ILogger Logger = Log.Get<ImGuiBackend>();
     private const string ImGuiVertexShaderSource = @"
 struct VSInput
 {
@@ -699,7 +702,7 @@ float4 main(PSInput input) : SV_TARGET
 
         if (totalVertexSize > _desc.MaxVertices * 20 || totalIndexSize > _desc.MaxIndices * 2)
         {
-            Console.WriteLine("ImGui draw data exceeds buffer capacity");
+            Logger.LogWarning("ImGui draw data exceeds buffer capacity");
             return;
         }
 

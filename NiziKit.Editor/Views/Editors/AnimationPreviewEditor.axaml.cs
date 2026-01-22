@@ -10,12 +10,6 @@ public partial class AnimationPreviewEditor : UserControl
 {
     private Animator? _animator;
     private EditorViewModel? _editorViewModel;
-    private bool _isPlaying;
-    private float _playbackSpeed = 1.0f;
-    private string? _currentAnimation;
-
-    public bool IsPlaying => _isPlaying;
-    public float PlaybackSpeed => _playbackSpeed;
 
     public AnimationPreviewEditor()
     {
@@ -31,7 +25,6 @@ public partial class AnimationPreviewEditor : UserControl
         {
             _editorViewModel?.UnregisterAnimationPreview(this);
             AnimationComboBox.ItemsSource = null;
-            _isPlaying = false;
             return;
         }
 
@@ -40,7 +33,7 @@ public partial class AnimationPreviewEditor : UserControl
             animator.Initialize();
         }
 
-        var animations = GetAvailableAnimations();
+        var animations = animator.AnimationNames;
         AnimationComboBox.ItemsSource = animations;
 
         if (animations.Count > 0)
@@ -67,25 +60,15 @@ public partial class AnimationPreviewEditor : UserControl
         _editorViewModel?.RegisterAnimationPreview(this);
     }
 
-    private IReadOnlyList<string> GetAvailableAnimations()
-    {
-        if (_animator?.Skeleton == null)
-        {
-            return Array.Empty<string>();
-        }
-
-        return _animator.Skeleton.AnimationNames;
-    }
-
     public void Update(float deltaTime)
     {
-        if (_animator == null || !_isPlaying)
+        if (_animator == null)
         {
             return;
         }
 
-        _animator.Update(deltaTime * _playbackSpeed);
         UpdateTimelineFromAnimator();
+        UpdatePlayPauseButton();
     }
 
     private void UpdateTimelineFromAnimator()
@@ -95,7 +78,7 @@ public partial class AnimationPreviewEditor : UserControl
             return;
         }
 
-        TimelineSlider.Value = _animator.GetCurrentStateNormalizedTime();
+        TimelineSlider.Value = _animator.NormalizedTime;
         UpdateCurrentTimeText();
     }
 
@@ -112,10 +95,7 @@ public partial class AnimationPreviewEditor : UserControl
             return;
         }
 
-        _currentAnimation = selectedAnimation;
         _animator.Play(selectedAnimation);
-        _isPlaying = true;
-
         UpdateDurationText();
         UpdatePlayPauseButton();
     }
@@ -132,18 +112,20 @@ public partial class AnimationPreviewEditor : UserControl
             return;
         }
 
-        if (_isPlaying)
+        if (_animator.IsPlaying && !_animator.IsPaused)
         {
-            _isPlaying = false;
+            _animator.Pause();
+        }
+        else if (_animator.IsPaused)
+        {
+            _animator.Resume();
         }
         else
         {
-            if (_currentAnimation == null && AnimationComboBox.SelectedItem is string anim)
+            if (AnimationComboBox.SelectedItem is string anim)
             {
-                _currentAnimation = anim;
                 _animator.Play(anim);
             }
-            _isPlaying = true;
         }
 
         UpdatePlayPauseButton();
@@ -156,11 +138,14 @@ public partial class AnimationPreviewEditor : UserControl
             return;
         }
 
-        _isPlaying = false;
-        if (_currentAnimation != null)
+        _animator.Stop();
+
+        if (AnimationComboBox.SelectedItem is string anim)
         {
-            _animator.Play(_currentAnimation);
+            _animator.Play(anim);
+            _animator.Pause();
         }
+
         TimelineSlider.Value = 0;
         UpdatePlayPauseButton();
         UpdateCurrentTimeText();
@@ -168,26 +153,28 @@ public partial class AnimationPreviewEditor : UserControl
 
     private void OnSpeedValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
     {
-        _playbackSpeed = (float)SpeedSlider.Value;
+        if (_animator != null)
+        {
+            _animator.Speed = (float)SpeedSlider.Value;
+        }
         SpeedText.Text = $"{SpeedSlider.Value:F1}x";
     }
 
     private void UpdatePlayPauseButton()
     {
-        PlayPauseButton.Content = _isPlaying ? "Pause" : "Play";
+        var isPlaying = _animator?.IsPlaying == true && !(_animator?.IsPaused ?? true);
+        PlayPauseButton.Content = isPlaying ? "Pause" : "Play";
     }
 
     private void UpdateDurationText()
     {
-        var state = _animator?.GetCurrentState();
-        var duration = state?.Clip?.Duration ?? 1f;
+        var duration = _animator?.Duration ?? 0f;
         DurationText.Text = FormatTime(duration);
     }
 
     private void UpdateCurrentTimeText()
     {
-        var state = _animator?.GetCurrentState();
-        var duration = state?.Clip?.Duration ?? 1f;
+        var duration = _animator?.Duration ?? 0f;
         var currentTime = (float)TimelineSlider.Value * duration;
         CurrentTimeText.Text = FormatTime(currentTime);
     }
@@ -203,6 +190,5 @@ public partial class AnimationPreviewEditor : UserControl
     {
         base.OnUnloaded(e);
         _editorViewModel?.UnregisterAnimationPreview(this);
-        _isPlaying = false;
     }
 }

@@ -1,5 +1,6 @@
 using DenOfIz;
 using DZForestDemo.GameObjects;
+using Microsoft.Extensions.Logging;
 using NiziKit.Application;
 using NiziKit.Core;
 using NiziKit.Graphics.Renderer.Forward;
@@ -10,6 +11,7 @@ namespace DZForestDemo;
 
 public sealed class SnakeGame(GameDesc? desc = null) : Game(desc)
 {
+    private static readonly ILogger Logger = Log.Get<SnakeGame>();
     private ForwardRenderer _renderer = null!;
 
     protected override void Load(Game game)
@@ -17,13 +19,12 @@ public sealed class SnakeGame(GameDesc? desc = null) : Game(desc)
         _renderer = new ForwardRenderer(RenderUi);
         World.LoadScene("Scenes/SnakeScene.niziscene.json");
 
-        Console.WriteLine("=== SNAKE 3D ===");
-        Console.WriteLine("Controls:");
-        Console.WriteLine("  WASD / Arrow Keys = Move");
-        Console.WriteLine("  Space = Pause/Resume");
-        Console.WriteLine("  R = Restart");
-        Console.WriteLine("  Esc = Quit");
-        Console.WriteLine();
+        Logger.LogInformation("=== SNAKE 3D ===");
+        Logger.LogInformation("Controls:");
+        Logger.LogInformation("  WASD / Arrow Keys = Move");
+        Logger.LogInformation("  Space = Pause/Resume");
+        Logger.LogInformation("  R = Restart");
+        Logger.LogInformation("  Esc = Quit");
     }
 
     protected override void Update(float dt)

@@ -1,4 +1,9 @@
+using Microsoft.Extensions.Logging;
+using NiziKit.Core;
 using NiziKit.Offline;
+
+Log.Initialize();
+var logger = Log.Get("AssetImport");
 
 var projectDir = Solution.Project("DZForestDemo");
 var assetProject = AssetDirectories.ForProjectAssets(projectDir, projectDir);
@@ -10,13 +15,13 @@ ImportSyntyAssets(syntySourceDir, syntyOutputDir);
 
 return 0;
 
-void Log(string msg) => Console.WriteLine(msg);
+void LogInfo(string msg) => logger.LogInformation("{Message}", msg);
 
 void ImportSyntyAssets(string sourceDirectory, string outputDirectory)
 {
     if (!Directory.Exists(sourceDirectory))
     {
-        Log($"Synty assets not found at, synty assets are private and inaccessible unless added to the synty team: {sourceDirectory}");
+        logger.LogWarning("Synty assets not found at, synty assets are private and inaccessible unless added to the synty team: {SourceDirectory}", sourceDirectory);
         return;
     }
 
@@ -30,16 +35,16 @@ void ImportSyntyAssets(string sourceDirectory, string outputDirectory)
         PreserveDirectoryStructure = true,
         ModelScale = 0.01f,
         GenerateMips = true,
-        OnProgress = Log
+        OnProgress = LogInfo
     });
 
-    Log($"Synty: {result.ModelsExported} models, {result.TexturesExported} textures exported");
+    logger.LogInformation("Synty: {ModelsExported} models, {TexturesExported} textures exported", result.ModelsExported, result.TexturesExported);
     if (result.TotalFailed > 0)
     {
-        Log($"Synty: {result.TotalFailed} failed");
+        logger.LogWarning("Synty: {TotalFailed} failed", result.TotalFailed);
         foreach (var error in result.Errors.Take(10))
         {
-            Console.WriteLine($"  {error}");
+            logger.LogError("  {Error}", error);
         }
     }
 }

@@ -22,6 +22,7 @@ public class Fox : GameObject
 
     private readonly Animator? _animator;
     private readonly bool _useLayerBlending;
+    private float _speed = 1.0f;
 
     public Fox(Vector3? position = null, bool useLayerBlending = false) : base("Fox")
     {
@@ -36,79 +37,43 @@ public class Fox : GameObject
         AddComponent<MeshComponent>().Mesh = gltf.Meshes[0];
 
         var skeleton = gltf.GetSkeleton();
-        var runAnimation = skeleton.GetAnimation("Run");
-        var surveyAnimation = skeleton.GetAnimation("Survey");
-
-        var controller = useLayerBlending
-            ? CreateLayerBlendController(runAnimation, surveyAnimation)
-            : CreateFoxController(runAnimation, surveyAnimation);
 
         _animator = AddComponent<Animator>();
         _animator.Skeleton = skeleton;
-        _animator.Controller = controller;
+        _animator.DefaultAnimation = "Run";
         _animator.Initialize();
 
-        _animator.StateCompleted += (_, e) =>
+        if (_useLayerBlending)
         {
-        };
+            // Add a second layer for overlay animations
+            _animator.AddLayer(0f, BlendMode.Override);
+            _animator.PlayOnLayer(1, "Survey");
+        }
     }
 
-    private static AnimatorController CreateFoxController(Animation runAnimation, Animation surveyAnimation)
+    public void TriggerSurvey()
     {
-        var controller = new AnimatorController { Name = "FoxController" };
-
-        controller.AddBool("IsRunning", true);
-        controller.AddTrigger("Survey");
-        controller.AddFloat("Speed", 1.0f);
-
-        var runState = controller.AddState("Run");
-        runState.Clip = runAnimation;
-        runState.Loop = true;
-        runState.SpeedParameterName = "Speed";
-
-        var surveyState = controller.AddState("Survey");
-        surveyState.Clip = surveyAnimation;
-        surveyState.Loop = false;
-
-        var toSurvey = runState.AddTransition(surveyState);
-        toSurvey.AddCondition("Survey", AnimatorConditionMode.If);
-        toSurvey.Duration = 0.3f;
-        toSurvey.Curve = TransitionCurve.EaseInOut;
-
-        var toRun = surveyState.AddTransition(runState);
-        toRun.AddCondition("IsRunning", AnimatorConditionMode.If);
-        toRun.HasExitTime = true;
-        toRun.ExitTime = 0.9f;
-        toRun.Duration = 0.4f;
-        toRun.Curve = TransitionCurve.EaseOut;
-
-        return controller;
+        _animator?.CrossFade("Survey", 0.3f, LoopMode.Once);
     }
 
-    private static AnimatorController CreateLayerBlendController(Animation runAnimation, Animation surveyAnimation)
+    public void SetSpeed(float speed)
     {
-        var controller = new AnimatorController { Name = "FoxLayerController" };
-
-        controller.AddFloat("OverlayWeight", 0.0f);
-
-        var runState = controller.AddState("Run", 0);
-        runState.Clip = runAnimation;
-        runState.Loop = true;
-
-        var overlayLayer = controller.AddLayer("SurveyOverlay");
-        overlayLayer.Weight = 0.0f;
-        overlayLayer.BlendMode = AnimatorLayerBlendMode.Override;
-
-        var surveyOverlay = controller.AddState("SurveyOverlay", 1);
-        surveyOverlay.Clip = surveyAnimation;
-        surveyOverlay.Loop = true;
-
-        return controller;
+        _speed = speed;
+        if (_animator != null)
+        {
+            _animator.Speed = speed;
+        }
     }
 
-    public void TriggerSurvey() => _animator?.SetTrigger("Survey");
-    public void SetSpeed(float speed) => _animator?.SetFloat("Speed", speed);
-    public void SetRunning(bool isRunning) => _animator?.SetBool("IsRunning", isRunning);
+    public void SetRunning(bool isRunning)
+    {
+        if (_animator == null) return;
+
+        if (isRunning && _animator.CurrentAnimation != "Run")
+        {
+            _animator.CrossFade("Run", 0.3f);
+        }
+    }
 
     public void SetOverlayWeight(float weight)
     {
@@ -118,17 +83,17 @@ public class Fox : GameObject
         }
     }
 
-    public void CrossFadeToSurvey(TransitionCurve curve = TransitionCurve.EaseInOut)
+    public void CrossFadeToSurvey()
     {
-        _animator?.CrossFade("Survey", 0.5f, 0, curve);
+        _animator?.CrossFade("Survey", 0.5f, LoopMode.Once);
     }
 
-    public void CrossFadeToRun(TransitionCurve curve = TransitionCurve.EaseOut)
+    public void CrossFadeToRun()
     {
-        _animator?.CrossFade("Run", 0.3f, 0, curve);
+        _animator?.CrossFade("Run", 0.3f);
     }
 
-    public bool IsInTransition => _animator?.IsInTransition() ?? false;
-    public string? CurrentStateName => _animator?.GetCurrentState()?.Name;
-    public float NormalizedTime => _animator?.GetCurrentStateNormalizedTime() ?? 0;
+    public bool IsInTransition => _animator?.IsBlending ?? false;
+    public string? CurrentStateName => _animator?.CurrentAnimation;
+    public float NormalizedTime => _animator?.NormalizedTime ?? 0;
 }
