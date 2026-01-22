@@ -223,6 +223,8 @@ public sealed class EditorGame : Game
 
         var ray = _editorCamera.ScreenPointToRay(_lastMouseX, _lastMouseY, _width, _height);
         gizmoPass.Gizmo.UpdateDrag(ray, _editorCamera);
+
+        _renderer.EditorViewModel?.SelectedGameObject?.Refresh();
     }
 
     private void EndGizmoDrag()
@@ -237,6 +239,8 @@ public sealed class EditorGame : Game
         var gizmoPass = _renderer.GizmoPass;
         gizmoPass?.Gizmo.CancelDrag();
         _gizmoDragging = false;
+
+        _renderer.EditorViewModel?.SelectedGameObject?.Refresh();
     }
 
     private void HandleGizmoModeKey(KeyCode keyCode)

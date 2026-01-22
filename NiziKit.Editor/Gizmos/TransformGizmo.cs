@@ -33,14 +33,14 @@ public enum GizmoSpace
 
 public class TransformGizmo
 {
-    private const float AxisLength = 1.5f;
-    private const float AxisHitRadius = 0.12f;
-    private const float PlaneSize = 0.4f;
-    private const float PlaneOffset = 0.3f;
-    private const float RotateRingRadius = 1.2f;
-    private const float RotateRingThickness = 0.15f;
-    private const float CenterBoxSize = 0.25f;
-    private const float MinGizmoScale = 0.5f;
+    private const float AxisLength = 1.2f;
+    private const float AxisHitRadius = 0.08f;
+    private const float PlaneSize = 0.3f;
+    private const float PlaneOffset = 0.25f;
+    private const float RotateRingRadius = 1.0f;
+    private const float RotateRingThickness = 0.1f;
+    private const float CenterBoxSize = 0.15f;
+    private const float MinGizmoScale = 0.05f;
     private const float MaxGizmoScale = 5f;
 
     public GizmoMode Mode { get; set; } = GizmoMode.Translate;
@@ -80,7 +80,7 @@ public class TransformGizmo
         }
 
         var cameraDistance = Vector3.Distance(camera.WorldPosition, _target.WorldPosition);
-        var distanceScale = cameraDistance * 0.15f;
+        var distanceScale = cameraDistance * 0.08f;
         return Math.Clamp(distanceScale, MinGizmoScale, MaxGizmoScale);
     }
 

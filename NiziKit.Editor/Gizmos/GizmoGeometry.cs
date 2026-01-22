@@ -29,19 +29,19 @@ public static class GizmoGeometry
     public static readonly Vector4 SelectionBoxColor = new(1f, 0.6f, 0.1f, 1f);
     public static readonly Vector4 WhiteColor = new(0.9f, 0.9f, 0.9f, 1f);
 
-    private const float AxisLength = 1.5f;
-    private const float ArrowHeadLength = 0.25f;
-    private const float ArrowHeadRadius = 0.1f;
-    private const float ShaftRadius = 0.025f;
-    private const float PlaneSize = 0.4f;
-    private const float PlaneOffset = 0.3f;
-    private const float RingRadius = 1.2f;
-    private const float RingThickness = 0.04f;
+    private const float AxisLength = 1.2f;
+    private const float ArrowHeadLength = 0.18f;
+    private const float ArrowHeadRadius = 0.06f;
+    private const float ShaftRadius = 0.015f;
+    private const float PlaneSize = 0.3f;
+    private const float PlaneOffset = 0.25f;
+    private const float RingRadius = 1.0f;
+    private const float RingThickness = 0.02f;
     private const int RingSegments = 48;
-    private const int ConeSegments = 12;
-    private const int TubeSegments = 8;
-    private const float ScaleBoxSize = 0.12f;
-    private const float CenterBoxSize = 0.18f;
+    private const int ConeSegments = 10;
+    private const int TubeSegments = 6;
+    private const float ScaleBoxSize = 0.08f;
+    private const float CenterBoxSize = 0.12f;
 
     public static Vector4 GetAxisColor(GizmoAxis axis, GizmoAxis hoveredAxis, GizmoAxis activeAxis)
     {

@@ -83,25 +83,29 @@
                     Height="{DynamicResource EditorTaskbarHeight}">
                 <!-- Centered taskbar buttons -->
                 <StackPanel Orientation="Horizontal"
-                            Spacing="4"
+                            Spacing="8"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center">
                     <ToggleButton x:Name="AssetBrowserToggle"
                                   IsChecked="{Binding IsAssetBrowserOpen, Mode=TwoWay}"
                                   Classes="taskbar-button">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
                             <PathIcon Data="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"
-                                      Width="20" Height="20"/>
-                            <TextBlock Text="Assets" VerticalAlignment="Center"/>
+                                      Width="24" Height="24"/>
+                            <TextBlock Text="Assets"
+                                       FontSize="{DynamicResource EditorFontSizeMedium}"
+                                       VerticalAlignment="Center"/>
                         </StackPanel>
                     </ToggleButton>
                     <ToggleButton x:Name="PackManagerToggle"
                                   IsChecked="{Binding IsPackManagerOpen, Mode=TwoWay}"
                                   Classes="taskbar-button">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
                             <PathIcon Data="M3 3h8v8H3V3zm0 10h8v8H3v-8zm10-10h8v8h-8V3zm0 10h8v8h-8v-8z"
-                                      Width="20" Height="20"/>
-                            <TextBlock Text="Packs" VerticalAlignment="Center"/>
+                                      Width="24" Height="24"/>
+                            <TextBlock Text="Packs"
+                                       FontSize="{DynamicResource EditorFontSizeMedium}"
+                                       VerticalAlignment="Center"/>
                         </StackPanel>
                     </ToggleButton>
                 </StackPanel>
@@ -117,7 +121,7 @@
                     BorderBrush="{DynamicResource PanelBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="8,8,0,0"
-                    Height="550">
+                    Height="600">
                 <Grid RowDefinitions="Auto,*">
                     <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="16,12">
                         <TextBlock Text="Asset Browser"
@@ -146,7 +150,7 @@
                     BorderBrush="{DynamicResource PanelBorderBrush}"
                     BorderThickness="1"
                     CornerRadius="8,8,0,0"
-                    Height="550">
+                    Height="600">
                 <Grid RowDefinitions="Auto,*">
                     <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="16,12">
                         <TextBlock Text="Pack Manager"
