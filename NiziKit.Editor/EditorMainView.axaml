@@ -14,7 +14,6 @@
 
     <Panel>
         <Grid RowDefinitions="Auto,*,Auto">
-            <!-- Menu Bar -->
             <Border Grid.Row="0"
                     Background="{StaticResource EditorPanelBackground}"
                     Padding="4,2">
@@ -40,46 +39,48 @@
                 </Menu>
             </Border>
 
-            <!-- Main Content Area -->
-            <Grid Grid.Row="1" ColumnDefinitions="380,*,420">
-                <!-- Left Panel: Scene Tree -->
+            <Grid Grid.Row="1" ColumnDefinitions="Auto,*,Auto">
                 <Border Grid.Column="0"
                         Background="{StaticResource EditorPanelBackground}"
                         BorderBrush="{StaticResource EditorPanelBorder}"
                         BorderThickness="1"
                         CornerRadius="8"
                         Padding="16"
-                        Margin="8,8,4,8">
+                        Margin="8,8,4,8"
+                        MinWidth="{StaticResource PanelMinWidth}"
+                        MaxWidth="{StaticResource PanelMaxWidth}"
+                        Width="380">
                     <Grid RowDefinitions="Auto,*">
                         <TextBlock Grid.Row="0"
                                    Text="Scene"
-                                   Theme="{StaticResource SubtitleTextBlockStyle}"
+                                   Classes="subtitle"
                                    Margin="0,0,0,12"/>
                         <views:SceneTreeView Grid.Row="1"
                                              DataContext="{Binding}"/>
                     </Grid>
                 </Border>
 
-                <!-- Center: Viewport (empty/transparent for game rendering) -->
-                <Panel Grid.Column="1" Background="Transparent">
+                <Panel Grid.Column="1" Background="Transparent" MinWidth="200">
                     <views:ViewportToolbar HorizontalAlignment="Center"
                                            VerticalAlignment="Top"
                                            Margin="0,8,0,0"
                                            DataContext="{Binding}"/>
                 </Panel>
 
-                <!-- Right Panel: Inspector -->
                 <Border Grid.Column="2"
                         Background="{StaticResource EditorPanelBackground}"
                         BorderBrush="{StaticResource EditorPanelBorder}"
                         BorderThickness="1"
                         CornerRadius="8"
                         Padding="16"
-                        Margin="4,8,8,8">
+                        Margin="4,8,8,8"
+                        MinWidth="{StaticResource PanelMinWidth}"
+                        MaxWidth="{StaticResource PanelMaxWidth}"
+                        Width="420">
                     <Grid RowDefinitions="Auto,*">
                         <TextBlock Grid.Row="0"
                                    Text="Inspector"
-                                   Theme="{StaticResource SubtitleTextBlockStyle}"
+                                   Classes="subtitle"
                                    Margin="0,0,0,12"/>
                         <views:ComponentsPanel Grid.Row="1"
                                                DataContext="{Binding}"/>
@@ -87,7 +88,6 @@
                 </Border>
             </Grid>
 
-            <!-- Bottom Taskbar -->
             <Border Grid.Row="2"
                     Background="{StaticResource EditorPanelBackground}"
                     BorderBrush="{StaticResource EditorPanelBorder}"
@@ -108,27 +108,69 @@
             </Border>
         </Grid>
 
-        <!-- Content Browser Popup Panel -->
-        <Border IsVisible="{Binding IsContentBrowserOpen}"
-                HorizontalAlignment="Stretch"
-                VerticalAlignment="Bottom"
-                Margin="392,0,432,60">
-            <Border Background="{StaticResource EditorPanelBackground}"
+        <Grid IsVisible="{Binding IsContentBrowserOpen}"
+              ColumnDefinitions="Auto,*,Auto"
+              RowDefinitions="*,Auto,Auto">
+            <Border Grid.Column="0" Grid.Row="1" Width="392" Background="Transparent"/>
+            <Border Grid.Column="1" Grid.Row="1"
+                    Background="{StaticResource EditorPanelBackground}"
                     BorderBrush="{StaticResource EditorPanelBorder}"
                     BorderThickness="1"
                     CornerRadius="8,8,0,0"
+                    MinWidth="400"
+                    MinHeight="300"
+                    MaxHeight="700"
                     Height="600">
                 <Grid RowDefinitions="Auto,Auto,*">
-                    <!-- Title Bar -->
                     <Border Grid.Row="0"
                             Background="{StaticResource EditorPanelSecondaryBackground}"
                             CornerRadius="8,8,0,0"
-                            Padding="20,16">
-                        <Grid ColumnDefinitions="*,Auto">
+                            Padding="12,8,12,8">
+                        <Grid ColumnDefinitions="Auto,Auto,*,Auto">
                             <TextBlock Text="Content Browser"
-                                       Theme="{StaticResource SubtitleTextBlockStyle}"
-                                       VerticalAlignment="Center"/>
-                            <Button Grid.Column="1"
+                                       Classes="subtitle"
+                                       VerticalAlignment="Center"
+                                       Margin="8,0,16,0"/>
+                            <Border Grid.Column="1"
+                                    Width="1"
+                                    Background="{DynamicResource DividerStrokeColorDefaultBrush}"
+                                    Margin="0,4"/>
+                            <ScrollViewer Grid.Column="2"
+                                          HorizontalScrollBarVisibility="Auto"
+                                          VerticalScrollBarVisibility="Disabled"
+                                          Margin="8,0">
+                                <ItemsControl ItemsSource="{Binding ContentBrowserViewModel.Tabs}">
+                                    <ItemsControl.ItemsPanel>
+                                        <ItemsPanelTemplate>
+                                            <StackPanel Orientation="Horizontal" Spacing="2"/>
+                                        </ItemsPanelTemplate>
+                                    </ItemsControl.ItemsPanel>
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:ContentTab">
+                                            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                                                    CornerRadius="{DynamicResource ControlCornerRadius}"
+                                                    Padding="12,6"
+                                                    Margin="2"
+                                                    Cursor="Hand"
+                                                    PointerPressed="OnContentBrowserTabPointerPressed">
+                                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                                    <ui:SymbolIcon Symbol="Folder" FontSize="14"/>
+                                                    <TextBlock Text="{Binding Title}"
+                                                               VerticalAlignment="Center"/>
+                                                    <Button IsVisible="{Binding IsCloseable}"
+                                                            Command="{Binding $parent[ItemsControl].DataContext.ContentBrowserViewModel.CloseTabCommand}"
+                                                            CommandParameter="{Binding}"
+                                                            Padding="4"
+                                                            Margin="4,0,0,0">
+                                                        <ui:SymbolIcon Symbol="Dismiss" FontSize="12"/>
+                                                    </Button>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                            <Button Grid.Column="3"
                                     Command="{Binding CloseContentBrowserCommand}"
                                     ToolTip.Tip="Close"
                                     Padding="8">
@@ -136,43 +178,38 @@
                             </Button>
                         </Grid>
                     </Border>
-                    <!-- Separator -->
                     <Border Grid.Row="1" Height="1" Background="{DynamicResource DividerStrokeColorDefaultBrush}"/>
-                    <!-- Content -->
                     <views:ContentBrowserView Grid.Row="2"
                                               DataContext="{Binding ContentBrowserViewModel}"/>
                 </Grid>
             </Border>
-        </Border>
 
-        <!-- Asset Editor Overlay -->
+            <Border Grid.Column="2" Grid.Row="1" Width="432" Background="Transparent"/>
+
+            <Border Grid.Column="0" Grid.ColumnSpan="3" Grid.Row="2" Height="60" Background="Transparent"/>
+        </Grid>
+
         <Border IsVisible="{Binding ContentBrowserViewModel.IsAssetEditorOpen}"
                 Background="#60000000"
                 ZIndex="500">
             <editors:AssetEditorDialog DataContext="{Binding ContentBrowserViewModel}"/>
         </Border>
 
-        <!-- Import Panel Modal -->
         <Border IsVisible="{Binding IsImportPanelOpen}"
                 Background="#60000000"
                 ZIndex="1000">
-            <Border Background="{StaticResource EditorPanelBackground}"
-                    BorderBrush="{StaticResource EditorPanelBorder}"
-                    BorderThickness="1"
-                    CornerRadius="8"
+            <Border Classes="dialog-container-large"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Width="1400"
-                    Height="900">
+                    Margin="40">
                 <Grid RowDefinitions="Auto,Auto,*">
-                    <!-- Title Bar -->
                     <Border Grid.Row="0"
                             Background="{StaticResource EditorPanelSecondaryBackground}"
                             CornerRadius="8,8,0,0"
                             Padding="24,16">
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBlock Text="Import Assets"
-                                       Theme="{StaticResource SubtitleTextBlockStyle}"
+                                       Classes="subtitle"
                                        VerticalAlignment="Center"/>
                             <Button Grid.Column="1"
                                     Command="{Binding CloseImportPanelCommand}"
@@ -182,16 +219,13 @@
                             </Button>
                         </Grid>
                     </Border>
-                    <!-- Separator -->
                     <Border Grid.Row="1" Height="1" Background="{DynamicResource DividerStrokeColorDefaultBrush}"/>
-                    <!-- Content -->
                     <views:ImportPanel Grid.Row="2"
                                        DataContext="{Binding ImportViewModel}"/>
                 </Grid>
             </Border>
         </Border>
 
-        <!-- Asset Picker Overlay -->
         <Border IsVisible="{Binding IsAssetPickerOpen}"
                 Background="#60000000">
             <editors:AssetPickerDialog x:Name="AssetPickerDialog"

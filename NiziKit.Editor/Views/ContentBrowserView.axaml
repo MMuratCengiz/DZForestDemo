@@ -42,7 +42,8 @@
                                               Width="16" Height="16"
                                               Foreground="{DynamicResource AccentFillColorDefaultBrush}"/>
                                     <TextBlock Text="{Binding Name}"
-                                               VerticalAlignment="Center"/>
+                                               VerticalAlignment="Center"
+                                               TextTrimming="CharacterEllipsis"/>
                                 </StackPanel>
                             </DataTemplate>
                         </ListBox.ItemTemplate>
@@ -104,6 +105,8 @@
                     <TextBox Grid.Column="2"
                              Text="{Binding SearchText}"
                              Watermark="Search..."
+                             MinWidth="120"
+                             MaxWidth="250"
                              Width="180"
                              VerticalAlignment="Center">
                         <TextBox.InnerLeftContent>
@@ -131,12 +134,8 @@
                         </ListBox.ItemsPanel>
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="vm:ContentItem">
-                                <Border Width="120"
-                                        Height="150"
-                                        Margin="4"
-                                        Padding="8"
-                                        CornerRadius="{DynamicResource ControlCornerRadius}"
-                                        Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
+                                <!-- Content tile with responsive sizing -->
+                                <Border Classes="content-tile"
                                         ToolTip.Tip="{Binding TypeLabel}"
                                         PointerPressed="OnItemPointerPressed">
                                     <Grid RowDefinitions="*,Auto,Auto">
@@ -150,6 +149,7 @@
                                         <TextBlock Grid.Row="1"
                                                    Text="{Binding Name}"
                                                    TextWrapping="Wrap"
+                                                   TextTrimming="CharacterEllipsis"
                                                    TextAlignment="Center"
                                                    MaxHeight="40"
                                                    Margin="0,8,0,0"
@@ -181,7 +181,8 @@
                         Padding="12,6"
                         IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                     <TextBlock Text="{Binding StatusMessage}"
-                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                               TextTrimming="CharacterEllipsis"/>
                 </Border>
             </Grid>
         </Grid>

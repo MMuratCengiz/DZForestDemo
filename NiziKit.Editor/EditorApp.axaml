@@ -8,7 +8,6 @@
     <Application.Resources>
         <views:BoolToForegroundConverter x:Key="BoolToForegroundConverter"/>
 
-        <!-- Only truly editor-specific colors -->
         <Color x:Key="AxisXColor">#E05555</Color>
         <Color x:Key="AxisYColor">#55CC55</Color>
         <Color x:Key="AxisZColor">#5588EE</Color>
@@ -17,7 +16,6 @@
         <SolidColorBrush x:Key="AxisYBrush" Color="{StaticResource AxisYColor}"/>
         <SolidColorBrush x:Key="AxisZBrush" Color="{StaticResource AxisZColor}"/>
 
-        <!-- Editor panel backgrounds - fully opaque for proper input handling -->
         <SolidColorBrush x:Key="EditorPanelBackground" Color="#FF2D2D2D"/>
         <SolidColorBrush x:Key="EditorPanelSecondaryBackground" Color="#FF252525"/>
         <SolidColorBrush x:Key="EditorPanelBorder" Color="#FF3D3D3D"/>
@@ -25,52 +23,7 @@
 
     <Application.Styles>
         <sty:FluentAvaloniaTheme />
-
-        <!-- Base TopLevel style - no transparent background to ensure proper input handling -->
-        <Style Selector=":is(TopLevel)">
-            <Setter Property="FontSize" Value="20"/>
-        </Style>
-
-        <!-- Base font size for all controls -->
-        <Style Selector="TextBlock">
-            <Setter Property="FontSize" Value="20"/>
-        </Style>
-        <Style Selector="TextBox">
-            <Setter Property="FontSize" Value="20"/>
-        </Style>
-        <Style Selector="Button">
-            <Setter Property="FontSize" Value="20"/>
-        </Style>
-        <Style Selector="ToggleButton">
-            <Setter Property="FontSize" Value="20"/>
-        </Style>
-        <Style Selector="ComboBox">
-            <Setter Property="FontSize" Value="20"/>
-        </Style>
-        <Style Selector="ComboBoxItem">
-            <Setter Property="FontSize" Value="20"/>
-        </Style>
-        <Style Selector="MenuItem">
-            <Setter Property="FontSize" Value="20"/>
-        </Style>
-        <Style Selector="TabItem">
-            <Setter Property="FontSize" Value="20"/>
-        </Style>
-        <Style Selector="TreeViewItem">
-            <Setter Property="FontSize" Value="20"/>
-        </Style>
-        <Style Selector="ListBoxItem">
-            <Setter Property="FontSize" Value="20"/>
-        </Style>
-        <Style Selector="CheckBox">
-            <Setter Property="FontSize" Value="20"/>
-        </Style>
-        <Style Selector="RadioButton">
-            <Setter Property="FontSize" Value="20"/>
-        </Style>
-        <Style Selector="Label">
-            <Setter Property="FontSize" Value="20"/>
-        </Style>
+        <StyleInclude Source="avares://NiziKit.Editor/Styles/EditorStyles.axaml"/>
     </Application.Styles>
 
 </Application>

@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Markup.Xaml;
 using NiziKit.Editor.ViewModels;
 using NiziKit.Editor.Views.Editors;
@@ -52,5 +53,13 @@ public partial class EditorMainView : UserControl
     public void RefreshScene()
     {
         _viewModel?.LoadFromCurrentScene();
+    }
+
+    private void OnContentBrowserTabPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is Border border && border.DataContext is ContentTab tab && _viewModel != null)
+        {
+            _viewModel.ContentBrowserViewModel.SelectedTab = tab;
+        }
     }
 }

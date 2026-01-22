@@ -1,0 +1,214 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- 
+    NiziKit Editor Styles
+    =====================
+    Centralized style definitions for consistent, responsive UI across the editor.
+    Uses class-based selectors for easy application in XAML.
+    -->
+
+    <Styles.Resources>
+        <!-- =========================== -->
+        <!-- Font Size System (Tiered)   -->
+        <!-- =========================== -->
+        <!-- Minimum 20px for high-DPI displays (150%+ scaling) -->
+        <x:Double x:Key="FontSizeCaption">20</x:Double>
+        <x:Double x:Key="FontSizeBody">22</x:Double>
+        <x:Double x:Key="FontSizeBodyLarge">24</x:Double>
+        <x:Double x:Key="FontSizeSubtitle">26</x:Double>
+        <x:Double x:Key="FontSizeTitle">30</x:Double>
+        <x:Double x:Key="FontSizeHeader">36</x:Double>
+
+        <!-- =========================== -->
+        <!-- Layout Constants            -->
+        <!-- =========================== -->
+        <!-- Panel sizing constraints -->
+        <x:Double x:Key="PanelMinWidth">280</x:Double>
+        <x:Double x:Key="PanelMaxWidth">500</x:Double>
+        <x:Double x:Key="PanelPreferredWidth">380</x:Double>
+        
+        <!-- Content tile sizing -->
+        <x:Double x:Key="TileMinWidth">100</x:Double>
+        <x:Double x:Key="TileMaxWidth">150</x:Double>
+        <x:Double x:Key="TilePreferredWidth">120</x:Double>
+        <x:Double x:Key="TilePreferredHeight">150</x:Double>
+        
+        <!-- Dialog constraints -->
+        <x:Double x:Key="DialogMinWidth">600</x:Double>
+        <x:Double x:Key="DialogMaxWidth">1400</x:Double>
+        <x:Double x:Key="DialogMinHeight">400</x:Double>
+        <x:Double x:Key="DialogMaxHeight">900</x:Double>
+        
+        <!-- Spacing -->
+        <x:Double x:Key="SpacingXS">4</x:Double>
+        <x:Double x:Key="SpacingSM">8</x:Double>
+        <x:Double x:Key="SpacingMD">12</x:Double>
+        <x:Double x:Key="SpacingLG">16</x:Double>
+        <x:Double x:Key="SpacingXL">24</x:Double>
+    </Styles.Resources>
+
+    <!-- =========================== -->
+    <!-- Text Styles                 -->
+    <!-- =========================== -->
+
+    <!-- Caption text - smallest, for metadata/hints -->
+    <Style Selector="TextBlock.caption">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+
+    <!-- Body text - standard readable text -->
+    <Style Selector="TextBlock.body">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+
+    <!-- Body large - slightly emphasized body text -->
+    <Style Selector="TextBlock.body-large">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBodyLarge}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+
+    <!-- Subtitle - section headers -->
+    <Style Selector="TextBlock.subtitle">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeSubtitle}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+
+    <!-- Title - panel/dialog titles -->
+    <Style Selector="TextBlock.title">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeTitle}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+
+    <!-- =========================== -->
+    <!-- Control Base Overrides      -->
+    <!-- =========================== -->
+    
+    <Style Selector="TextBlock">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+
+    <Style Selector="TextBox">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+    </Style>
+
+    <Style Selector="Button">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+    </Style>
+
+    <Style Selector="ToggleButton">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+    </Style>
+
+    <Style Selector="ComboBox">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+    </Style>
+
+    <Style Selector="ComboBoxItem">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+    </Style>
+
+    <Style Selector="MenuItem">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+    </Style>
+
+    <Style Selector="TabItem">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+    </Style>
+
+    <Style Selector="TreeViewItem">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+    </Style>
+
+    <Style Selector="ListBoxItem">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+    </Style>
+
+    <Style Selector="CheckBox">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+    </Style>
+
+    <Style Selector="RadioButton">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+    </Style>
+
+    <Style Selector="Label">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
+    </Style>
+
+    <!-- =========================== -->
+    <!-- Editor Panel Styles         -->
+    <!-- =========================== -->
+    
+    <!-- Base panel style for left/right sidebars -->
+    <Style Selector="Border.editor-side-panel">
+        <Setter Property="Background" Value="{DynamicResource EditorPanelBackground}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource EditorPanelBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="Padding" Value="16"/>
+    </Style>
+
+    <!-- Header/Title bar panel style -->
+    <Style Selector="Border.editor-header-panel">
+        <Setter Property="Background" Value="{DynamicResource EditorPanelSecondaryBackground}"/>
+        <Setter Property="CornerRadius" Value="8,8,0,0"/>
+        <Setter Property="Padding" Value="16,12"/>
+    </Style>
+
+    <!-- Footer/Action bar panel style -->
+    <Style Selector="Border.editor-footer-panel">
+        <Setter Property="Background" Value="{DynamicResource EditorPanelSecondaryBackground}"/>
+        <Setter Property="CornerRadius" Value="0,0,8,8"/>
+        <Setter Property="Padding" Value="16,12"/>
+    </Style>
+
+    <!-- =========================== -->
+    <!-- Content Tile Style          -->
+    <!-- =========================== -->
+    
+    <Style Selector="Border.content-tile">
+        <Setter Property="Width" Value="{StaticResource TilePreferredWidth}"/>
+        <Setter Property="MinWidth" Value="{StaticResource TileMinWidth}"/>
+        <Setter Property="MaxWidth" Value="{StaticResource TileMaxWidth}"/>
+        <Setter Property="Height" Value="{StaticResource TilePreferredHeight}"/>
+        <Setter Property="Margin" Value="4"/>
+        <Setter Property="Padding" Value="8"/>
+        <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}"/>
+        <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorSecondaryBrush}"/>
+    </Style>
+
+    <!-- =========================== -->
+    <!-- Dialog Styles               -->
+    <!-- =========================== -->
+    
+    <Style Selector="Border.dialog-container">
+        <Setter Property="Background" Value="{DynamicResource EditorPanelBackground}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource EditorPanelBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="MinWidth" Value="{StaticResource DialogMinWidth}"/>
+        <Setter Property="MaxWidth" Value="{StaticResource DialogMaxWidth}"/>
+        <Setter Property="MinHeight" Value="{StaticResource DialogMinHeight}"/>
+        <Setter Property="MaxHeight" Value="{StaticResource DialogMaxHeight}"/>
+    </Style>
+
+    <!-- Large dialog variant -->
+    <Style Selector="Border.dialog-container-large">
+        <Setter Property="Background" Value="{DynamicResource EditorPanelBackground}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource EditorPanelBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="8"/>
+        <Setter Property="MinWidth" Value="800"/>
+        <Setter Property="MaxWidth" Value="1600"/>
+        <Setter Property="MinHeight" Value="500"/>
+        <Setter Property="MaxHeight" Value="1000"/>
+    </Style>
+
+</Styles>

@@ -670,10 +670,12 @@ public partial class JsonFormEditor : UserControl
 
         var comboBox = new ComboBox
         {
-            HorizontalAlignment = HorizontalAlignment.Stretch,
-            ItemsSource = missingProps.Select(FormatPropertyName).ToList(),
-            PlaceholderText = "Select property..."
+            HorizontalAlignment = HorizontalAlignment.Stretch
         };
+        foreach (var prop in missingProps)
+        {
+            comboBox.Items.Add(FormatPropertyName(prop));
+        }
         Grid.SetColumn(comboBox, 1);
         grid.Children.Add(comboBox);
 
@@ -695,9 +697,10 @@ public partial class JsonFormEditor : UserControl
 
         addButton.Click += (s, e) =>
         {
-            if (comboBox.SelectedIndex >= 0 && comboBox.SelectedIndex < missingProps.Count)
+            var selectedIndex = comboBox.SelectedIndex;
+            if (selectedIndex >= 0 && selectedIndex < missingProps.Count)
             {
-                var propName = missingProps[comboBox.SelectedIndex];
+                var propName = missingProps[selectedIndex];
                 var defaultValue = _schema?.CreateDefaultForProperty(propertyPath, propName);
                 obj[propName] = defaultValue ?? JsonValue.Create("");
                 ValueChanged?.Invoke();
