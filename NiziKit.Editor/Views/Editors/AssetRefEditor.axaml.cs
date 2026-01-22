@@ -24,8 +24,8 @@ public partial class AssetRefEditor : UserControl
     private ItemsControl? _packItemsControl;
 
     private bool _isUpdating;
-    private IReadOnlyList<string> _allPacks = Array.Empty<string>();
-    private IReadOnlyList<AssetInfo> _allAssets = Array.Empty<AssetInfo>();
+    private IReadOnlyList<string> _allPacks = [];
+    private IReadOnlyList<AssetInfo> _allAssets = [];
 
     public AssetRefType AssetType { get; set; }
     public AssetBrowserService? AssetBrowser { get; set; }

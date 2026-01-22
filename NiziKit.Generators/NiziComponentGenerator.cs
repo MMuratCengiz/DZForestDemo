@@ -525,8 +525,8 @@ public class NiziComponentGenerator : IIncrementalGenerator
         public string ClassName { get; set; } = "";
         public string TypeName { get; set; } = "";
         public bool GenerateFactory { get; set; }
-        public List<PropertyInfo> Properties { get; set; } = new();
-        public List<PartialPropertyInfo> PartialProperties { get; set; } = new();
+        public List<PropertyInfo> Properties { get; set; } = [];
+        public List<PartialPropertyInfo> PartialProperties { get; set; } = [];
     }
 
     private class PropertyInfo

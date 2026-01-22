@@ -4,7 +4,6 @@ using CommunityToolkit.Mvvm.Input;
 using NiziKit.Application.Timing;
 using NiziKit.Components;
 using NiziKit.Core;
-using NiziKit.Editor.Animation;
 using NiziKit.Editor.Gizmos;
 using NiziKit.Editor.Services;
 using NiziKit.Editor.Views.Editors;
@@ -66,17 +65,6 @@ public partial class EditorViewModel : ObservableObject
         foreach (var editor in _animationPreviewEditors)
         {
             editor.Update(deltaTime);
-        }
-    }
-
-    public IEnumerable<Animation.AnimationPreviewRenderer> GetActivePreviewRenderers()
-    {
-        foreach (var editor in _animationPreviewEditors)
-        {
-            if (editor.PreviewRenderer?.NeedsRender == true)
-            {
-                yield return editor.PreviewRenderer;
-            }
         }
     }
 

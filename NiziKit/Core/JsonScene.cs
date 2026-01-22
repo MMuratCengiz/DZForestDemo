@@ -13,7 +13,7 @@ namespace NiziKit.Core;
 
 public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension(jsonPath)), IAssetResolver
 {
-    private readonly List<AssetPack> _loadedPacks = new();
+    private readonly List<AssetPack> _loadedPacks = [];
 
     public override void Load()
     {

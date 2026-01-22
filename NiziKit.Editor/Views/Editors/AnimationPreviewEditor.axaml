@@ -7,27 +7,6 @@
             Padding="8"
             Margin="0,4">
         <StackPanel Spacing="8">
-            <!-- Preview Viewport -->
-            <Border x:Name="PreviewBorder"
-                    Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                    CornerRadius="4"
-                    Height="200"
-                    ClipToBounds="True">
-                <Grid>
-                    <!-- Placeholder when no preview is available -->
-                    <TextBlock x:Name="PlaceholderText"
-                               Text="Animation Preview"
-                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center"/>
-
-                    <!-- Preview image will be rendered here -->
-                    <Image x:Name="PreviewImage"
-                           Stretch="Uniform"
-                           IsVisible="False"/>
-                </Grid>
-            </Border>
-
             <!-- Animation Selection -->
             <ComboBox x:Name="AnimationComboBox"
                       HorizontalAlignment="Stretch"

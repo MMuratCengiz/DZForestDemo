@@ -25,8 +25,8 @@ public sealed partial class PhysicsWorld : IWorldEventListener, IDisposable
     private readonly Dictionary<BodyHandle, int> _bodyToId = new();
     private readonly Dictionary<StaticHandle, int> _staticToId = new();
     private readonly Dictionary<int, List<ConstraintHandle>> _constraintsByOwner = new();
-    private readonly List<ConstraintHandle> _allConstraints = new();
-    private readonly HashSet<(BodyHandle, BodyHandle)> _ignoredCollisionPairs = new();
+    private readonly List<ConstraintHandle> _allConstraints = [];
+    private readonly HashSet<(BodyHandle, BodyHandle)> _ignoredCollisionPairs = [];
     private readonly Dictionary<int, (GameObject Go, WheelColliderComponent Wheel)> _wheelColliders = new();
 
     private readonly CollisionPair[] _activeContactsBuffer = new CollisionPair[MaxTrackedContacts];

@@ -3,9 +3,6 @@ using System.Text.Json;
 
 namespace NiziKit.Core;
 
-/// <summary>
-/// Extension methods for parsing JsonElement values with defaults.
-/// </summary>
 public static class JsonElementExtensions
 {
     public static string GetStringOrDefault(this IReadOnlyDictionary<string, JsonElement>? properties, string key, string defaultValue = "")

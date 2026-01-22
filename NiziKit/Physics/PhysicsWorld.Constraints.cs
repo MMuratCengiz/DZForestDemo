@@ -14,7 +14,7 @@ public sealed partial class PhysicsWorld
         {
             if (!_constraintsByOwner.TryGetValue(ownerId.Value, out var list))
             {
-                list = new List<ConstraintHandle>();
+                list = [];
                 _constraintsByOwner[ownerId.Value] = list;
             }
             list.Add(handle);
@@ -31,7 +31,7 @@ public sealed partial class PhysicsWorld
         {
             if (!_constraintsByOwner.TryGetValue(ownerId.Value, out var list))
             {
-                list = new List<ConstraintHandle>();
+                list = [];
                 _constraintsByOwner[ownerId.Value] = list;
             }
             list.Add(handle);

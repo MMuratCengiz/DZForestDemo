@@ -2,20 +2,20 @@ using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using NiziKit.Animation;
-using NiziKit.Editor.Animation;
 using NiziKit.Editor.ViewModels;
 
 namespace NiziKit.Editor.Views.Editors;
 
 public partial class AnimationPreviewEditor : UserControl
 {
-    private AnimationPreviewRenderer? _previewRenderer;
     private Animator? _animator;
     private EditorViewModel? _editorViewModel;
-    private bool _isDraggingTimeline;
-    private SkiaTextureView? _textureView;
+    private bool _isPlaying;
+    private float _playbackSpeed = 1.0f;
+    private string? _currentAnimation;
 
-    public AnimationPreviewRenderer? PreviewRenderer => _previewRenderer;
+    public bool IsPlaying => _isPlaying;
+    public float PlaybackSpeed => _playbackSpeed;
 
     public AnimationPreviewEditor()
     {
@@ -30,70 +30,78 @@ public partial class AnimationPreviewEditor : UserControl
         if (animator == null)
         {
             _editorViewModel?.UnregisterAnimationPreview(this);
-            _previewRenderer?.Dispose();
-            _previewRenderer = null;
             AnimationComboBox.ItemsSource = null;
+            _isPlaying = false;
             return;
         }
 
-        _previewRenderer ??= new AnimationPreviewRenderer(256, 256);
-        _previewRenderer.SetPreviewTarget(animator.Owner);
+        if (!animator.IsInitialized)
+        {
+            animator.Initialize();
+        }
 
-        var animations = _previewRenderer.GetAvailableAnimations();
+        var animations = GetAvailableAnimations();
         AnimationComboBox.ItemsSource = animations;
 
         if (animations.Count > 0)
         {
-            AnimationComboBox.SelectedIndex = 0;
+            var defaultAnim = animator.DefaultAnimation;
+            var selectedIndex = 0;
+
+            if (!string.IsNullOrEmpty(defaultAnim))
+            {
+                for (var i = 0; i < animations.Count; i++)
+                {
+                    if (animations[i] == defaultAnim)
+                    {
+                        selectedIndex = i;
+                        break;
+                    }
+                }
+            }
+
+            AnimationComboBox.SelectedIndex = selectedIndex;
         }
 
-        SetupPreviewView();
         UpdateDurationText();
-
         _editorViewModel?.RegisterAnimationPreview(this);
     }
 
-    private void SetupPreviewView()
+    private IReadOnlyList<string> GetAvailableAnimations()
     {
-        if (_textureView != null || _previewRenderer == null)
+        if (_animator?.Skeleton == null)
         {
-            return;
+            return Array.Empty<string>();
         }
 
-        _textureView = new SkiaTextureView
-        {
-            SourceTexture = _previewRenderer.ColorTarget
-        };
-
-        var previewBorder = this.FindControl<Border>("PreviewBorder");
-        if (previewBorder?.Child is Grid grid)
-        {
-            grid.Children.Add(_textureView);
-            PlaceholderText.IsVisible = false;
-        }
+        return _animator.Skeleton.AnimationNames;
     }
 
     public void Update(float deltaTime)
     {
-        if (_previewRenderer == null)
+        if (_animator == null || !_isPlaying)
         {
             return;
         }
 
-        _previewRenderer.Update(deltaTime);
+        _animator.Update(deltaTime * _playbackSpeed);
+        UpdateTimelineFromAnimator();
+    }
 
-        if (!_isDraggingTimeline && _previewRenderer.IsPlaying)
+    private void UpdateTimelineFromAnimator()
+    {
+        if (_animator == null)
         {
-            TimelineSlider.Value = _previewRenderer.GetNormalizedTime();
-            UpdateCurrentTimeText();
+            return;
         }
 
-        _textureView?.InvalidateVisual();
+        TimelineSlider.Value = _animator.GetCurrentStateNormalizedTime();
+        UpdateCurrentTimeText();
     }
 
     private void OnAnimationSelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (_previewRenderer == null)
+        if (_animator == null)
         {
             return;
         }
@@ -104,40 +112,38 @@ public partial class AnimationPreviewEditor : UserControl
             return;
         }
 
-        _previewRenderer.PlayAnimation(selectedAnimation);
+        _currentAnimation = selectedAnimation;
+        _animator.Play(selectedAnimation);
+        _isPlaying = true;
+
         UpdateDurationText();
         UpdatePlayPauseButton();
     }
 
     private void OnTimelineValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
     {
-        if (_isDraggingTimeline)
-        {
-            UpdateCurrentTimeText();
-        }
+        UpdateCurrentTimeText();
     }
 
     private void OnPlayPauseClicked(object? sender, RoutedEventArgs e)
     {
-        if (_previewRenderer == null)
+        if (_animator == null)
         {
             return;
         }
 
-        if (_previewRenderer.IsPlaying)
+        if (_isPlaying)
         {
-            _previewRenderer.Pause();
+            _isPlaying = false;
         }
         else
         {
-            if (_previewRenderer.CurrentAnimation == null && AnimationComboBox.SelectedItem is string anim)
+            if (_currentAnimation == null && AnimationComboBox.SelectedItem is string anim)
             {
-                _previewRenderer.PlayAnimation(anim);
+                _currentAnimation = anim;
+                _animator.Play(anim);
             }
-            else
-            {
-                _previewRenderer.Resume();
-            }
+            _isPlaying = true;
         }
 
         UpdatePlayPauseButton();
@@ -145,12 +151,16 @@ public partial class AnimationPreviewEditor : UserControl
 
     private void OnStopClicked(object? sender, RoutedEventArgs e)
     {
-        if (_previewRenderer == null)
+        if (_animator == null)
         {
             return;
         }
 
-        _previewRenderer.Stop();
+        _isPlaying = false;
+        if (_currentAnimation != null)
+        {
+            _animator.Play(_currentAnimation);
+        }
         TimelineSlider.Value = 0;
         UpdatePlayPauseButton();
         UpdateCurrentTimeText();
@@ -158,39 +168,26 @@ public partial class AnimationPreviewEditor : UserControl
 
     private void OnSpeedValueChanged(object? sender, RangeBaseValueChangedEventArgs e)
     {
-        if (_previewRenderer == null)
-        {
-            return;
-        }
-
-        _previewRenderer.PlaybackSpeed = (float)SpeedSlider.Value;
+        _playbackSpeed = (float)SpeedSlider.Value;
         SpeedText.Text = $"{SpeedSlider.Value:F1}x";
     }
 
     private void UpdatePlayPauseButton()
     {
-        PlayPauseButton.Content = _previewRenderer?.IsPlaying == true ? "Pause" : "Play";
+        PlayPauseButton.Content = _isPlaying ? "Pause" : "Play";
     }
 
     private void UpdateDurationText()
     {
-        if (_previewRenderer == null)
-        {
-            return;
-        }
-
-        var duration = _previewRenderer.GetAnimationDuration();
+        var state = _animator?.GetCurrentState();
+        var duration = state?.Clip?.Duration ?? 1f;
         DurationText.Text = FormatTime(duration);
     }
 
     private void UpdateCurrentTimeText()
     {
-        if (_previewRenderer == null)
-        {
-            return;
-        }
-
-        var duration = _previewRenderer.GetAnimationDuration();
+        var state = _animator?.GetCurrentState();
+        var duration = state?.Clip?.Duration ?? 1f;
         var currentTime = (float)TimelineSlider.Value * duration;
         CurrentTimeText.Text = FormatTime(currentTime);
     }
@@ -206,7 +203,6 @@ public partial class AnimationPreviewEditor : UserControl
     {
         base.OnUnloaded(e);
         _editorViewModel?.UnregisterAnimationPreview(this);
-        _previewRenderer?.Dispose();
-        _previewRenderer = null;
+        _isPlaying = false;
     }
 }

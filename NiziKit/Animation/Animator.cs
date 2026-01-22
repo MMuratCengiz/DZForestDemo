@@ -46,6 +46,7 @@ public partial class Animator : IDisposable
 
     public int BoneCount { get; private set; }
     public ReadOnlySpan<Matrix4x4> BoneMatrices => _boneMatrices.AsSpan(0, BoneCount);
+    public bool IsInitialized => _initialized;
 
     public Animator()
     {

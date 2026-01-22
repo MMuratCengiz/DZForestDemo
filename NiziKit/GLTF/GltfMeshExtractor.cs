@@ -77,7 +77,7 @@ public static class GltfMeshExtractor
             {
                 if (!attributeData.ContainsKey(attrName))
                 {
-                    attributeData[attrName] = new List<byte>();
+                    attributeData[attrName] = [];
                 }
 
                 ExtractAttributeData(document, accessorIndex, attrName, vertexCount, convertToLeftHanded, attributeData[attrName]);
@@ -87,7 +87,7 @@ public static class GltfMeshExtractor
             {
                 if (!attributeData.ContainsKey("NORMAL"))
                 {
-                    attributeData["NORMAL"] = new List<byte>();
+                    attributeData["NORMAL"] = [];
                 }
                 GenerateDefaultNormals(vertexCount, attributeData["NORMAL"]);
             }
@@ -96,7 +96,7 @@ public static class GltfMeshExtractor
             {
                 if (!attributeData.ContainsKey("TANGENT"))
                 {
-                    attributeData["TANGENT"] = new List<byte>();
+                    attributeData["TANGENT"] = [];
                 }
 
                 var normalBytes = attributeData.GetValueOrDefault("NORMAL");

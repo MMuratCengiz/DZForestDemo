@@ -22,8 +22,8 @@ public partial class AssetPickerDialog : UserControl
 
     private AssetBrowserService? _assetBrowser;
     private AssetRefType _assetType;
-    private IReadOnlyList<string> _allPacks = Array.Empty<string>();
-    private IReadOnlyList<AssetInfo> _allAssets = Array.Empty<AssetInfo>();
+    private IReadOnlyList<string> _allPacks = [];
+    private IReadOnlyList<AssetInfo> _allAssets = [];
     private AssetInfo? _selectedAsset;
     private string? _initialPack;
     private string? _initialAssetName;
