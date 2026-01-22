@@ -305,7 +305,7 @@ public partial class EditorViewModel : ObservableObject
     private string _gizmoModeText = "Move (W)";
 
     private float _statsUpdateTimer;
-    private const float StatsUpdateInterval = 1.0f;
+    private const float StatsUpdateInterval = 0.25f;
 
     public event Action? ViewPresetChanged;
     public event Action? ProjectionModeChanged;
