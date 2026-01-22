@@ -104,52 +104,52 @@ public static class VertexPacker
         switch (attr.Semantic)
         {
             case "POSITION":
-            {
-                var value = Vector3.Zero;
-                MemoryMarshal.Write(dest[offset..], in value);
-                break;
-            }
+                {
+                    var value = Vector3.Zero;
+                    MemoryMarshal.Write(dest[offset..], in value);
+                    break;
+                }
             case "NORMAL":
-            {
-                var value = Vector3.UnitY;
-                MemoryMarshal.Write(dest[offset..], in value);
-                break;
-            }
+                {
+                    var value = Vector3.UnitY;
+                    MemoryMarshal.Write(dest[offset..], in value);
+                    break;
+                }
             case "TANGENT":
-            {
-                var value = new Vector4(1, 0, 0, 1);
-                MemoryMarshal.Write(dest[offset..], in value);
-                break;
-            }
+                {
+                    var value = new Vector4(1, 0, 0, 1);
+                    MemoryMarshal.Write(dest[offset..], in value);
+                    break;
+                }
             case "TEXCOORD":
-            {
-                var value = Vector2.Zero;
-                MemoryMarshal.Write(dest[offset..], in value);
-                break;
-            }
+                {
+                    var value = Vector2.Zero;
+                    MemoryMarshal.Write(dest[offset..], in value);
+                    break;
+                }
             case "COLOR":
-            {
-                var value = Vector4.One;
-                MemoryMarshal.Write(dest[offset..], in value);
-                break;
-            }
+                {
+                    var value = Vector4.One;
+                    MemoryMarshal.Write(dest[offset..], in value);
+                    break;
+                }
             case "BLENDWEIGHT":
-            {
-                var value = new Vector4(1, 0, 0, 0);
-                MemoryMarshal.Write(dest[offset..], in value);
-                break;
-            }
+                {
+                    var value = new Vector4(1, 0, 0, 0);
+                    MemoryMarshal.Write(dest[offset..], in value);
+                    break;
+                }
             case "BLENDINDICES":
-            {
-                var value = new UInt4 { X = 0, Y = 0, Z = 0, W = 0 };
-                MemoryMarshal.Write(dest[offset..], in value);
-                break;
-            }
+                {
+                    var value = new UInt4 { X = 0, Y = 0, Z = 0, W = 0 };
+                    MemoryMarshal.Write(dest[offset..], in value);
+                    break;
+                }
             default:
-            {
-                dest.Slice(offset, attr.SizeInBytes).Clear();
-                break;
-            }
+                {
+                    dest.Slice(offset, attr.SizeInBytes).Clear();
+                    break;
+                }
         }
     }
 

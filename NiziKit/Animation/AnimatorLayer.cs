@@ -47,7 +47,7 @@ public class AnimatorLayer
 
     public void SetBoneMask(params int[] boneIndices)
     {
-        BoneMask = [..boneIndices];
+        BoneMask = [.. boneIndices];
     }
 
     public void ClearBoneMask()

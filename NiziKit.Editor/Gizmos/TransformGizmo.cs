@@ -201,84 +201,84 @@ public class TransformGizmo
         switch (Mode)
         {
             case GizmoMode.Translate:
-            {
-                if (TryHitPlane(ray, origin, axisX, axisY, scale, out var distXY) && distXY < closestDist)
                 {
-                    closestDist = distXY;
-                    closestAxis = GizmoAxis.XY;
-                }
-                if (TryHitPlane(ray, origin, axisX, axisZ, scale, out var distXZ) && distXZ < closestDist)
-                {
-                    closestDist = distXZ;
-                    closestAxis = GizmoAxis.XZ;
-                }
-                if (TryHitPlane(ray, origin, axisY, axisZ, scale, out var distYZ) && distYZ < closestDist)
-                {
-                    closestDist = distYZ;
-                    closestAxis = GizmoAxis.YZ;
-                }
+                    if (TryHitPlane(ray, origin, axisX, axisY, scale, out var distXY) && distXY < closestDist)
+                    {
+                        closestDist = distXY;
+                        closestAxis = GizmoAxis.XY;
+                    }
+                    if (TryHitPlane(ray, origin, axisX, axisZ, scale, out var distXZ) && distXZ < closestDist)
+                    {
+                        closestDist = distXZ;
+                        closestAxis = GizmoAxis.XZ;
+                    }
+                    if (TryHitPlane(ray, origin, axisY, axisZ, scale, out var distYZ) && distYZ < closestDist)
+                    {
+                        closestDist = distYZ;
+                        closestAxis = GizmoAxis.YZ;
+                    }
 
-                if (TryHitAxisLine(ray, origin, axisX, scale, out var distX) && distX < closestDist)
-                {
-                    closestDist = distX;
-                    closestAxis = GizmoAxis.X;
+                    if (TryHitAxisLine(ray, origin, axisX, scale, out var distX) && distX < closestDist)
+                    {
+                        closestDist = distX;
+                        closestAxis = GizmoAxis.X;
+                    }
+                    if (TryHitAxisLine(ray, origin, axisY, scale, out var distY) && distY < closestDist)
+                    {
+                        closestDist = distY;
+                        closestAxis = GizmoAxis.Y;
+                    }
+                    if (TryHitAxisLine(ray, origin, axisZ, scale, out var distZ) && distZ < closestDist)
+                    {
+                        closestDist = distZ;
+                        closestAxis = GizmoAxis.Z;
+                    }
+                    break;
                 }
-                if (TryHitAxisLine(ray, origin, axisY, scale, out var distY) && distY < closestDist)
-                {
-                    closestDist = distY;
-                    closestAxis = GizmoAxis.Y;
-                }
-                if (TryHitAxisLine(ray, origin, axisZ, scale, out var distZ) && distZ < closestDist)
-                {
-                    closestDist = distZ;
-                    closestAxis = GizmoAxis.Z;
-                }
-                break;
-            }
             case GizmoMode.Rotate:
-            {
-                if (TryHitRing(ray, origin, axisX, scale, out var distX) && distX < closestDist)
                 {
-                    closestDist = distX;
-                    closestAxis = GizmoAxis.X;
+                    if (TryHitRing(ray, origin, axisX, scale, out var distX) && distX < closestDist)
+                    {
+                        closestDist = distX;
+                        closestAxis = GizmoAxis.X;
+                    }
+                    if (TryHitRing(ray, origin, axisY, scale, out var distY) && distY < closestDist)
+                    {
+                        closestDist = distY;
+                        closestAxis = GizmoAxis.Y;
+                    }
+                    if (TryHitRing(ray, origin, axisZ, scale, out var distZ) && distZ < closestDist)
+                    {
+                        closestDist = distZ;
+                        closestAxis = GizmoAxis.Z;
+                    }
+                    break;
                 }
-                if (TryHitRing(ray, origin, axisY, scale, out var distY) && distY < closestDist)
-                {
-                    closestDist = distY;
-                    closestAxis = GizmoAxis.Y;
-                }
-                if (TryHitRing(ray, origin, axisZ, scale, out var distZ) && distZ < closestDist)
-                {
-                    closestDist = distZ;
-                    closestAxis = GizmoAxis.Z;
-                }
-                break;
-            }
             case GizmoMode.Scale:
-            {
-                if (TryHitCenterBox(ray, origin, scale, out var distCenter) && distCenter < closestDist)
                 {
-                    closestDist = distCenter;
-                    closestAxis = GizmoAxis.All;
-                }
+                    if (TryHitCenterBox(ray, origin, scale, out var distCenter) && distCenter < closestDist)
+                    {
+                        closestDist = distCenter;
+                        closestAxis = GizmoAxis.All;
+                    }
 
-                if (TryHitAxisLine(ray, origin, axisX, scale, out var distX) && distX < closestDist)
-                {
-                    closestDist = distX;
-                    closestAxis = GizmoAxis.X;
+                    if (TryHitAxisLine(ray, origin, axisX, scale, out var distX) && distX < closestDist)
+                    {
+                        closestDist = distX;
+                        closestAxis = GizmoAxis.X;
+                    }
+                    if (TryHitAxisLine(ray, origin, axisY, scale, out var distY) && distY < closestDist)
+                    {
+                        closestDist = distY;
+                        closestAxis = GizmoAxis.Y;
+                    }
+                    if (TryHitAxisLine(ray, origin, axisZ, scale, out var distZ) && distZ < closestDist)
+                    {
+                        closestDist = distZ;
+                        closestAxis = GizmoAxis.Z;
+                    }
+                    break;
                 }
-                if (TryHitAxisLine(ray, origin, axisY, scale, out var distY) && distY < closestDist)
-                {
-                    closestDist = distY;
-                    closestAxis = GizmoAxis.Y;
-                }
-                if (TryHitAxisLine(ray, origin, axisZ, scale, out var distZ) && distZ < closestDist)
-                {
-                    closestDist = distZ;
-                    closestAxis = GizmoAxis.Z;
-                }
-                break;
-            }
         }
 
         return closestAxis;

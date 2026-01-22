@@ -92,7 +92,9 @@ public sealed class GizmoPass : IDisposable
 
         var vertices = new GizmoVertex[UnitCubeVertexCount];
         for (var i = 0; i < UnitCubeVertexCount; i++)
+        {
             vertices[i] = new GizmoVertex(corners[BoxEdges[i]], GizmoGeometry.SelectionBoxColor);
+        }
 
         var bufferSize = (uint)(Marshal.SizeOf<GizmoVertex>() * UnitCubeVertexCount);
         var buffer = GraphicsContext.Device.CreateBuffer(new BufferDesc
@@ -402,16 +404,22 @@ public sealed class GizmoPass : IDisposable
         for (var m = 0; m < NumModes; m++)
         {
             for (var a = 0; a < NumAxes; a++)
+            {
                 _gizmoBuffers[m, a]?.Dispose();
+            }
         }
 
         _unitCubeBuffer.Dispose();
 
         foreach (var bindGroup in _gizmoBindGroups)
+        {
             bindGroup.Dispose();
+        }
 
         foreach (var bindGroup in _selectionBindGroups)
+        {
             bindGroup.Dispose();
+        }
 
         _gizmoConstantBuffer.Dispose();
         _selectionConstantBuffer.Dispose();

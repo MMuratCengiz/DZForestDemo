@@ -200,8 +200,16 @@ public partial class OrbitController
 
     private static float WrapAngle(float angle)
     {
-        while (angle > MathF.PI) angle -= MathF.PI * 2f;
-        while (angle < -MathF.PI) angle += MathF.PI * 2f;
+        while (angle > MathF.PI)
+        {
+            angle -= MathF.PI * 2f;
+        }
+
+        while (angle < -MathF.PI)
+        {
+            angle += MathF.PI * 2f;
+        }
+
         return angle;
     }
 }

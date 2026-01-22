@@ -181,7 +181,7 @@ public static class GltfSkeletonExtractor
                 ParentIndex = jointData.ParentIndex,
                 InverseBindMatrix = inverseBindMatrix,
                 LocalTransform = localTransform,
-                ChildIndices = [..jointData.ChildIndices]
+                ChildIndices = [.. jointData.ChildIndices]
             });
         }
 

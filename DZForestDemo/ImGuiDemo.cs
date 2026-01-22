@@ -140,16 +140,16 @@ public class ImGuiDemoWindow : IDisposable
 
         var frameIndex = _frameSync.NextFrame();
         var commandList = _frameSync.GetCommandList(frameIndex);
-        
+
         _imGuiRenderer.NewFrame((uint)_viewport.Width, (uint)_viewport.Height, (float)_stepTimer.GetDeltaTime());
         BuildImGuiUi();
 
-        
+
         commandList.Begin();
-        
+
         var image = _frameSync.AcquireNextImage();
         var renderTarget = _swapChain.GetRenderTarget(image);
-        
+
         _resourceTracking.TransitionTexture(commandList, renderTarget,
             (uint)ResourceUsageFlagBits.RenderTarget, QueueType.Graphics);
 

@@ -146,7 +146,7 @@ public sealed class DenOfIzTopLevel : EmbeddableControlRoot
     {
         var point = new Point(x, y);
         var hit = this.InputHitTest(point);
-        
+
         if (hit == null || hit == this)
         {
             return false;

@@ -18,7 +18,7 @@ public class ForwardRenderer : IRenderer
     private uint _height;
 
     private readonly UiBuildCallback? _uiBuildCallback;
-    
+
     public ForwardRenderer(UiBuildCallback? uiBuildCallback = null)
     {
         _renderFrame = new RenderFrame();
@@ -46,7 +46,7 @@ public class ForwardRenderer : IRenderer
         {
             return;
         }
-        
+
         _viewData.Scene = scene;
         _viewData.DeltaTime = Time.DeltaTime;
         _viewData.TotalTime = Time.TotalTime;

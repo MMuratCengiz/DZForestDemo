@@ -17,7 +17,7 @@ public sealed partial class PhysicsWorld
             UpdateWheelCollider(entry.Wheel, dt);
         }
     }
-    
+
     private void UpdateWheelCollider(WheelColliderComponent wheel, float dt)
     {
         if (!wheel.WheelBodyHandle.HasValue || !wheel.MotorConstraint.HasValue || !wheel.HingeConstraint.HasValue)

@@ -33,7 +33,7 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 
     private void HandleInput()
     {
-        
+
     }
 
     protected override void FixedUpdate(float fixedDt)

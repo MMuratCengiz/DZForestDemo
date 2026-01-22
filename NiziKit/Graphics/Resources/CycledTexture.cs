@@ -7,7 +7,7 @@ public partial class CycledTexture : IDisposable
 {
     private readonly TextureDesc _textureDesc;
     private readonly List<Texture> _textures = [];
-    
+
     public CycledTexture(TextureDesc textureDesc)
     {
         _textureDesc = textureDesc;
@@ -17,8 +17,8 @@ public partial class CycledTexture : IDisposable
             GraphicsContext.ResourceTracking.TrackTexture(_textures[i], QueueType.Graphics);
         }
     }
-    
-    public Texture this[int index]  => _textures[index];
+
+    public Texture this[int index] => _textures[index];
     public uint Width => _textureDesc.Width;
     public uint Height => _textureDesc.Height;
     public Format Format => _textureDesc.Format;

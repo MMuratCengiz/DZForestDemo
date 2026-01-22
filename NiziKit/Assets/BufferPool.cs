@@ -81,7 +81,7 @@ public sealed class BufferPool(LogicalDevice device, uint usages, ulong blockSiz
                 return false;
             }
 
-            view = new GpuBufferView{ Buffer = _buffer, Offset = alignedOffset, NumBytes = numBytes};
+            view = new GpuBufferView { Buffer = _buffer, Offset = alignedOffset, NumBytes = numBytes };
             _offset = alignedOffset + numBytes;
             return true;
         }

@@ -17,7 +17,7 @@ public sealed class UniformBufferArena : IDisposable
         public IntPtr Data;
         public int Offset;
     }
-    
+
     private const uint BufferChunkSize = 65536;
     private const int ConstantBufferAlignment = 256;
     private readonly List<Chunk> _chunks = [];
@@ -45,7 +45,7 @@ public sealed class UniformBufferArena : IDisposable
 
         var offset = (uint)alignedOffset;
         chunk.Offset = alignedOffset + size;
-        return new GpuBufferView{ Buffer = chunk.Buffer, NumBytes = (uint)size, Offset = offset};
+        return new GpuBufferView { Buffer = chunk.Buffer, NumBytes = (uint)size, Offset = offset };
     }
 
     private static int AlignUp(int value, int alignment)

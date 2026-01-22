@@ -46,13 +46,13 @@ public sealed class GltfInspectionResult
         IReadOnlyList<GltfMaterialInfo> materials,
         bool hasAnimations,
         bool hasSkins) => new()
-    {
-        Success = true,
-        Meshes = meshes,
-        Materials = materials,
-        HasAnimations = hasAnimations,
-        HasSkins = hasSkins
-    };
+        {
+            Success = true,
+            Meshes = meshes,
+            Materials = materials,
+            HasAnimations = hasAnimations,
+            HasSkins = hasSkins
+        };
 }
 
 public sealed class GltfInspector

@@ -815,18 +815,18 @@ float4 main(PSInput input) : SV_TARGET
 
             case EventType.MouseButtonDown:
             case EventType.MouseButtonUp:
-            {
-                io.AddMousePosEvent(ev.MouseButton.X, ev.MouseButton.Y);
-
-                var mouseButton = ev.MouseButton.Button switch
                 {
-                    MouseButton.Left => 0,
-                    MouseButton.Right => 1,
-                    MouseButton.Middle => 2,
-                    _ => 0
-                };
-                io.AddMouseButtonEvent(mouseButton, ev.Type == EventType.MouseButtonDown);
-            }
+                    io.AddMousePosEvent(ev.MouseButton.X, ev.MouseButton.Y);
+
+                    var mouseButton = ev.MouseButton.Button switch
+                    {
+                        MouseButton.Left => 0,
+                        MouseButton.Right => 1,
+                        MouseButton.Middle => 2,
+                        _ => 0
+                    };
+                    io.AddMouseButtonEvent(mouseButton, ev.Type == EventType.MouseButtonDown);
+                }
                 break;
 
             case EventType.MouseWheel:
@@ -835,13 +835,13 @@ float4 main(PSInput input) : SV_TARGET
 
             case EventType.KeyDown:
             case EventType.KeyUp:
-            {
-                var key = KeyCodeToImGuiKey(ev.Key.KeyCode);
-                if (key != ImGuiKey.None)
                 {
-                    io.AddKeyEvent(key, ev.Type == EventType.KeyDown);
+                    var key = KeyCodeToImGuiKey(ev.Key.KeyCode);
+                    if (key != ImGuiKey.None)
+                    {
+                        io.AddKeyEvent(key, ev.Type == EventType.KeyDown);
+                    }
                 }
-            }
                 break;
 
             case EventType.TextInput:

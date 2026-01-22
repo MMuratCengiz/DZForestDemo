@@ -743,7 +743,7 @@ public sealed class Assets : IDisposable
             skeleton.Dispose();
         }
 
-        _skeletonCache.Clear(); 
+        _skeletonCache.Clear();
 
         foreach (var mesh in _meshCache.Values)
         {

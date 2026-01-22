@@ -1,4 +1,4 @@
-﻿using NiziKit.Assets;
+using NiziKit.Assets;
 using NiziKit.ContentPipeline;
 using NiziKit.Graphics.Binding;
 

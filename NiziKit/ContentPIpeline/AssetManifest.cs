@@ -25,7 +25,7 @@ public sealed class ManifestOptions
     ];
 
     public List<string> Includes { get; set; } = ["**/*"];
-    public List<string> Excludes { get; set; } = [..DefaultExcludes];
+    public List<string> Excludes { get; set; } = [.. DefaultExcludes];
     public List<string> ForceIncludes { get; set; } = [];
 
     public static ManifestOptions LoadFromDirectory(string directory)

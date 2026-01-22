@@ -10,6 +10,6 @@ public interface IAsset : IDisposable
 
     public void Load(GraphicsContext context, byte[] bytes)
     {
-        
+
     }
 }

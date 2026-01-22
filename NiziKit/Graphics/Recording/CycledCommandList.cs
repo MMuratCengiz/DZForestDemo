@@ -5,8 +5,8 @@ namespace NiziKit.Graphics.Recording;
 public class CycledCommandList : IDisposable
 {
     private readonly CommandListPool _commandListPool;
-    private readonly CommandList[]  _commandLists;
-    
+    private readonly CommandList[] _commandLists;
+
     public CycledCommandList(QueueType queueType)
     {
         var poolDesc = new CommandListPoolDesc
@@ -27,11 +27,11 @@ public class CycledCommandList : IDisposable
             default:
                 throw new ArgumentOutOfRangeException(nameof(queueType), queueType, null);
         }
-        
+
         _commandListPool = GraphicsContext.Device.CreateCommandListPool(poolDesc);
         _commandLists = _commandListPool.GetCommandLists().ToArray();
     }
-    
+
     public CommandList this[int index] => _commandLists[index];
 
     public void Dispose()

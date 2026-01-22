@@ -354,7 +354,7 @@ public partial class RenderFrame : IDisposable
 
         GraphicsContext.SwapChain.Present((uint)_currentFrame);
     }
-    
+
     public void Present(CycledTexture sourceTexture)
     {
         Present(sourceTexture[GraphicsContext.FrameIndex]);
