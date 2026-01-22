@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using NiziKit.Assets;
 using NiziKit.Assets.Serde;
 using NiziKit.ContentPipeline;
@@ -12,10 +13,10 @@ public sealed class AssetPack : IDisposable
     public string Version { get; private set; } = "1.0.0";
     public string SourcePath { get; private set; } = string.Empty;
 
-    private readonly Dictionary<string, Texture2d> _textures = new();
-    private readonly Dictionary<string, Graphics.GpuShader> _shaders = new();
-    private readonly Dictionary<string, Material> _materials = new();
-    private readonly Dictionary<string, Model> _models = new();
+    private readonly ConcurrentDictionary<string, Texture2d> _textures = new();
+    private readonly ConcurrentDictionary<string, Graphics.GpuShader> _shaders = new();
+    private readonly ConcurrentDictionary<string, Material> _materials = new();
+    private readonly ConcurrentDictionary<string, Model> _models = new();
 
     private IAssetPackProvider? _provider;
     private string _basePath = string.Empty;
@@ -137,10 +138,12 @@ public sealed class AssetPack : IDisposable
         Name = definition.Name;
         Version = definition.Version;
 
-        LoadTextures(definition.Textures);
-        LoadShaders(definition.Shaders);
-        LoadMaterials(definition.Materials);
-        LoadModels(definition.Models);
+        Parallel.Invoke(
+            () => LoadTextures(definition.Textures),
+            () => LoadShaders(definition.Shaders),
+            () => LoadMaterials(definition.Materials),
+            () => LoadModels(definition.Models)
+        );
     }
 
     private async Task ApplyDefinitionAsync(AssetPackJson definition, CancellationToken ct)
@@ -158,11 +161,11 @@ public sealed class AssetPack : IDisposable
 
     private void LoadTextures(Dictionary<string, string> textureDefs)
     {
-        foreach (var (key, path) in textureDefs)
+        Parallel.ForEach(textureDefs, kvp =>
         {
-            var texture = Assets.Assets.LoadTexture(path);
-            _textures[key] = texture;
-        }
+            var texture = Assets.Assets.LoadTexture(kvp.Value);
+            _textures[kvp.Key] = texture;
+        });
     }
 
     private async Task LoadTexturesAsync(Dictionary<string, string> textureDefs, CancellationToken ct)
@@ -181,11 +184,11 @@ public sealed class AssetPack : IDisposable
 
     private void LoadShaders(Dictionary<string, string> shaderDefs)
     {
-        foreach (var (key, path) in shaderDefs)
+        Parallel.ForEach(shaderDefs, kvp =>
         {
-            var shader = Assets.Assets.LoadShaderFromJson(path);
-            _shaders[key] = shader;
-        }
+            var shader = Assets.Assets.LoadShaderFromJson(kvp.Value);
+            _shaders[kvp.Key] = shader;
+        });
     }
 
     private async Task LoadShadersAsync(Dictionary<string, string> shaderDefs, CancellationToken ct)
@@ -204,11 +207,11 @@ public sealed class AssetPack : IDisposable
 
     private void LoadMaterials(Dictionary<string, string> materialDefs)
     {
-        foreach (var (key, path) in materialDefs)
+        Parallel.ForEach(materialDefs, kvp =>
         {
-            var material = Assets.Assets.LoadMaterial(path);
-            _materials[key] = material;
-        }
+            var material = Assets.Assets.LoadMaterial(kvp.Value);
+            _materials[kvp.Key] = material;
+        });
     }
 
     private async Task LoadMaterialsAsync(Dictionary<string, string> materialDefs, CancellationToken ct)
@@ -227,11 +230,11 @@ public sealed class AssetPack : IDisposable
 
     private void LoadModels(Dictionary<string, string> modelDefs)
     {
-        foreach (var (key, path) in modelDefs)
+        Parallel.ForEach(modelDefs, kvp =>
         {
-            var model = Assets.Assets.LoadModel(path);
-            _models[key] = model;
-        }
+            var model = Assets.Assets.LoadModel(kvp.Value);
+            _models[kvp.Key] = model;
+        });
     }
 
     private async Task LoadModelsAsync(Dictionary<string, string> modelDefs, CancellationToken ct)

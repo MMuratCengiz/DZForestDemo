@@ -13,6 +13,7 @@ public partial class GenericComponentView : UserControl
 {
     private ItemsControl? _propertiesControl;
     private AssetBrowserService? _assetBrowser;
+    private EditorViewModel? _editorViewModel;
 
     public GenericComponentView()
     {
@@ -31,8 +32,8 @@ public partial class GenericComponentView : UserControl
 
         if (DataContext is ComponentViewModel vm && _propertiesControl != null)
         {
-            // Get the AssetBrowserService from the EditorViewModel
             _assetBrowser = vm.Owner?.Editor?.AssetBrowser;
+            _editorViewModel = vm.Owner?.Editor;
             BuildPropertyControls(vm.Component);
         }
     }
@@ -100,6 +101,7 @@ public partial class GenericComponentView : UserControl
             Instance = component,
             Property = prop,
             AssetBrowser = _assetBrowser,
+            EditorViewModel = _editorViewModel,
             OnValueChanged = () => component.Owner?.NotifyComponentChanged(component)
         };
 

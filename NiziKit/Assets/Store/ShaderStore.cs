@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -10,8 +11,8 @@ namespace NiziKit.Assets.Store;
 
 public class ShaderStore : IDisposable
 {
-    private readonly Dictionary<string, GpuShader> _shaderCache = new();
-    private readonly Dictionary<string, ShaderProgram> _programCache = new();
+    private readonly ConcurrentDictionary<string, GpuShader> _shaderCache = new();
+    private readonly ConcurrentDictionary<string, ShaderProgram> _programCache = new();
     private readonly string _diskCacheDir;
 
     public ShaderStore(string? diskCacheDirectory = null)
@@ -24,7 +25,7 @@ public class ShaderStore : IDisposable
 
     public void Register(string key, GpuShader shader)
     {
-        _shaderCache[key] = shader;
+        _shaderCache.TryAdd(key, shader);
     }
 
     public GpuShader? Get(string baseName, IReadOnlyDictionary<string, string?>? variants)
@@ -46,7 +47,7 @@ public class ShaderStore : IDisposable
 
     public void RegisterProgram(string key, ShaderProgram program)
     {
-        _programCache[key] = program;
+        _programCache.TryAdd(key, program);
     }
 
     public ShaderProgram? TryLoadFromDisk(string cacheKey)

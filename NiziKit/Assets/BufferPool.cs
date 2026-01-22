@@ -10,35 +10,42 @@ public sealed class BufferPool(LogicalDevice device, uint usages, ulong blockSiz
     : IDisposable
 {
     private readonly List<BufferBlock> _blocks = [];
+    private readonly Lock _lock = new();
 
     public void Dispose()
     {
-        foreach (var block in _blocks)
+        lock (_lock)
         {
-            block.Dispose();
-        }
+            foreach (var block in _blocks)
+            {
+                block.Dispose();
+            }
 
-        _blocks.Clear();
+            _blocks.Clear();
+        }
     }
 
     public GpuBufferView Allocate(uint size, uint alignment = 16)
     {
         size = AlignUp(size, alignment);
 
-        var blocks = CollectionsMarshal.AsSpan(_blocks);
-        for (var i = 0; i < blocks.Length; i++)
+        lock (_lock)
         {
-            if (blocks[i].TryAllocate(size, alignment, out var view))
+            var blocks = CollectionsMarshal.AsSpan(_blocks);
+            for (var i = 0; i < blocks.Length; i++)
             {
-                return view;
+                if (blocks[i].TryAllocate(size, alignment, out var view))
+                {
+                    return view;
+                }
             }
+
+            var newBlockSize = Math.Max(blockSize, size);
+            var newBlock = new BufferBlock(device, usages, newBlockSize);
+            _blocks.Add(newBlock);
+
+            return newBlock.TryAllocate(size, alignment, out var newView) ? newView : new GpuBufferView();
         }
-
-        var newBlockSize = Math.Max(blockSize, size);
-        var newBlock = new BufferBlock(device, usages, newBlockSize);
-        _blocks.Add(newBlock);
-
-        return newBlock.TryAllocate(size, alignment, out var newView) ? newView : new GpuBufferView();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

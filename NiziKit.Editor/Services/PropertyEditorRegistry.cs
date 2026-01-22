@@ -3,30 +3,25 @@ using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using NiziKit.Components;
+using NiziKit.Editor.ViewModels;
 
 namespace NiziKit.Editor.Services;
 
-/// <summary>
-/// Context passed to property editor factories containing all information needed to create an editor.
-/// </summary>
 public class PropertyEditorContext
 {
     public required object Instance { get; init; }
     public required PropertyInfo Property { get; init; }
     public required Action OnValueChanged { get; init; }
     public AssetBrowserService? AssetBrowser { get; init; }
+    public EditorViewModel? EditorViewModel { get; init; }
 }
 
-/// <summary>
-/// Central registry that maps property types and attributes to editor factory functions.
-/// </summary>
 public static class PropertyEditorRegistry
 {
     private static readonly Dictionary<Type, Func<PropertyEditorContext, Control>> TypeEditors = new();
 
     static PropertyEditorRegistry()
     {
-        // Register built-in type editors
         RegisterTypeEditor(typeof(string), CreateStringEditor);
         RegisterTypeEditor(typeof(float), CreateFloatEditor);
         RegisterTypeEditor(typeof(double), CreateDoubleEditor);
@@ -45,39 +40,33 @@ public static class PropertyEditorRegistry
         var prop = context.Property;
         var propType = prop.PropertyType;
 
-        // Check for AssetRef attribute first (attribute-based takes priority)
         var assetRefAttr = prop.GetCustomAttribute<AssetRefAttribute>();
         if (assetRefAttr != null)
         {
             return CreateAssetRefEditor(context, assetRefAttr);
         }
 
-        // Check for enum types
         if (propType.IsEnum)
         {
             return CreateEnumEditor(context);
         }
 
-        // Check for registered type editors
         if (TypeEditors.TryGetValue(propType, out var factory))
         {
             return factory(context);
         }
 
-        // Check for nullable value types
         var underlyingType = Nullable.GetUnderlyingType(propType);
         if (underlyingType != null && TypeEditors.TryGetValue(underlyingType, out factory))
         {
             return factory(context);
         }
 
-        // Check for value types (structs) that aren't primitives
         if (propType.IsValueType && !propType.IsPrimitive && !propType.IsEnum)
         {
             return CreateStructEditor(context);
         }
 
-        // Fallback to read-only display
         return CreateReadOnlyEditor(context);
     }
 
@@ -269,6 +258,7 @@ public static class PropertyEditorRegistry
         {
             AssetType = assetRefAttr.AssetType,
             AssetBrowser = context.AssetBrowser,
+            EditorViewModel = context.EditorViewModel,
             CurrentAsset = context.Property.GetValue(context.Instance),
             IsReadOnly = !context.Property.CanWrite,
             OnAssetChanged = (newAsset, assetRef) =>

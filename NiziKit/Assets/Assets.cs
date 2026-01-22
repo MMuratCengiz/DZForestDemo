@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using DenOfIz;
 using NiziKit.Assets.Serde;
@@ -14,17 +15,18 @@ public sealed class Assets : IDisposable
     private readonly BufferPool _vertexPool;
     private readonly BufferPool _indexPool;
 
-    private readonly Dictionary<string, Model> _modelCache = new();
-    private readonly Dictionary<string, Texture2d> _textureCache = new();
-    private readonly Dictionary<string, Skeleton> _skeletonCache = new();
-    private readonly Dictionary<string, Mesh> _meshCache = new();
-    private readonly Dictionary<string, Material> _materialCache = new();
+    private readonly ConcurrentDictionary<string, Model> _modelCache = new();
+    private readonly ConcurrentDictionary<string, Texture2d> _textureCache = new();
+    private readonly ConcurrentDictionary<string, Skeleton> _skeletonCache = new();
+    private readonly ConcurrentDictionary<string, Mesh> _meshCache = new();
+    private readonly ConcurrentDictionary<string, Material> _materialCache = new();
     private readonly ShaderStore _shaderStore = new();
     private ShaderBuilder? _shaderBuilder;
 
     private readonly List<Mesh> _meshList = [];
     private readonly List<Texture2d> _textureList = [];
     private readonly List<Material> _materialList = [];
+    private readonly Lock _listLock = new();
 
     public Assets()
     {
@@ -103,12 +105,16 @@ public sealed class Assets : IDisposable
         }
 
         _Upload(mesh);
-        mesh.Index = (uint)_meshList.Count;
-        _meshList.Add(mesh);
+
+        lock (_listLock)
+        {
+            mesh.Index = (uint)_meshList.Count;
+            _meshList.Add(mesh);
+        }
 
         if (cacheKey != null)
         {
-            _meshCache[cacheKey] = mesh;
+            _meshCache.TryAdd(cacheKey, mesh);
         }
 
         return mesh;
@@ -124,34 +130,37 @@ public sealed class Assets : IDisposable
         var numBytes = (uint)data.Length;
         var gpuView = _vertexPool.Allocate(numBytes);
 
-        var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
+        lock (GraphicsContext.GpuLock)
         {
-            Device = GraphicsContext.Device,
-            IssueBarriers = false
-        });
-        batchCopy.Begin();
-
-        var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
-        try
-        {
-            batchCopy.CopyToGPUBuffer(new CopyToGpuBufferDesc
+            var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
             {
-                Data = new ByteArrayView
-                {
-                    Elements = handle.AddrOfPinnedObject(),
-                    NumElements = numBytes
-                },
-                DstBuffer = gpuView.Buffer,
-                DstBufferOffset = gpuView.Offset
+                Device = GraphicsContext.Device,
+                IssueBarriers = false
             });
-        }
-        finally
-        {
-            handle.Free();
-        }
+            batchCopy.Begin();
 
-        batchCopy.Submit(null);
-        batchCopy.Dispose();
+            var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
+            try
+            {
+                batchCopy.CopyToGPUBuffer(new CopyToGpuBufferDesc
+                {
+                    Data = new ByteArrayView
+                    {
+                        Elements = handle.AddrOfPinnedObject(),
+                        NumElements = numBytes
+                    },
+                    DstBuffer = gpuView.Buffer,
+                    DstBufferOffset = gpuView.Offset
+                });
+            }
+            finally
+            {
+                handle.Free();
+            }
+
+            batchCopy.Submit(null);
+            batchCopy.Dispose();
+        }
 
         var vertexCount = (uint)(data.Length / format.Stride);
         return new VertexBufferView(gpuView, (uint)format.Stride, vertexCount);
@@ -162,34 +171,37 @@ public sealed class Assets : IDisposable
         var numBytes = (uint)(sizeof(uint) * indices.Length);
         var gpuView = _indexPool.Allocate(numBytes);
 
-        var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
+        lock (GraphicsContext.GpuLock)
         {
-            Device = GraphicsContext.Device,
-            IssueBarriers = false
-        });
-        batchCopy.Begin();
-
-        var handle = GCHandle.Alloc(indices, GCHandleType.Pinned);
-        try
-        {
-            batchCopy.CopyToGPUBuffer(new CopyToGpuBufferDesc
+            var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
             {
-                Data = new ByteArrayView
-                {
-                    Elements = handle.AddrOfPinnedObject(),
-                    NumElements = numBytes
-                },
-                DstBuffer = gpuView.Buffer,
-                DstBufferOffset = gpuView.Offset
+                Device = GraphicsContext.Device,
+                IssueBarriers = false
             });
-        }
-        finally
-        {
-            handle.Free();
-        }
+            batchCopy.Begin();
 
-        batchCopy.Submit(null);
-        batchCopy.Dispose();
+            var handle = GCHandle.Alloc(indices, GCHandleType.Pinned);
+            try
+            {
+                batchCopy.CopyToGPUBuffer(new CopyToGpuBufferDesc
+                {
+                    Data = new ByteArrayView
+                    {
+                        Elements = handle.AddrOfPinnedObject(),
+                        NumElements = numBytes
+                    },
+                    DstBuffer = gpuView.Buffer,
+                    DstBufferOffset = gpuView.Offset
+                });
+            }
+            finally
+            {
+                handle.Free();
+            }
+
+            batchCopy.Submit(null);
+            batchCopy.Dispose();
+        }
 
         return new IndexBufferView(gpuView, IndexType.Uint32, (uint)indices.Length);
     }
@@ -209,7 +221,7 @@ public sealed class Assets : IDisposable
             _Register(mesh, $"{path}:{mesh.Name}");
         }
 
-        _modelCache[path] = model;
+        _modelCache.TryAdd(path, model);
         return model;
     }
 
@@ -228,7 +240,7 @@ public sealed class Assets : IDisposable
             _Register(mesh, $"{path}:{mesh.Name}");
         }
 
-        _modelCache[path] = model;
+        _modelCache.TryAdd(path, model);
         return model;
     }
 
@@ -241,9 +253,16 @@ public sealed class Assets : IDisposable
 
         var texture = new Texture2d();
         texture.Load(path);
-        _textureList.Add(texture);
-        _textureCache[path] = texture;
-        return texture;
+
+        if (_textureCache.TryAdd(path, texture))
+        {
+            lock (_listLock)
+            {
+                _textureList.Add(texture);
+            }
+        }
+
+        return _textureCache[path];
     }
 
     private async Task<Texture2d> _LoadTextureAsync(string path, CancellationToken ct = default)
@@ -255,9 +274,16 @@ public sealed class Assets : IDisposable
 
         var texture = new Texture2d();
         await texture.LoadAsync(path, ct);
-        _textureList.Add(texture);
-        _textureCache[path] = texture;
-        return texture;
+
+        if (_textureCache.TryAdd(path, texture))
+        {
+            lock (_listLock)
+            {
+                _textureList.Add(texture);
+            }
+        }
+
+        return _textureCache[path];
     }
 
     private Skeleton _LoadSkeleton(string modelPath)
@@ -268,7 +294,7 @@ public sealed class Assets : IDisposable
         }
 
         var skeleton = Skeleton.Load(modelPath);
-        _skeletonCache[modelPath] = skeleton;
+        _skeletonCache.TryAdd(modelPath, skeleton);
         return skeleton;
     }
 
@@ -280,7 +306,7 @@ public sealed class Assets : IDisposable
         }
 
         var skeleton = await Skeleton.LoadAsync(modelPath, ct);
-        _skeletonCache[modelPath] = skeleton;
+        _skeletonCache.TryAdd(modelPath, skeleton);
         return skeleton;
     }
 
@@ -322,20 +348,29 @@ public sealed class Assets : IDisposable
             return cached;
         }
 
-        var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
-        if (diskCached != null)
+        lock (GraphicsContext.GpuLock)
         {
-            _shaderStore.RegisterProgram(cacheKey, diskCached);
-            return diskCached;
+            cached = _shaderStore.GetProgram(cacheKey);
+            if (cached != null)
+            {
+                return cached;
+            }
+
+            var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
+            if (diskCached != null)
+            {
+                _shaderStore.RegisterProgram(cacheKey, diskCached);
+                return diskCached;
+            }
+
+            _shaderBuilder ??= new ShaderBuilder();
+            var program = _shaderBuilder.CompileGraphics(vsFullPath, psFullPath, defines: defines);
+
+            _shaderStore.SaveToDisk(cacheKey, program);
+            _shaderStore.RegisterProgram(cacheKey, program);
+
+            return program;
         }
-
-        _shaderBuilder ??= new ShaderBuilder();
-        var program = _shaderBuilder.CompileGraphics(vsFullPath, psFullPath, defines: defines);
-
-        _shaderStore.SaveToDisk(cacheKey, program);
-        _shaderStore.RegisterProgram(cacheKey, program);
-
-        return program;
     }
 
     private ShaderProgram _LoadComputeProgram(string computePath, Dictionary<string, string?>? defines)
@@ -350,20 +385,29 @@ public sealed class Assets : IDisposable
             return cached;
         }
 
-        var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
-        if (diskCached != null)
+        lock (GraphicsContext.GpuLock)
         {
-            _shaderStore.RegisterProgram(cacheKey, diskCached);
-            return diskCached;
+            cached = _shaderStore.GetProgram(cacheKey);
+            if (cached != null)
+            {
+                return cached;
+            }
+
+            var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
+            if (diskCached != null)
+            {
+                _shaderStore.RegisterProgram(cacheKey, diskCached);
+                return diskCached;
+            }
+
+            _shaderBuilder ??= new ShaderBuilder();
+            var program = _shaderBuilder.CompileCompute(csFullPath, defines: defines);
+
+            _shaderStore.SaveToDisk(cacheKey, program);
+            _shaderStore.RegisterProgram(cacheKey, program);
+
+            return program;
         }
-
-        _shaderBuilder ??= new ShaderBuilder();
-        var program = _shaderBuilder.CompileCompute(csFullPath, defines: defines);
-
-        _shaderStore.SaveToDisk(cacheKey, program);
-        _shaderStore.RegisterProgram(cacheKey, program);
-
-        return program;
     }
 
     private GpuShader _LoadShader(string vertexPath, string pixelPath, GraphicsPipelineDesc pipelineDesc, Dictionary<string, string?>? defines)
@@ -436,7 +480,11 @@ public sealed class Assets : IDisposable
             return _materialCache[material.Name];
         }
 
-        _materialList.Add(material);
+        lock (_listLock)
+        {
+            _materialList.Add(material);
+        }
+
         return material;
     }
 
@@ -463,10 +511,15 @@ public sealed class Assets : IDisposable
         material.EnsureShaderLoaded();
         material.EnsureTexturesLoaded();
 
-        _materialCache[fullPath] = material;
-        _materialList.Add(material);
+        if (_materialCache.TryAdd(fullPath, material))
+        {
+            lock (_listLock)
+            {
+                _materialList.Add(material);
+            }
+        }
 
-        return material;
+        return _materialCache[fullPath];
     }
 
     private async Task<Material> _LoadMaterialAsync(string path, CancellationToken ct = default)
@@ -486,10 +539,15 @@ public sealed class Assets : IDisposable
 
         await material.LoadAllAsync(ct);
 
-        _materialCache[fullPath] = material;
-        _materialList.Add(material);
+        if (_materialCache.TryAdd(fullPath, material))
+        {
+            lock (_listLock)
+            {
+                _materialList.Add(material);
+            }
+        }
 
-        return material;
+        return _materialCache[fullPath];
     }
 
     private GpuShader _LoadShaderFromJson(string path)
@@ -508,8 +566,18 @@ public sealed class Assets : IDisposable
         var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;
         var pipelineType = shaderJson.DetectPipelineType();
 
-        _shaderBuilder ??= new ShaderBuilder();
-        var program = _shaderBuilder.CompileFromJson(shaderJson, basePath);
+        ShaderProgram program;
+        lock (GraphicsContext.GpuLock)
+        {
+            existingShader = _shaderStore[fullPath];
+            if (existingShader != null)
+            {
+                return existingShader;
+            }
+
+            _shaderBuilder ??= new ShaderBuilder();
+            program = _shaderBuilder.CompileFromJson(shaderJson, basePath);
+        }
 
         GpuShader shader;
         switch (pipelineType)

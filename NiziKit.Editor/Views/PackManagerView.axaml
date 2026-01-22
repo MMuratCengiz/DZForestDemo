@@ -1,9 +1,11 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:NiziKit.Editor.ViewModels"
+             xmlns:views="using:NiziKit.Editor.Views"
              x:Class="NiziKit.Editor.Views.PackManagerView"
              x:DataType="vm:PackManagerViewModel">
 
+    <Panel>
     <Grid ColumnDefinitions="160,*">
         <!-- Left: Pack List -->
         <Border Grid.Column="0"
@@ -381,4 +383,128 @@
             </StackPanel>
         </Border>
     </Grid>
+
+    <!-- File Browser Overlay -->
+    <Border IsVisible="{Binding IsFileBrowserOpen}"
+            Background="#C0000000">
+        <Border Background="#E0202020"
+                CornerRadius="8"
+                BorderBrush="{DynamicResource PanelBorderBrush}"
+                BorderThickness="1"
+                Padding="16"
+                Margin="40"
+                MaxWidth="800"
+                MaxHeight="600"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+            <Grid RowDefinitions="Auto,*,Auto">
+                <TextBlock Grid.Row="0"
+                           Text="{Binding FileBrowserTitle}"
+                           Classes="header"
+                           Margin="0,0,0,12"/>
+                <views:FileBrowserGrid Grid.Row="1"
+                                       DataContext="{Binding FileBrowserViewModel}"/>
+                <StackPanel Grid.Row="2"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="8"
+                            Margin="0,12,0,0">
+                    <Button Content="Cancel"
+                            Command="{Binding CloseFileBrowserCommand}"
+                            FontSize="{DynamicResource EditorFontSizeSmall}"
+                            Padding="16,8"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Border>
+
+    <!-- Asset Editor Overlay -->
+    <Border IsVisible="{Binding IsAssetEditorOpen}"
+            Background="#C0000000">
+        <Border Background="#E0202020"
+                CornerRadius="8"
+                BorderBrush="{DynamicResource PanelBorderBrush}"
+                BorderThickness="1"
+                Padding="20"
+                Margin="60"
+                MaxWidth="500"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center">
+            <Grid RowDefinitions="Auto,*,Auto">
+                <TextBlock Grid.Row="0"
+                           Text="{Binding AssetEditorTitle}"
+                           Classes="header"
+                           Margin="0,0,0,16"/>
+
+                <!-- Material Editor -->
+                <StackPanel Grid.Row="1"
+                            x:Name="MaterialEditorPanel"
+                            Spacing="12">
+                    <Grid ColumnDefinitions="100,*">
+                        <TextBlock Text="Name" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingAssetName}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="100,*">
+                        <TextBlock Text="Shader" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingAssetShader}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="100,*">
+                        <TextBlock Text="Albedo" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingAssetAlbedo}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="100,*">
+                        <TextBlock Text="Normal" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingAssetNormal}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="100,*">
+                        <TextBlock Text="Metallic" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingAssetMetallic}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="100,*">
+                        <TextBlock Text="Roughness" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingAssetRoughness}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                    </Grid>
+                </StackPanel>
+
+                <!-- Shader Editor -->
+                <StackPanel Grid.Row="1"
+                            x:Name="ShaderEditorPanel"
+                            Spacing="12">
+                    <Grid ColumnDefinitions="100,*">
+                        <TextBlock Text="Name" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingShaderName}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="100,*">
+                        <TextBlock Text="Type" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingShaderType}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="100,*">
+                        <TextBlock Text="Vertex Path" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingShaderVertexPath}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                    </Grid>
+                    <Grid ColumnDefinitions="100,*">
+                        <TextBlock Text="Pixel Path" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Text="{Binding EditingShaderPixelPath}" FontSize="{DynamicResource EditorFontSizeSmall}"/>
+                    </Grid>
+                </StackPanel>
+
+                <StackPanel Grid.Row="2"
+                            Orientation="Horizontal"
+                            HorizontalAlignment="Right"
+                            Spacing="8"
+                            Margin="0,16,0,0">
+                    <Button Content="Cancel"
+                            Command="{Binding CloseAssetEditorCommand}"
+                            FontSize="{DynamicResource EditorFontSizeSmall}"
+                            Padding="16,8"/>
+                    <Button Content="Save"
+                            Command="{Binding SaveAssetEditorCommand}"
+                            Classes="primary"
+                            FontSize="{DynamicResource EditorFontSizeSmall}"
+                            Padding="16,8"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Border>
+    </Panel>
 </UserControl>

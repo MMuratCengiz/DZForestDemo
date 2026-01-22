@@ -1,0 +1,80 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="NiziKit.Editor.Views.Editors.AssetPickerDialog">
+
+    <Border Background="#E0202020"
+            CornerRadius="8"
+            BorderBrush="{DynamicResource PanelBorderBrush}"
+            BorderThickness="1"
+            Padding="24"
+            Width="1200"
+            Height="800">
+        <Grid RowDefinitions="Auto,Auto,*,Auto">
+            <!-- Header -->
+            <TextBlock Grid.Row="0"
+                       x:Name="HeaderText"
+                       Text="Select Asset"
+                       Classes="header"
+                       Margin="0,0,0,16"/>
+
+            <!-- Search and Pack Filter -->
+            <Grid Grid.Row="1" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+                <TextBox Grid.Column="0"
+                         x:Name="SearchBox"
+                         Watermark="Search..."
+                         FontSize="{DynamicResource EditorFontSizeSmall}"
+                         VerticalContentAlignment="Center"
+                         Height="52"
+                         Margin="0,0,12,0"/>
+                <ComboBox Grid.Column="1"
+                          x:Name="PackComboBox"
+                          FontSize="{DynamicResource EditorFontSizeSmall}"
+                          VerticalContentAlignment="Center"
+                          VerticalAlignment="Stretch"
+                          MinWidth="180"/>
+            </Grid>
+
+            <!-- Asset Grid -->
+            <Border Grid.Row="2"
+                    Background="{DynamicResource SurfaceDarkBrush}"
+                    CornerRadius="4"
+                    Padding="8">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled"
+                              VerticalScrollBarVisibility="Auto">
+                    <ItemsControl x:Name="AssetItemsControl">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel Orientation="Horizontal"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Border>
+
+            <!-- Buttons -->
+            <Grid Grid.Row="3" ColumnDefinitions="*,Auto,Auto" Margin="0,16,0,0">
+                <TextBlock Grid.Column="0"
+                           x:Name="SelectionText"
+                           Text=""
+                           Classes="muted"
+                           FontSize="{DynamicResource EditorFontSizeSmall}"
+                           VerticalAlignment="Center"
+                           TextTrimming="CharacterEllipsis"/>
+                <Button Grid.Column="1"
+                        x:Name="CancelButton"
+                        Content="Cancel"
+                        FontSize="{DynamicResource EditorFontSizeSmall}"
+                        Margin="0,0,12,0"
+                        MinWidth="100"
+                        Padding="16,10"/>
+                <Button Grid.Column="2"
+                        x:Name="SelectButton"
+                        Content="Select"
+                        Classes="primary"
+                        FontSize="{DynamicResource EditorFontSizeSmall}"
+                        MinWidth="100"
+                        Padding="16,10"/>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

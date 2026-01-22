@@ -2,6 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:NiziKit.Editor.ViewModels"
              xmlns:views="using:NiziKit.Editor.Views"
+             xmlns:editors="using:NiziKit.Editor.Views.Editors"
              xmlns:dock="using:Dock.Avalonia.Controls"
              xmlns:docking="using:NiziKit.Editor.Docking"
              x:Class="NiziKit.Editor.EditorMainView"
@@ -85,6 +86,14 @@
                                        DataContext="{Binding ImportViewModel}"/>
                 </Grid>
             </Border>
+        </Border>
+
+        <!-- Asset Picker Overlay -->
+        <Border IsVisible="{Binding IsAssetPickerOpen}"
+                Background="#D0000000">
+            <editors:AssetPickerDialog x:Name="AssetPickerDialog"
+                                       HorizontalAlignment="Center"
+                                       VerticalAlignment="Center"/>
         </Border>
     </Panel>
 </UserControl>

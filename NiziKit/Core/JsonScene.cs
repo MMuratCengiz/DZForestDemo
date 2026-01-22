@@ -24,6 +24,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         Name = sceneData.Name;
 
         LoadAssetPacks(sceneData.AssetPacks);
+        PrewarmMeshes(sceneData.Objects);
         LoadCamera(sceneData.Camera);
         LoadCameras(sceneData.Cameras);
         LoadLights(sceneData.Lights);
@@ -39,6 +40,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         Name = sceneData.Name;
 
         await LoadAssetPacksAsync(sceneData.AssetPacks, ct);
+        PrewarmMeshes(sceneData.Objects);
         LoadCamera(sceneData.Camera);
         LoadCameras(sceneData.Cameras);
         LoadLights(sceneData.Lights);
@@ -52,14 +54,15 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             return;
         }
 
-        foreach (var packPath in packs)
+        var packsToLoad = packs.Where(p => !AssetPacks.AssetPacks.IsLoaded(p)).ToList();
+        var loadedPacks = new AssetPack[packsToLoad.Count];
+
+        Parallel.For(0, packsToLoad.Count, i =>
         {
-            if (!AssetPacks.AssetPacks.IsLoaded(packPath))
-            {
-                var pack = AssetPack.Load(packPath);
-                _loadedPacks.Add(pack);
-            }
-        }
+            loadedPacks[i] = AssetPack.Load(packsToLoad[i]);
+        });
+
+        _loadedPacks.AddRange(loadedPacks);
     }
 
     private async Task LoadAssetPacksAsync(List<string>? packs, CancellationToken ct)
@@ -73,6 +76,66 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         var loadTasks = packsToLoad.Select(p => AssetPack.LoadAsync(p, ct));
         var loadedPacks = await Task.WhenAll(loadTasks);
         _loadedPacks.AddRange(loadedPacks);
+    }
+
+    private void PrewarmMeshes(List<GameObjectJson>? objects)
+    {
+        if (objects == null)
+        {
+            return;
+        }
+
+        var meshMaterialPairs = new List<(Mesh mesh, VertexFormat format)>();
+        CollectMeshMaterialPairs(objects, meshMaterialPairs);
+
+        Parallel.ForEach(meshMaterialPairs, pair =>
+        {
+            pair.mesh.GetVertexBuffer(pair.format);
+        });
+    }
+
+    private void CollectMeshMaterialPairs(List<GameObjectJson> objects, List<(Mesh mesh, VertexFormat format)> pairs)
+    {
+        foreach (var obj in objects)
+        {
+            if (obj.Components != null)
+            {
+                string? meshRef = null;
+                string? materialRef = null;
+
+                foreach (var comp in obj.Components)
+                {
+                    if (comp.Type.Equals("mesh", StringComparison.OrdinalIgnoreCase))
+                    {
+                        meshRef = comp.Properties?.GetStringOrDefault("mesh");
+                    }
+                    else if (comp.Type.Equals("material", StringComparison.OrdinalIgnoreCase))
+                    {
+                        materialRef = comp.Properties?.GetStringOrDefault("material");
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(meshRef) && !string.IsNullOrEmpty(materialRef))
+                {
+                    var mesh = ResolveMeshFromProperties(
+                        new Dictionary<string, JsonElement>
+                        {
+                            ["mesh"] = JsonSerializer.SerializeToElement(meshRef)
+                        });
+                    var material = ResolveMaterial(materialRef);
+
+                    if (mesh != null && material?.GpuShader != null)
+                    {
+                        pairs.Add((mesh, material.GpuShader.VertexFormat));
+                    }
+                }
+            }
+
+            if (obj.Children != null)
+            {
+                CollectMeshMaterialPairs(obj.Children, pairs);
+            }
+        }
     }
 
     private void LoadCamera(CameraJson? cameraData)

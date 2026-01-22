@@ -58,39 +58,42 @@ public class Texture2d : IAsset
         };
         using var textureData = TextureData.CreateFromData(textureDataDesc);
 
-        var gpuTexture = device.CreateTexture(new TextureDesc
+        lock (GraphicsContext.GpuLock)
         {
-            Width = textureData.GetWidth(),
-            Height = textureData.GetHeight(),
-            Depth = Math.Max(1u, textureData.GetDepth()),
-            MipLevels = textureData.GetMipLevels(),
-            ArraySize = textureData.GetArraySize(),
-            Format = textureData.GetFormat(),
-            Usage = (uint)(TextureUsageFlagBits.CopyDst | TextureUsageFlagBits.TextureBinding),
-            DebugName = StringView.Create(Path.GetFileNameWithoutExtension(name))
-        });
+            var gpuTexture = device.CreateTexture(new TextureDesc
+            {
+                Width = textureData.GetWidth(),
+                Height = textureData.GetHeight(),
+                Depth = Math.Max(1u, textureData.GetDepth()),
+                MipLevels = textureData.GetMipLevels(),
+                ArraySize = textureData.GetArraySize(),
+                Format = textureData.GetFormat(),
+                Usage = (uint)(TextureUsageFlagBits.CopyDst | TextureUsageFlagBits.TextureBinding),
+                DebugName = StringView.Create(Path.GetFileNameWithoutExtension(name))
+            });
 
-        using var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
-        {
-            Device = device,
-            IssueBarriers = true
-        });
-        batchCopy.Begin();
-        batchCopy.LoadTextureFromData(new LoadTextureFromDataDesc
-        {
-            TextureData = textureData,
-            DstTexture = gpuTexture
-        });
-        batchCopy.Submit(null);
+            using var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
+            {
+                Device = device,
+                IssueBarriers = true
+            });
+            batchCopy.Begin();
+            batchCopy.LoadTextureFromData(new LoadTextureFromDataDesc
+            {
+                TextureData = textureData,
+                DstTexture = gpuTexture
+            });
+            batchCopy.Submit(null);
 
-        GraphicsContext.ResourceTracking.TrackTexture(gpuTexture, QueueType.Graphics);
-        Name = Path.GetFileNameWithoutExtension(name);
-        SourcePath = name;
-        Width = textureData.GetWidth();
-        Height = textureData.GetHeight();
-        MipLevels = textureData.GetMipLevels();
-        Format = textureData.GetFormat();
-        GpuTexture = gpuTexture;
+            GraphicsContext.ResourceTracking.TrackTexture(gpuTexture, QueueType.Graphics);
+            Name = Path.GetFileNameWithoutExtension(name);
+            SourcePath = name;
+            Width = textureData.GetWidth();
+            Height = textureData.GetHeight();
+            MipLevels = textureData.GetMipLevels();
+            Format = textureData.GetFormat();
+            GpuTexture = gpuTexture;
+        }
     }
 
     public void Dispose()

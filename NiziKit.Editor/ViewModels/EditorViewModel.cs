@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Dock.Model.Controls;
 using Dock.Model.Core;
+using NiziKit.Components;
 using NiziKit.Core;
 using NiziKit.Editor.Docking;
 using NiziKit.Editor.Services;
@@ -61,6 +62,21 @@ public partial class EditorViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isImportPanelOpen;
+
+    // Asset Picker state
+    [ObservableProperty]
+    private bool _isAssetPickerOpen;
+
+    [ObservableProperty]
+    private AssetRefType _assetPickerAssetType;
+
+    [ObservableProperty]
+    private string? _assetPickerCurrentPack;
+
+    [ObservableProperty]
+    private string? _assetPickerCurrentAssetName;
+
+    private Action<AssetInfo?>? _assetPickerCallback;
 
     [ObservableProperty]
     private IRootDock? _dockLayout;
@@ -201,6 +217,29 @@ public partial class EditorViewModel : ObservableObject
     private void CloseImportPanel()
     {
         IsImportPanelOpen = false;
+    }
+
+    public void OpenAssetPicker(AssetRefType assetType, string? currentPack, string? currentAssetName, Action<AssetInfo?> callback)
+    {
+        AssetPickerAssetType = assetType;
+        AssetPickerCurrentPack = currentPack;
+        AssetPickerCurrentAssetName = currentAssetName;
+        _assetPickerCallback = callback;
+        IsAssetPickerOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseAssetPicker()
+    {
+        IsAssetPickerOpen = false;
+        _assetPickerCallback = null;
+    }
+
+    public void OnAssetPickerSelected(AssetInfo? asset)
+    {
+        _assetPickerCallback?.Invoke(asset);
+        IsAssetPickerOpen = false;
+        _assetPickerCallback = null;
     }
 
     [RelayCommand]

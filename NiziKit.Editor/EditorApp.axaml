@@ -76,11 +76,11 @@
         <SolidColorBrush x:Key="DockThemeForegroundBrush" Color="{StaticResource TextPrimaryColor}"/>
         <SolidColorBrush x:Key="DockThemeBorderLowBrush" Color="#50FFFFFF"/>
         <SolidColorBrush x:Key="DockThemeControlBackgroundBrush" Color="{StaticResource SurfaceDarkColor}"/>
-        <SolidColorBrush x:Key="DockApplicationAccentBrushLow" Color="{StaticResource AccentColor}"/>
+        <SolidColorBrush x:Key="DockApplicationAccentBrushLow" Color="{StaticResource TextMutedColor}"/>
         <SolidColorBrush x:Key="DockApplicationAccentBrushMed" Color="{StaticResource SurfaceLightColor}"/>
-        <SolidColorBrush x:Key="DockApplicationAccentBrushHigh" Color="{StaticResource AccentHoverColor}"/>
+        <SolidColorBrush x:Key="DockApplicationAccentBrushHigh" Color="{StaticResource TextMutedColor}"/>
         <SolidColorBrush x:Key="DockApplicationAccentForegroundBrush" Color="{StaticResource TextPrimaryColor}"/>
-        <SolidColorBrush x:Key="DockApplicationAccentBrushIndicator" Color="{StaticResource AccentColor}"/>
+        <SolidColorBrush x:Key="DockApplicationAccentBrushIndicator" Color="{StaticResource TextMutedColor}"/>
     </Application.Resources>
 
     <Application.Styles>
