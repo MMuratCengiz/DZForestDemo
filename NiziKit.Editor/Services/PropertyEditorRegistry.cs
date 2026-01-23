@@ -1,7 +1,9 @@
+using System.Collections;
 using System.Numerics;
 using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Layout;
+using NiziKit.Animation;
 using NiziKit.Components;
 using NiziKit.Editor.ViewModels;
 
@@ -62,6 +64,12 @@ public static class PropertyEditorRegistry
             return CreateEnumEditor(context);
         }
 
+        // Check for List<T> types
+        if (IsListType(propType))
+        {
+            return CreateListEditor(context);
+        }
+
         if (TypeEditors.TryGetValue(propType, out var factory))
         {
             return factory(context);
@@ -79,6 +87,88 @@ public static class PropertyEditorRegistry
         }
 
         return CreateReadOnlyEditor(context);
+    }
+
+    private static bool IsListType(Type type)
+    {
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(List<>))
+        {
+            return true;
+        }
+
+        // Check for IList<T>
+        if (type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IList<>)))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static Type? GetListElementType(Type listType)
+    {
+        if (listType.IsGenericType && listType.GetGenericTypeDefinition() == typeof(List<>))
+        {
+            return listType.GetGenericArguments()[0];
+        }
+
+        var listInterface = listType.GetInterfaces()
+            .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IList<>));
+
+        return listInterface?.GetGenericArguments()[0];
+    }
+
+    private static Control CreateListEditor(PropertyEditorContext context)
+    {
+        var elementType = GetListElementType(context.Property.PropertyType);
+
+        // Check for special AnimationEntry list
+        if (elementType == typeof(AnimationEntry))
+        {
+            return CreateAnimationListEditor(context);
+        }
+
+        // Generic list editor
+        return new Views.Editors.ListEditor
+        {
+            Instance = context.Instance,
+            Property = context.Property,
+            AssetBrowser = context.AssetBrowser,
+            EditorViewModel = context.EditorViewModel,
+            OnValueChanged = context.OnValueChanged,
+            IsReadOnly = !context.Property.CanWrite
+        };
+    }
+
+    private static Control CreateAnimationListEditor(PropertyEditorContext context)
+    {
+        var editor = new Views.Editors.ListEditor
+        {
+            Instance = context.Instance,
+            Property = context.Property,
+            AssetBrowser = context.AssetBrowser,
+            EditorViewModel = context.EditorViewModel,
+            OnValueChanged = context.OnValueChanged,
+            IsReadOnly = !context.Property.CanWrite,
+            ItemFactory = () => new AnimationEntry { Name = "NewAnimation" },
+            CustomItemEditorFactory = (item, index, itemContext) =>
+            {
+                if (item is AnimationEntry entry)
+                {
+                    return new Views.Editors.AnimationEntryEditor
+                    {
+                        Entry = entry,
+                        AssetBrowser = context.AssetBrowser,
+                        EditorViewModel = context.EditorViewModel,
+                        OnValueChanged = itemContext.OnValueChanged,
+                        IsReadOnly = false
+                    };
+                }
+                return null;
+            }
+        };
+
+        return editor;
     }
 
     private static Control CreateStringEditor(PropertyEditorContext context)

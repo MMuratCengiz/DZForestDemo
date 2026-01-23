@@ -100,8 +100,8 @@ public sealed class EditorGame : Game
         }
 
         _renderer.EditorViewModel?.UpdateStatistics();
+        _renderer.EditorViewModel?.Update(dt);
 
-        // Update all animators in the scene
         World.AnimationWorld.Update(dt);
 
         _renderer.Render(dt);

@@ -7,13 +7,13 @@
     {
       "name": "Main Camera",
       "position": [
-        0,
-        0,
-        -12
+        1.3669761,
+        -7.3278384,
+        -8.367347
       ],
       "rotation": [
-        0,
-        0,
+        5.500396,
+        1.0313246,
         0
       ],
       "fieldOfView": 0.785398,
@@ -131,9 +131,9 @@
         16.022827
       ],
       "rotation": [
-        14.298939,
-        26.656485,
-        80.74262
+        -1.2206087,
+        -29.97747,
+        77.66519
       ],
       "scale": [
         1,
@@ -873,6 +873,36 @@
           "type": "animator",
           "skeleton": "viking:Fox",
           "defaultAnimation": "Survey"
+        }
+      ],
+      "children": []
+    },
+    {
+      "name": "New Object",
+      "active": true,
+      "position": [
+        -0.28755423,
+        0.642045,
+        -5.34352
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ],
+      "components": [
+        {
+          "type": "mesh",
+          "mesh": "viking:PolygonSyntyCharacter"
+        },
+        {
+          "type": "material",
+          "material": "viking:NewMaterial"
         }
       ],
       "children": []

@@ -1,0 +1,25 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="NiziKit.Editor.Views.Editors.ListEditor">
+
+    <Border Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
+            CornerRadius="{DynamicResource ControlCornerRadius}"
+            Padding="8"
+            Margin="0,4">
+        <StackPanel Spacing="4">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock x:Name="CountLabel" 
+                           Text="0 items"
+                           VerticalAlignment="Center"
+                           Classes="caption"/>
+                <Button x:Name="AddButton" 
+                        Grid.Column="1"
+                        Content="+"
+                        Padding="8,4"
+                        ToolTip.Tip="Add item"/>
+            </Grid>
+            
+            <ItemsControl x:Name="ItemsControl"/>
+        </StackPanel>
+    </Border>
+</UserControl>

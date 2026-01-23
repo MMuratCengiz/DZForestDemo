@@ -29,6 +29,9 @@ public static class AssetPacks
     public static bool TryGet(string name, out AssetPack? pack)
         => _packs.TryGetValue(name, out pack);
 
+    public static bool TryGetPack(string name, out AssetPack? pack)
+        => _packs.TryGetValue(name, out pack);
+
     public static bool IsLoaded(string name) => _packs.ContainsKey(name);
 
     public static Texture2d GetTexture(string packName, string assetName)

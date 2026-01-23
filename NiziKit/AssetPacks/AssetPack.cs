@@ -17,6 +17,7 @@ public sealed class AssetPack : IDisposable
     private readonly ConcurrentDictionary<string, Graphics.GpuShader> _shaders = new();
     private readonly ConcurrentDictionary<string, Material> _materials = new();
     private readonly ConcurrentDictionary<string, Model> _models = new();
+    private readonly ConcurrentDictionary<string, string> _modelPaths = new();
 
     private IAssetPackProvider? _provider;
     private string _basePath = string.Empty;
@@ -81,6 +82,16 @@ public sealed class AssetPack : IDisposable
     public bool TryGetShader(string key, out Graphics.GpuShader? shader) => _shaders.TryGetValue(key, out shader);
     public bool TryGetMaterial(string key, out Material? material) => _materials.TryGetValue(key, out material);
     public bool TryGetModel(string key, out Model? model) => _models.TryGetValue(key, out model);
+
+    /// <summary>
+    /// Gets the file path for a model by its key.
+    /// </summary>
+    public string? GetModelPath(string key) => _modelPaths.GetValueOrDefault(key);
+
+    /// <summary>
+    /// Gets all model keys in this pack.
+    /// </summary>
+    public IEnumerable<string> GetModelKeys() => _models.Keys;
 
     private void LoadInternal(string path)
     {
@@ -240,6 +251,7 @@ public sealed class AssetPack : IDisposable
         {
             var model = Assets.Assets.LoadModel(kvp.Value);
             _models[kvp.Key] = model;
+            _modelPaths[kvp.Key] = kvp.Value;
         });
     }
 
@@ -248,12 +260,13 @@ public sealed class AssetPack : IDisposable
         var tasks = modelDefs.Select(async kvp =>
         {
             var model = await Assets.Assets.LoadModelAsync(kvp.Value, ct);
-            return (kvp.Key, model);
+            return (kvp.Key, kvp.Value, model);
         });
 
-        foreach (var (key, model) in await Task.WhenAll(tasks))
+        foreach (var (key, path, model) in await Task.WhenAll(tasks))
         {
             _models[key] = model;
+            _modelPaths[key] = path;
         }
     }
 

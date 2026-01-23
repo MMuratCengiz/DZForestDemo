@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NiziKit.ContentPipeline;
@@ -119,7 +120,7 @@ public partial class ImportViewModel : ObservableObject
                         ImportTextures = ImportType is ImportType.Textures or ImportType.Both,
                         ModelScale = ModelScale,
                         GenerateMips = GenerateMips,
-                        OnProgress = msg => ProgressText = msg
+                        OnProgress = msg => Dispatcher.UIThread.Post(() => ProgressText = msg)
                     };
 
                     await Task.Run(() => importer.Import(settings), _cancellationTokenSource.Token);

@@ -26,31 +26,33 @@
                 <ScrollViewer Grid.Column="1"
                               HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Disabled"
+                              VerticalAlignment="Center"
                               Margin="12,0">
                     <ItemsControl ItemsSource="{Binding BreadcrumbParts}"
                                   VerticalAlignment="Center">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <StackPanel Orientation="Horizontal" Spacing="4"/>
+                                <StackPanel Orientation="Horizontal"/>
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="vm:BreadcrumbItem">
-                                <StackPanel Orientation="Horizontal">
-                                    <Button Content="{Binding Name}"
-                                            Command="{Binding $parent[ItemsControl].DataContext.NavigateToCommand}"
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Button Command="{Binding $parent[ItemsControl].DataContext.NavigateToCommand}"
                                             CommandParameter="{Binding Path}"
-                                            Padding="10,6"
-                                            MaxWidth="180">
-                                        <Button.Styles>
-                                            <Style Selector="Button > ContentPresenter > TextBlock">
-                                                <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
-                                            </Style>
-                                        </Button.Styles>
+                                            Background="Transparent"
+                                            BorderThickness="0"
+                                            Padding="10,12"
+                                            Cursor="Hand"
+                                            VerticalAlignment="Center">
+                                        <TextBlock Text="{Binding Name}"
+                                                   Classes="body"
+                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
                                     </Button>
                                     <TextBlock Text="/"
+                                               Classes="body"
                                                VerticalAlignment="Center"
-                                               Margin="4,0"
+                                               Margin="2,0"
                                                Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
                                 </StackPanel>
                             </DataTemplate>
@@ -72,43 +74,51 @@
         </Border>
 
         <!-- File Grid -->
-        <ListBox Grid.Row="1"
-                 x:Name="FileGrid"
-                 ItemsSource="{Binding Entries}"
-                 SelectedItem="{Binding SelectedEntry}"
-                 Background="Transparent"
-                 SelectionMode="Single"
-                 ScrollViewer.HorizontalScrollBarVisibility="Disabled">
-            <ListBox.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <WrapPanel Orientation="Horizontal"/>
-                </ItemsPanelTemplate>
-            </ListBox.ItemsPanel>
-            <ListBox.ItemTemplate>
-                <DataTemplate x:DataType="services:FileEntry">
-                    <Border Width="120"
-                            Height="120"
-                            Margin="6"
-                            Padding="12"
-                            CornerRadius="{DynamicResource ControlCornerRadius}"
-                            Background="Transparent">
-                        <StackPanel HorizontalAlignment="Center"
-                                    VerticalAlignment="Center"
-                                    Spacing="10">
-                            <PathIcon Data="{Binding IconData}"
-                                      Width="40"
-                                      Height="40"
-                                      Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                            <TextBlock Text="{Binding Name}"
-                                       TextTrimming="CharacterEllipsis"
-                                       TextAlignment="Center"
-                                       MaxWidth="100"
-                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"
-                                       ToolTip.Tip="{Binding Name}"/>
-                        </StackPanel>
-                    </Border>
-                </DataTemplate>
-            </ListBox.ItemTemplate>
-        </ListBox>
+        <Border Grid.Row="1"
+                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                CornerRadius="{DynamicResource ControlCornerRadius}">
+            <ListBox x:Name="FileGrid"
+                     ItemsSource="{Binding Entries}"
+                     SelectedItem="{Binding SelectedEntry}"
+                     SelectionMode="Single"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="services:FileEntry">
+                        <Border Width="180" Height="180"
+                                Margin="8"
+                                Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
+                                CornerRadius="8"
+                                Padding="14"
+                                ToolTip.Tip="{Binding Name}">
+                            <Grid RowDefinitions="Auto,*">
+                                <PathIcon Grid.Row="0"
+                                          Data="{Binding IconData}"
+                                          Width="64" Height="64"
+                                          Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                          HorizontalAlignment="Center"
+                                          VerticalAlignment="Center"
+                                          Margin="0,8,0,0"/>
+
+                                <TextBlock Grid.Row="1"
+                                           Text="{Binding Name}"
+                                           TextWrapping="Wrap"
+                                           TextAlignment="Center"
+                                           FontSize="{StaticResource FontSizeCaption}"
+                                           MaxLines="3"
+                                           Margin="0,10,0,0"
+                                           HorizontalAlignment="Center"
+                                           VerticalAlignment="Top"
+                                           ToolTip.Tip="{Binding Name}"/>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
     </Grid>
 </UserControl>

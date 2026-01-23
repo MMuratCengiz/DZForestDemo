@@ -2,12 +2,14 @@
   "name": "viking",
   "version": "1.0.0",
   "textures": {
-    "Texture": "Textures/Texture.png"
+    "Texture": "Textures/Texture.png",
+    "T_PolygonApocalypse_01": "Synty/Textures/BaseLocomotion/Demo_Textures/T_PolygonApocalypse_01.png"
   },
   "shaders": {},
   "materials": {
     "VikingRealmAlt": "Materials/VikingScene.nizimat.json",
-    "FoxMat": "Materials/Fox.nizimat.json"
+    "FoxMat": "Materials/Fox.nizimat.json",
+    "NewMaterial": "Materials/NewMaterial.nizimat.json"
   },
   "models": {
     "characters": "Synty/Models/VikingRealm/FBX/VikingRealm_Characters.glb",
@@ -33,6 +35,7 @@
     "flag": "Synty/Models/VikingRealm/FBX/SM_Prop_Flag_01.glb",
     "Fox": "Models/Fox.glb",
     "SM_Prop_Target_01": "Synty/Models/BaseLocomotion/Demo_Models/SM_Prop_Target_01.glb",
-    "A_Idle_Crouching_Masc": "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/Idle/A_Idle_Crouching_Masc.glb"
+    "A_Idle_Crouching_Masc": "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/Idle/A_Idle_Crouching_Masc.glb",
+    "PolygonSyntyCharacter": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.glb"
   }
 }

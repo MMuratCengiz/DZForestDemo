@@ -1,0 +1,8 @@
+{
+  "name": "Dummy",
+  "shader": "../Shaders/Default.nizishp.json",
+  "textures": {
+    "albedo": "../Synty/Textures/BaseLocomotion/Demo_Textures/T_Polygon_Dummy_01.png"
+  },
+  "variant": "SKINNED"
+}

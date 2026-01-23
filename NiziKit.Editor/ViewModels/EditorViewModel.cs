@@ -94,6 +94,33 @@ public partial class EditorViewModel : ObservableObject
     [ObservableProperty]
     private bool _isImportPanelOpen;
 
+    [ObservableProperty]
+    private bool _isOpenSceneDialogOpen;
+
+    [ObservableProperty]
+    private bool _isSavePromptOpen;
+
+    [ObservableProperty]
+    private FileBrowserViewModel? _sceneBrowserViewModel;
+
+    [ObservableProperty]
+    private bool _isDirty;
+
+    private string? _pendingScenePath;
+
+    private float _autoSaveTimer;
+    private float _contentRefreshTimer;
+    private bool _isAutoSaving;
+    private bool _isRefreshingContent;
+    private const float AutoSaveInterval = 60f;
+    private const float ContentRefreshInterval = 5f;
+
+    [ObservableProperty]
+    private bool _autoSaveEnabled = true;
+
+    [ObservableProperty]
+    private string _autoSaveStatus = "";
+
     // Bottom panel states
     [ObservableProperty]
     private bool _isAssetBrowserOpen;
@@ -234,6 +261,7 @@ public partial class EditorViewModel : ObservableObject
         }
 
         _sceneService.SaveScene(scene);
+        IsDirty = false;
     }
 
     [RelayCommand]
@@ -241,6 +269,175 @@ public partial class EditorViewModel : ObservableObject
     {
         World.LoadScene(path);
         LoadFromCurrentScene();
+        IsDirty = false;
+    }
+
+    [RelayCommand]
+    private void OpenScene()
+    {
+        SceneBrowserViewModel = new FileBrowserViewModel(_assetFileService)
+        {
+            Filter = AssetFileType.Scene
+        };
+        IsOpenSceneDialogOpen = true;
+    }
+
+    [RelayCommand]
+    private void CloseOpenSceneDialog()
+    {
+        IsOpenSceneDialogOpen = false;
+        SceneBrowserViewModel = null;
+    }
+
+    public void OnSceneFileSelected(string path)
+    {
+        IsOpenSceneDialogOpen = false;
+
+        if (IsDirty)
+        {
+            _pendingScenePath = path;
+            IsSavePromptOpen = true;
+        }
+        else
+        {
+            LoadSceneFromPath(path);
+        }
+    }
+
+    [RelayCommand]
+    private void SavePromptSave()
+    {
+        SaveScene();
+        IsSavePromptOpen = false;
+        if (_pendingScenePath != null)
+        {
+            LoadSceneFromPath(_pendingScenePath);
+            _pendingScenePath = null;
+        }
+    }
+
+    [RelayCommand]
+    private void SavePromptDiscard()
+    {
+        IsSavePromptOpen = false;
+        if (_pendingScenePath != null)
+        {
+            LoadSceneFromPath(_pendingScenePath);
+            _pendingScenePath = null;
+        }
+    }
+
+    [RelayCommand]
+    private void SavePromptCancel()
+    {
+        IsSavePromptOpen = false;
+        _pendingScenePath = null;
+    }
+
+    private void LoadSceneFromPath(string path)
+    {
+        World.CurrentScene?.Dispose();
+        World.LoadScene(path);
+        LoadFromCurrentScene();
+        IsDirty = false;
+    }
+
+    public void MarkDirty()
+    {
+        IsDirty = true;
+    }
+
+    public void Update(float deltaTime)
+    {
+        if (AutoSaveEnabled && IsDirty && !_isAutoSaving)
+        {
+            _autoSaveTimer += deltaTime;
+            if (_autoSaveTimer >= AutoSaveInterval)
+            {
+                _autoSaveTimer = 0f;
+                _ = PerformAutoSaveAsync();
+            }
+        }
+
+        if (!_isRefreshingContent)
+        {
+            _contentRefreshTimer += deltaTime;
+            if (_contentRefreshTimer >= ContentRefreshInterval)
+            {
+                _contentRefreshTimer = 0f;
+                _ = RefreshContentCachesAsync();
+            }
+        }
+    }
+
+    private async Task PerformAutoSaveAsync()
+    {
+        var scene = World.CurrentScene;
+        if (scene == null || _isAutoSaving)
+        {
+            return;
+        }
+
+        _isAutoSaving = true;
+        AutoSaveStatus = "Auto-saving...";
+
+        try
+        {
+            await Task.Run(async () =>
+            {
+                await _sceneService.SaveSceneAsync(scene);
+            });
+
+            IsDirty = false;
+            AutoSaveStatus = $"Auto-saved at {DateTime.Now:HH:mm:ss}";
+        }
+        catch (Exception ex)
+        {
+            AutoSaveStatus = $"Auto-save failed: {ex.Message}";
+        }
+        finally
+        {
+            _isAutoSaving = false;
+        }
+    }
+
+    private async Task RefreshContentCachesAsync()
+    {
+        if (_isRefreshingContent)
+        {
+            return;
+        }
+
+        _isRefreshingContent = true;
+
+        try
+        {
+            await Task.Run(() =>
+            {
+                if (IsContentBrowserOpen)
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        ContentBrowserViewModel.RefreshCurrentTab();
+                    });
+                }
+
+                if (IsAssetBrowserOpen)
+                {
+                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                    {
+                        AssetBrowserViewModel.Refresh();
+                    });
+                }
+            });
+        }
+        catch
+        {
+        }
+        finally
+        {
+            _isRefreshingContent = false;
+        }
     }
 
     [RelayCommand]

@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
+using NiziKit.Editor.Services;
 using NiziKit.Editor.ViewModels;
 using NiziKit.Editor.Views.Editors;
 
@@ -47,7 +48,20 @@ public partial class EditorMainView : UserControl
                     _viewModel.AssetPickerCurrentPack,
                     _viewModel.AssetPickerCurrentAssetName);
             }
+
+            if (e.PropertyName == nameof(EditorViewModel.SceneBrowserViewModel) && _viewModel.SceneBrowserViewModel != null)
+            {
+                _viewModel.SceneBrowserViewModel.FileDoubleClicked += OnSceneBrowserFileDoubleClicked;
+            }
         };
+    }
+
+    private void OnSceneBrowserFileDoubleClicked(FileEntry entry)
+    {
+        if (entry.Type == AssetFileType.Scene)
+        {
+            _viewModel?.OnSceneFileSelected(entry.FullPath);
+        }
     }
 
     public void RefreshScene()

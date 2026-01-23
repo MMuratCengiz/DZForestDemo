@@ -162,12 +162,12 @@ public sealed class DenOfIzTopLevel : EmbeddableControlRoot
                 return true;
             }
 
-            if (current is Border border && border.Background is SolidColorBrush brush && brush.Color.A > 0)
+            if (current is Border border && border.Background != null)
             {
                 return true;
             }
 
-            if (current is Panel panel && panel.Background is SolidColorBrush panelBrush && panelBrush.Color.A > 0)
+            if (current is Panel panel && panel.Background != null)
             {
                 return true;
             }

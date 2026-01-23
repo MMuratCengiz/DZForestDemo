@@ -362,6 +362,12 @@ public class NiziComponentGenerator : IIncrementalGenerator
         baseType = baseType.Replace("global::", "");
         var simpleType = baseType.Contains(".") ? baseType.Substring(baseType.LastIndexOf('.') + 1) : baseType;
 
+        // Handle List<T> types
+        if (baseType.StartsWith("System.Collections.Generic.List<") || baseType.StartsWith("List<"))
+        {
+            return $"System.Text.Json.JsonSerializer.Deserialize<{baseType}>({varName}.GetRawText())";
+        }
+
         return simpleType switch
         {
             "String" or "string" => $"{varName}.GetString()",

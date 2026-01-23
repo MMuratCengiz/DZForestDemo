@@ -67,6 +67,18 @@ public class EditorSceneService
 
     public void SaveScene(Scene scene)
     {
+        var (json, path) = PrepareSceneSave(scene);
+        File.WriteAllText(path, json);
+    }
+
+    public async Task SaveSceneAsync(Scene scene)
+    {
+        var (json, path) = PrepareSceneSave(scene);
+        await File.WriteAllTextAsync(path, json);
+    }
+
+    private (string json, string path) PrepareSceneSave(Scene scene)
+    {
         var sceneJson = ConvertToJson(scene);
         var json = JsonSerializer.Serialize(sceneJson, NiziJsonSerializationOptions.Default);
 
@@ -82,7 +94,7 @@ public class EditorSceneService
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         }
 
-        File.WriteAllText(path, json);
+        return (json, path);
     }
 
     public SceneJson ConvertToJson(Scene scene)
@@ -266,6 +278,17 @@ public class EditorSceneService
             if (!string.IsNullOrEmpty(animComp.DefaultAnimation))
             {
                 json.Properties["defaultAnimation"] = JsonSerializer.SerializeToElement(animComp.DefaultAnimation);
+            }
+
+            // Serialize animations list (only external animations need to be saved)
+            var externalAnimations = animComp.Animations
+                .Where(a => a.IsExternal)
+                .Select(a => new { name = a.Name, source = a.SourceRef })
+                .ToList();
+
+            if (externalAnimations.Count > 0)
+            {
+                json.Properties["animations"] = JsonSerializer.SerializeToElement(externalAnimations);
             }
         }
         else

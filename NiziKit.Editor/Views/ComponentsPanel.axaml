@@ -8,7 +8,7 @@
 
     <ScrollViewer VerticalScrollBarVisibility="Auto"
                   Padding="8">
-        <StackPanel>
+        <StackPanel Background="Transparent">
             <StackPanel IsVisible="{Binding !HasSelection}"
                         HorizontalAlignment="Center"
                         Margin="0,40">

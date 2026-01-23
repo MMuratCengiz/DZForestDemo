@@ -32,6 +32,56 @@ public class AssetBrowserService
         return packs;
     }
 
+    /// <summary>
+    /// Alias for GetLoadedPacks for consistency.
+    /// </summary>
+    public IReadOnlyList<string> GetLoadedPackNames() => GetLoadedPacks();
+
+    /// <summary>
+    /// Gets all models in a pack that have skeletons (and thus can have animations).
+    /// </summary>
+    public IReadOnlyList<string> GetModelsWithSkeletons(string packName)
+    {
+        var models = new List<string>();
+
+        if (!AssetPacks.AssetPacks.TryGet(packName, out var pack) || pack == null)
+        {
+            return models;
+        }
+
+        foreach (var modelKey in pack.Models.Keys)
+        {
+            var model = pack.Models[modelKey];
+            if (model.Skeleton != null)
+            {
+                models.Add(modelKey);
+            }
+        }
+
+        return models;
+    }
+
+    /// <summary>
+    /// Gets all animation names from a specific model in a pack.
+    /// </summary>
+    public IReadOnlyList<string> GetAnimationsFromModel(string packName, string modelName)
+    {
+        var animations = new List<string>();
+
+        if (!AssetPacks.AssetPacks.TryGet(packName, out var pack) || pack == null)
+        {
+            return animations;
+        }
+
+        if (!pack.TryGetModel(modelName, out var model) || model?.Skeleton == null)
+        {
+            return animations;
+        }
+
+        animations.AddRange(model.Skeleton.AnimationNames);
+        return animations;
+    }
+
     public IReadOnlyList<AssetInfo> GetAssetsOfType(AssetRefType assetType, string packName)
     {
         return assetType switch

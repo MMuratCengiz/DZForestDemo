@@ -2,7 +2,9 @@ using System.Numerics;
 using DenOfIz;
 using Microsoft.Extensions.Logging;
 using NiziKit.Assets;
+using NiziKit.AssetPacks;
 using NiziKit.Components;
+using NiziKit.ContentPipeline;
 using NiziKit.Core;
 
 namespace NiziKit.Animation;
@@ -36,6 +38,10 @@ public partial class Animator : IDisposable
     [JsonProperty("defaultAnimation")]
     public partial string? DefaultAnimation { get; set; }
 
+    [SerializeField]
+    [JsonProperty("animations")]
+    public List<AnimationEntry> Animations { get; set; } = [];
+
     public bool IsPlaying { get; private set; }
     public bool IsPaused { get; private set; }
     public string? CurrentAnimation => _layers[0].CurrentAnimation?.Name;
@@ -53,7 +59,18 @@ public partial class Animator : IDisposable
     public ReadOnlySpan<Matrix4x4> BoneMatrices => _boneMatrices.AsSpan(0, BoneCount);
     public bool IsInitialized => _initialized;
 
-    public IReadOnlyList<string> AnimationNames => Skeleton?.AnimationNames ?? Array.Empty<string>();
+    public IReadOnlyList<string> AnimationNames
+    {
+        get
+        {
+            if (Animations.Count > 0)
+            {
+                return Animations.Select(a => a.Name).ToList();
+            }
+            return Skeleton?.AnimationNames ?? Array.Empty<string>();
+        }
+    }
+
     public IReadOnlyList<string> JointNames => _jointNames;
 
     public int LayerCount => _layerCount;
@@ -83,11 +100,57 @@ public partial class Animator : IDisposable
         }
     }
 
+    public void SyncAnimationsFromSkeleton()
+    {
+        if (Skeleton == null)
+        {
+            return;
+        }
+
+        var externals = Animations.Where(a => a.IsExternal).ToList();
+        Animations.Clear();
+
+        foreach (var animName in Skeleton.AnimationNames)
+        {
+            Animations.Add(AnimationEntry.FromSkeleton(animName));
+        }
+
+        Animations.AddRange(externals);
+    }
+
+    public void AddExternalAnimation(string name, string sourceRef)
+    {
+        var existing = Animations.FirstOrDefault(a => a.Name == name);
+        if (existing != null)
+        {
+            existing.SourceRef = sourceRef;
+        }
+        else
+        {
+            Animations.Add(AnimationEntry.External(name, sourceRef));
+        }
+    }
+
+    public bool RemoveAnimation(string name)
+    {
+        var entry = Animations.FirstOrDefault(a => a.Name == name);
+        if (entry != null)
+        {
+            return Animations.Remove(entry);
+        }
+        return false;
+    }
+
     public void Initialize()
     {
         if (Skeleton == null)
         {
             return;
+        }
+
+        if (Animations.Count == 0)
+        {
+            SyncAnimationsFromSkeleton();
         }
 
         BoneCount = Math.Min(Skeleton.JointCount, MaxBones);
@@ -105,10 +168,69 @@ public partial class Animator : IDisposable
         _inverseBindMatrices = meshComponent?.Mesh?.InverseBindMatrices;
         _nodeTransform = meshComponent?.Mesh?.NodeTransform ?? Matrix4x4.Identity;
 
+        LoadExternalAnimations();
+
         if (!string.IsNullOrEmpty(DefaultAnimation) && HasAnimation(DefaultAnimation))
         {
             Play(DefaultAnimation);
         }
+    }
+
+    private void LoadExternalAnimations()
+    {
+        if (Skeleton == null)
+        {
+            return;
+        }
+
+        foreach (var entry in Animations.Where(a => a.IsExternal))
+        {
+            try
+            {
+                var (modelPath, animationName) = ParseAnimationSourceRef(entry.SourceRef!);
+                if (!string.IsNullOrEmpty(modelPath) && !string.IsNullOrEmpty(animationName))
+                {
+                    Skeleton.LoadAnimationFromFile(modelPath, animationName);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning("Failed to load external animation '{Name}' from '{Source}': {Message}",
+                    entry.Name, entry.SourceRef, ex.Message);
+            }
+        }
+    }
+
+    private static (string modelPath, string animationName) ParseAnimationSourceRef(string sourceRef)
+    {
+        var colonIndex = sourceRef.IndexOf(':');
+        if (colonIndex <= 0)
+        {
+            return (string.Empty, string.Empty);
+        }
+
+        var packName = sourceRef[..colonIndex];
+        var remainder = sourceRef[(colonIndex + 1)..];
+
+        var slashIndex = remainder.IndexOf('/');
+        if (slashIndex <= 0)
+        {
+            return (string.Empty, string.Empty);
+        }
+
+        var modelName = remainder[..slashIndex];
+        var animationName = remainder[(slashIndex + 1)..];
+
+        if (AssetPacks.AssetPacks.TryGetPack(packName, out var pack))
+        {
+            var modelPath = pack.GetModelPath(modelName);
+            if (!string.IsNullOrEmpty(modelPath))
+            {
+                return (modelPath, animationName);
+            }
+        }
+
+        return (string.Empty, string.Empty);
     }
 
     public int GetJointIndex(string name)
@@ -126,7 +248,12 @@ public partial class Animator : IDisposable
 
     public bool HasAnimation(string name)
     {
-        var names = AnimationNames;
+        if (Animations.Any(a => a.Name == name))
+        {
+            return true;
+        }
+
+        var names = Skeleton?.AnimationNames ?? Array.Empty<string>();
         for (var i = 0; i < names.Count; i++)
         {
             if (names[i] == name)
@@ -138,6 +265,59 @@ public partial class Animator : IDisposable
         return false;
     }
 
+    public AnimationEntry? GetAnimationEntry(string name)
+    {
+        return Animations.FirstOrDefault(a => a.Name == name);
+    }
+
+    private Assets.Animation? ResolveAnimation(string name)
+    {
+        if (Skeleton == null)
+        {
+            return null;
+        }
+
+        var entry = GetAnimationEntry(name);
+
+        if (entry == null)
+        {
+            try
+            {
+                return Skeleton.GetAnimation(name);
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        if (entry.IsExternal)
+        {
+            var (modelPath, animationName) = ParseAnimationSourceRef(entry.SourceRef!);
+            if (!string.IsNullOrEmpty(modelPath))
+            {
+                try
+                {
+                    return Skeleton.LoadAnimationFromFile(modelPath, animationName);
+                }
+                catch
+                {
+                    return null;
+                }
+            }
+            return null;
+        }
+
+        try
+        {
+            return Skeleton.GetAnimation(name);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     public float GetDuration(string name)
     {
         if (Skeleton == null || !HasAnimation(name))
@@ -145,15 +325,8 @@ public partial class Animator : IDisposable
             return 0f;
         }
 
-        try
-        {
-            var anim = Skeleton.GetAnimation(name);
-            return anim.Duration;
-        }
-        catch
-        {
-            return 0f;
-        }
+        var anim = ResolveAnimation(name);
+        return anim?.Duration ?? 0f;
     }
 
     public void Play(string name, LoopMode loop = LoopMode.Loop)
@@ -229,14 +402,10 @@ public partial class Animator : IDisposable
             Initialize();
         }
 
-        Assets.Animation anim;
-        try
+        var anim = ResolveAnimation(name);
+        if (anim == null)
         {
-            anim = Skeleton.GetAnimation(name);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning("Failed to play animation '{Name}': {Message}", name, ex.Message);
+            Logger.LogWarning("Failed to play animation '{Name}': animation not found", name);
             return;
         }
 
@@ -257,14 +426,10 @@ public partial class Animator : IDisposable
             Initialize();
         }
 
-        Assets.Animation anim;
-        try
+        var anim = ResolveAnimation(name);
+        if (anim == null)
         {
-            anim = Skeleton.GetAnimation(name);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogWarning("Failed to crossfade to animation '{Name}': {Message}", name, ex.Message);
+            Logger.LogWarning("Failed to crossfade to animation '{Name}': animation not found", name);
             return;
         }
 

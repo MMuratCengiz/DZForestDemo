@@ -10,7 +10,7 @@
         <views:BoolToForegroundConverter x:Key="BoolToForegroundConverter"/>
     </UserControl.Resources>
 
-    <Panel>
+    <Panel Background="Transparent">
         <Grid RowDefinitions="*,Auto">
             <TreeView Grid.Row="0"
                       x:Name="SceneTree"
