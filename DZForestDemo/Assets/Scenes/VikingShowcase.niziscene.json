@@ -2,7 +2,7 @@
   "name": "Viking Showcase",
   "assetPacks": [
     "Packs/Viking",
-    "C:\\Workspace\\DZForestDemo\\DZForestDemo\\Assets\\Packs\\NewPack"
+    "Packs/NewPack"
   ],
   "cameras": [
     {
