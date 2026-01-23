@@ -871,6 +871,7 @@ public partial class ContentBrowserViewModel : ObservableObject
                     return;
             }
 
+            NormalizePackPaths(packData);
             File.WriteAllText(packFile, packData.ToJson());
             
             if (AssetPacks.AssetPacks.IsLoaded(SelectedPack.PackName))
@@ -932,6 +933,7 @@ public partial class ContentBrowserViewModel : ObservableObject
 
             if (removed)
             {
+                NormalizePackPaths(packData);
                 File.WriteAllText(packFile, packData.ToJson());
                 
                 if (AssetPacks.AssetPacks.IsLoaded(SelectedPack.PackName))
@@ -1014,5 +1016,22 @@ public partial class ContentBrowserViewModel : ObservableObject
     private string GetRelativePath(string fullPath)
     {
         return Path.GetRelativePath(_assetsDirectory, fullPath);
+    }
+
+    private static void NormalizePackPaths(AssetPackJson pack)
+    {
+        NormalizeDictionary(pack.Models);
+        NormalizeDictionary(pack.Textures);
+        NormalizeDictionary(pack.Materials);
+        NormalizeDictionary(pack.Shaders);
+    }
+
+    private static void NormalizeDictionary(Dictionary<string, string> dict)
+    {
+        var keys = dict.Keys.ToList();
+        foreach (var key in keys)
+        {
+            dict[key] = dict[key].Replace('\\', '/');
+        }
     }
 }
