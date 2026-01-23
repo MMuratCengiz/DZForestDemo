@@ -17,7 +17,7 @@
                     MaxWidth="450"
                     Width="380">
                 <Grid RowDefinitions="Auto,*">
-                    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="8,4,0,16">
+                    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="8,4,0,12">
                         <TextBlock Text="Asset Packs"
                                    Classes="subtitle"
                                    VerticalAlignment="Center"/>
@@ -32,23 +32,71 @@
                     <ScrollViewer Grid.Row="1"
                                   HorizontalScrollBarVisibility="Disabled"
                                   VerticalScrollBarVisibility="Auto">
-                        <TreeView ItemsSource="{Binding PackTree}"
-                                  SelectedItem="{Binding SelectedFolder}">
-                            <TreeView.ItemTemplate>
-                                <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:FolderTreeNode">
-                                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="4,6"
-                                                PointerPressed="OnPackTreeItemPointerPressed">
-                                        <PathIcon Data="{Binding IconData}"
-                                                  Width="24" Height="24"
-                                                  Foreground="{DynamicResource AccentFillColorDefaultBrush}"/>
-                                        <TextBlock Text="{Binding Name}"
-                                                   VerticalAlignment="Center"
-                                                   TextWrapping="NoWrap"
-                                                   MaxWidth="280"/>
-                                    </StackPanel>
-                                </TreeDataTemplate>
-                            </TreeView.ItemTemplate>
-                        </TreeView>
+                        <StackPanel Spacing="8">
+                            <!-- Scene Packs Section -->
+                            <StackPanel>
+                                <TextBlock Text="Scene Packs"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           Margin="8,4,0,8"/>
+                                <TreeView ItemsSource="{Binding ScenePackTree}"
+                                          SelectedItem="{Binding SelectedFolder}">
+                                    <TreeView.ItemTemplate>
+                                        <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:FolderTreeNode">
+                                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="4,5"
+                                                        PointerPressed="OnPackTreeItemPointerPressed">
+                                                <PathIcon Data="{Binding IconData}"
+                                                          Width="20" Height="20"
+                                                          Foreground="{DynamicResource AccentFillColorDefaultBrush}"/>
+                                                <TextBlock Text="{Binding Name}"
+                                                           VerticalAlignment="Center"
+                                                           TextWrapping="NoWrap"
+                                                           MaxWidth="260"/>
+                                            </StackPanel>
+                                        </TreeDataTemplate>
+                                    </TreeView.ItemTemplate>
+                                </TreeView>
+                                <TextBlock Text="No packs in scene"
+                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                           Margin="12,8"
+                                           IsVisible="{Binding !ScenePackTree.Count}"/>
+                            </StackPanel>
+
+                            <!-- Divider -->
+                            <Border Height="1"
+                                    Background="{DynamicResource DividerStrokeColorDefaultBrush}"
+                                    Margin="8,8"/>
+
+                            <!-- Available Packs Section -->
+                            <StackPanel>
+                                <TextBlock Text="Available Packs"
+                                           FontWeight="SemiBold"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           Margin="8,4,0,8"/>
+                                <TreeView ItemsSource="{Binding AvailablePackTree}"
+                                          SelectedItem="{Binding SelectedFolder}">
+                                    <TreeView.ItemTemplate>
+                                        <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:FolderTreeNode">
+                                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="4,5"
+                                                        PointerPressed="OnPackTreeItemPointerPressed">
+                                                <PathIcon Data="{Binding IconData}"
+                                                          Width="20" Height="20"
+                                                          Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+                                                <TextBlock Text="{Binding Name}"
+                                                           VerticalAlignment="Center"
+                                                           TextWrapping="NoWrap"
+                                                           MaxWidth="260"
+                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
+                                            </StackPanel>
+                                        </TreeDataTemplate>
+                                    </TreeView.ItemTemplate>
+                                </TreeView>
+                                <TextBlock Text="No available packs"
+                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                           Margin="12,8"
+                                           IsVisible="{Binding !AvailablePackTree.Count}"/>
+                            </StackPanel>
+                        </StackPanel>
                     </ScrollViewer>
                 </Grid>
             </Border>

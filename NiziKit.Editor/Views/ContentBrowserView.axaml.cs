@@ -191,24 +191,45 @@ public partial class ContentBrowserView : UserControl
             return;
         }
 
-        var items = new List<InlineMenuItem>
+        var items = new List<InlineMenuItem>();
+        var isInScene = vm.ScenePackTree.Any(p => p.PackName == packNode.PackName);
+        if (isInScene)
         {
-            new()
+            items.Add(new InlineMenuItem
             {
-                Header = "Rename",
-                Icon = Symbol.Rename,
-                Command = vm.RenamePackCommand,
+                Header = "Remove from Scene",
+                Icon = Symbol.Remove,
+                Command = vm.RemovePackFromSceneCommand,
                 CommandParameter = packNode
-            },
-            InlineMenuItem.Separator(),
-            new()
+            });
+        }
+        else
+        {
+            items.Add(new InlineMenuItem
             {
-                Header = "Show in Explorer",
-                Icon = Symbol.OpenFolder,
-                Command = vm.ShowPackInExplorerCommand,
+                Header = "Add to Scene",
+                Icon = Symbol.Add,
+                Command = vm.AddPackToSceneCommand,
                 CommandParameter = packNode
-            }
-        };
+            });
+        }
+
+        items.Add(InlineMenuItem.Separator());
+        items.Add(new InlineMenuItem
+        {
+            Header = "Rename",
+            Icon = Symbol.Rename,
+            Command = vm.RenamePackCommand,
+            CommandParameter = packNode
+        });
+        items.Add(InlineMenuItem.Separator());
+        items.Add(new InlineMenuItem
+        {
+            Header = "Show in Explorer",
+            Icon = Symbol.OpenFolder,
+            Command = vm.ShowPackInExplorerCommand,
+            CommandParameter = packNode
+        });
 
         InlineMenu.Show(position, items);
     }

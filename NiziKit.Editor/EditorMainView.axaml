@@ -230,7 +230,8 @@
         </Border>
 
         <Border IsVisible="{Binding IsAssetPickerOpen}"
-                Classes="dialog-overlay">
+                Classes="dialog-overlay"
+                ZIndex="600">
             <editors:AssetPickerDialog x:Name="AssetPickerDialog"
                                        HorizontalAlignment="Center"
                                        VerticalAlignment="Center"/>

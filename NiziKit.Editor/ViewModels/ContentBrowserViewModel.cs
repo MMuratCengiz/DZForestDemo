@@ -163,7 +163,8 @@ public partial class ContentBrowserViewModel : ObservableObject
     }
 
     public ObservableCollection<FolderTreeNode> FolderTree { get; } = [];
-    public ObservableCollection<FolderTreeNode> PackTree { get; } = [];
+    public ObservableCollection<FolderTreeNode> ScenePackTree { get; } = [];
+    public ObservableCollection<FolderTreeNode> AvailablePackTree { get; } = [];
 
     public ObservableCollection<ContentTab> Tabs { get; } = [];
 
@@ -246,7 +247,8 @@ public partial class ContentBrowserViewModel : ObservableObject
     private void LoadFolderTree()
     {
         FolderTree.Clear();
-        PackTree.Clear();
+        ScenePackTree.Clear();
+        AvailablePackTree.Clear();
 
         if (Directory.Exists(_assetsDirectory))
         {
@@ -267,64 +269,17 @@ public partial class ContentBrowserViewModel : ObservableObject
                     {
                         var json = File.ReadAllText(packFile);
                         var pack = AssetPackJson.FromJson(json);
-                        var packNode = new FolderTreeNode
-                        {
-                            Name = pack.Name,
-                            FullPath = dir,
-                            IsPack = true,
-                            PackName = pack.Name,
-                            IsExpanded = false
-                        };
+                        var packNode = CreatePackNode(pack, dir);
 
-                        foreach (var model in pack.Models)
+                        // Check if pack is loaded in the scene
+                        if (AssetPacks.IsLoaded(pack.Name))
                         {
-                            packNode.Children.Add(new FolderTreeNode
-                            {
-                                Name = model.Key,
-                                FullPath = Path.Combine(dir, model.Value),
-                                IsPack = false,
-                                PackName = pack.Name,
-                                AssetType = AssetFileType.Model
-                            });
+                            ScenePackTree.Add(packNode);
                         }
-
-                        foreach (var texture in pack.Textures)
+                        else
                         {
-                            packNode.Children.Add(new FolderTreeNode
-                            {
-                                Name = texture.Key,
-                                FullPath = Path.Combine(dir, texture.Value),
-                                IsPack = false,
-                                PackName = pack.Name,
-                                AssetType = AssetFileType.Texture
-                            });
+                            AvailablePackTree.Add(packNode);
                         }
-
-                        foreach (var material in pack.Materials)
-                        {
-                            packNode.Children.Add(new FolderTreeNode
-                            {
-                                Name = material.Key,
-                                FullPath = Path.Combine(dir, material.Value),
-                                IsPack = false,
-                                PackName = pack.Name,
-                                AssetType = AssetFileType.Material
-                            });
-                        }
-
-                        foreach (var shader in pack.Shaders)
-                        {
-                            packNode.Children.Add(new FolderTreeNode
-                            {
-                                Name = shader.Key,
-                                FullPath = Path.Combine(dir, shader.Value),
-                                IsPack = false,
-                                PackName = pack.Name,
-                                AssetType = AssetFileType.Shader
-                            });
-                        }
-
-                        PackTree.Add(packNode);
                     }
                     catch
                     {
@@ -332,6 +287,68 @@ public partial class ContentBrowserViewModel : ObservableObject
                 }
             }
         }
+    }
+
+    private static FolderTreeNode CreatePackNode(AssetPackJson pack, string dir)
+    {
+        var packNode = new FolderTreeNode
+        {
+            Name = pack.Name,
+            FullPath = dir,
+            IsPack = true,
+            PackName = pack.Name,
+            IsExpanded = false
+        };
+
+        foreach (var model in pack.Models)
+        {
+            packNode.Children.Add(new FolderTreeNode
+            {
+                Name = model.Key,
+                FullPath = Path.Combine(dir, model.Value),
+                IsPack = false,
+                PackName = pack.Name,
+                AssetType = AssetFileType.Model
+            });
+        }
+
+        foreach (var texture in pack.Textures)
+        {
+            packNode.Children.Add(new FolderTreeNode
+            {
+                Name = texture.Key,
+                FullPath = Path.Combine(dir, texture.Value),
+                IsPack = false,
+                PackName = pack.Name,
+                AssetType = AssetFileType.Texture
+            });
+        }
+
+        foreach (var material in pack.Materials)
+        {
+            packNode.Children.Add(new FolderTreeNode
+            {
+                Name = material.Key,
+                FullPath = Path.Combine(dir, material.Value),
+                IsPack = false,
+                PackName = pack.Name,
+                AssetType = AssetFileType.Material
+            });
+        }
+
+        foreach (var shader in pack.Shaders)
+        {
+            packNode.Children.Add(new FolderTreeNode
+            {
+                Name = shader.Key,
+                FullPath = Path.Combine(dir, shader.Value),
+                IsPack = false,
+                PackName = pack.Name,
+                AssetType = AssetFileType.Shader
+            });
+        }
+
+        return packNode;
     }
 
     private FolderTreeNode CreateFolderNode(string path)
@@ -711,8 +728,19 @@ public partial class ContentBrowserViewModel : ObservableObject
         var packFile = Path.Combine(packDir, "pack.nizipack.json");
         File.WriteAllText(packFile, packData.ToJson());
 
+        // Load the pack into the runtime
+        try
+        {
+            AssetPack.Load(packDir);
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Created pack but failed to load: {ex.Message}";
+        }
+
         StatusMessage = $"Created pack: {Path.GetFileName(packDir)}";
         LoadFolderTree();
+        RefreshCurrentTab();
         OpenPack(packData.Name, packDir);
     }
 
@@ -761,7 +789,7 @@ public partial class ContentBrowserViewModel : ObservableObject
                 return;
             }
 
-            var existingPack = PackTree.FirstOrDefault(p => p.PackName.Equals(newName, StringComparison.OrdinalIgnoreCase) && p != _renamingPack);
+            var existingPack = ScenePackTree.Concat(AvailablePackTree).FirstOrDefault(p => p.PackName.Equals(newName, StringComparison.OrdinalIgnoreCase) && p != _renamingPack);
             if (existingPack != null)
             {
                 StatusMessage = $"A pack named '{newName}' already exists";
@@ -869,6 +897,60 @@ public partial class ContentBrowserViewModel : ObservableObject
         }
         catch
         {
+        }
+    }
+
+    [RelayCommand]
+    public void AddPackToScene(FolderTreeNode? packNode)
+    {
+        if (packNode == null || !packNode.IsPack)
+        {
+            return;
+        }
+
+        if (AssetPacks.IsLoaded(packNode.PackName))
+        {
+            StatusMessage = $"Pack '{packNode.PackName}' is already in the scene";
+            return;
+        }
+
+        try
+        {
+            AssetPack.Load(packNode.FullPath);
+            StatusMessage = $"Added pack '{packNode.PackName}' to scene";
+            LoadFolderTree();
+            RefreshCurrentTab();
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error adding pack: {ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    public void RemovePackFromScene(FolderTreeNode? packNode)
+    {
+        if (packNode == null || !packNode.IsPack)
+        {
+            return;
+        }
+
+        if (!AssetPacks.IsLoaded(packNode.PackName))
+        {
+            StatusMessage = $"Pack '{packNode.PackName}' is not in the scene";
+            return;
+        }
+
+        try
+        {
+            AssetPacks.Unregister(packNode.PackName);
+            StatusMessage = $"Removed pack '{packNode.PackName}' from scene";
+            LoadFolderTree();
+            RefreshCurrentTab();
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error removing pack: {ex.Message}";
         }
     }
 
