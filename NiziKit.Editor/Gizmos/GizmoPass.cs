@@ -26,11 +26,18 @@ public sealed class GizmoPass : IDisposable
         0, 4, 1, 5, 2, 6, 3, 7
     ];
 
+    private static readonly Vector4 GridColorMajor = new(0.5f, 0.5f, 0.5f, 0.8f);
+    private static readonly Vector4 GridColorMinor = new(0.35f, 0.35f, 0.35f, 0.5f);
+    private static readonly Vector4 GridColorAxisX = new(0.7f, 0.2f, 0.2f, 0.9f);
+    private static readonly Vector4 GridColorAxisZ = new(0.2f, 0.4f, 0.7f, 0.9f);
+
     private readonly GizmoShaders _shaders;
     private readonly MappedBuffer<GizmoConstants> _gizmoConstantBuffer;
     private readonly MappedBuffer<GizmoConstants> _selectionConstantBuffer;
+    private readonly MappedBuffer<GizmoConstants> _gridConstantBuffer;
     private readonly BindGroup[] _gizmoBindGroups;
     private readonly BindGroup[] _selectionBindGroups;
+    private readonly BindGroup[] _gridBindGroups;
     private readonly Texture?[] _boundDepthTextures;
 
     private readonly Buffer[,] _gizmoBuffers;
@@ -39,10 +46,20 @@ public sealed class GizmoPass : IDisposable
     private readonly Buffer _unitCubeBuffer;
     private readonly List<Matrix4x4> _selectionBoxMatrices = new(MaxSelectionBoxes);
 
+    private Buffer? _gridBuffer;
+    private int _gridVertexCount;
+    private float _currentGridSize;
+    private float _currentGridSpacing;
+
     private Vector3 _gizmoOrigin;
     private Quaternion _gizmoRotation;
     private float _gizmoScale;
     private bool _hasGizmo;
+
+    public bool ShowGrid { get; set; } = true;
+    public float GridSize { get; set; } = 50f;
+    public float GridSpacing { get; set; } = 1f;
+    public int GridSubdivisions { get; set; } = 5;
 
     public TransformGizmo Gizmo { get; } = new();
 
@@ -53,6 +70,7 @@ public sealed class GizmoPass : IDisposable
         var numFrames = (int)GraphicsContext.NumFrames;
         _gizmoBindGroups = new BindGroup[numFrames];
         _selectionBindGroups = new BindGroup[numFrames];
+        _gridBindGroups = new BindGroup[numFrames];
         _boundDepthTextures = new Texture?[numFrames];
 
         for (var i = 0; i < numFrames; i++)
@@ -65,15 +83,21 @@ public sealed class GizmoPass : IDisposable
             {
                 Layout = _shaders.BindGroupLayout
             });
+            _gridBindGroups[i] = GraphicsContext.Device.CreateBindGroup(new BindGroupDesc
+            {
+                Layout = _shaders.BindGroupLayout
+            });
         }
 
         _gizmoConstantBuffer = new MappedBuffer<GizmoConstants>(true, "GizmoConstants");
         _selectionConstantBuffer = new MappedBuffer<GizmoConstants>(true, "SelectionConstants");
+        _gridConstantBuffer = new MappedBuffer<GizmoConstants>(true, "GridConstants");
 
         _gizmoBuffers = new Buffer[NumModes, NumAxes];
         _gizmoVertexCounts = new int[NumModes, NumAxes];
         _unitCubeBuffer = BuildUnitCubeBuffer();
         BuildAllGizmoBuffers();
+        BuildGridBuffer();
     }
 
     private Buffer BuildUnitCubeBuffer()
@@ -221,6 +245,97 @@ public sealed class GizmoPass : IDisposable
         }
     }
 
+    private void BuildGridBuffer()
+    {
+        if (MathF.Abs(_currentGridSize - GridSize) < 0.001f &&
+            MathF.Abs(_currentGridSpacing - GridSpacing) < 0.001f &&
+            _gridBuffer != null)
+        {
+            return;
+        }
+
+        _gridBuffer?.Dispose();
+        _currentGridSize = GridSize;
+        _currentGridSpacing = GridSpacing;
+
+        var vertices = new List<GizmoVertex>();
+        var halfSize = GridSize;
+        var majorSpacing = GridSpacing * GridSubdivisions;
+
+        for (var i = -halfSize; i <= halfSize; i += GridSpacing)
+        {
+            var isMajor = MathF.Abs(i % majorSpacing) < 0.001f;
+            var isAxis = MathF.Abs(i) < 0.001f;
+
+            Vector4 colorX, colorZ;
+            if (isAxis)
+            {
+                colorX = GridColorAxisZ;
+                colorZ = GridColorAxisX;
+            }
+            else
+            {
+                colorX = isMajor ? GridColorMajor : GridColorMinor;
+                colorZ = isMajor ? GridColorMajor : GridColorMinor;
+            }
+
+            vertices.Add(new GizmoVertex(new Vector3(i, 0, -halfSize), colorX));
+            vertices.Add(new GizmoVertex(new Vector3(i, 0, halfSize), colorX));
+
+            vertices.Add(new GizmoVertex(new Vector3(-halfSize, 0, i), colorZ));
+            vertices.Add(new GizmoVertex(new Vector3(halfSize, 0, i), colorZ));
+        }
+
+        _gridVertexCount = vertices.Count;
+
+        if (_gridVertexCount == 0)
+        {
+            return;
+        }
+
+        var bufferSize = (uint)(Marshal.SizeOf<GizmoVertex>() * _gridVertexCount);
+        _gridBuffer = GraphicsContext.Device.CreateBuffer(new BufferDesc
+        {
+            NumBytes = bufferSize,
+            Usage = (uint)BufferUsageFlagBits.Vertex,
+            HeapType = HeapType.Gpu,
+            DebugName = StringView.Create("GridBuffer")
+        });
+
+        lock (GraphicsContext.GpuLock)
+        {
+            var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
+            {
+                Device = GraphicsContext.Device,
+                IssueBarriers = false
+            });
+            batchCopy.Begin();
+
+            var array = CollectionsMarshal.AsSpan(vertices).ToArray();
+            var handle = GCHandle.Alloc(array, GCHandleType.Pinned);
+            try
+            {
+                batchCopy.CopyToGPUBuffer(new CopyToGpuBufferDesc
+                {
+                    Data = new ByteArrayView
+                    {
+                        Elements = handle.AddrOfPinnedObject(),
+                        NumElements = bufferSize
+                    },
+                    DstBuffer = _gridBuffer,
+                    DstBufferOffset = 0
+                });
+            }
+            finally
+            {
+                handle.Free();
+            }
+
+            batchCopy.Submit(null);
+            batchCopy.Dispose();
+        }
+    }
+
     private (int modeIndex, int axisIndex) GetGizmoIndices()
     {
         var modeIndex = Gizmo.Mode switch
@@ -289,16 +404,21 @@ public sealed class GizmoPass : IDisposable
 
     public void Render(GraphicsPass pass, ViewData viewData, CycledTexture sceneDepth)
     {
-        if (!_hasGizmo && _selectionBoxMatrices.Count == 0)
-        {
-            return;
-        }
-
         var frameIndex = GraphicsContext.FrameIndex;
         var depthTexture = sceneDepth[frameIndex];
         UpdateBindGroups(frameIndex, depthTexture);
 
         var vertexStride = (uint)Marshal.SizeOf<GizmoVertex>();
+
+        if (ShowGrid && _gridBuffer != null && _gridVertexCount > 0)
+        {
+            BuildGridBuffer();
+            UpdateGridConstants(viewData);
+            pass.BindPipeline(_shaders.GridPipeline);
+            pass.Bind(_gridBindGroups[frameIndex]);
+            pass.BindVertexBuffer(_gridBuffer, 0, vertexStride);
+            pass.Draw((uint)_gridVertexCount, 1, 0, 0);
+        }
 
         if (_hasGizmo)
         {
@@ -379,6 +499,27 @@ public sealed class GizmoPass : IDisposable
         _selectionConstantBuffer.Write(in constants);
     }
 
+    private void UpdateGridConstants(ViewData viewData)
+    {
+        var camera = viewData.Camera ?? viewData.Scene?.GetActiveCamera();
+        var viewProjection = camera?.ViewProjectionMatrix ?? Matrix4x4.Identity;
+        var cameraPosition = camera?.WorldPosition ?? Vector3.Zero;
+
+        var constants = new GizmoConstants
+        {
+            ViewProjection = viewProjection,
+            ModelMatrix = Matrix4x4.Identity,
+            CameraPosition = cameraPosition,
+            DepthBias = 1.0f,
+            SelectionColor = GridColorMajor,
+            Opacity = 1f,
+            Time = viewData.TotalTime,
+            ScreenSize = new Vector2(GraphicsContext.Width, GraphicsContext.Height)
+        };
+
+        _gridConstantBuffer.Write(in constants);
+    }
+
     private void UpdateBindGroups(int frameIndex, Texture depthTexture)
     {
         if (_boundDepthTextures[frameIndex] == depthTexture)
@@ -396,6 +537,11 @@ public sealed class GizmoPass : IDisposable
         _selectionBindGroups[frameIndex].SrvTexture(0, depthTexture);
         _selectionBindGroups[frameIndex].EndUpdate();
 
+        _gridBindGroups[frameIndex].BeginUpdate();
+        _gridBindGroups[frameIndex].Cbv(0, _gridConstantBuffer[frameIndex]);
+        _gridBindGroups[frameIndex].SrvTexture(0, depthTexture);
+        _gridBindGroups[frameIndex].EndUpdate();
+
         _boundDepthTextures[frameIndex] = depthTexture;
     }
 
@@ -410,6 +556,7 @@ public sealed class GizmoPass : IDisposable
         }
 
         _unitCubeBuffer.Dispose();
+        _gridBuffer?.Dispose();
 
         foreach (var bindGroup in _gizmoBindGroups)
         {
@@ -421,8 +568,14 @@ public sealed class GizmoPass : IDisposable
             bindGroup.Dispose();
         }
 
+        foreach (var bindGroup in _gridBindGroups)
+        {
+            bindGroup.Dispose();
+        }
+
         _gizmoConstantBuffer.Dispose();
         _selectionConstantBuffer.Dispose();
+        _gridConstantBuffer.Dispose();
         _shaders.Dispose();
     }
 }

@@ -20,7 +20,7 @@
                         Padding="10"
                         ToolTip.Tip="Go up"
                         VerticalAlignment="Center">
-                    <ui:SymbolIcon Symbol="ChevronUp" FontSize="18"/>
+                    <ui:SymbolIcon Symbol="ChevronUp" FontSize="{StaticResource IconSizeMedium}"/>
                 </Button>
 
                 <ScrollViewer Grid.Column="1"

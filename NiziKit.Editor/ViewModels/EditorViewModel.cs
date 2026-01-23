@@ -345,6 +345,10 @@ public partial class EditorViewModel : ObservableObject
     private bool _snapEnabled;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(GridStatusText))]
+    private bool _showGrid = true;
+
+    [ObservableProperty]
     private float _positionSnapIncrement = 1f;
 
     [ObservableProperty]
@@ -353,48 +357,58 @@ public partial class EditorViewModel : ObservableObject
     [ObservableProperty]
     private float _scaleSnapIncrement = 0.1f;
 
+    [ObservableProperty]
+    private float _gridSize = 50f;
+
+    [ObservableProperty]
+    private float _gridSpacing = 1f;
+
     public string SnapStatusText => SnapEnabled ? "Snap: On" : "Snap: Off";
+    public string GridStatusText => ShowGrid ? "Grid: On" : "Grid: Off";
 
-    private GridDesc? _gridSettings;
+    public event Action? GridSettingsChanged;
 
-    public void SetGridSettings(GridDesc desc)
+    private GridDesc? _gridDesc;
+
+    public void SetGridDesc(GridDesc desc)
     {
-        _gridSettings = desc;
+        _gridDesc = desc;
         SnapEnabled = desc.SnapEnabled;
-        PositionSnapIncrement = desc.PositionSnapIncrement;
+        PositionSnapIncrement = GridSpacing;
+        desc.PositionSnapIncrement = GridSpacing;
         RotationSnapIncrement = desc.RotationSnapIncrement;
         ScaleSnapIncrement = desc.ScaleSnapIncrement;
     }
 
     partial void OnSnapEnabledChanged(bool value)
     {
-        if (_gridSettings != null)
+        if (_gridDesc != null)
         {
-            _gridSettings.SnapEnabled = value;
+            _gridDesc.SnapEnabled = value;
         }
     }
 
     partial void OnPositionSnapIncrementChanged(float value)
     {
-        if (_gridSettings != null)
+        if (_gridDesc != null)
         {
-            _gridSettings.PositionSnapIncrement = value;
+            _gridDesc.PositionSnapIncrement = value;
         }
     }
 
     partial void OnRotationSnapIncrementChanged(float value)
     {
-        if (_gridSettings != null)
+        if (_gridDesc != null)
         {
-            _gridSettings.RotationSnapIncrement = value;
+            _gridDesc.RotationSnapIncrement = value;
         }
     }
 
     partial void OnScaleSnapIncrementChanged(float value)
     {
-        if (_gridSettings != null)
+        if (_gridDesc != null)
         {
-            _gridSettings.ScaleSnapIncrement = value;
+            _gridDesc.ScaleSnapIncrement = value;
         }
     }
 
@@ -402,6 +416,28 @@ public partial class EditorViewModel : ObservableObject
     private void ToggleSnap()
     {
         SnapEnabled = !SnapEnabled;
+    }
+
+    [RelayCommand]
+    private void ToggleGrid()
+    {
+        ShowGrid = !ShowGrid;
+    }
+
+    partial void OnShowGridChanged(bool value)
+    {
+        GridSettingsChanged?.Invoke();
+    }
+
+    partial void OnGridSizeChanged(float value)
+    {
+        GridSettingsChanged?.Invoke();
+    }
+
+    partial void OnGridSpacingChanged(float value)
+    {
+        PositionSnapIncrement = value;
+        GridSettingsChanged?.Invoke();
     }
 
     private float _statsUpdateTimer;

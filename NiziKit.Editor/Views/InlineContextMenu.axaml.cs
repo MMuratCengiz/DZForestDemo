@@ -16,6 +16,13 @@ public partial class InlineContextMenu : UserControl
         InitializeComponent();
     }
 
+    private static double GetIconSize(string key, double fallback = 16)
+    {
+        if (Avalonia.Application.Current?.TryFindResource(key, out var resource) == true && resource is double size)
+            return size;
+        return fallback;
+    }
+
     public void Show(Point position, IEnumerable<InlineMenuItem> items)
     {
         // Ensure we're on the UI thread
@@ -124,7 +131,7 @@ public partial class InlineContextMenu : UserControl
             panel.Children.Add(new SymbolIcon
             {
                 Symbol = item.Icon.Value,
-                FontSize = 16
+                FontSize = GetIconSize("IconSizeBase")
             });
         }
 

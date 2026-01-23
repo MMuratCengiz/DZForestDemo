@@ -44,7 +44,7 @@
                             Padding="12,6"/>
                     <Button Command="{Binding RefreshPacksCommand}"
                             Padding="8,6">
-                        <ui:SymbolIcon Symbol="Refresh" FontSize="16"/>
+                        <ui:SymbolIcon Symbol="Refresh" FontSize="{StaticResource IconSizeBase}"/>
                     </Button>
                 </StackPanel>
             </Grid>
@@ -107,9 +107,9 @@
                                                 CornerRadius="4"
                                                 Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}">
                                             <Grid RowDefinitions="*,Auto,Auto">
-                                                <ui:SymbolIcon Grid.Row="0"
+<ui:SymbolIcon Grid.Row="0"
                                                                Symbol="Image"
-                                                               FontSize="32"
+                                                               FontSize="{StaticResource IconSizeXL}"
                                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                VerticalAlignment="Center"
                                                                HorizontalAlignment="Center"/>
@@ -165,9 +165,9 @@
                                                 DoubleTapped="OnAssetCardDoubleTapped"
                                                 Tag="{Binding}">
                                             <Grid RowDefinitions="*,Auto,Auto">
-                                                <ui:SymbolIcon Grid.Row="0"
+<ui:SymbolIcon Grid.Row="0"
                                                                Symbol="Globe"
-                                                               FontSize="32"
+                                                               FontSize="{StaticResource IconSizeXL}"
                                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                VerticalAlignment="Center"
                                                                HorizontalAlignment="Center"/>
@@ -282,9 +282,9 @@
                                                 DoubleTapped="OnAssetCardDoubleTapped"
                                                 Tag="{Binding}">
                                             <Grid RowDefinitions="*,Auto,Auto">
-                                                <ui:SymbolIcon Grid.Row="0"
+<ui:SymbolIcon Grid.Row="0"
                                                                Symbol="Code"
-                                                               FontSize="32"
+                                                               FontSize="{StaticResource IconSizeXL}"
                                                                Foreground="{DynamicResource TextFillColorSecondaryBrush}"
                                                                VerticalAlignment="Center"
                                                                HorizontalAlignment="Center"/>
@@ -338,8 +338,8 @@
             <StackPanel HorizontalAlignment="Center"
                         VerticalAlignment="Center"
                         Spacing="12">
-                <ui:SymbolIcon Symbol="Folder"
-                               FontSize="56"
+<ui:SymbolIcon Symbol="Folder"
+                               FontSize="{StaticResource IconSizeHuge}"
                                Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
                 <TextBlock Text="Select a pack or create a new one"
                            Foreground="{DynamicResource TextFillColorTertiaryBrush}"

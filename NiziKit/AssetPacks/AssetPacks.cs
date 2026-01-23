@@ -51,4 +51,24 @@ public static class AssetPacks
         }
         _packs.Clear();
     }
+
+    public static void Reload(string name)
+    {
+        if (_packs.TryGetValue(name, out var existingPack))
+        {
+            var sourcePath = existingPack.SourcePath;
+            existingPack.Dispose();
+            AssetPack.Load(sourcePath);
+        }
+    }
+
+    public static async Task ReloadAsync(string name, CancellationToken ct = default)
+    {
+        if (_packs.TryGetValue(name, out var existingPack))
+        {
+            var sourcePath = existingPack.SourcePath;
+            existingPack.Dispose();
+            await AssetPack.LoadAsync(sourcePath, ct);
+        }
+    }
 }

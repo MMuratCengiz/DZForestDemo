@@ -395,6 +395,13 @@ public partial class JsonFormEditor : UserControl
 
     private static readonly Dictionary<string, ParsedJsonSchema> SchemaCache = new();
 
+    private static double GetIconSize(string key, double fallback = 12)
+    {
+        if (Avalonia.Application.Current?.TryFindResource(key, out var resource) == true && resource is double size)
+            return size;
+        return fallback;
+    }
+
     public JsonFormEditor()
     {
         InitializeComponent();
@@ -712,7 +719,7 @@ public partial class JsonFormEditor : UserControl
 
         var addButton = new Button
         {
-            Content = new SymbolIcon { Symbol = Symbol.Add, FontSize = 12 },
+            Content = new SymbolIcon { Symbol = Symbol.Add, FontSize = GetIconSize("IconSizeSmall") },
             Padding = new Thickness(4)
         };
         ToolTip.SetTip(addButton, "Add Entry");
@@ -809,7 +816,7 @@ public partial class JsonFormEditor : UserControl
 
         var removeButton = new Button
         {
-            Content = new SymbolIcon { Symbol = Symbol.Remove, FontSize = 12 },
+            Content = new SymbolIcon { Symbol = Symbol.Remove, FontSize = GetIconSize("IconSizeSmall") },
             Padding = new Thickness(4),
             VerticalAlignment = VerticalAlignment.Center,
             Margin = new Thickness(8, 0, 0, 0)
@@ -864,7 +871,7 @@ public partial class JsonFormEditor : UserControl
 
         var addButton = new Button
         {
-            Content = new SymbolIcon { Symbol = Symbol.Add, FontSize = 12 },
+            Content = new SymbolIcon { Symbol = Symbol.Add, FontSize = GetIconSize("IconSizeSmall") },
             Padding = new Thickness(4)
         };
         ToolTip.SetTip(addButton, "Add");
@@ -941,7 +948,7 @@ public partial class JsonFormEditor : UserControl
 
         var removeButton = new Button
         {
-            Content = new SymbolIcon { Symbol = Symbol.Remove, FontSize = 12 },
+            Content = new SymbolIcon { Symbol = Symbol.Remove, FontSize = GetIconSize("IconSizeSmall") },
             Padding = new Thickness(4),
             VerticalAlignment = VerticalAlignment.Top,
             Margin = new Thickness(4, 0, 0, 0)

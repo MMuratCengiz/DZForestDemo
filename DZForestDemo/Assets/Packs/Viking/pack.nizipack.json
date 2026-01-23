@@ -31,6 +31,8 @@
     "torch": "Synty/Models/VikingRealm/FBX/SM_Prop_Torch_01.glb",
     "firepit": "Synty/Models/VikingRealm/FBX/SM_Prop_Fire_Pit_01.glb",
     "flag": "Synty/Models/VikingRealm/FBX/SM_Prop_Flag_01.glb",
-    "Fox": "Models/Fox.glb"
+    "Fox": "Models/Fox.glb",
+    "SM_Prop_Target_01": "Synty\\Models\\BaseLocomotion\\Demo_Models\\SM_Prop_Target_01.glb",
+    "A_Idle_Crouching_Masc": "Synty\\Models\\BaseLocomotion\\Animations\\Polygon\\Masculine\\Idle\\A_Idle_Crouching_Masc.glb"
   }
 }

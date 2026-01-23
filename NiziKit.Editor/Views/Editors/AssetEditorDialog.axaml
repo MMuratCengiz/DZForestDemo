@@ -24,7 +24,7 @@
                             Command="{Binding CloseAssetEditorCommand}"
                             ToolTip.Tip="Close"
                             Padding="8">
-                        <ui:SymbolIcon Symbol="Dismiss" FontSize="18"/>
+                        <ui:SymbolIcon Symbol="Dismiss" FontSize="{StaticResource IconSizeMedium}"/>
                     </Button>
                 </Grid>
             </Border>

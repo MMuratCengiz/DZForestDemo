@@ -83,7 +83,9 @@ public sealed class EditorGame : Game
             {
                 mainView.ViewModel.ViewPresetChanged += OnViewPresetChanged;
                 mainView.ViewModel.ProjectionModeChanged += OnProjectionModeChanged;
-                mainView.ViewModel.SetGridSettings(_renderer.GizmoPass.Gizmo.GridDesc);
+                mainView.ViewModel.GridSettingsChanged += OnGridSettingsChanged;
+                mainView.ViewModel.SetGridDesc(_renderer.GizmoPass.Gizmo.GridDesc);
+                SyncGridSettings(mainView.ViewModel);
             }
         }
     }
@@ -462,6 +464,25 @@ public sealed class EditorGame : Game
         }
     }
 
+    private void OnGridSettingsChanged()
+    {
+        var vm = _renderer.EditorViewModel;
+        if (vm == null)
+        {
+            return;
+        }
+
+        SyncGridSettings(vm);
+    }
+
+    private void SyncGridSettings(EditorViewModel vm)
+    {
+        var gizmoPass = _renderer.GizmoPass;
+        gizmoPass.ShowGrid = vm.ShowGrid;
+        gizmoPass.GridSize = vm.GridSize;
+        gizmoPass.GridSpacing = vm.GridSpacing;
+    }
+
     private void OnResize(uint width, uint height)
     {
         if (_width == width && _height == height)
@@ -608,6 +629,7 @@ public sealed class EditorGame : Game
         {
             _renderer.EditorViewModel.ViewPresetChanged -= OnViewPresetChanged;
             _renderer.EditorViewModel.ProjectionModeChanged -= OnProjectionModeChanged;
+            _renderer.EditorViewModel.GridSettingsChanged -= OnGridSettingsChanged;
         }
 
         _topLevel.TextInputActiveChanged -= OnTextInputActiveChanged;

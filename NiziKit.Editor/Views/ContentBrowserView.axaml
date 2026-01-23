@@ -25,7 +25,7 @@
                                 Command="{Binding CreatePackCommand}"
                                 ToolTip.Tip="Create new pack"
                                 Padding="10">
-                            <ui:SymbolIcon Symbol="Add" FontSize="20"/>
+                            <ui:SymbolIcon Symbol="Add" FontSize="{StaticResource IconSizeLarge}"/>
                         </Button>
                     </Grid>
 
@@ -114,7 +114,7 @@
                              Width="220"
                              VerticalAlignment="Center">
                         <TextBox.InnerLeftContent>
-                            <ui:SymbolIcon Symbol="Find" FontSize="18" Margin="10,0,0,0"/>
+                            <ui:SymbolIcon Symbol="Find" FontSize="{StaticResource IconSizeMedium}" Margin="10,0,0,0"/>
                         </TextBox.InnerLeftContent>
                     </TextBox>
                 </Grid>

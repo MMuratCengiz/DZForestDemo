@@ -821,7 +821,7 @@ public partial class ContentBrowserViewModel : ObservableObject
             var json = File.ReadAllText(packFile);
             var packData = AssetPackJson.FromJson(json);
 
-            var relativePath = Path.GetRelativePath(SelectedPack.FullPath, SelectedItem.FullPath);
+            var relativePath = Path.GetRelativePath(_assetsDirectory, SelectedItem.FullPath).Replace('\\', '/');
             var assetKey = Path.GetFileNameWithoutExtension(SelectedItem.Name);
             if (assetKey.EndsWith(".nizimat") || assetKey.EndsWith(".nizishp"))
             {
@@ -872,6 +872,12 @@ public partial class ContentBrowserViewModel : ObservableObject
             }
 
             File.WriteAllText(packFile, packData.ToJson());
+            
+            if (AssetPacks.AssetPacks.IsLoaded(SelectedPack.PackName))
+            {
+                AssetPacks.AssetPacks.Reload(SelectedPack.PackName);
+            }
+            
             StatusMessage = $"Added '{assetKey}' to pack '{SelectedPack.PackName}'";
             LoadFolderTree();
         }
@@ -927,6 +933,12 @@ public partial class ContentBrowserViewModel : ObservableObject
             if (removed)
             {
                 File.WriteAllText(packFile, packData.ToJson());
+                
+                if (AssetPacks.AssetPacks.IsLoaded(SelectedPack.PackName))
+                {
+                    AssetPacks.AssetPacks.Reload(SelectedPack.PackName);
+                }
+                
                 StatusMessage = $"Removed '{assetKey}' from pack '{SelectedPack.PackName}'";
                 LoadFolderTree();
             }
