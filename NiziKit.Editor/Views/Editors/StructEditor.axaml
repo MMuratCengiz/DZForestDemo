@@ -2,10 +2,11 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="NiziKit.Editor.Views.Editors.StructEditor">
 
-    <Border Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
-            CornerRadius="{DynamicResource ControlCornerRadius}"
-            Padding="8"
-            Margin="0,4">
+    <Border Background="{StaticResource EditorSurfaceRaised}"
+            BorderBrush="{StaticResource EditorPanelBorder}"
+            BorderThickness="1"
+            Padding="10"
+            Margin="0,6">
         <ItemsControl x:Name="FieldsControl"/>
     </Border>
 </UserControl>

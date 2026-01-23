@@ -12,24 +12,25 @@
             Margin="40">
         <Grid RowDefinitions="Auto,Auto,*,Auto">
             <Border Grid.Row="0"
-                    Background="{StaticResource EditorPanelSecondaryBackground}"
-                    CornerRadius="8,8,0,0"
-                    Padding="20,16">
+                    Background="{StaticResource EditorAccentGradient}"
+                    Padding="24,14">
                 <Grid ColumnDefinitions="*,Auto">
                     <TextBlock Text="{Binding AssetEditorTitle}"
                                Classes="subtitle"
+                               Foreground="#FFFFFF"
                                VerticalAlignment="Center"
                                TextTrimming="CharacterEllipsis"/>
                     <Button Grid.Column="1"
                             Command="{Binding CloseAssetEditorCommand}"
                             ToolTip.Tip="Close"
-                            Padding="8">
-                        <ui:SymbolIcon Symbol="Dismiss" FontSize="{StaticResource IconSizeMedium}"/>
+                            Padding="8"
+                            Classes="ghost">
+                        <ui:SymbolIcon Symbol="Dismiss" FontSize="{StaticResource IconSizeMedium}" Foreground="#FFFFFF"/>
                     </Button>
                 </Grid>
             </Border>
 
-            <Border Grid.Row="1" Height="1" Background="{DynamicResource DividerStrokeColorDefaultBrush}"/>
+            <Border Grid.Row="1" Height="1" Background="{StaticResource EditorPanelBorder}"/>
 
             <TabControl Grid.Row="2" Margin="16" x:Name="EditorTabs">
                 <TabItem Header="Form">
@@ -53,22 +54,21 @@
 
             <Border Grid.Row="3"
                     Background="{StaticResource EditorPanelSecondaryBackground}"
-                    CornerRadius="0,0,8,8"
-                    Padding="16,12">
+                    Padding="18,14">
                 <Grid ColumnDefinitions="*,Auto,Auto">
                     <TextBlock Grid.Column="0"
                                Text="{Binding StatusMessage}"
-                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                               Foreground="{StaticResource EditorTextMuted}"
                                VerticalAlignment="Center"/>
                     <Button Grid.Column="1"
                             Content="Cancel"
                             Command="{Binding CloseAssetEditorCommand}"
-                            Padding="20,10"
-                            Margin="0,0,8,0"/>
+                            Padding="22,12"
+                            Margin="0,0,10,0"/>
                     <Button Grid.Column="2"
                             Content="Save"
                             Click="OnSaveClick"
-                            Padding="20,10"
+                            Padding="22,12"
                             Classes="accent"/>
                 </Grid>
             </Border>

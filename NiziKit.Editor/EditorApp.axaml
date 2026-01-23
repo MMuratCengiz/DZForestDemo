@@ -8,46 +8,57 @@
     <Application.Resources>
         <views:BoolToForegroundConverter x:Key="BoolToForegroundConverter"/>
 
-        <Color x:Key="AxisXColor">#FF6B6B</Color>
-        <Color x:Key="AxisYColor">#6BCB77</Color>
-        <Color x:Key="AxisZColor">#6B9FFF</Color>
+        <Color x:Key="AxisXColor">#E06060</Color>
+        <Color x:Key="AxisYColor">#60C080</Color>
+        <Color x:Key="AxisZColor">#6090E0</Color>
 
         <SolidColorBrush x:Key="AxisXBrush" Color="{StaticResource AxisXColor}"/>
         <SolidColorBrush x:Key="AxisYBrush" Color="{StaticResource AxisYColor}"/>
         <SolidColorBrush x:Key="AxisZBrush" Color="{StaticResource AxisZColor}"/>
 
-        <Color x:Key="EditorAccent">#7C4DFF</Color>
-        <Color x:Key="EditorAccentLight">#B388FF</Color>
-        <Color x:Key="EditorAccentDark">#5E35B1</Color>
+        <Color x:Key="EditorAccent">#5080C0</Color>
+        <Color x:Key="EditorAccentLight">#7090D0</Color>
+        <Color x:Key="EditorAccentDark">#406090</Color>
 
         <SolidColorBrush x:Key="EditorAccentBrush" Color="{StaticResource EditorAccent}"/>
         <SolidColorBrush x:Key="EditorAccentLightBrush" Color="{StaticResource EditorAccentLight}"/>
         <SolidColorBrush x:Key="EditorAccentDarkBrush" Color="{StaticResource EditorAccentDark}"/>
 
-        <SolidColorBrush x:Key="EditorPanelBackground" Color="#FF1A1A1A"/>
-        <SolidColorBrush x:Key="EditorPanelSecondaryBackground" Color="#FF141414"/>
-        <SolidColorBrush x:Key="EditorPanelTertiaryBackground" Color="#FF0F0F0F"/>
-        <SolidColorBrush x:Key="EditorPanelElevated" Color="#FF242424"/>
-        <SolidColorBrush x:Key="EditorPanelBorder" Color="#FF3A3A3A"/>
-        <SolidColorBrush x:Key="EditorPanelBorderLight" Color="#FF4A4A4A"/>
+        <SolidColorBrush x:Key="EditorPanelBackground" Color="#FF0A0A0C"/>
+        <SolidColorBrush x:Key="EditorPanelSecondaryBackground" Color="#FF050506"/>
+        <SolidColorBrush x:Key="EditorPanelTertiaryBackground" Color="#FF000000"/>
+        <SolidColorBrush x:Key="EditorPanelElevated" Color="#FF151518"/>
+        <SolidColorBrush x:Key="EditorPanelBorder" Color="#FF252530"/>
+        <SolidColorBrush x:Key="EditorPanelBorderLight" Color="#FF353540"/>
 
-        <SolidColorBrush x:Key="EditorTextPrimary" Color="#FFFFFFFF"/>
-        <SolidColorBrush x:Key="EditorTextSecondary" Color="#FFB0B0B0"/>
-        <SolidColorBrush x:Key="EditorTextMuted" Color="#FF707070"/>
-        <SolidColorBrush x:Key="EditorTextDisabled" Color="#FF4A4A4A"/>
+        <SolidColorBrush x:Key="EditorTextPrimary" Color="#FFE0E0E8"/>
+        <SolidColorBrush x:Key="EditorTextSecondary" Color="#FFA0A0B0"/>
+        <SolidColorBrush x:Key="EditorTextMuted" Color="#FF606070"/>
+        <SolidColorBrush x:Key="EditorTextDisabled" Color="#FF404050"/>
 
-        <SolidColorBrush x:Key="EditorSuccess" Color="#FF4CAF50"/>
-        <SolidColorBrush x:Key="EditorWarning" Color="#FFFFC107"/>
-        <SolidColorBrush x:Key="EditorError" Color="#FFF44336"/>
-        <SolidColorBrush x:Key="EditorInfo" Color="#FF2196F3"/>
+        <SolidColorBrush x:Key="EditorSuccess" Color="#FF60A060"/>
+        <SolidColorBrush x:Key="EditorWarning" Color="#FFC0A050"/>
+        <SolidColorBrush x:Key="EditorError" Color="#FFC06060"/>
+        <SolidColorBrush x:Key="EditorInfo" Color="#FF6090C0"/>
 
-        <SolidColorBrush x:Key="EditorHover" Color="#1AFFFFFF"/>
-        <SolidColorBrush x:Key="EditorActive" Color="#33FFFFFF"/>
-        <SolidColorBrush x:Key="EditorSelected" Color="#337C4DFF"/>
-        <SolidColorBrush x:Key="EditorSelectedBorder" Color="#FF7C4DFF"/>
+        <SolidColorBrush x:Key="EditorHover" Color="#FF1A1A20"/>
+        <SolidColorBrush x:Key="EditorActive" Color="#FF252530"/>
+        <SolidColorBrush x:Key="EditorSelected" Color="#FF304060"/>
+        <SolidColorBrush x:Key="EditorSelectedBorder" Color="#FF5080C0"/>
 
-        <SolidColorBrush x:Key="EditorHeaderBackground" Color="#FF252525"/>
-        <SolidColorBrush x:Key="EditorHeaderAccent" Color="#FF7C4DFF"/>
+        <SolidColorBrush x:Key="EditorHeaderBackground" Color="#FF0A0A0C"/>
+        <SolidColorBrush x:Key="EditorHeaderAccent" Color="#FF5080C0"/>
+
+        <SolidColorBrush x:Key="EditorSurfaceRaised" Color="#FF101014"/>
+        <SolidColorBrush x:Key="EditorSurfaceOverlay" Color="#FF181820"/>
+
+        <Color x:Key="EditorGradientStart">#FF406080</Color>
+        <Color x:Key="EditorGradientEnd">#FF504080</Color>
+
+        <LinearGradientBrush x:Key="EditorAccentGradient" StartPoint="0%,0%" EndPoint="100%,100%">
+            <GradientStop Color="{StaticResource EditorGradientStart}" Offset="0"/>
+            <GradientStop Color="{StaticResource EditorGradientEnd}" Offset="1"/>
+        </LinearGradientBrush>
     </Application.Resources>
 
     <Application.Styles>

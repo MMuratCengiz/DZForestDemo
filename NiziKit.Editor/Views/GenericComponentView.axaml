@@ -4,5 +4,11 @@
              x:Class="NiziKit.Editor.Views.GenericComponentView"
              x:DataType="vm:ComponentViewModel">
 
-    <ItemsControl x:Name="PropertiesControl"/>
+    <ItemsControl x:Name="PropertiesControl">
+        <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+                <StackPanel Spacing="8"/>
+            </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+    </ItemsControl>
 </UserControl>

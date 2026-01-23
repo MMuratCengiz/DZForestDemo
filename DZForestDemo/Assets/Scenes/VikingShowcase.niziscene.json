@@ -1,14 +1,14 @@
 {
   "name": "Viking Showcase",
   "assetPacks": [
-    "Packs/Viking",
-    "Packs/NewPack"
+    "Packs/NewPack",
+    "Packs/Viking"
   ],
   "cameras": [
     {
       "name": "Main Camera",
-      "position": [0, 0, 0],
-      "rotation": [0, 0, 0],
+      "position": [-12.057553, -11.755675, -12.795991],
+      "rotation": [-3.0939765, 24.75179, 0],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -83,7 +83,7 @@
       "name": "Boat",
       "active": true,
       "position": [25.431843, 0, 16.022827],
-      "rotation": [-25.04221, -17.082655, 81.15897],
+      "rotation": [-22.144875, 20.772388, 73.22995],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -563,6 +563,23 @@
               "source": "viking:A_Jump_Sprinting_Masc/A_Jump_Sprinting_Masc"
             }
           ]
+        }
+      ],
+      "children": []
+    },
+    {
+      "name": "New Object",
+      "active": true,
+      "position": [0, 0, -9.997309],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "components": [
+        {
+          "type": "mesh",
+          "mesh": "newpack:SM_Veh_Wagon_01/SM_Veh_Wagon_01"
+        },
+        {
+          "type": "material"
         }
       ],
       "children": []

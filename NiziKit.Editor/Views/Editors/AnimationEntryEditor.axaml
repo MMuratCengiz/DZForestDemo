@@ -3,17 +3,19 @@
              x:Class="NiziKit.Editor.Views.Editors.AnimationEntryEditor">
 
     <Grid ColumnDefinitions="Auto,*,Auto">
-        <Border x:Name="ExternalBadge" 
+        <Border x:Name="ExternalBadge"
                 Grid.Column="0"
-                Background="{DynamicResource SystemAccentColorLight1}"
-                CornerRadius="4"
-                Padding="4,2"
-                Margin="0,0,6,0"
+                Background="{StaticResource EditorInfo}"
+                Padding="6,3"
+                Margin="0,0,8,0"
                 VerticalAlignment="Center"
                 IsVisible="False">
-            <TextBlock Text="Ext" Classes="caption"/>
+            <TextBlock Text="Ext"
+                       FontSize="{StaticResource FontSizeCaption}"
+                       FontWeight="SemiBold"
+                       Foreground="#11111B"/>
         </Border>
-        
+
         <TextBlock x:Name="AnimationNameText"
                    Grid.Column="1"
                    VerticalAlignment="Center"

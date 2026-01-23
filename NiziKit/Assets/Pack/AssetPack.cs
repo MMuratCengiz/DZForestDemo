@@ -82,14 +82,8 @@ public sealed class AssetPack : IDisposable
     public bool TryGetMaterial(string key, out Material? material) => _materials.TryGetValue(key, out material);
     public bool TryGetModel(string key, out Model? model) => _models.TryGetValue(key, out model);
 
-    /// <summary>
-    /// Gets the file path for a model by its key.
-    /// </summary>
     public string? GetModelPath(string key) => _modelPaths.GetValueOrDefault(key);
 
-    /// <summary>
-    /// Gets all model keys in this pack.
-    /// </summary>
     public IEnumerable<string> GetModelKeys() => _models.Keys;
 
     private void LoadInternal(string path)

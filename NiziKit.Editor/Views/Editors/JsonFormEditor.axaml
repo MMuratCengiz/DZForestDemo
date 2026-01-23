@@ -5,7 +5,7 @@
 
     <ScrollViewer HorizontalScrollBarVisibility="Disabled"
                   VerticalScrollBarVisibility="Auto">
-        <StackPanel x:Name="FormContainer" Spacing="12" Margin="4"/>
+        <StackPanel x:Name="FormContainer" Spacing="14" Margin="4"/>
     </ScrollViewer>
 
 </UserControl>

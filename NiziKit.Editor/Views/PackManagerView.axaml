@@ -7,17 +7,17 @@
              x:DataType="vm:PackManagerViewModel">
 
     <Panel>
-    <Grid ColumnDefinitions="180,*">
-        <!-- Left: Pack List -->
+    <Grid ColumnDefinitions="200,*">
         <Border Grid.Column="0"
-                Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
-                Padding="8"
-                Margin="0,0,4,0">
+                Background="{StaticResource EditorPanelSecondaryBackground}"
+                BorderBrush="{StaticResource EditorPanelBorder}"
+                BorderThickness="0,0,1,0"
+                Padding="10">
             <Grid RowDefinitions="Auto,*,Auto">
                 <TextBlock Grid.Row="0"
                            Text="Packs"
-                           Theme="{StaticResource BodyStrongTextBlockStyle}"
-                           Margin="4,0,0,8"/>
+                           Classes="subtitle"
+                           Margin="4,0,0,12"/>
 
                 <ListBox Grid.Row="1"
                          ItemsSource="{Binding Packs}"
@@ -25,69 +25,71 @@
                          Background="Transparent">
                     <ListBox.ItemTemplate>
                         <DataTemplate x:DataType="vm:PackInfo">
-                            <StackPanel Spacing="2" Margin="4,4">
-                                <TextBlock Text="{Binding Name}"
-                                           FontWeight="SemiBold"/>
-                                <TextBlock Text="{Binding Version}"
-                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
-                            </StackPanel>
+                            <Border Padding="8,6"
+                                    Background="Transparent">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="{Binding Name}"
+                                               FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding Version}"
+                                               Foreground="{StaticResource EditorTextMuted}"
+                                               FontSize="{StaticResource FontSizeCaption}"/>
+                                </StackPanel>
+                            </Border>
                         </DataTemplate>
                     </ListBox.ItemTemplate>
                 </ListBox>
 
                 <StackPanel Grid.Row="2"
                             Orientation="Horizontal"
-                            Spacing="4"
-                            Margin="0,8,0,0">
+                            Spacing="6"
+                            Margin="0,12,0,0">
                     <Button Content="New"
                             Command="{Binding NewPackCommand}"
-                            Padding="12,6"/>
+                            Padding="14,8"
+                            Classes="accent"/>
                     <Button Command="{Binding RefreshPacksCommand}"
-                            Padding="8,6">
+                            Padding="10,8">
                         <ui:SymbolIcon Symbol="Refresh" FontSize="{StaticResource IconSizeBase}"/>
                     </Button>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <!-- Right: Pack Editor -->
         <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto" IsVisible="{Binding IsEditing}">
-            <!-- Header: Pack Info -->
             <Border Grid.Row="0"
-                    Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
-                    Padding="12,8"
+                    Background="{StaticResource EditorPanelSecondaryBackground}"
+                    Padding="14,10"
                     Margin="0,0,0,4">
                 <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
                     <TextBox Grid.Column="0"
                              Text="{Binding PackName}"
                              Watermark="Pack Name"
-                             MinWidth="200"/>
+                             MinWidth="220"/>
 
                     <StackPanel Grid.Column="2"
                                 Orientation="Horizontal"
                                 Spacing="8"
                                 VerticalAlignment="Center">
                         <TextBlock Text="v"
-                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                   Foreground="{StaticResource EditorTextMuted}"
                                    VerticalAlignment="Center"/>
                         <TextBox Text="{Binding PackVersion}"
                                  Watermark="1.0.0"
-                                 Width="100"/>
+                                 Width="110"/>
                     </StackPanel>
 
                     <Button Grid.Column="4"
                             Content="Save"
                             Command="{Binding SavePackCommand}"
-                            Padding="20,8"
-                            Margin="12,0,0,0"/>
+                            Padding="22,10"
+                            Margin="14,0,0,0"
+                            Classes="accent"/>
                 </Grid>
             </Border>
 
-            <!-- Asset Tabs -->
             <TabControl Grid.Row="1"
                         SelectedIndex="{Binding SelectedTabIndex}">
 
-                <!-- Textures Tab -->
                 <TabItem Header="Textures">
                     <Grid RowDefinitions="*,Auto">
                         <ScrollViewer Grid.Row="0"
@@ -101,16 +103,12 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:PackAssetEntry">
-                                        <Border Width="160" Height="120"
-                                                Margin="4"
-                                                Padding="10"
-                                                CornerRadius="4"
-                                                Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}">
+                                        <Border Classes="content-tile">
                                             <Grid RowDefinitions="*,Auto,Auto">
-<ui:SymbolIcon Grid.Row="0"
+                                                <ui:SymbolIcon Grid.Row="0"
                                                                Symbol="Image"
                                                                FontSize="{StaticResource IconSizeXL}"
-                                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                               Foreground="{StaticResource EditorTextSecondary}"
                                                                VerticalAlignment="Center"
                                                                HorizontalAlignment="Center"/>
                                                 <TextBlock Grid.Row="1"
@@ -118,12 +116,12 @@
                                                            TextTrimming="CharacterEllipsis"
                                                            TextAlignment="Center"
                                                            ToolTip.Tip="{Binding Key}"
-                                                           Margin="0,6,0,0"/>
+                                                           Margin="0,8,0,0"/>
                                                 <Button Grid.Row="2"
                                                         Content="Remove"
-                                                        Padding="8,4"
+                                                        Padding="10,6"
                                                         HorizontalAlignment="Center"
-                                                        Margin="0,4,0,0"
+                                                        Margin="0,6,0,0"
                                                         Command="{Binding $parent[ItemsControl].DataContext.RemoveTextureCommand}"
                                                         CommandParameter="{Binding}"/>
                                             </Grid>
@@ -134,16 +132,16 @@
                         </ScrollViewer>
                         <StackPanel Grid.Row="1"
                                     Orientation="Horizontal"
-                                    Spacing="8"
-                                    Margin="8">
+                                    Spacing="10"
+                                    Margin="12">
                             <Button Content="+ Add Texture"
                                     Command="{Binding BrowseTextureCommand}"
-                                    Padding="12,6"/>
+                                    Padding="14,8"
+                                    Classes="accent"/>
                         </StackPanel>
                     </Grid>
                 </TabItem>
 
-                <!-- Materials Tab -->
                 <TabItem Header="Materials">
                     <Grid RowDefinitions="*,Auto">
                         <ScrollViewer Grid.Row="0"
@@ -157,18 +155,14 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:PackAssetEntry">
-                                        <Border Width="160" Height="120"
-                                                Margin="4"
-                                                Padding="10"
-                                                CornerRadius="4"
-                                                Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
+                                        <Border Classes="content-tile"
                                                 DoubleTapped="OnAssetCardDoubleTapped"
                                                 Tag="{Binding}">
                                             <Grid RowDefinitions="*,Auto,Auto">
-<ui:SymbolIcon Grid.Row="0"
+                                                <ui:SymbolIcon Grid.Row="0"
                                                                Symbol="Globe"
                                                                FontSize="{StaticResource IconSizeXL}"
-                                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                               Foreground="{StaticResource EditorTextSecondary}"
                                                                VerticalAlignment="Center"
                                                                HorizontalAlignment="Center"/>
                                                 <TextBlock Grid.Row="1"
@@ -176,12 +170,12 @@
                                                            TextTrimming="CharacterEllipsis"
                                                            TextAlignment="Center"
                                                            ToolTip.Tip="{Binding Key}"
-                                                           Margin="0,6,0,0"/>
+                                                           Margin="0,8,0,0"/>
                                                 <Button Grid.Row="2"
                                                         Content="Remove"
-                                                        Padding="8,4"
+                                                        Padding="10,6"
                                                         HorizontalAlignment="Center"
-                                                        Margin="0,4,0,0"
+                                                        Margin="0,6,0,0"
                                                         Command="{Binding $parent[ItemsControl].DataContext.RemoveMaterialCommand}"
                                                         CommandParameter="{Binding}"/>
                                             </Grid>
@@ -192,19 +186,19 @@
                         </ScrollViewer>
                         <StackPanel Grid.Row="1"
                                     Orientation="Horizontal"
-                                    Spacing="8"
-                                    Margin="8">
+                                    Spacing="10"
+                                    Margin="12">
                             <Button Content="+ Add Material"
                                     Command="{Binding BrowseMaterialCommand}"
-                                    Padding="12,6"/>
+                                    Padding="14,8"/>
                             <Button Content="+ Create New"
                                     Command="{Binding CreateMaterialCommand}"
-                                    Padding="12,6"/>
+                                    Padding="14,8"
+                                    Classes="accent"/>
                         </StackPanel>
                     </Grid>
                 </TabItem>
 
-                <!-- Models Tab -->
                 <TabItem Header="Models">
                     <Grid RowDefinitions="*,Auto">
                         <ScrollViewer Grid.Row="0"
@@ -218,16 +212,12 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:PackAssetEntry">
-                                        <Border Width="160" Height="120"
-                                                Margin="4"
-                                                Padding="10"
-                                                CornerRadius="4"
-                                                Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}">
+                                        <Border Classes="content-tile">
                                             <Grid RowDefinitions="*,Auto,Auto">
                                                 <PathIcon Grid.Row="0"
                                                           Data="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"
-                                                          Width="32" Height="32"
-                                                          Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                          Width="36" Height="36"
+                                                          Foreground="{StaticResource EditorTextSecondary}"
                                                           VerticalAlignment="Center"
                                                           HorizontalAlignment="Center"/>
                                                 <TextBlock Grid.Row="1"
@@ -235,12 +225,12 @@
                                                            TextTrimming="CharacterEllipsis"
                                                            TextAlignment="Center"
                                                            ToolTip.Tip="{Binding Key}"
-                                                           Margin="0,6,0,0"/>
+                                                           Margin="0,8,0,0"/>
                                                 <Button Grid.Row="2"
                                                         Content="Remove"
-                                                        Padding="8,4"
+                                                        Padding="10,6"
                                                         HorizontalAlignment="Center"
-                                                        Margin="0,4,0,0"
+                                                        Margin="0,6,0,0"
                                                         Command="{Binding $parent[ItemsControl].DataContext.RemoveModelCommand}"
                                                         CommandParameter="{Binding}"/>
                                             </Grid>
@@ -251,16 +241,16 @@
                         </ScrollViewer>
                         <StackPanel Grid.Row="1"
                                     Orientation="Horizontal"
-                                    Spacing="8"
-                                    Margin="8">
+                                    Spacing="10"
+                                    Margin="12">
                             <Button Content="+ Add Model"
                                     Command="{Binding BrowseModelCommand}"
-                                    Padding="12,6"/>
+                                    Padding="14,8"
+                                    Classes="accent"/>
                         </StackPanel>
                     </Grid>
                 </TabItem>
 
-                <!-- Shaders Tab -->
                 <TabItem Header="Shaders">
                     <Grid RowDefinitions="*,Auto">
                         <ScrollViewer Grid.Row="0"
@@ -274,18 +264,14 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="vm:PackAssetEntry">
-                                        <Border Width="160" Height="120"
-                                                Margin="4"
-                                                Padding="10"
-                                                CornerRadius="4"
-                                                Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
+                                        <Border Classes="content-tile"
                                                 DoubleTapped="OnAssetCardDoubleTapped"
                                                 Tag="{Binding}">
                                             <Grid RowDefinitions="*,Auto,Auto">
-<ui:SymbolIcon Grid.Row="0"
+                                                <ui:SymbolIcon Grid.Row="0"
                                                                Symbol="Code"
                                                                FontSize="{StaticResource IconSizeXL}"
-                                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                               Foreground="{StaticResource EditorTextSecondary}"
                                                                VerticalAlignment="Center"
                                                                HorizontalAlignment="Center"/>
                                                 <TextBlock Grid.Row="1"
@@ -293,12 +279,12 @@
                                                            TextTrimming="CharacterEllipsis"
                                                            TextAlignment="Center"
                                                            ToolTip.Tip="{Binding Key}"
-                                                           Margin="0,6,0,0"/>
+                                                           Margin="0,8,0,0"/>
                                                 <Button Grid.Row="2"
                                                         Content="Remove"
-                                                        Padding="8,4"
+                                                        Padding="10,6"
                                                         HorizontalAlignment="Center"
-                                                        Margin="0,4,0,0"
+                                                        Margin="0,6,0,0"
                                                         Command="{Binding $parent[ItemsControl].DataContext.RemoveShaderCommand}"
                                                         CommandParameter="{Binding}"/>
                                             </Grid>
@@ -309,144 +295,137 @@
                         </ScrollViewer>
                         <StackPanel Grid.Row="1"
                                     Orientation="Horizontal"
-                                    Spacing="8"
-                                    Margin="8">
+                                    Spacing="10"
+                                    Margin="12">
                             <Button Content="+ Add Shader"
                                     Command="{Binding BrowseShaderCommand}"
-                                    Padding="12,6"/>
+                                    Padding="14,8"/>
                             <Button Content="+ Create New"
                                     Command="{Binding CreateShaderCommand}"
-                                    Padding="12,6"/>
+                                    Padding="14,8"
+                                    Classes="accent"/>
                         </StackPanel>
                     </Grid>
                 </TabItem>
             </TabControl>
 
-            <!-- Status Bar -->
             <Border Grid.Row="2"
-                    Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
-                    Padding="12,8"
+                    Background="{StaticResource EditorPanelSecondaryBackground}"
+                    Padding="14,10"
                     IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                 <TextBlock Text="{Binding StatusMessage}"
-                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+                           Foreground="{StaticResource EditorTextMuted}"/>
             </Border>
         </Grid>
 
-        <!-- No Selection Placeholder -->
         <Border Grid.Column="1"
                 IsVisible="{Binding !IsEditing}">
             <StackPanel HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Spacing="12">
-<ui:SymbolIcon Symbol="Folder"
+                        Spacing="16">
+                <ui:SymbolIcon Symbol="Folder"
                                FontSize="{StaticResource IconSizeHuge}"
-                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+                               Foreground="{StaticResource EditorTextMuted}"/>
                 <TextBlock Text="Select a pack or create a new one"
-                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                           Foreground="{StaticResource EditorTextMuted}"
                            HorizontalAlignment="Center"/>
             </StackPanel>
         </Border>
     </Grid>
 
-    <!-- File Browser Overlay -->
     <Border IsVisible="{Binding IsFileBrowserOpen}"
-            Background="#C0000000">
-        <Border Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
-                CornerRadius="8"
-                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+            Classes="dialog-overlay">
+        <Border Background="{StaticResource EditorPanelBackground}"
+                BorderBrush="{StaticResource EditorPanelBorder}"
                 BorderThickness="1"
-                Padding="16"
+                Padding="20"
                 Margin="40"
-                MaxWidth="800"
-                MaxHeight="600"
+                MaxWidth="900"
+                MaxHeight="650"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center">
             <Grid RowDefinitions="Auto,*,Auto">
                 <TextBlock Grid.Row="0"
                            Text="{Binding FileBrowserTitle}"
-                           Theme="{StaticResource SubtitleTextBlockStyle}"
-                           Margin="0,0,0,12"/>
+                           Classes="subtitle"
+                           Margin="0,0,0,16"/>
                 <views:FileBrowserGrid Grid.Row="1"
                                        DataContext="{Binding FileBrowserViewModel}"/>
                 <StackPanel Grid.Row="2"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
-                            Spacing="8"
-                            Margin="0,12,0,0">
+                            Spacing="10"
+                            Margin="0,16,0,0">
                     <Button Content="Cancel"
                             Command="{Binding CloseFileBrowserCommand}"
-                            Padding="16,8"/>
+                            Padding="18,10"/>
                 </StackPanel>
             </Grid>
         </Border>
     </Border>
 
-    <!-- Asset Editor Overlay -->
     <Border IsVisible="{Binding IsAssetEditorOpen}"
-            Background="#C0000000">
-        <Border Background="{DynamicResource SolidBackgroundFillColorSecondaryBrush}"
-                CornerRadius="8"
-                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+            Classes="dialog-overlay">
+        <Border Background="{StaticResource EditorPanelBackground}"
+                BorderBrush="{StaticResource EditorPanelBorder}"
                 BorderThickness="1"
-                Padding="20"
+                Padding="24"
                 Margin="60"
-                MaxWidth="500"
+                MaxWidth="520"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center">
             <Grid RowDefinitions="Auto,*,Auto">
                 <TextBlock Grid.Row="0"
                            Text="{Binding AssetEditorTitle}"
-                           Theme="{StaticResource SubtitleTextBlockStyle}"
-                           Margin="0,0,0,16"/>
+                           Classes="subtitle"
+                           Margin="0,0,0,20"/>
 
-                <!-- Material Editor -->
                 <StackPanel Grid.Row="1"
                             x:Name="MaterialEditorPanel"
-                            Spacing="12">
-                    <Grid ColumnDefinitions="100,*">
-                        <TextBlock Text="Name" VerticalAlignment="Center"/>
+                            Spacing="14">
+                    <Grid ColumnDefinitions="110,*">
+                        <TextBlock Text="Name" VerticalAlignment="Center" Foreground="{StaticResource EditorTextSecondary}"/>
                         <TextBox Grid.Column="1" Text="{Binding EditingAssetName}"/>
                     </Grid>
-                    <Grid ColumnDefinitions="100,*">
-                        <TextBlock Text="Shader" VerticalAlignment="Center"/>
+                    <Grid ColumnDefinitions="110,*">
+                        <TextBlock Text="Shader" VerticalAlignment="Center" Foreground="{StaticResource EditorTextSecondary}"/>
                         <TextBox Grid.Column="1" Text="{Binding EditingAssetShader}"/>
                     </Grid>
-                    <Grid ColumnDefinitions="100,*">
-                        <TextBlock Text="Albedo" VerticalAlignment="Center"/>
+                    <Grid ColumnDefinitions="110,*">
+                        <TextBlock Text="Albedo" VerticalAlignment="Center" Foreground="{StaticResource EditorTextSecondary}"/>
                         <TextBox Grid.Column="1" Text="{Binding EditingAssetAlbedo}"/>
                     </Grid>
-                    <Grid ColumnDefinitions="100,*">
-                        <TextBlock Text="Normal" VerticalAlignment="Center"/>
+                    <Grid ColumnDefinitions="110,*">
+                        <TextBlock Text="Normal" VerticalAlignment="Center" Foreground="{StaticResource EditorTextSecondary}"/>
                         <TextBox Grid.Column="1" Text="{Binding EditingAssetNormal}"/>
                     </Grid>
-                    <Grid ColumnDefinitions="100,*">
-                        <TextBlock Text="Metallic" VerticalAlignment="Center"/>
+                    <Grid ColumnDefinitions="110,*">
+                        <TextBlock Text="Metallic" VerticalAlignment="Center" Foreground="{StaticResource EditorTextSecondary}"/>
                         <TextBox Grid.Column="1" Text="{Binding EditingAssetMetallic}"/>
                     </Grid>
-                    <Grid ColumnDefinitions="100,*">
-                        <TextBlock Text="Roughness" VerticalAlignment="Center"/>
+                    <Grid ColumnDefinitions="110,*">
+                        <TextBlock Text="Roughness" VerticalAlignment="Center" Foreground="{StaticResource EditorTextSecondary}"/>
                         <TextBox Grid.Column="1" Text="{Binding EditingAssetRoughness}"/>
                     </Grid>
                 </StackPanel>
 
-                <!-- Shader Editor -->
                 <StackPanel Grid.Row="1"
                             x:Name="ShaderEditorPanel"
-                            Spacing="12">
-                    <Grid ColumnDefinitions="100,*">
-                        <TextBlock Text="Name" VerticalAlignment="Center"/>
+                            Spacing="14">
+                    <Grid ColumnDefinitions="110,*">
+                        <TextBlock Text="Name" VerticalAlignment="Center" Foreground="{StaticResource EditorTextSecondary}"/>
                         <TextBox Grid.Column="1" Text="{Binding EditingShaderName}"/>
                     </Grid>
-                    <Grid ColumnDefinitions="100,*">
-                        <TextBlock Text="Type" VerticalAlignment="Center"/>
+                    <Grid ColumnDefinitions="110,*">
+                        <TextBlock Text="Type" VerticalAlignment="Center" Foreground="{StaticResource EditorTextSecondary}"/>
                         <TextBox Grid.Column="1" Text="{Binding EditingShaderType}"/>
                     </Grid>
-                    <Grid ColumnDefinitions="100,*">
-                        <TextBlock Text="Vertex Path" VerticalAlignment="Center"/>
+                    <Grid ColumnDefinitions="110,*">
+                        <TextBlock Text="Vertex Path" VerticalAlignment="Center" Foreground="{StaticResource EditorTextSecondary}"/>
                         <TextBox Grid.Column="1" Text="{Binding EditingShaderVertexPath}"/>
                     </Grid>
-                    <Grid ColumnDefinitions="100,*">
-                        <TextBlock Text="Pixel Path" VerticalAlignment="Center"/>
+                    <Grid ColumnDefinitions="110,*">
+                        <TextBlock Text="Pixel Path" VerticalAlignment="Center" Foreground="{StaticResource EditorTextSecondary}"/>
                         <TextBox Grid.Column="1" Text="{Binding EditingShaderPixelPath}"/>
                     </Grid>
                 </StackPanel>
@@ -454,14 +433,15 @@
                 <StackPanel Grid.Row="2"
                             Orientation="Horizontal"
                             HorizontalAlignment="Right"
-                            Spacing="8"
-                            Margin="0,16,0,0">
+                            Spacing="10"
+                            Margin="0,20,0,0">
                     <Button Content="Cancel"
                             Command="{Binding CloseAssetEditorCommand}"
-                            Padding="16,8"/>
+                            Padding="18,10"/>
                     <Button Content="Save"
                             Command="{Binding SaveAssetEditorCommand}"
-                            Padding="16,8"/>
+                            Padding="18,10"
+                            Classes="accent"/>
                 </StackPanel>
             </Grid>
         </Border>

@@ -7,34 +7,30 @@
              x:DataType="vm:ImportViewModel">
 
     <Grid RowDefinitions="*,Auto,Auto" Margin="16">
-        <!-- Source Browser -->
         <Border Grid.Row="0"
-                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                Background="{StaticResource EditorSurfaceRaised}"
+                BorderBrush="{StaticResource EditorPanelBorder}"
                 BorderThickness="1"
-                CornerRadius="{DynamicResource ControlCornerRadius}"
                 Padding="12"
                 Margin="0,0,0,12">
             <views:FileBrowserGrid DataContext="{Binding FileBrowser}"/>
         </Border>
 
-        <!-- Import Options -->
         <Border Grid.Row="1"
-                Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                Background="{StaticResource EditorSurfaceRaised}"
+                BorderBrush="{StaticResource EditorPanelBorder}"
                 BorderThickness="1"
-                CornerRadius="{DynamicResource ControlCornerRadius}"
-                Padding="16,12"
+                Padding="18,14"
                 Margin="0,0,0,12">
             <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*" RowDefinitions="Auto">
-                <!-- Type Selection -->
                 <TextBlock Text="Type"
                            VerticalAlignment="Center"
-                           Margin="0,0,12,0"/>
+                           Foreground="{StaticResource EditorTextSecondary}"
+                           Margin="0,0,16,0"/>
                 <StackPanel Grid.Column="1"
                             Orientation="Horizontal"
-                            Spacing="16"
-                            Margin="0,0,24,0">
+                            Spacing="20"
+                            Margin="0,0,32,0">
                     <RadioButton Content="Models"
                                  IsChecked="{Binding ImportType, Converter={x:Static vm:ImportTypeConverter.Instance}, ConverterParameter={x:Static vm:ImportType.Models}}"
                                  GroupName="ImportType"/>
@@ -46,17 +42,16 @@
                                  GroupName="ImportType"/>
                 </StackPanel>
 
-                <!-- Scale -->
                 <TextBlock Grid.Column="2"
                            Text="Scale"
                            VerticalAlignment="Center"
+                           Foreground="{StaticResource EditorTextSecondary}"
                            Margin="0,0,12,0"/>
                 <TextBox Grid.Column="3"
                          Text="{Binding ModelScale}"
-                         Width="80"
-                         Margin="0,0,24,0"/>
+                         Width="90"
+                         Margin="0,0,32,0"/>
 
-                <!-- Mips -->
                 <CheckBox Grid.Column="4"
                           Content="Generate Mipmaps"
                           IsChecked="{Binding GenerateMips}"
@@ -64,52 +59,49 @@
             </Grid>
         </Border>
 
-        <!-- Action Bar with Output -->
         <Border Grid.Row="2"
-                Background="{DynamicResource LayerFillColorDefaultBrush}"
-                CornerRadius="{DynamicResource ControlCornerRadius}"
-                Padding="16,12">
+                Background="{StaticResource EditorPanelSecondaryBackground}"
+                Padding="18,14">
             <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
-                <!-- Output Directory -->
                 <TextBlock Text="Output"
                            VerticalAlignment="Center"
-                           Margin="0,0,12,0"/>
+                           Foreground="{StaticResource EditorTextSecondary}"
+                           Margin="0,0,16,0"/>
                 <TextBox Grid.Column="1"
                          Text="{Binding OutputDirectory}"
                          Watermark="Assets/..."
                          VerticalAlignment="Center"/>
 
-                <!-- Progress -->
                 <StackPanel Grid.Column="2"
                             Orientation="Horizontal"
                             VerticalAlignment="Center"
-                            Spacing="12"
-                            Margin="16,0"
+                            Spacing="14"
+                            Margin="20,0"
                             IsVisible="{Binding IsImporting}">
                     <TextBlock Text="{Binding ProgressText}"
                                VerticalAlignment="Center"
-                               MaxWidth="200"
-                               TextTrimming="CharacterEllipsis"/>
+                               MaxWidth="220"
+                               TextTrimming="CharacterEllipsis"
+                               Foreground="{StaticResource EditorTextSecondary}"/>
                     <ProgressBar Value="{Binding Progress}"
                                  Maximum="100"
-                                 Width="100"
-                                 Height="4"
+                                 Width="120"
+                                 Height="6"
                                  VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <!-- Buttons -->
                 <Button Grid.Column="3"
                         Content="Cancel"
                         Command="{Binding CancelCommand}"
                         Margin="12,0"
-                        MinWidth="100"
-                        Padding="16,10"/>
+                        MinWidth="110"
+                        Padding="18,12"/>
                 <Button Grid.Column="4"
                         Content="Import"
                         Command="{Binding ImportCommand}"
                         IsEnabled="{Binding !IsImporting}"
-                        MinWidth="100"
-                        Padding="16,10"
+                        MinWidth="110"
+                        Padding="18,12"
                         Classes="accent"/>
             </Grid>
         </Border>

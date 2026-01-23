@@ -9,92 +9,110 @@
     <Panel>
         <Grid ColumnDefinitions="Auto,*">
             <Border Grid.Column="0"
-                    Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
-                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                    Background="{StaticResource EditorPanelSecondaryBackground}"
+                    BorderBrush="{StaticResource EditorPanelBorder}"
                     BorderThickness="0,0,1,0"
                     Padding="12"
                     MinWidth="320"
                     MaxWidth="450"
                     Width="380">
                 <Grid RowDefinitions="Auto,*">
-                    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="8,4,0,12">
+                    <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="8,4,0,16">
                         <TextBlock Text="Asset Packs"
                                    Classes="subtitle"
                                    VerticalAlignment="Center"/>
                         <Button Grid.Column="1"
                                 Command="{Binding CreatePackCommand}"
                                 ToolTip.Tip="Create new pack"
-                                Padding="10">
-                            <ui:SymbolIcon Symbol="Add" FontSize="{StaticResource IconSizeLarge}"/>
+                                Padding="10"
+                                Classes="accent">
+                            <ui:SymbolIcon Symbol="Add" FontSize="{StaticResource IconSizeLarge}" Foreground="#FFFFFF"/>
                         </Button>
                     </Grid>
 
                     <ScrollViewer Grid.Row="1"
                                   HorizontalScrollBarVisibility="Disabled"
                                   VerticalScrollBarVisibility="Auto">
-                        <StackPanel Spacing="8">
-                            <!-- Scene Packs Section -->
+                        <StackPanel Spacing="12">
                             <StackPanel>
-                                <TextBlock Text="Scene Packs"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                           Margin="8,4,0,8"/>
+                                <Border Background="{StaticResource EditorSuccess}"
+                                        Padding="10,6"
+                                        Margin="0,0,0,8">
+                                    <TextBlock Text="Scene Packs"
+                                               FontWeight="SemiBold"
+                                               Foreground="#11111B"/>
+                                </Border>
                                 <TreeView ItemsSource="{Binding ScenePackTree}"
-                                          SelectedItem="{Binding SelectedFolder}">
+                                          SelectedItem="{Binding SelectedFolder}"
+                                          Background="Transparent">
                                     <TreeView.ItemTemplate>
                                         <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:FolderTreeNode">
-                                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="4,5"
-                                                        PointerPressed="OnPackTreeItemPointerPressed">
-                                                <PathIcon Data="{Binding IconData}"
-                                                          Width="20" Height="20"
-                                                          Foreground="{DynamicResource AccentFillColorDefaultBrush}"/>
-                                                <TextBlock Text="{Binding Name}"
-                                                           VerticalAlignment="Center"
-                                                           TextWrapping="NoWrap"
-                                                           MaxWidth="260"/>
-                                            </StackPanel>
+                                            <Border Padding="6,8"
+                                                    Background="Transparent"
+                                                    PointerPressed="OnPackTreeItemPointerPressed">
+                                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                                    <PathIcon Data="{Binding IconData}"
+                                                              Width="20" Height="20"
+                                                              Foreground="{StaticResource EditorSuccess}"/>
+                                                    <TextBlock Text="{Binding Name}"
+                                                               VerticalAlignment="Center"
+                                                               TextWrapping="NoWrap"
+                                                               MaxWidth="260"/>
+                                                </StackPanel>
+                                            </Border>
                                         </TreeDataTemplate>
                                     </TreeView.ItemTemplate>
                                 </TreeView>
-                                <TextBlock Text="No packs in scene"
-                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                           Margin="12,8"
-                                           IsVisible="{Binding !ScenePackTree.Count}"/>
+                                <Border IsVisible="{Binding !ScenePackTree.Count}"
+                                        Background="{StaticResource EditorSurfaceRaised}"
+                                        Padding="16,12"
+                                        Margin="0,4">
+                                    <TextBlock Text="No packs in scene"
+                                               Foreground="{StaticResource EditorTextMuted}"
+                                               HorizontalAlignment="Center"/>
+                                </Border>
                             </StackPanel>
 
-                            <!-- Divider -->
-                            <Border Height="1"
-                                    Background="{DynamicResource DividerStrokeColorDefaultBrush}"
-                                    Margin="8,8"/>
+                            <Border Height="1" Background="{StaticResource EditorPanelBorder}"/>
 
-                            <!-- Available Packs Section -->
                             <StackPanel>
-                                <TextBlock Text="Available Packs"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                           Margin="8,4,0,8"/>
+                                <Border Background="{StaticResource EditorPanelElevated}"
+                                        Padding="10,6"
+                                        Margin="0,0,0,8">
+                                    <TextBlock Text="Available Packs"
+                                               FontWeight="SemiBold"
+                                               Foreground="{StaticResource EditorTextSecondary}"/>
+                                </Border>
                                 <TreeView ItemsSource="{Binding AvailablePackTree}"
-                                          SelectedItem="{Binding SelectedFolder}">
+                                          SelectedItem="{Binding SelectedFolder}"
+                                          Background="Transparent">
                                     <TreeView.ItemTemplate>
                                         <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:FolderTreeNode">
-                                            <StackPanel Orientation="Horizontal" Spacing="10" Margin="4,5"
-                                                        PointerPressed="OnPackTreeItemPointerPressed">
-                                                <PathIcon Data="{Binding IconData}"
-                                                          Width="20" Height="20"
-                                                          Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
-                                                <TextBlock Text="{Binding Name}"
-                                                           VerticalAlignment="Center"
-                                                           TextWrapping="NoWrap"
-                                                           MaxWidth="260"
-                                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"/>
-                                            </StackPanel>
+                                            <Border Padding="6,8"
+                                                    Background="Transparent"
+                                                    PointerPressed="OnPackTreeItemPointerPressed">
+                                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                                    <PathIcon Data="{Binding IconData}"
+                                                              Width="20" Height="20"
+                                                              Foreground="{StaticResource EditorTextMuted}"/>
+                                                    <TextBlock Text="{Binding Name}"
+                                                               VerticalAlignment="Center"
+                                                               TextWrapping="NoWrap"
+                                                               MaxWidth="260"
+                                                               Foreground="{StaticResource EditorTextSecondary}"/>
+                                                </StackPanel>
+                                            </Border>
                                         </TreeDataTemplate>
                                     </TreeView.ItemTemplate>
                                 </TreeView>
-                                <TextBlock Text="No available packs"
-                                           Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                           Margin="12,8"
-                                           IsVisible="{Binding !AvailablePackTree.Count}"/>
+                                <Border IsVisible="{Binding !AvailablePackTree.Count}"
+                                        Background="{StaticResource EditorSurfaceRaised}"
+                                        Padding="16,12"
+                                        Margin="0,4">
+                                    <TextBlock Text="No available packs"
+                                               Foreground="{StaticResource EditorTextMuted}"
+                                               HorizontalAlignment="Center"/>
+                                </Border>
                             </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
@@ -102,80 +120,82 @@
             </Border>
 
             <Grid Grid.Column="1" RowDefinitions="Auto,*,Auto">
-                <Grid Grid.Row="0"
-                      ColumnDefinitions="*,Auto,Auto"
-                      Margin="16,12,16,8">
-                    <ScrollViewer Grid.Column="0"
-                                  HorizontalScrollBarVisibility="Auto"
-                                  VerticalScrollBarVisibility="Disabled"
-                                  VerticalAlignment="Center">
-                        <ItemsControl ItemsSource="{Binding SelectedTab.Breadcrumbs}"
+                <Border Grid.Row="0"
+                        Background="{StaticResource EditorPanelSecondaryBackground}"
+                        Padding="16,10">
+                    <Grid ColumnDefinitions="*,Auto,Auto">
+                        <ScrollViewer Grid.Column="0"
+                                      HorizontalScrollBarVisibility="Auto"
+                                      VerticalScrollBarVisibility="Disabled"
                                       VerticalAlignment="Center">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <StackPanel Orientation="Horizontal"/>
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="vm:BreadcrumbItem">
-                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                        <Button Command="{Binding $parent[ItemsControl].DataContext.NavigateToCommand}"
-                                                CommandParameter="{Binding Path}"
-                                                Background="Transparent"
-                                                BorderThickness="0"
-                                                Padding="10,12"
-                                                Cursor="Hand"
-                                                VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding Name}"
+                            <ItemsControl ItemsSource="{Binding SelectedTab.Breadcrumbs}"
+                                          VerticalAlignment="Center">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <StackPanel Orientation="Horizontal"/>
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:BreadcrumbItem">
+                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                            <Button Command="{Binding $parent[ItemsControl].DataContext.NavigateToCommand}"
+                                                    CommandParameter="{Binding Path}"
+                                                    Padding="10,8"
+                                                    Cursor="Hand"
+                                                    Classes="ghost"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding Name}"
+                                                           Classes="body"/>
+                                            </Button>
+                                            <TextBlock Text="/"
                                                        Classes="body"
-                                                       Foreground="{DynamicResource TextFillColorPrimaryBrush}"/>
-                                        </Button>
-                                        <TextBlock Text="/"
-                                                   Classes="body"
-                                                   VerticalAlignment="Center"
-                                                   Margin="2,0"
-                                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
-                                    </StackPanel>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
+                                                       VerticalAlignment="Center"
+                                                       Margin="4,0"
+                                                       Foreground="{StaticResource EditorTextMuted}"/>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
 
-                    <ComboBox Grid.Column="1"
-                              SelectedIndex="{Binding FilterIndex}"
-                              MinWidth="150"
-                              VerticalAlignment="Center"
-                              Margin="12,0">
-                        <ComboBoxItem Content="All"/>
-                        <ComboBoxItem Content="Models"/>
-                        <ComboBoxItem Content="Textures"/>
-                        <ComboBoxItem Content="Materials"/>
-                        <ComboBoxItem Content="Shaders"/>
-                        <ComboBoxItem Content="Scenes"/>
-                    </ComboBox>
+                        <ComboBox Grid.Column="1"
+                                  SelectedIndex="{Binding FilterIndex}"
+                                  MinWidth="150"
+                                  VerticalAlignment="Center"
+                                  Margin="16,0">
+                            <ComboBoxItem Content="All"/>
+                            <ComboBoxItem Content="Models"/>
+                            <ComboBoxItem Content="Textures"/>
+                            <ComboBoxItem Content="Materials"/>
+                            <ComboBoxItem Content="Shaders"/>
+                            <ComboBoxItem Content="Scenes"/>
+                        </ComboBox>
 
-                    <TextBox Grid.Column="2"
-                             Text="{Binding SearchText}"
-                             Watermark="Search..."
-                             MinWidth="160"
-                             MaxWidth="300"
-                             Width="220"
-                             VerticalAlignment="Center">
-                        <TextBox.InnerLeftContent>
-                            <ui:SymbolIcon Symbol="Find" FontSize="{StaticResource IconSizeMedium}" Margin="10,0,0,0"/>
-                        </TextBox.InnerLeftContent>
-                    </TextBox>
-                </Grid>
+                        <TextBox Grid.Column="2"
+                                 Text="{Binding SearchText}"
+                                 Watermark="Search..."
+                                 MinWidth="180"
+                                 MaxWidth="320"
+                                 Width="240"
+                                 VerticalAlignment="Center">
+                            <TextBox.InnerLeftContent>
+                                <ui:SymbolIcon Symbol="Find" FontSize="{StaticResource IconSizeMedium}" Margin="10,0,0,0"/>
+                            </TextBox.InnerLeftContent>
+                        </TextBox>
+                    </Grid>
+                </Border>
 
                 <Border Grid.Row="1"
                         x:Name="ContentGridBorder"
-                        Margin="16,8,16,12"
-                        Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                        CornerRadius="{DynamicResource ControlCornerRadius}">
+                        Margin="16,12"
+                        Background="{StaticResource EditorSurfaceRaised}"
+                        BorderBrush="{StaticResource EditorPanelBorder}"
+                        BorderThickness="1">
                     <ListBox x:Name="ContentGrid"
                              ItemsSource="{Binding SelectedTab.Items}"
                              SelectedItem="{Binding SelectedItem}"
                              SelectionMode="Single"
+                             Background="Transparent"
                              ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                              DoubleTapped="OnItemDoubleTapped"
                              PointerPressed="OnContentGridPointerPressed">
@@ -186,18 +206,14 @@
                         </ListBox.ItemsPanel>
                         <ListBox.ItemTemplate>
                             <DataTemplate x:DataType="vm:ContentItem">
-                                <Border Width="180" Height="180"
-                                        Margin="8"
-                                        Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
-                                        CornerRadius="8"
-                                        Padding="14"
+                                <Border Classes="content-tile"
                                         ToolTip.Tip="{Binding TypeLabel}"
                                         PointerPressed="OnItemPointerPressed">
                                     <Grid RowDefinitions="Auto,*,Auto">
                                         <PathIcon Grid.Row="0"
                                                   Data="{Binding IconData}"
-                                                  Width="64" Height="64"
-                                                  Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                  Width="56" Height="56"
+                                                  Foreground="{StaticResource EditorTextSecondary}"
                                                   HorizontalAlignment="Center"
                                                   VerticalAlignment="Center"
                                                   Margin="0,8,0,0"/>
@@ -215,16 +231,14 @@
 
                                         <Border Grid.Row="2"
                                                 IsVisible="{Binding HasModelInfo}"
-                                                Background="{DynamicResource AccentFillColorDefaultBrush}"
-                                                CornerRadius="4"
-                                                Padding="10,4"
+                                                Classes="badge"
                                                 HorizontalAlignment="Center"
                                                 Margin="0,6,0,0">
                                             <StackPanel Orientation="Horizontal" Spacing="6">
-                                                <TextBlock Text="{Binding MeshCount}" FontSize="{StaticResource FontSizeCaption}" Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
-                                                <TextBlock Text="M" FontSize="{StaticResource FontSizeCaption}" Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
-                                                <TextBlock Text="{Binding AnimationCount}" FontSize="{StaticResource FontSizeCaption}" IsVisible="{Binding HasSkeleton}" Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
-                                                <TextBlock Text="A" FontSize="{StaticResource FontSizeCaption}" IsVisible="{Binding HasSkeleton}" Foreground="{DynamicResource TextOnAccentFillColorPrimaryBrush}"/>
+                                                <TextBlock Text="{Binding MeshCount}" FontSize="{StaticResource FontSizeCaption}" Foreground="#FFFFFF"/>
+                                                <TextBlock Text="M" FontSize="{StaticResource FontSizeCaption}" Foreground="#FFFFFF"/>
+                                                <TextBlock Text="{Binding AnimationCount}" FontSize="{StaticResource FontSizeCaption}" IsVisible="{Binding HasSkeleton}" Foreground="#FFFFFF"/>
+                                                <TextBlock Text="A" FontSize="{StaticResource FontSizeCaption}" IsVisible="{Binding HasSkeleton}" Foreground="#FFFFFF"/>
                                             </StackPanel>
                                         </Border>
                                     </Grid>
@@ -235,45 +249,43 @@
                 </Border>
 
                 <Border Grid.Row="2"
-                        Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
+                        Background="{StaticResource EditorPanelSecondaryBackground}"
                         Padding="20,10"
                         IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
                     <TextBlock Text="{Binding StatusMessage}"
                                Classes="body"
-                               Foreground="{DynamicResource TextFillColorTertiaryBrush}"/>
+                               Foreground="{StaticResource EditorTextMuted}"/>
                 </Border>
             </Grid>
         </Grid>
 
         <views:InlineContextMenu x:Name="InlineMenu" ZIndex="100"/>
 
-        <!-- Rename Dialog -->
         <Border IsVisible="{Binding IsRenameDialogOpen}"
                 Classes="dialog-overlay"
                 ZIndex="200">
-            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+            <Border Background="{StaticResource EditorPanelBackground}"
+                    BorderBrush="{StaticResource EditorPanelBorder}"
                     BorderThickness="1"
-                    CornerRadius="{DynamicResource OverlayCornerRadius}"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
                     Padding="24"
-                    MinWidth="350">
-                <StackPanel Spacing="16">
+                    MinWidth="380">
+                <StackPanel Spacing="18">
                     <TextBlock Text="{Binding RenameDialogTitle}"
-                               FontWeight="SemiBold"/>
+                               Classes="subtitle"/>
                     <TextBox Text="{Binding RenameDialogValue, Mode=TwoWay}"
                              Watermark="Enter new name"/>
                     <StackPanel Orientation="Horizontal"
                                 HorizontalAlignment="Right"
-                                Spacing="8">
+                                Spacing="10">
                         <Button Content="Cancel"
                                 Command="{Binding CancelRenameCommand}"
-                                Padding="16,8"/>
+                                Padding="20,10"/>
                         <Button Content="Rename"
                                 Command="{Binding ConfirmRenameCommand}"
                                 Classes="accent"
-                                Padding="16,8"/>
+                                Padding="20,10"/>
                     </StackPanel>
                 </StackPanel>
             </Border>

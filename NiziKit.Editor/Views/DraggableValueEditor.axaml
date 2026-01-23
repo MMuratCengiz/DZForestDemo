@@ -3,27 +3,24 @@
              x:Class="NiziKit.Editor.Views.DraggableValueEditor">
 
     <Grid ColumnDefinitions="Auto,*">
-        <!-- Draggable Label -->
         <Border Grid.Column="0"
                 x:Name="DragLabel"
-                Background="{DynamicResource SolidBackgroundFillColorBaseBrush}"
-                CornerRadius="3,0,0,3"
-                Padding="10,6"
+                Background="{StaticResource EditorPanelElevated}"
+                Padding="10,8"
                 Cursor="SizeWestEast"
-                MinWidth="28">
+                MinWidth="32">
             <TextBlock x:Name="LabelText"
                        Text="X"
-                       FontWeight="SemiBold"
+                       FontWeight="Bold"
                        HorizontalAlignment="Center"
                        VerticalAlignment="Center"/>
         </Border>
 
-        <!-- Value TextBox -->
         <TextBox Grid.Column="1"
                  x:Name="ValueTextBox"
-                 CornerRadius="0,3,3,0"
-                 BorderThickness="0"
-                 Padding="8,6"
-                 MinWidth="50"/>
+                 CornerRadius="0"
+                 BorderThickness="1,1,1,1"
+                 Padding="10,8"
+                 MinWidth="60"/>
     </Grid>
 </UserControl>

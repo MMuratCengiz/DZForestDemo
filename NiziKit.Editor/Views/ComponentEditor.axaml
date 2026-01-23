@@ -5,8 +5,7 @@
              x:Class="NiziKit.Editor.Views.ComponentEditor"
              x:DataType="vm:ComponentViewModel">
 
-    <StackPanel Spacing="8">
-        <!-- Dynamic property display based on component type -->
+    <StackPanel Spacing="10">
         <ContentControl Content="{Binding}">
             <ContentControl.ContentTemplate>
                 <DataTemplate x:DataType="vm:ComponentViewModel">

@@ -174,7 +174,7 @@ public partial class ContentBrowserView : UserControl
     private void OnPackTreeItemPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         var point = e.GetCurrentPoint(this);
-        if (point.Properties.IsRightButtonPressed && sender is StackPanel panel && panel.DataContext is FolderTreeNode node)
+        if (point.Properties.IsRightButtonPressed && sender is Border border && border.DataContext is FolderTreeNode node)
         {
             if (node.IsPack)
             {

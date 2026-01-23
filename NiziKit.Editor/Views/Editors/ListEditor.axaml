@@ -2,23 +2,25 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="NiziKit.Editor.Views.Editors.ListEditor">
 
-    <Border Background="{DynamicResource CardBackgroundFillColorSecondaryBrush}"
-            CornerRadius="{DynamicResource ControlCornerRadius}"
-            Padding="8"
-            Margin="0,4">
-        <StackPanel Spacing="4">
+    <Border Background="{StaticResource EditorSurfaceRaised}"
+            BorderBrush="{StaticResource EditorPanelBorder}"
+            BorderThickness="1"
+            Padding="10"
+            Margin="0,6">
+        <StackPanel Spacing="6">
             <Grid ColumnDefinitions="*,Auto">
-                <TextBlock x:Name="CountLabel" 
+                <TextBlock x:Name="CountLabel"
                            Text="0 items"
                            VerticalAlignment="Center"
-                           Classes="caption"/>
-                <Button x:Name="AddButton" 
+                           Foreground="{StaticResource EditorTextMuted}"/>
+                <Button x:Name="AddButton"
                         Grid.Column="1"
                         Content="+"
-                        Padding="8,4"
-                        ToolTip.Tip="Add item"/>
+                        Padding="10,6"
+                        ToolTip.Tip="Add item"
+                        Classes="accent"/>
             </Grid>
-            
+
             <ItemsControl x:Name="ItemsControl"/>
         </StackPanel>
     </Border>

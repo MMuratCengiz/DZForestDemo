@@ -10,32 +10,44 @@
         <views:BoolToForegroundConverter x:Key="BoolToForegroundConverter"/>
     </UserControl.Resources>
 
-    <Panel Background="Transparent">
+    <Panel>
         <Grid RowDefinitions="*,Auto">
             <TreeView Grid.Row="0"
                       x:Name="SceneTree"
                       ItemsSource="{Binding RootObjects}"
                       SelectionMode="Single"
-                      Margin="4"
+                      Background="Transparent"
+                      Margin="0"
                       PointerPressed="OnTreeViewPointerPressed">
                 <TreeView.ItemTemplate>
                     <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:GameObjectViewModel">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <PathIcon Data="{Binding TypeIconData}"
-                                      Width="20" Height="20"
-                                      Foreground="{Binding TypeIconColor}"
-                                      VerticalAlignment="Center"
-                                      Opacity="{Binding IsActive, Converter={x:Static vm:GameObjectViewModel.ActiveToOpacityConverter}}"/>
-                            <TextBlock Text="{Binding Name}"
-                                       VerticalAlignment="Center"
-                                       Foreground="{Binding IsActive, Converter={StaticResource BoolToForegroundConverter}}"/>
-                        </StackPanel>
+                        <Border Padding="4,6"
+                                Background="Transparent"
+                                CornerRadius="2">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <PathIcon Data="{Binding TypeIconData}"
+                                          Width="20" Height="20"
+                                          Foreground="{Binding TypeIconColor}"
+                                          VerticalAlignment="Center"
+                                          Opacity="{Binding IsActive, Converter={x:Static vm:GameObjectViewModel.ActiveToOpacityConverter}}"/>
+                                <TextBlock Text="{Binding Name}"
+                                           VerticalAlignment="Center"
+                                           Foreground="{Binding IsActive, Converter={StaticResource BoolToForegroundConverter}}"/>
+                            </StackPanel>
+                        </Border>
                     </TreeDataTemplate>
                 </TreeView.ItemTemplate>
                 <TreeView.Styles>
                     <Style Selector="TreeViewItem">
                         <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
                         <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+                        <Setter Property="Padding" Value="2"/>
+                    </Style>
+                    <Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
+                        <Setter Property="Background" Value="{DynamicResource EditorSelected}"/>
+                    </Style>
+                    <Style Selector="TreeViewItem:pointerover /template/ Border#PART_LayoutRoot">
+                        <Setter Property="Background" Value="{DynamicResource EditorHover}"/>
                     </Style>
                 </TreeView.Styles>
             </TreeView>
@@ -43,28 +55,26 @@
             <Border Grid.Row="1"
                     x:Name="DeleteConfirmPanel"
                     IsVisible="False"
-                    Background="#40E05555"
-                    BorderBrush="#E05555"
-                    BorderThickness="1"
-                    CornerRadius="{DynamicResource ControlCornerRadius}"
-                    Padding="12"
-                    Margin="4">
+                    Classes="status-error"
+                    Margin="0,8,0,0">
                 <StackPanel Spacing="10">
                     <TextBlock x:Name="DeleteConfirmText"
                                Text="Delete this object?"
-                               TextWrapping="Wrap"/>
+                               TextWrapping="Wrap"
+                               Foreground="{StaticResource EditorError}"/>
                     <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
                         <Button Content="Cancel"
-                                x:Name="CancelDeleteButton"/>
+                                x:Name="CancelDeleteButton"
+                                Padding="16,8"/>
                         <Button Content="Delete"
                                 x:Name="ConfirmDeleteButton"
-                                Foreground="#E05555"/>
+                                Classes="danger"
+                                Padding="16,8"/>
                     </StackPanel>
                 </StackPanel>
             </Border>
         </Grid>
 
-        <!-- Inline Context Menu -->
         <views:InlineContextMenu x:Name="InlineMenu"/>
     </Panel>
 </UserControl>
