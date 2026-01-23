@@ -15,26 +15,12 @@
     <Panel>
         <Grid RowDefinitions="Auto,*,Auto">
             <Border Grid.Row="0"
-                    Background="{StaticResource EditorPanelSecondaryBackground}"
+                    Background="{StaticResource EditorPanelBackground}"
                     BorderBrush="{StaticResource EditorPanelBorder}"
                     BorderThickness="0,0,0,1"
-                    Padding="12,6"
-                    MinHeight="48">
+                    Padding="8,4">
                 <Grid ColumnDefinitions="Auto,*,Auto">
-                    <Menu Grid.Column="0"
-                          Background="Transparent"
-                          VerticalAlignment="Center"
-                          Height="36">
-                        <Menu.Styles>
-                            <Style Selector="MenuItem">
-                                <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
-                                <Setter Property="Padding" Value="14,8"/>
-                                <Setter Property="VerticalAlignment" Value="Center"/>
-                            </Style>
-                            <Style Selector="MenuItem > MenuItem">
-                                <Setter Property="Padding" Value="12,10"/>
-                            </Style>
-                        </Menu.Styles>
+                    <Menu Grid.Column="0" VerticalAlignment="Center">
                         <MenuItem Header="File">
                             <MenuItem Header="Open Scene..." Command="{Binding OpenSceneCommand}" InputGesture="Ctrl+O"/>
                             <MenuItem Header="Save Scene" Command="{Binding SaveSceneCommand}" InputGesture="Ctrl+S"/>
@@ -62,7 +48,6 @@
                             VerticalAlignment="Center">
                         <TextBlock Text="NiziKit Editor"
                                    FontWeight="Bold"
-                                   FontSize="{StaticResource FontSizeBody}"
                                    Foreground="#FFFFFF"/>
                     </Border>
                 </Grid>
