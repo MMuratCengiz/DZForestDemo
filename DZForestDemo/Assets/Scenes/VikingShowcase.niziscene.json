@@ -1,7 +1,8 @@
 {
   "name": "Viking Showcase",
   "assetPacks": [
-    "Packs/Viking"
+    "Packs/Viking",
+    "C:\\Workspace\\DZForestDemo\\DZForestDemo\\Assets\\Packs\\NewPack"
   ],
   "cameras": [
     {
@@ -82,7 +83,7 @@
       "name": "Boat",
       "active": true,
       "position": [25.431843, 0, 16.022827],
-      "rotation": [11.415294, -27.932198, 74.490486],
+      "rotation": [-25.04221, -17.082655, 81.15897],
       "scale": [1, 1, 1],
       "components": [
         {

@@ -339,7 +339,12 @@ public class EditorSceneService
 
         if (field?.GetValue(null) is Dictionary<string, AssetPack> packs)
         {
-            return packs.Values.Select(p => p.SourcePath).Where(p => !string.IsNullOrEmpty(p)).ToList();
+            var assetsDir = Content.ResolvePath("");
+            return packs.Values
+                .Select(p => p.SourcePath)
+                .Where(p => !string.IsNullOrEmpty(p))
+                .Select(p => Path.GetRelativePath(assetsDir, p).Replace('\\', '/'))
+                .ToList();
         }
 
         return null;
