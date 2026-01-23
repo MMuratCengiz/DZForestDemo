@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using NiziKit.Components;
 
 namespace NiziKit.Animation;
@@ -5,9 +6,11 @@ namespace NiziKit.Animation;
 public class AnimationEntry
 {
     [JsonProperty("name")]
+    [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
     [JsonProperty("source")]
+    [JsonPropertyName("source")]
     public string? SourceRef { get; set; }
 
     public bool IsExternal => !string.IsNullOrEmpty(SourceRef);

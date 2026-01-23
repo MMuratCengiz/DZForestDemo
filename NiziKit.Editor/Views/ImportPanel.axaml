@@ -6,23 +6,16 @@
              x:Class="NiziKit.Editor.Views.ImportPanel"
              x:DataType="vm:ImportViewModel">
 
-    <Grid RowDefinitions="*,Auto,Auto" Margin="24">
+    <Grid RowDefinitions="*,Auto,Auto" Margin="16">
         <!-- Source Browser -->
         <Border Grid.Row="0"
                 Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
                 BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1"
                 CornerRadius="{DynamicResource ControlCornerRadius}"
-                Padding="16"
-                Margin="0,0,0,16">
-            <Grid RowDefinitions="Auto,*">
-                <TextBlock Grid.Row="0"
-                           Text="Source Files"
-                           Theme="{StaticResource BodyStrongTextBlockStyle}"
-                           Margin="0,0,0,12"/>
-                <views:FileBrowserGrid Grid.Row="1"
-                                       DataContext="{Binding FileBrowser}"/>
-            </Grid>
+                Padding="12"
+                Margin="0,0,0,12">
+            <views:FileBrowserGrid DataContext="{Binding FileBrowser}"/>
         </Border>
 
         <!-- Import Options -->
@@ -31,88 +24,92 @@
                 BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
                 BorderThickness="1"
                 CornerRadius="{DynamicResource ControlCornerRadius}"
-                Padding="20"
-                Margin="0,0,0,16">
-            <StackPanel Spacing="16">
-                <TextBlock Text="Import Options"
-                           Theme="{StaticResource BodyStrongTextBlockStyle}"/>
-
-                <StackPanel Spacing="14">
-                    <!-- Type Selection -->
-                    <Grid ColumnDefinitions="80,*">
-                        <TextBlock Text="Type"
-                                   VerticalAlignment="Center"/>
-                        <StackPanel Grid.Column="1"
-                                    Orientation="Horizontal"
-                                    Spacing="24">
-                            <RadioButton Content="Models"
-                                         IsChecked="{Binding ImportType, Converter={x:Static vm:ImportTypeConverter.Instance}, ConverterParameter={x:Static vm:ImportType.Models}}"
-                                         GroupName="ImportType"/>
-                            <RadioButton Content="Textures"
-                                         IsChecked="{Binding ImportType, Converter={x:Static vm:ImportTypeConverter.Instance}, ConverterParameter={x:Static vm:ImportType.Textures}}"
-                                         GroupName="ImportType"/>
-                            <RadioButton Content="Both"
-                                         IsChecked="{Binding ImportType, Converter={x:Static vm:ImportTypeConverter.Instance}, ConverterParameter={x:Static vm:ImportType.Both}}"
-                                         GroupName="ImportType"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- Scale and Mips -->
-                    <Grid ColumnDefinitions="80,Auto,*">
-                        <TextBlock Text="Scale"
-                                   VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1"
-                                 Text="{Binding ModelScale}"
-                                 Width="100"/>
-                        <CheckBox Grid.Column="2"
-                                  Content="Generate Mipmaps"
-                                  IsChecked="{Binding GenerateMips}"
-                                  Margin="24,0,0,0"
-                                  VerticalAlignment="Center"/>
-                    </Grid>
-
-                    <!-- Output Directory -->
-                    <Grid ColumnDefinitions="80,*">
-                        <TextBlock Text="Output"
-                                   VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1"
-                                 Text="{Binding OutputDirectory}"
-                                 Watermark="Assets/..."/>
-                    </Grid>
+                Padding="16,12"
+                Margin="0,0,0,12">
+            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*" RowDefinitions="Auto">
+                <!-- Type Selection -->
+                <TextBlock Text="Type"
+                           VerticalAlignment="Center"
+                           Margin="0,0,12,0"/>
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            Spacing="16"
+                            Margin="0,0,24,0">
+                    <RadioButton Content="Models"
+                                 IsChecked="{Binding ImportType, Converter={x:Static vm:ImportTypeConverter.Instance}, ConverterParameter={x:Static vm:ImportType.Models}}"
+                                 GroupName="ImportType"/>
+                    <RadioButton Content="Textures"
+                                 IsChecked="{Binding ImportType, Converter={x:Static vm:ImportTypeConverter.Instance}, ConverterParameter={x:Static vm:ImportType.Textures}}"
+                                 GroupName="ImportType"/>
+                    <RadioButton Content="Both"
+                                 IsChecked="{Binding ImportType, Converter={x:Static vm:ImportTypeConverter.Instance}, ConverterParameter={x:Static vm:ImportType.Both}}"
+                                 GroupName="ImportType"/>
                 </StackPanel>
-            </StackPanel>
+
+                <!-- Scale -->
+                <TextBlock Grid.Column="2"
+                           Text="Scale"
+                           VerticalAlignment="Center"
+                           Margin="0,0,12,0"/>
+                <TextBox Grid.Column="3"
+                         Text="{Binding ModelScale}"
+                         Width="80"
+                         Margin="0,0,24,0"/>
+
+                <!-- Mips -->
+                <CheckBox Grid.Column="4"
+                          Content="Generate Mipmaps"
+                          IsChecked="{Binding GenerateMips}"
+                          VerticalAlignment="Center"/>
+            </Grid>
         </Border>
 
-        <!-- Action Bar -->
+        <!-- Action Bar with Output -->
         <Border Grid.Row="2"
                 Background="{DynamicResource LayerFillColorDefaultBrush}"
                 CornerRadius="{DynamicResource ControlCornerRadius}"
-                Padding="16">
-            <Grid ColumnDefinitions="*,Auto,Auto">
+                Padding="16,12">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
+                <!-- Output Directory -->
+                <TextBlock Text="Output"
+                           VerticalAlignment="Center"
+                           Margin="0,0,12,0"/>
+                <TextBox Grid.Column="1"
+                         Text="{Binding OutputDirectory}"
+                         Watermark="Assets/..."
+                         VerticalAlignment="Center"/>
+
                 <!-- Progress -->
-                <StackPanel Grid.Column="0"
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
                             VerticalAlignment="Center"
-                            Spacing="6"
+                            Spacing="12"
+                            Margin="16,0"
                             IsVisible="{Binding IsImporting}">
-                    <TextBlock Text="{Binding ProgressText}"/>
+                    <TextBlock Text="{Binding ProgressText}"
+                               VerticalAlignment="Center"
+                               MaxWidth="200"
+                               TextTrimming="CharacterEllipsis"/>
                     <ProgressBar Value="{Binding Progress}"
                                  Maximum="100"
-                                 Height="4"/>
+                                 Width="100"
+                                 Height="4"
+                                 VerticalAlignment="Center"/>
                 </StackPanel>
 
                 <!-- Buttons -->
-                <Button Grid.Column="1"
+                <Button Grid.Column="3"
                         Content="Cancel"
                         Command="{Binding CancelCommand}"
-                        Margin="0,0,12,0"
-                        MinWidth="120"
-                        Padding="20,12"/>
-                <Button Grid.Column="2"
+                        Margin="12,0"
+                        MinWidth="100"
+                        Padding="16,10"/>
+                <Button Grid.Column="4"
                         Content="Import"
                         Command="{Binding ImportCommand}"
                         IsEnabled="{Binding !IsImporting}"
-                        MinWidth="120"
-                        Padding="20,12"
+                        MinWidth="100"
+                        Padding="16,10"
                         Classes="accent"/>
             </Grid>
         </Border>

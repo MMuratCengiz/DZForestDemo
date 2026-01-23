@@ -7,13 +7,13 @@
     {
       "name": "Main Camera",
       "position": [
-        1.3669761,
-        -7.3278384,
-        -8.367347
+        0,
+        0,
+        -4
       ],
       "rotation": [
-        5.500396,
-        1.0313246,
+        0,
+        0,
         0
       ],
       "fieldOfView": 0.785398,
@@ -131,9 +131,9 @@
         16.022827
       ],
       "rotation": [
-        -1.2206087,
-        -29.97747,
-        77.66519
+        -11.965881,
+        27.716335,
+        74.37626
       ],
       "scale": [
         1,
@@ -903,6 +903,15 @@
         {
           "type": "material",
           "material": "viking:NewMaterial"
+        },
+        {
+          "type": "animator",
+          "animations": [
+            {
+              "name": "Take 001",
+              "source": "viking:characters/Take 001"
+            }
+          ]
         }
       ],
       "children": []

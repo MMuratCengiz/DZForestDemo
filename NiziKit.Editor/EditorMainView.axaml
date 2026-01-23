@@ -202,8 +202,8 @@
             <Border Classes="dialog-container-large"
                     HorizontalAlignment="Center"
                     VerticalAlignment="Center"
-                    Width="1200"
-                    Height="800"
+                    Width="1436"
+                    Height="900"
                     Margin="40">
                 <Grid RowDefinitions="Auto,Auto,*">
                     <Border Grid.Row="0"

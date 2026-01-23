@@ -1,6 +1,7 @@
 using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+using NiziKit.Animation;
 using NiziKit.Assets;
 
 namespace NiziKit.Editor.Views.Editors;
@@ -41,7 +42,7 @@ public partial class AnimationSelectorEditor : UserControl
 
     private void PopulateAnimations()
     {
-        if (_animationComboBox == null || Instance == null || SkeletonProperty == null)
+        if (_animationComboBox == null || Instance == null)
         {
             return;
         }
@@ -51,12 +52,27 @@ public partial class AnimationSelectorEditor : UserControl
         {
             var items = new List<string> { "(None)" };
 
-            var skeleton = SkeletonProperty.GetValue(Instance) as Skeleton;
-            if (skeleton != null)
+            var animationNamesProperty = Instance.GetType().GetProperty("AnimationNames");
+            if (animationNamesProperty != null)
             {
-                foreach (var animName in skeleton.AnimationNames)
+                var animNames = animationNamesProperty.GetValue(Instance) as IReadOnlyList<string>;
+                if (animNames != null)
                 {
-                    items.Add(animName);
+                    foreach (var animName in animNames)
+                    {
+                        items.Add(animName);
+                    }
+                }
+            }
+            else if (SkeletonProperty != null)
+            {
+                var skeleton = SkeletonProperty.GetValue(Instance) as Skeleton;
+                if (skeleton != null)
+                {
+                    foreach (var animName in skeleton.AnimationNames)
+                    {
+                        items.Add(animName);
+                    }
                 }
             }
 

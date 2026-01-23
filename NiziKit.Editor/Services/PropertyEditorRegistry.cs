@@ -64,7 +64,6 @@ public static class PropertyEditorRegistry
             return CreateEnumEditor(context);
         }
 
-        // Check for List<T> types
         if (IsListType(propType))
         {
             return CreateListEditor(context);
@@ -96,7 +95,6 @@ public static class PropertyEditorRegistry
             return true;
         }
 
-        // Check for IList<T>
         if (type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IList<>)))
         {
             return true;
@@ -122,13 +120,11 @@ public static class PropertyEditorRegistry
     {
         var elementType = GetListElementType(context.Property.PropertyType);
 
-        // Check for special AnimationEntry list
         if (elementType == typeof(AnimationEntry))
         {
             return CreateAnimationListEditor(context);
         }
 
-        // Generic list editor
         return new Views.Editors.ListEditor
         {
             Instance = context.Instance,
@@ -142,30 +138,14 @@ public static class PropertyEditorRegistry
 
     private static Control CreateAnimationListEditor(PropertyEditorContext context)
     {
-        var editor = new Views.Editors.ListEditor
+        var editor = new Views.Editors.AnimationListEditor
         {
             Instance = context.Instance,
             Property = context.Property,
             AssetBrowser = context.AssetBrowser,
             EditorViewModel = context.EditorViewModel,
             OnValueChanged = context.OnValueChanged,
-            IsReadOnly = !context.Property.CanWrite,
-            ItemFactory = () => new AnimationEntry { Name = "NewAnimation" },
-            CustomItemEditorFactory = (item, index, itemContext) =>
-            {
-                if (item is AnimationEntry entry)
-                {
-                    return new Views.Editors.AnimationEntryEditor
-                    {
-                        Entry = entry,
-                        AssetBrowser = context.AssetBrowser,
-                        EditorViewModel = context.EditorViewModel,
-                        OnValueChanged = itemContext.OnValueChanged,
-                        IsReadOnly = false
-                    };
-                }
-                return null;
-            }
+            IsReadOnly = !context.Property.CanWrite
         };
 
         return editor;

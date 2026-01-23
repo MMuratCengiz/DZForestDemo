@@ -83,13 +83,14 @@ public partial class ListEditor : UserControl
     {
         var panel = new Grid
         {
-            ColumnDefinitions = new ColumnDefinitions("*,Auto,Auto,Auto"),
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
             Margin = new Thickness(0, 2)
         };
 
         var editorContainer = new Border
         {
-            Margin = new Thickness(0, 0, 4, 0)
+            Margin = new Thickness(0, 0, 4, 0),
+            VerticalAlignment = VerticalAlignment.Center
         };
 
         if (item != null)
@@ -114,35 +115,14 @@ public partial class ListEditor : UserControl
 
         if (!IsReadOnly)
         {
-            var upButton = new Button
-            {
-                Content = "^",
-                Padding = new Thickness(6, 2),
-                IsEnabled = index > 0
-            };
-            upButton.Click += (s, e) => MoveItem(index, index - 1, list);
-            Grid.SetColumn(upButton, 1);
-            panel.Children.Add(upButton);
-
-            var downButton = new Button
-            {
-                Content = "v",
-                Padding = new Thickness(6, 2),
-                Margin = new Thickness(2, 0, 0, 0),
-                IsEnabled = index < list.Count - 1
-            };
-            downButton.Click += (s, e) => MoveItem(index, index + 1, list);
-            Grid.SetColumn(downButton, 2);
-            panel.Children.Add(downButton);
-
             var removeButton = new Button
             {
                 Content = "X",
                 Padding = new Thickness(6, 2),
-                Margin = new Thickness(2, 0, 0, 0)
+                VerticalAlignment = VerticalAlignment.Center
             };
             removeButton.Click += (s, e) => RemoveItem(index, list);
-            Grid.SetColumn(removeButton, 3);
+            Grid.SetColumn(removeButton, 1);
             panel.Children.Add(removeButton);
         }
 
@@ -366,20 +346,6 @@ public partial class ListEditor : UserControl
         Rebuild();
     }
 
-    private void MoveItem(int fromIndex, int toIndex, IList list)
-    {
-        if (IsReadOnly || fromIndex < 0 || fromIndex >= list.Count || toIndex < 0 || toIndex >= list.Count)
-        {
-            return;
-        }
-
-        var item = list[fromIndex];
-        list.RemoveAt(fromIndex);
-        list.Insert(toIndex, item);
-        OnValueChanged?.Invoke();
-        Rebuild();
-    }
-
     private Type GetElementType()
     {
         if (Property == null)
@@ -389,13 +355,11 @@ public partial class ListEditor : UserControl
 
         var propType = Property.PropertyType;
 
-        // Handle List<T>
         if (propType.IsGenericType && propType.GetGenericTypeDefinition() == typeof(List<>))
         {
             return propType.GetGenericArguments()[0];
         }
 
-        // Handle IList<T>
         var listInterface = propType.GetInterfaces()
             .FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IList<>));
         if (listInterface != null)
@@ -403,7 +367,6 @@ public partial class ListEditor : UserControl
             return listInterface.GetGenericArguments()[0];
         }
 
-        // Handle arrays
         if (propType.IsArray)
         {
             return propType.GetElementType() ?? typeof(object);
