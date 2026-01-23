@@ -72,7 +72,7 @@ public sealed class DenOfIzTopLevel : EmbeddableControlRoot
             _surface.Resize(width, height, scaling);
         }
 
-        _impl.SetClientSize(new Size(width / scaling, height / scaling), scaling);
+        _impl.SetClientSize(new Size(width, height), scaling);
     }
 
     public void Resize(int width, int height, double scaling = 1.0)

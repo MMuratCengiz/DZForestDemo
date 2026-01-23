@@ -48,7 +48,7 @@ public sealed class EditorGame : Game
         _width = GraphicsContext.Width;
         _height = GraphicsContext.Height;
 
-        _scaling = 1.0;
+        _scaling = Display.GetPrimaryDisplay().DpiScale;
         _topLevel = new DenOfIzTopLevel((int)_width, (int)_height, _scaling);
         _topLevel.Content = new EditorMainView();
 

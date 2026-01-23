@@ -8,17 +8,17 @@
     <Application.Resources>
         <views:BoolToForegroundConverter x:Key="BoolToForegroundConverter"/>
 
-        <Color x:Key="AxisXColor">#E05555</Color>
-        <Color x:Key="AxisYColor">#55CC55</Color>
-        <Color x:Key="AxisZColor">#5588EE</Color>
+        <Color x:Key="AxisXColor">#FF6B6B</Color>
+        <Color x:Key="AxisYColor">#6BCB77</Color>
+        <Color x:Key="AxisZColor">#6B9FFF</Color>
 
         <SolidColorBrush x:Key="AxisXBrush" Color="{StaticResource AxisXColor}"/>
         <SolidColorBrush x:Key="AxisYBrush" Color="{StaticResource AxisYColor}"/>
         <SolidColorBrush x:Key="AxisZBrush" Color="{StaticResource AxisZColor}"/>
 
-        <SolidColorBrush x:Key="EditorPanelBackground" Color="#FF2D2D2D"/>
-        <SolidColorBrush x:Key="EditorPanelSecondaryBackground" Color="#FF252525"/>
-        <SolidColorBrush x:Key="EditorPanelBorder" Color="#FF3D3D3D"/>
+        <SolidColorBrush x:Key="EditorPanelBackground" Color="#FF1A1A1A"/>
+        <SolidColorBrush x:Key="EditorPanelSecondaryBackground" Color="#FF141414"/>
+        <SolidColorBrush x:Key="EditorPanelBorder" Color="#FF3A3A3A"/>
     </Application.Resources>
 
     <Application.Styles>

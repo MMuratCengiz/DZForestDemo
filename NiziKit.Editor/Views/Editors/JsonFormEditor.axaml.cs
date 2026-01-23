@@ -652,63 +652,43 @@ public partial class JsonFormEditor : UserControl
 
     private Control CreateAddPropertyRow(JsonObject obj, string propertyPath, List<string> missingProps)
     {
-        var grid = new Grid
+        var button = new Button
         {
-            ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"),
+            Content = "Add Property...",
+            HorizontalAlignment = HorizontalAlignment.Left,
             Margin = new Thickness(0, 8, 0, 0)
         };
 
-        var labelBlock = new TextBlock
+        var menuItems = new List<MenuItem>();
+        var flyout = new MenuFlyout { Placement = PlacementMode.BottomEdgeAlignedLeft };
+        for (var i = 0; i < missingProps.Count; i++)
         {
-            Text = "Add Property",
-            VerticalAlignment = VerticalAlignment.Center,
-            MinWidth = 120,
-            Margin = new Thickness(0, 0, 12, 0)
-        };
-        Grid.SetColumn(labelBlock, 0);
-        grid.Children.Add(labelBlock);
-
-        var comboBox = new ComboBox
-        {
-            HorizontalAlignment = HorizontalAlignment.Stretch
-        };
-        foreach (var prop in missingProps)
-        {
-            comboBox.Items.Add(FormatPropertyName(prop));
-        }
-        Grid.SetColumn(comboBox, 1);
-        grid.Children.Add(comboBox);
-
-        var addButton = new Button
-        {
-            Content = new SymbolIcon { Symbol = Symbol.Add, FontSize = 12 },
-            Padding = new Thickness(4),
-            Margin = new Thickness(4, 0, 0, 0)
-        };
-        ToolTip.SetTip(addButton, "Add");
-        addButton.IsEnabled = false;
-        Grid.SetColumn(addButton, 2);
-        grid.Children.Add(addButton);
-
-        comboBox.SelectionChanged += (s, e) =>
-        {
-            addButton.IsEnabled = comboBox.SelectedIndex >= 0;
-        };
-
-        addButton.Click += (s, e) =>
-        {
-            var selectedIndex = comboBox.SelectedIndex;
-            if (selectedIndex >= 0 && selectedIndex < missingProps.Count)
+            var propName = missingProps[i];
+            var displayName = FormatPropertyName(propName);
+            var item = new MenuItem { Header = displayName };
+            item.Click += (s, e) =>
             {
-                var propName = missingProps[selectedIndex];
                 var defaultValue = _schema?.CreateDefaultForProperty(propertyPath, propName);
                 obj[propName] = defaultValue ?? JsonValue.Create("");
                 ValueChanged?.Invoke();
                 RefreshForm();
+            };
+            flyout.Items.Add(item);
+            menuItems.Add(item);
+        }
+
+        flyout.Opened += (s, e) =>
+        {
+            var width = button.Bounds.Width;
+            foreach (var item in menuItems)
+            {
+                item.MinWidth = width;
             }
         };
 
-        return grid;
+        button.Flyout = flyout;
+
+        return button;
     }
 
     private Control CreateDictionarySection(string key, string displayName, JsonObject dictObj, JsonObject parent, string propertyPath)
@@ -1178,28 +1158,40 @@ public partial class JsonFormEditor : UserControl
 
     private Control CreateEnumEditor(string key, string? value, JsonObject parent, string[] enumValues)
     {
-        var comboBox = new ComboBox
+        var button = new Button
         {
+            Content = value ?? enumValues.FirstOrDefault() ?? "",
             HorizontalAlignment = HorizontalAlignment.Stretch,
-            ItemsSource = enumValues
+            HorizontalContentAlignment = HorizontalAlignment.Left
         };
 
-        var index = Array.IndexOf(enumValues, value);
-        if (index >= 0)
+        var menuItems = new List<MenuItem>();
+        var flyout = new MenuFlyout { Placement = PlacementMode.BottomEdgeAlignedLeft };
+        foreach (var enumValue in enumValues)
         {
-            comboBox.SelectedIndex = index;
+            var item = new MenuItem { Header = enumValue };
+            item.Click += (s, e) =>
+            {
+                parent[key] = enumValue;
+                button.Content = enumValue;
+                ValueChanged?.Invoke();
+            };
+            flyout.Items.Add(item);
+            menuItems.Add(item);
         }
 
-        comboBox.SelectionChanged += (s, e) =>
+        flyout.Opened += (s, e) =>
         {
-            if (comboBox.SelectedItem is string selected)
+            var width = button.Bounds.Width;
+            foreach (var item in menuItems)
             {
-                parent[key] = selected;
-                ValueChanged?.Invoke();
+                item.MinWidth = width;
             }
         };
 
-        return comboBox;
+        button.Flyout = flyout;
+
+        return button;
     }
 
     private Control CreateNumberEditor(string key, double value, JsonObject parent, bool isInt)
