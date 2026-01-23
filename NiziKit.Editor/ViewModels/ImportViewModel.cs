@@ -112,7 +112,7 @@ public partial class ImportViewModel : ObservableObject
                 {
                     // Import entire directory
                     ProgressText = $"Importing directory: {file.Name}";
-                    var settings = new DirectoryImportSettings
+                    var settings = new BulkImportDesc
                     {
                         SourceDirectory = file.FullPath,
                         OutputDirectory = outputPath,

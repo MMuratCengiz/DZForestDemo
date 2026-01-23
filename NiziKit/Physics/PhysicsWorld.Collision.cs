@@ -50,17 +50,19 @@ public sealed partial class PhysicsWorld
         {
             var key = _activeContactsBuffer[i];
 
-            if (!_trackedObjects.TryGetValue(key.IdA, out var goA) ||
-                !_trackedObjects.TryGetValue(key.IdB, out var goB))
+            if (!_trackedObjects.TryGetValue(key.IdA, out var entryA) ||
+                !_trackedObjects.TryGetValue(key.IdB, out var entryB))
             {
                 continue;
             }
 
-            var rbA = goA.GetComponent<RigidbodyComponent>();
-            var rbB = goB.GetComponent<RigidbodyComponent>();
+            var goA = entryA.Go;
+            var goB = entryB.Go;
+            var rbA = entryA.Rigidbody;
+            var rbB = entryB.Rigidbody;
 
-            var velA = rbA != null ? GetVelocity(key.IdA) : Vector3.Zero;
-            var velB = rbB != null ? GetVelocity(key.IdB) : Vector3.Zero;
+            var velA = GetVelocity(key.IdA);
+            var velB = GetVelocity(key.IdB);
             var relativeVelocity = velA - velB;
 
             var wasActive = ContainsContact(_previousContactsBuffer, _previousContactCount, key);
@@ -102,14 +104,16 @@ public sealed partial class PhysicsWorld
                 continue;
             }
 
-            if (!_trackedObjects.TryGetValue(key.IdA, out var goA) ||
-                !_trackedObjects.TryGetValue(key.IdB, out var goB))
+            if (!_trackedObjects.TryGetValue(key.IdA, out var entryA) ||
+                !_trackedObjects.TryGetValue(key.IdB, out var entryB))
             {
                 continue;
             }
 
-            var rbA = goA.GetComponent<RigidbodyComponent>();
-            var rbB = goB.GetComponent<RigidbodyComponent>();
+            var goA = entryA.Go;
+            var goB = entryB.Go;
+            var rbA = entryA.Rigidbody;
+            var rbB = entryB.Rigidbody;
 
             var collisionA = new Collision
             {

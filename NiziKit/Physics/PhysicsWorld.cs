@@ -21,7 +21,7 @@ public sealed partial class PhysicsWorld : IWorldEventListener, IDisposable
     private readonly ThreadDispatcher _threadDispatcher;
     private readonly Dictionary<int, BodyHandle> _bodyHandles = new();
     private readonly Dictionary<int, StaticHandle> _staticHandles = new();
-    private readonly Dictionary<int, GameObject> _trackedObjects = new();
+    private readonly Dictionary<int, (GameObject Go, RigidbodyComponent Rigidbody)> _trackedObjects = new();
     private readonly Dictionary<BodyHandle, int> _bodyToId = new();
     private readonly Dictionary<StaticHandle, int> _staticToId = new();
     private readonly Dictionary<int, List<ConstraintHandle>> _constraintsByOwner = new();
@@ -73,13 +73,10 @@ public sealed partial class PhysicsWorld : IWorldEventListener, IDisposable
 
     private void SyncToGameObjects()
     {
-        foreach (var (id, go) in _trackedObjects)
+        foreach (var (id, entry) in _trackedObjects)
         {
-            var rigidbody = go.GetComponent<RigidbodyComponent>();
-            if (rigidbody == null)
-            {
-                continue;
-            }
+            var rigidbody = entry.Rigidbody;
+            var go = entry.Go;
 
             if (rigidbody.BodyType == PhysicsBodyType.Kinematic)
             {

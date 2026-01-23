@@ -144,33 +144,35 @@ public static class GltfAnimationExtractor
             foreach (var kf in channelData.Keyframes)
             {
                 var value = kf.Value;
-                var inTangent = kf.InTangent;
-                var outTangent = kf.OutTangent;
+                var inTangent = kf.InTangent ?? Vector4.Zero;
+                var outTangent = kf.OutTangent ?? Vector4.Zero;
+                var hasIn = kf.InTangent.HasValue;
+                var hasOut = kf.OutTangent.HasValue;
 
                 if (convertToLeftHanded)
                 {
                     if (channelData.Path == AnimationPath.Translation)
                     {
                         value = new Vector4(value.X, value.Y, -value.Z, 0);
-                        if (inTangent.HasValue)
+                        if (hasIn)
                         {
-                            inTangent = new Vector4(inTangent.Value.X, inTangent.Value.Y, -inTangent.Value.Z, 0);
+                            inTangent = new Vector4(inTangent.X, inTangent.Y, -inTangent.Z, 0);
                         }
-                        if (outTangent.HasValue)
+                        if (hasOut)
                         {
-                            outTangent = new Vector4(outTangent.Value.X, outTangent.Value.Y, -outTangent.Value.Z, 0);
+                            outTangent = new Vector4(outTangent.X, outTangent.Y, -outTangent.Z, 0);
                         }
                     }
                     else if (channelData.Path == AnimationPath.Rotation)
                     {
                         value = new Vector4(-value.X, -value.Y, value.Z, value.W);
-                        if (inTangent.HasValue)
+                        if (hasIn)
                         {
-                            inTangent = new Vector4(-inTangent.Value.X, -inTangent.Value.Y, inTangent.Value.Z, inTangent.Value.W);
+                            inTangent = new Vector4(-inTangent.X, -inTangent.Y, inTangent.Z, inTangent.W);
                         }
-                        if (outTangent.HasValue)
+                        if (hasOut)
                         {
-                            outTangent = new Vector4(-outTangent.Value.X, -outTangent.Value.Y, outTangent.Value.Z, outTangent.Value.W);
+                            outTangent = new Vector4(-outTangent.X, -outTangent.Y, outTangent.Z, outTangent.W);
                         }
                     }
                 }
@@ -180,7 +182,9 @@ public static class GltfAnimationExtractor
                     Time = kf.Time,
                     Value = value,
                     InTangent = inTangent,
-                    OutTangent = outTangent
+                    OutTangent = outTangent,
+                    HasInTangent = hasIn,
+                    HasOutTangent = hasOut
                 });
             }
 

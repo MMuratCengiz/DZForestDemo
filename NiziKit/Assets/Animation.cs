@@ -10,12 +10,14 @@ public enum AnimationPath
     Scale
 }
 
-public class Keyframe
+public struct Keyframe
 {
     public float Time { get; set; }
     public Vector4 Value { get; set; }
-    public Vector4? InTangent { get; set; }
-    public Vector4? OutTangent { get; set; }
+    public Vector4 InTangent { get; set; }
+    public Vector4 OutTangent { get; set; }
+    public bool HasInTangent { get; set; }
+    public bool HasOutTangent { get; set; }
 }
 
 public class AnimationChannel

@@ -77,22 +77,19 @@ public sealed partial class PhysicsWorld
             rigidbody.BodyHandle = handle;
         }
 
-        _trackedObjects[go.Id] = go;
+        _trackedObjects[go.Id] = (go, rigidbody);
     }
 
     private void Unregister(GameObject go)
     {
-        if (!_trackedObjects.Remove(go.Id))
+        if (!_trackedObjects.TryGetValue(go.Id, out var entry))
         {
             return;
         }
 
-        var rigidbody = go.GetComponent<RigidbodyComponent>();
-        if (rigidbody != null)
-        {
-            rigidbody.BodyHandle = null;
-            rigidbody.StaticHandle = null;
-        }
+        _trackedObjects.Remove(go.Id);
+        entry.Rigidbody.BodyHandle = null;
+        entry.Rigidbody.StaticHandle = null;
 
         RemoveBody(go.Id);
     }

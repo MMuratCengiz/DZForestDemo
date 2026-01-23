@@ -31,6 +31,7 @@ public sealed class GltfExportDesc
     public bool OptimizeMeshes { get; set; } = true;
     public bool MergeMeshes { get; set; }
     public bool DropNormals { get; set; }
+    public bool FbxPreservePivots { get; set; } = false;
 }
 
 public sealed class GltfExportResult
@@ -62,6 +63,7 @@ public sealed class GltfExporter : IDisposable
 {
     private const uint AiProcessGlobalScale = 0x8000000;
     private const string AiConfigGlobalScaleFactorKey = "GLOBAL_SCALE_FACTOR_KEY";
+    private const string AiConfigFbxPreservePivotsKey = "IMPORT_FBX_PRESERVE_PIVOTS";
 
     private static readonly string[] SupportedExtensionsList =
     [
@@ -160,6 +162,7 @@ public sealed class GltfExporter : IDisposable
 
         var propertyStore = _assimp.CreatePropertyStore();
         _assimp.SetImportPropertyFloat(propertyStore, AiConfigGlobalScaleFactorKey, desc.ScaleFactor);
+        _assimp.SetImportPropertyInteger(propertyStore, AiConfigFbxPreservePivotsKey, desc.FbxPreservePivots ? 1 : 0);
 
         var finalFlags = (uint)importFlags | AiProcessGlobalScale;
         var scene = _assimp.ImportFileExWithProperties(desc.SourceFilePath, finalFlags, null, propertyStore);

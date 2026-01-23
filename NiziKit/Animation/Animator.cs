@@ -58,13 +58,25 @@ public partial class Animator : IDisposable
     public ReadOnlySpan<Matrix4x4> BoneMatrices => _boneMatrices.AsSpan(0, BoneCount);
     public bool IsInitialized => _initialized;
 
+    private string[]? _cachedAnimationNames;
+    private int _cachedAnimationCount = -1;
+
     public IReadOnlyList<string> AnimationNames
     {
         get
         {
             if (Animations.Count > 0)
             {
-                return Animations.Select(a => a.Name).ToList();
+                if (_cachedAnimationNames == null || _cachedAnimationCount != Animations.Count)
+                {
+                    _cachedAnimationNames = new string[Animations.Count];
+                    for (var i = 0; i < Animations.Count; i++)
+                    {
+                        _cachedAnimationNames[i] = Animations[i].Name;
+                    }
+                    _cachedAnimationCount = Animations.Count;
+                }
+                return _cachedAnimationNames;
             }
             return Skeleton?.AnimationNames ?? Array.Empty<string>();
         }
@@ -99,6 +111,8 @@ public partial class Animator : IDisposable
         }
     }
 
+    private List<AnimationEntry>? _externalAnimationsBuffer;
+
     public void SyncAnimationsFromSkeleton()
     {
         if (Skeleton == null)
@@ -106,36 +120,58 @@ public partial class Animator : IDisposable
             return;
         }
 
-        var externals = Animations.Where(a => a.IsExternal).ToList();
+        _externalAnimationsBuffer ??= new List<AnimationEntry>(8);
+        _externalAnimationsBuffer.Clear();
+
+        for (var i = 0; i < Animations.Count; i++)
+        {
+            if (Animations[i].IsExternal)
+            {
+                _externalAnimationsBuffer.Add(Animations[i]);
+            }
+        }
+
         Animations.Clear();
+        _cachedAnimationNames = null;
+        _cachedAnimationCount = -1;
 
         foreach (var animName in Skeleton.AnimationNames)
         {
             Animations.Add(AnimationEntry.FromSkeleton(animName));
         }
 
-        Animations.AddRange(externals);
+        for (var i = 0; i < _externalAnimationsBuffer.Count; i++)
+        {
+            Animations.Add(_externalAnimationsBuffer[i]);
+        }
     }
 
     public void AddExternalAnimation(string name, string sourceRef)
     {
-        var existing = Animations.FirstOrDefault(a => a.Name == name);
-        if (existing != null)
+        for (var i = 0; i < Animations.Count; i++)
         {
-            existing.SourceRef = sourceRef;
+            if (Animations[i].Name == name)
+            {
+                Animations[i].SourceRef = sourceRef;
+                return;
+            }
         }
-        else
-        {
-            Animations.Add(AnimationEntry.External(name, sourceRef));
-        }
+        Animations.Add(AnimationEntry.External(name, sourceRef));
+        _cachedAnimationNames = null;
+        _cachedAnimationCount = -1;
     }
 
     public bool RemoveAnimation(string name)
     {
-        var entry = Animations.FirstOrDefault(a => a.Name == name);
-        if (entry != null)
+        for (var i = 0; i < Animations.Count; i++)
         {
-            return Animations.Remove(entry);
+            if (Animations[i].Name == name)
+            {
+                Animations.RemoveAt(i);
+                _cachedAnimationNames = null;
+                _cachedAnimationCount = -1;
+                return true;
+            }
         }
         return false;
     }
@@ -182,8 +218,14 @@ public partial class Animator : IDisposable
             return;
         }
 
-        foreach (var entry in Animations.Where(a => a.IsExternal))
+        for (var i = 0; i < Animations.Count; i++)
         {
+            var entry = Animations[i];
+            if (!entry.IsExternal)
+            {
+                continue;
+            }
+
             try
             {
                 var (modelPath, animationName) = ParseAnimationSourceRef(entry.SourceRef!);
@@ -247,9 +289,12 @@ public partial class Animator : IDisposable
 
     public bool HasAnimation(string name)
     {
-        if (Animations.Any(a => a.Name == name))
+        for (var i = 0; i < Animations.Count; i++)
         {
-            return true;
+            if (Animations[i].Name == name)
+            {
+                return true;
+            }
         }
 
         var names = Skeleton?.AnimationNames ?? Array.Empty<string>();
@@ -266,7 +311,14 @@ public partial class Animator : IDisposable
 
     public AnimationEntry? GetAnimationEntry(string name)
     {
-        return Animations.FirstOrDefault(a => a.Name == name);
+        for (var i = 0; i < Animations.Count; i++)
+        {
+            if (Animations[i].Name == name)
+            {
+                return Animations[i];
+            }
+        }
+        return null;
     }
 
     private Assets.Animation? ResolveAnimation(string name)

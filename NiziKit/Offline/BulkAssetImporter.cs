@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 
 namespace NiziKit.Offline;
 
-public sealed class DirectoryImportSettings
+public sealed class BulkImportDesc
 {
     public required string SourceDirectory { get; set; }
     public required string OutputDirectory { get; set; }
@@ -15,7 +15,7 @@ public sealed class DirectoryImportSettings
     public Action<string>? OnProgress { get; set; }
 }
 
-public sealed class DirectoryImportResult
+public sealed class BulkImportResult
 {
     public int ModelsExported { get; init; }
     public int ModelsFailed { get; init; }
@@ -40,30 +40,30 @@ public sealed class BulkAssetImporter : IDisposable
         _assetExporter.Dispose();
     }
 
-    public DirectoryImportResult Import(DirectoryImportSettings settings)
+    public BulkImportResult Import(BulkImportDesc desc)
     {
-        if (!Directory.Exists(settings.SourceDirectory))
+        if (!Directory.Exists(desc.SourceDirectory))
         {
-            return new DirectoryImportResult
+            return new BulkImportResult
             {
-                Errors = [$"Source directory not found: {settings.SourceDirectory}"]
+                Errors = [$"Source directory not found: {desc.SourceDirectory}"]
             };
         }
 
-        Directory.CreateDirectory(settings.OutputDirectory);
+        Directory.CreateDirectory(desc.OutputDirectory);
 
         var modelFiles = new List<string>();
         var textureFiles = new List<string>();
 
-        foreach (var file in Directory.EnumerateFiles(settings.SourceDirectory, "*.*", SearchOption.AllDirectories))
+        foreach (var file in Directory.EnumerateFiles(desc.SourceDirectory, "*.*", SearchOption.AllDirectories))
         {
             var ext = Path.GetExtension(file).ToLowerInvariant();
 
-            if (settings.ImportModels && ModelExtensions.Contains(ext))
+            if (desc.ImportModels && ModelExtensions.Contains(ext))
             {
                 modelFiles.Add(file);
             }
-            else if (settings.ImportTextures && TextureExtensions.Contains(ext))
+            else if (desc.ImportTextures && TextureExtensions.Contains(ext))
             {
                 textureFiles.Add(file);
             }
@@ -77,20 +77,20 @@ public sealed class BulkAssetImporter : IDisposable
 
         var parallelOptions = new ParallelOptions
         {
-            MaxDegreeOfParallelism = settings.MaxDegreeOfParallelism
+            MaxDegreeOfParallelism = desc.MaxDegreeOfParallelism
         };
 
-        if (settings.ImportModels && modelFiles.Count > 0)
+        if (desc.ImportModels && modelFiles.Count > 0)
         {
-            settings.OnProgress?.Invoke($"Exporting {modelFiles.Count} models...");
+            desc.OnProgress?.Invoke($"Exporting {modelFiles.Count} models...");
 
             foreach (var file in modelFiles)
             {
-                var result = ExportModel(file, settings);
+                var result = ExportModel(file, desc);
                 if (result.Success)
                 {
                     modelsExported++;
-                    settings.OnProgress?.Invoke($"  Model: {Path.GetFileName(file)}");
+                    desc.OnProgress?.Invoke($"  Model: {Path.GetFileName(file)}");
                 }
                 else
                 {
@@ -100,17 +100,17 @@ public sealed class BulkAssetImporter : IDisposable
             }
         }
 
-        if (settings.ImportTextures && textureFiles.Count > 0)
+        if (desc.ImportTextures && textureFiles.Count > 0)
         {
-            settings.OnProgress?.Invoke($"Exporting {textureFiles.Count} textures...");
+            desc.OnProgress?.Invoke($"Exporting {textureFiles.Count} textures...");
 
             Parallel.ForEach(textureFiles, parallelOptions, file =>
             {
-                var result = ExportTexture(file, settings);
+                var result = ExportTexture(file, desc);
                 if (result.Success)
                 {
                     Interlocked.Increment(ref texturesExported);
-                    settings.OnProgress?.Invoke($"  Texture: {Path.GetFileName(file)}");
+                    desc.OnProgress?.Invoke($"  Texture: {Path.GetFileName(file)}");
                 }
                 else
                 {
@@ -120,7 +120,7 @@ public sealed class BulkAssetImporter : IDisposable
             });
         }
 
-        return new DirectoryImportResult
+        return new BulkImportResult
         {
             ModelsExported = modelsExported,
             ModelsFailed = modelsFailed,
@@ -130,15 +130,15 @@ public sealed class BulkAssetImporter : IDisposable
         };
     }
 
-    private AssetExportResult ExportModel(string sourceFile, DirectoryImportSettings settings)
+    private AssetExportResult ExportModel(string sourceFile, BulkImportDesc desc)
     {
-        var relativePath = Path.GetRelativePath(settings.SourceDirectory, sourceFile);
+        var relativePath = Path.GetRelativePath(desc.SourceDirectory, sourceFile);
         var relativeDir = Path.GetDirectoryName(relativePath) ?? "";
         var assetName = Path.GetFileNameWithoutExtension(sourceFile);
 
-        var outputDir = settings.PreserveDirectoryStructure
-            ? Path.Combine(settings.OutputDirectory, "Models", relativeDir)
-            : Path.Combine(settings.OutputDirectory, "Models");
+        var outputDir = desc.PreserveDirectoryStructure
+            ? Path.Combine(desc.OutputDirectory, "Models", relativeDir)
+            : Path.Combine(desc.OutputDirectory, "Models");
 
         Directory.CreateDirectory(outputDir);
 
@@ -148,7 +148,7 @@ public sealed class BulkAssetImporter : IDisposable
             OutputDirectory = outputDir,
             AssetName = assetName,
             Format = ExportFormat.Glb,
-            Scale = settings.ModelScale,
+            Scale = desc.ModelScale,
             EmbedTextures = false,
             OverwriteExisting = true,
             OptimizeMeshes = true,
@@ -166,20 +166,18 @@ public sealed class BulkAssetImporter : IDisposable
         return exporter.Export(exportDesc);
     }
 
-    private TextureExportResult ExportTexture(string sourceFile, DirectoryImportSettings settings)
+    private TextureExportResult ExportTexture(string sourceFile, BulkImportDesc desc)
     {
-        var relativePath = Path.GetRelativePath(settings.SourceDirectory, sourceFile);
+        var relativePath = Path.GetRelativePath(desc.SourceDirectory, sourceFile);
         var relativeDir = Path.GetDirectoryName(relativePath) ?? "";
         var fileName = Path.GetFileName(sourceFile);
 
-        var outputDir = settings.PreserveDirectoryStructure
-            ? Path.Combine(settings.OutputDirectory, "Textures", relativeDir)
-            : Path.Combine(settings.OutputDirectory, "Textures");
+        var outputDir = desc.PreserveDirectoryStructure
+            ? Path.Combine(desc.OutputDirectory, "Textures", relativeDir)
+            : Path.Combine(desc.OutputDirectory, "Textures");
 
         Directory.CreateDirectory(outputDir);
 
-        // Copy texture as-is since Texture2d.Load supports PNG/JPG/TGA/BMP directly
-        // (TextureData.CreateFromData does not support .dztex format)
         var outputPath = Path.Combine(outputDir, fileName);
         try
         {

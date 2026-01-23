@@ -26,7 +26,7 @@ void ImportSyntyAssets(string sourceDirectory, string outputDirectory)
     }
 
     using var importer = new BulkAssetImporter();
-    var result = importer.Import(new DirectoryImportSettings
+    var result = importer.Import(new BulkImportDesc
     {
         SourceDirectory = sourceDirectory,
         OutputDirectory = outputDirectory,
