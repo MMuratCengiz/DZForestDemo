@@ -31,6 +31,7 @@ public sealed class EditorGame : Game
     private bool _mouseOverUi;
     private bool _textInputActive;
     private bool _gizmoDragging;
+    private bool _shiftHeld;
 
     public EditorGame(GameDesc? desc = null) : base(desc)
     {
@@ -82,6 +83,7 @@ public sealed class EditorGame : Game
             {
                 mainView.ViewModel.ViewPresetChanged += OnViewPresetChanged;
                 mainView.ViewModel.ProjectionModeChanged += OnProjectionModeChanged;
+                mainView.ViewModel.SetGridSettings(_renderer.GizmoPass.Gizmo.GridDesc);
             }
         }
     }
@@ -126,7 +128,7 @@ public sealed class EditorGame : Game
 
             if (_gizmoDragging)
             {
-                HandleGizmoDrag();
+                HandleGizmoDrag(_shiftHeld);
             }
         }
         else if (ev.Type == EventType.MouseButtonDown)
@@ -164,6 +166,11 @@ public sealed class EditorGame : Game
             var modifiers = MapModifiers((KeyMod)ev.Key.Mod);
             _topLevel.InjectKeyDown(key, modifiers);
 
+            if (ev.Key.KeyCode == KeyCode.Lshift || ev.Key.KeyCode == KeyCode.Rshift)
+            {
+                _shiftHeld = true;
+            }
+
             if (!_textInputActive)
             {
                 HandleGizmoModeKey(ev.Key.KeyCode);
@@ -184,6 +191,11 @@ public sealed class EditorGame : Game
             var key = MapKey(ev.Key.KeyCode);
             var modifiers = MapModifiers((KeyMod)ev.Key.Mod);
             _topLevel.InjectKeyUp(key, modifiers);
+
+            if (ev.Key.KeyCode == KeyCode.Lshift || ev.Key.KeyCode == KeyCode.Rshift)
+            {
+                _shiftHeld = false;
+            }
         }
         else if (ev.Type == EventType.TextInput)
         {
@@ -224,7 +236,7 @@ public sealed class EditorGame : Game
         return false;
     }
 
-    private void HandleGizmoDrag()
+    private void HandleGizmoDrag(bool shiftHeld)
     {
         var gizmoPass = _renderer.GizmoPass;
         if (gizmoPass == null)
@@ -233,7 +245,7 @@ public sealed class EditorGame : Game
         }
 
         var ray = _editorCamera.ScreenPointToRay(_lastMouseX, _lastMouseY, _width, _height);
-        gizmoPass.Gizmo.UpdateDrag(ray, _editorCamera);
+        gizmoPass.Gizmo.UpdateDrag(ray, _editorCamera, shiftHeld);
 
         _renderer.EditorViewModel?.SelectedGameObject?.Refresh();
     }

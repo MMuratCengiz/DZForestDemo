@@ -24,7 +24,7 @@ public class EditorRenderer : IRenderer
     private uint _width;
     private uint _height;
 
-    private GizmoPass? _gizmoPass;
+    private GizmoPass _gizmoPass = null!;
     private EditorViewModel? _editorViewModel;
 
     public EditorViewModel? EditorViewModel
@@ -33,7 +33,7 @@ public class EditorRenderer : IRenderer
         set => _editorViewModel = value;
     }
 
-    public GizmoPass? GizmoPass => _gizmoPass;
+    public GizmoPass GizmoPass => _gizmoPass;
 
     public CameraComponent? Camera
     {
@@ -49,6 +49,7 @@ public class EditorRenderer : IRenderer
         _width = GraphicsContext.Width;
         _height = GraphicsContext.Height;
         CreateRenderTargets();
+        _gizmoPass = new GizmoPass();
     }
 
     private void CreateRenderTargets()
@@ -124,7 +125,6 @@ public class EditorRenderer : IRenderer
 
     private void RenderGizmos()
     {
-        _gizmoPass ??= new GizmoPass();
         _gizmoPass.BeginFrame();
 
         var selected = _editorViewModel?.SelectedGameObject?.GameObject;
@@ -171,7 +171,7 @@ public class EditorRenderer : IRenderer
     public void Dispose()
     {
         GraphicsContext.WaitIdle();
-        _gizmoPass?.Dispose();
+        _gizmoPass.Dispose();
         _sceneColor.Dispose();
         _sceneDepth.Dispose();
         _renderFrame.Dispose();

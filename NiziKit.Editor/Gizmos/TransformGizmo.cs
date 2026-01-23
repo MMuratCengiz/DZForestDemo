@@ -48,6 +48,7 @@ public class TransformGizmo
     public GizmoAxis HoveredAxis { get; private set; } = GizmoAxis.None;
     public GizmoAxis ActiveAxis { get; private set; } = GizmoAxis.None;
     public bool IsDragging => ActiveAxis != GizmoAxis.None;
+    public GridDesc GridDesc { get; } = new();
 
     private GameObject? _target;
     private Vector3 _dragStartPosition;
@@ -55,6 +56,7 @@ public class TransformGizmo
     private Vector3 _dragStartScale;
     private Vector3 _dragStartHitPoint;
     private float _dragStartAngle;
+    private float _accumulatedAngle;
     private Vector3 _dragAxisX;
     private Vector3 _dragAxisY;
     private Vector3 _dragAxisZ;
@@ -135,12 +137,13 @@ public class TransformGizmo
             {
                 _dragStartAngle = 0;
             }
+            _accumulatedAngle = 0;
         }
 
         return true;
     }
 
-    public void UpdateDrag(Ray ray, CameraComponent camera)
+    public void UpdateDrag(Ray ray, CameraComponent camera, bool shiftHeld = false)
     {
         if (_target == null || ActiveAxis == GizmoAxis.None)
         {
@@ -152,13 +155,13 @@ public class TransformGizmo
         switch (Mode)
         {
             case GizmoMode.Translate:
-                ApplyTranslation(currentHitPoint);
+                ApplyTranslation(currentHitPoint, shiftHeld);
                 break;
             case GizmoMode.Rotate:
-                ApplyRotation(currentHitPoint);
+                ApplyRotation(currentHitPoint, shiftHeld);
                 break;
             case GizmoMode.Scale:
-                ApplyScale(currentHitPoint);
+                ApplyScale(currentHitPoint, shiftHeld);
                 break;
         }
     }
@@ -429,7 +432,7 @@ public class TransformGizmo
         return origin;
     }
 
-    private void ApplyTranslation(Vector3 currentHitPoint)
+    private void ApplyTranslation(Vector3 currentHitPoint, bool shiftHeld)
     {
         if (_target == null)
         {
@@ -464,10 +467,17 @@ public class TransformGizmo
                 break;
         }
 
-        _target.LocalPosition = _dragStartPosition + constrainedDelta;
+        var newPosition = _dragStartPosition + constrainedDelta;
+        var snapIncrement = GridDesc.GetPositionIncrement(shiftHeld);
+        if (snapIncrement > 0f)
+        {
+            newPosition = GridDesc.Snap(newPosition, snapIncrement);
+        }
+
+        _target.LocalPosition = newPosition;
     }
 
-    private void ApplyRotation(Vector3 currentHitPoint)
+    private void ApplyRotation(Vector3 currentHitPoint, bool shiftHeld)
     {
         if (_target == null)
         {
@@ -483,6 +493,12 @@ public class TransformGizmo
         toHit = Vector3.Normalize(toHit);
         var currentAngle = GetAngleOnAxis(toHit, ActiveAxis);
         var deltaAngle = currentAngle - _dragStartAngle;
+
+        var snapIncrement = GridDesc.GetRotationIncrement(shiftHeld);
+        if (snapIncrement > 0f)
+        {
+            deltaAngle = GridDesc.SnapAngle(deltaAngle, snapIncrement);
+        }
 
         Vector3 rotationAxis;
         switch (ActiveAxis)
@@ -504,7 +520,7 @@ public class TransformGizmo
         _target.LocalRotation = deltaRotation * _dragStartRotation;
     }
 
-    private void ApplyScale(Vector3 currentHitPoint)
+    private void ApplyScale(Vector3 currentHitPoint, bool shiftHeld)
     {
         if (_target == null)
         {
@@ -522,21 +538,38 @@ public class TransformGizmo
         var scaleFactor = currentDist / startDist;
         scaleFactor = Math.Clamp(scaleFactor, 0.01f, 100f);
 
+        var snapIncrement = GridDesc.GetScaleIncrement(shiftHeld);
+
+        Vector3 newScale;
         switch (ActiveAxis)
         {
             case GizmoAxis.X:
-                _target.LocalScale = _dragStartScale with { X = _dragStartScale.X * scaleFactor };
+                newScale = _dragStartScale with { X = _dragStartScale.X * scaleFactor };
                 break;
             case GizmoAxis.Y:
-                _target.LocalScale = _dragStartScale with { Y = _dragStartScale.Y * scaleFactor };
+                newScale = _dragStartScale with { Y = _dragStartScale.Y * scaleFactor };
                 break;
             case GizmoAxis.Z:
-                _target.LocalScale = _dragStartScale with { Z = _dragStartScale.Z * scaleFactor };
+                newScale = _dragStartScale with { Z = _dragStartScale.Z * scaleFactor };
                 break;
             case GizmoAxis.All:
-                _target.LocalScale = _dragStartScale * scaleFactor;
+                newScale = _dragStartScale * scaleFactor;
                 break;
+            default:
+                return;
         }
+
+        if (snapIncrement > 0f)
+        {
+            newScale = GridDesc.Snap(newScale, snapIncrement);
+            newScale = new Vector3(
+                MathF.Max(newScale.X, 0.01f),
+                MathF.Max(newScale.Y, 0.01f),
+                MathF.Max(newScale.Z, 0.01f)
+            );
+        }
+
+        _target.LocalScale = newScale;
     }
 
     private float GetAngleOnAxis(Vector3 direction, GizmoAxis axis)

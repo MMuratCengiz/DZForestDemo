@@ -340,6 +340,70 @@ public partial class EditorViewModel : ObservableObject
     [ObservableProperty]
     private string _gizmoModeText = "Move (W)";
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SnapStatusText))]
+    private bool _snapEnabled;
+
+    [ObservableProperty]
+    private float _positionSnapIncrement = 1f;
+
+    [ObservableProperty]
+    private float _rotationSnapIncrement = 15f;
+
+    [ObservableProperty]
+    private float _scaleSnapIncrement = 0.1f;
+
+    public string SnapStatusText => SnapEnabled ? "Snap: On" : "Snap: Off";
+
+    private GridDesc? _gridSettings;
+
+    public void SetGridSettings(GridDesc desc)
+    {
+        _gridSettings = desc;
+        SnapEnabled = desc.SnapEnabled;
+        PositionSnapIncrement = desc.PositionSnapIncrement;
+        RotationSnapIncrement = desc.RotationSnapIncrement;
+        ScaleSnapIncrement = desc.ScaleSnapIncrement;
+    }
+
+    partial void OnSnapEnabledChanged(bool value)
+    {
+        if (_gridSettings != null)
+        {
+            _gridSettings.SnapEnabled = value;
+        }
+    }
+
+    partial void OnPositionSnapIncrementChanged(float value)
+    {
+        if (_gridSettings != null)
+        {
+            _gridSettings.PositionSnapIncrement = value;
+        }
+    }
+
+    partial void OnRotationSnapIncrementChanged(float value)
+    {
+        if (_gridSettings != null)
+        {
+            _gridSettings.RotationSnapIncrement = value;
+        }
+    }
+
+    partial void OnScaleSnapIncrementChanged(float value)
+    {
+        if (_gridSettings != null)
+        {
+            _gridSettings.ScaleSnapIncrement = value;
+        }
+    }
+
+    [RelayCommand]
+    private void ToggleSnap()
+    {
+        SnapEnabled = !SnapEnabled;
+    }
+
     private float _statsUpdateTimer;
     private int _frameCountSinceLastUpdate;
     private const float StatsUpdateInterval = 0.5f;
