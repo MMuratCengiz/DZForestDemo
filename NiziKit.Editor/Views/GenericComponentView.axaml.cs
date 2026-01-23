@@ -17,6 +17,8 @@ public partial class GenericComponentView : UserControl
     private AssetBrowserService? _assetBrowser;
     private EditorViewModel? _editorViewModel;
     private AnimationPreviewEditor? _animationPreviewEditor;
+    private readonly List<AnimationSelectorEditor> _animationSelectorEditors = new();
+    private readonly List<AnimationListEditor> _animationListEditors = new();
 
     public AnimationPreviewEditor? AnimationPreviewEditor => _animationPreviewEditor;
 
@@ -49,6 +51,9 @@ public partial class GenericComponentView : UserControl
         {
             return;
         }
+
+        _animationSelectorEditors.Clear();
+        _animationListEditors.Clear();
 
         var items = new List<Control>();
         var type = component.GetType();
@@ -100,7 +105,31 @@ public partial class GenericComponentView : UserControl
             }
         }
 
+        WireUpAnimationEditors();
         _propertiesControl.ItemsSource = items;
+    }
+
+    private void WireUpAnimationEditors()
+    {
+        if (_animationSelectorEditors.Count == 0 || _animationListEditors.Count == 0)
+        {
+            return;
+        }
+
+        foreach (var listEditor in _animationListEditors)
+        {
+            listEditor.OnAnimationsChanged = RefreshAnimationSelectors;
+        }
+    }
+
+    private void RefreshAnimationSelectors()
+    {
+        foreach (var selector in _animationSelectorEditors)
+        {
+            selector.RefreshAnimations();
+        }
+
+        _animationPreviewEditor?.RefreshAnimations();
     }
 
     private static bool ShouldShowProperty(PropertyInfo prop)
@@ -159,6 +188,15 @@ public partial class GenericComponentView : UserControl
         if (editor == null)
         {
             return null;
+        }
+
+        if (editor is AnimationSelectorEditor selectorEditor)
+        {
+            _animationSelectorEditors.Add(selectorEditor);
+        }
+        else if (editor is AnimationListEditor listEditor)
+        {
+            _animationListEditors.Add(listEditor);
         }
 
         if (prop.PropertyType == typeof(bool) && !skipLabel)

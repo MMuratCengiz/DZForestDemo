@@ -22,6 +22,7 @@ public partial class AnimationListEditor : UserControl
     public AssetBrowserService? AssetBrowser { get; set; }
     public EditorViewModel? EditorViewModel { get; set; }
     public Action? OnValueChanged { get; set; }
+    public Action? OnAnimationsChanged { get; set; }
     public bool IsReadOnly { get; set; }
 
     public AnimationListEditor()
@@ -155,6 +156,7 @@ public partial class AnimationListEditor : UserControl
                 var entry = AnimationEntry.External(animName, asset.FullReference);
                 list.Add(entry);
                 OnValueChanged?.Invoke();
+                OnAnimationsChanged?.Invoke();
                 Rebuild();
             }
         });
@@ -169,6 +171,7 @@ public partial class AnimationListEditor : UserControl
 
         list.RemoveAt(index);
         OnValueChanged?.Invoke();
+        OnAnimationsChanged?.Invoke();
         Rebuild();
     }
 

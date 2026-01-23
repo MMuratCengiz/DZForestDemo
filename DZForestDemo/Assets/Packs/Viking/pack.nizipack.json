@@ -36,6 +36,7 @@
     "Fox": "Models/Fox.glb",
     "SM_Prop_Target_01": "Synty/Models/BaseLocomotion/Demo_Models/SM_Prop_Target_01.glb",
     "A_Idle_Crouching_Masc": "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/Idle/A_Idle_Crouching_Masc.glb",
-    "PolygonSyntyCharacter": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.glb"
+    "PolygonSyntyCharacter": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.glb",
+    "A_Jump_Sprinting_Masc": "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/InAir/A_Jump_Sprinting_Masc.glb"
   }
 }

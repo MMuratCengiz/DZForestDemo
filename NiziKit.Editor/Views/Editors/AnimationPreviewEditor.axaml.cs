@@ -71,6 +71,36 @@ public partial class AnimationPreviewEditor : UserControl
         UpdatePlayPauseButton();
     }
 
+    public void RefreshAnimations()
+    {
+        if (_animator == null)
+        {
+            return;
+        }
+
+        var currentSelection = AnimationComboBox.SelectedItem as string;
+        var animations = _animator.AnimationNames;
+        AnimationComboBox.ItemsSource = null;
+        AnimationComboBox.ItemsSource = animations;
+
+        if (!string.IsNullOrEmpty(currentSelection))
+        {
+            for (var i = 0; i < animations.Count; i++)
+            {
+                if (animations[i] == currentSelection)
+                {
+                    AnimationComboBox.SelectedIndex = i;
+                    return;
+                }
+            }
+        }
+
+        if (animations.Count > 0)
+        {
+            AnimationComboBox.SelectedIndex = 0;
+        }
+    }
+
     private void UpdateTimelineFromAnimator()
     {
         if (_animator == null)

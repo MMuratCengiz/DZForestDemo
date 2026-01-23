@@ -6,8 +6,8 @@
   "cameras": [
     {
       "name": "Main Camera",
-      "position": [-1.3112752, -2.4158978, 13.539951],
-      "rotation": [-17.29619, 14.695007, -2.2066125E-07],
+      "position": [0.36878678, -7.555459, -6.996712],
+      "rotation": [-11.344553, -1.8907604, 0],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -82,7 +82,7 @@
       "name": "Boat",
       "active": true,
       "position": [25.431843, 0, 16.022827],
-      "rotation": [1.8307657, 29.949268, 77.82803],
+      "rotation": [29.693724, 4.48525, 78.527855],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -556,6 +556,10 @@
             {
               "name": "A_Idle_Crouching_Masc",
               "source": "viking:A_Idle_Crouching_Masc/A_Idle_Crouching_Masc"
+            },
+            {
+              "name": "A_Jump_Sprinting_Masc",
+              "source": "viking:A_Jump_Sprinting_Masc/A_Jump_Sprinting_Masc"
             }
           ]
         }

@@ -102,8 +102,6 @@ public sealed class EditorGame : Game
         _renderer.EditorViewModel?.UpdateStatistics();
         _renderer.EditorViewModel?.Update(dt);
 
-        World.AnimationWorld.Update(dt);
-
         _renderer.Render(dt);
     }
 
