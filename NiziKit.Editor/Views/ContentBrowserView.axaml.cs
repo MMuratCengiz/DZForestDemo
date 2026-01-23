@@ -139,22 +139,34 @@ public partial class ContentBrowserView : UserControl
                 Icon = Symbol.Open,
                 Command = vm.HandleItemDoubleClickCommand,
                 CommandParameter = item
-            },
-            InlineMenuItem.Separator(),
-            new()
-            {
-                Header = "Delete",
-                Icon = Symbol.Delete,
-                Command = vm.DeleteSelectedCommand
-            },
-            InlineMenuItem.Separator(),
-            new()
-            {
-                Header = "Show in Explorer",
-                Icon = Symbol.OpenFolder,
-                Command = vm.ShowInExplorerCommand
             }
         };
+
+        if (vm.SelectedPack != null && !item.IsDirectory && item.Type != NiziKit.Editor.Services.AssetFileType.Pack)
+        {
+            items.Add(InlineMenuItem.Separator());
+            items.Add(new InlineMenuItem
+            {
+                Header = $"Add To '{vm.SelectedPack.PackName}'",
+                Icon = Symbol.Add,
+                Command = vm.AddToSelectedPackCommand
+            });
+        }
+
+        items.Add(InlineMenuItem.Separator());
+        items.Add(new InlineMenuItem
+        {
+            Header = "Delete",
+            Icon = Symbol.Delete,
+            Command = vm.DeleteSelectedCommand
+        });
+        items.Add(InlineMenuItem.Separator());
+        items.Add(new InlineMenuItem
+        {
+            Header = "Show in Explorer",
+            Icon = Symbol.OpenFolder,
+            Command = vm.ShowInExplorerCommand
+        });
 
         InlineMenu.Show(position, items);
     }
