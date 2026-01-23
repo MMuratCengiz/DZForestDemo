@@ -1,8 +1,8 @@
 using System.Numerics;
 using System.Text.Json;
 using NiziKit.Assets;
+using NiziKit.Assets.Pack;
 using NiziKit.Assets.Serde;
-using NiziKit.AssetPacks;
 using NiziKit.Components;
 using NiziKit.ContentPipeline;
 using NiziKit.Graphics;
@@ -54,7 +54,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             return;
         }
 
-        var packsToLoad = packs.Where(p => !AssetPacks.AssetPacks.IsLoaded(p)).ToList();
+        var packsToLoad = packs.Where(p => !AssetPacks.IsLoaded(p)).ToList();
         var loadedPacks = new AssetPack[packsToLoad.Count];
 
         Parallel.For(0, packsToLoad.Count, i =>
@@ -72,7 +72,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             return;
         }
 
-        var packsToLoad = packs.Where(p => !AssetPacks.AssetPacks.IsLoaded(p)).ToList();
+        var packsToLoad = packs.Where(p => !AssetPacks.IsLoaded(p)).ToList();
         var loadTasks = packsToLoad.Select(p => AssetPack.LoadAsync(p, ct));
         var loadedPacks = await Task.WhenAll(loadTasks);
         _loadedPacks.AddRange(loadedPacks);
@@ -596,7 +596,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         return ResolvePackAsset(reference, (packName, assetName) =>
         {
             var (modelName, meshSelector) = ParseMeshSelector(assetName);
-            var model = AssetPacks.AssetPacks.GetModel(packName, modelName);
+            var model = AssetPacks.GetModel(packName, modelName);
             return GetMeshFromModel(model, meshSelector);
         });
     }
@@ -608,7 +608,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             return null;
         }
 
-        return ResolvePackAsset(reference, AssetPacks.AssetPacks.GetMaterial);
+        return ResolvePackAsset(reference, AssetPacks.GetMaterial);
     }
 
     public Texture2d? ResolveTexture(string reference)
@@ -618,7 +618,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             return null;
         }
 
-        return ResolvePackAsset(reference, AssetPacks.AssetPacks.GetTexture);
+        return ResolvePackAsset(reference, AssetPacks.GetTexture);
     }
 
     public GpuShader? ResolveShader(string reference)
@@ -628,7 +628,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             return null;
         }
 
-        return ResolvePackAsset(reference, AssetPacks.AssetPacks.GetShader);
+        return ResolvePackAsset(reference, AssetPacks.GetShader);
     }
 
     public Skeleton? ResolveSkeleton(string reference)
@@ -640,7 +640,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
         return ResolvePackAsset(reference, (packName, modelName) =>
         {
-            var model = AssetPacks.AssetPacks.GetModel(packName, modelName);
+            var model = AssetPacks.GetModel(packName, modelName);
             return model.Skeleton ?? throw new InvalidOperationException($"Model '{modelName}' does not have a skeleton");
         });
     }
@@ -655,7 +655,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         return ResolvePackAsset(reference, (packName, assetName) =>
         {
             var (modelName, animationSelector) = ParseMeshSelector(assetName);
-            var model = AssetPacks.AssetPacks.GetModel(packName, modelName);
+            var model = AssetPacks.GetModel(packName, modelName);
             var skeleton = model.Skeleton ?? throw new InvalidOperationException($"Model '{modelName}' does not have a skeleton");
             return GetAnimationFromSkeleton(skeleton, animationSelector);
         });
@@ -705,7 +705,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         return ResolvePackAsset(meshRef, (packName, assetName) =>
         {
             var (modelName, meshSelector) = ParseMeshSelector(assetName);
-            var model = AssetPacks.AssetPacks.GetModel(packName, modelName);
+            var model = AssetPacks.GetModel(packName, modelName);
             return GetMeshFromModel(model, meshSelector);
         });
     }

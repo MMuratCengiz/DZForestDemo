@@ -2,9 +2,8 @@ using System.Numerics;
 using DenOfIz;
 using Microsoft.Extensions.Logging;
 using NiziKit.Assets;
-using NiziKit.AssetPacks;
+using NiziKit.Assets.Pack;
 using NiziKit.Components;
-using NiziKit.ContentPipeline;
 using NiziKit.Core;
 
 namespace NiziKit.Animation;
@@ -221,7 +220,7 @@ public partial class Animator : IDisposable
         var modelName = remainder[..slashIndex];
         var animationName = remainder[(slashIndex + 1)..];
 
-        if (AssetPacks.AssetPacks.TryGetPack(packName, out var pack))
+        if (AssetPacks.TryGetPack(packName, out var pack))
         {
             var modelPath = pack.GetModelPath(modelName);
             if (!string.IsNullOrEmpty(modelPath))

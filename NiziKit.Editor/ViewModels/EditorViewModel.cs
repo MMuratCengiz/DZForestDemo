@@ -36,7 +36,7 @@ public partial class EditorViewModel : ObservableObject
 
         AssetBrowserViewModel = new AssetBrowserViewModel();
         PackManagerViewModel = new PackManagerViewModel();
-        ContentBrowserViewModel = new ContentBrowserViewModel();
+        ContentBrowserViewModel = new ContentBrowserViewModel { EditorViewModel = this };
         ImportViewModel = new ImportViewModel();
 
         ImportViewModel.ImportCompleted += () =>
@@ -499,7 +499,6 @@ public partial class EditorViewModel : ObservableObject
         AssetBrowserViewModel.Refresh();
     }
 
-    // Viewport and Statistics properties
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Is3DMode))]
     [NotifyPropertyChangedFor(nameof(ProjectionModeText))]

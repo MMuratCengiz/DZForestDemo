@@ -26,22 +26,27 @@
     "textures": {
       "type": "object",
       "description": "Texture bindings for the material",
+      "$showEmpty": true,
       "properties": {
         "albedo": {
           "type": "string",
-          "description": "Relative path to the albedo/diffuse texture"
+          "description": "Albedo/diffuse texture",
+          "$assetRef": "Texture"
         },
         "normal": {
           "type": "string",
-          "description": "Relative path to the normal map texture"
+          "description": "Normal map texture",
+          "$assetRef": "Texture"
         },
         "metallic": {
           "type": "string",
-          "description": "Relative path to the metallic texture"
+          "description": "Metallic texture",
+          "$assetRef": "Texture"
         },
         "roughness": {
           "type": "string",
-          "description": "Relative path to the roughness texture"
+          "description": "Roughness texture",
+          "$assetRef": "Texture"
         }
       }
     }

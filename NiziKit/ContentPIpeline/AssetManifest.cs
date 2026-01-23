@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
+using NiziKit.Assets.Serde;
 
 namespace NiziKit.ContentPipeline;
 
@@ -142,12 +143,6 @@ public sealed class ManifestOptions
 
 public sealed class AssetManifest
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    };
-
     [JsonPropertyName("version")]
     public string Version { get; set; } = "1.0.0";
 
@@ -196,10 +191,10 @@ public sealed class AssetManifest
         }
     }
 
-    public string ToJson() => JsonSerializer.Serialize(this, JsonOptions);
+    public string ToJson() => JsonSerializer.Serialize(this, NiziJsonSerializationOptions.Default);
 
     public static AssetManifest FromJson(string json) =>
-        JsonSerializer.Deserialize<AssetManifest>(json, JsonOptions) ?? new AssetManifest();
+        JsonSerializer.Deserialize<AssetManifest>(json, NiziJsonSerializationOptions.Default) ?? new AssetManifest();
 
     public static async Task<AssetManifest> LoadAsync(IContentProvider provider, string path = "manifest.json", CancellationToken ct = default)
     {

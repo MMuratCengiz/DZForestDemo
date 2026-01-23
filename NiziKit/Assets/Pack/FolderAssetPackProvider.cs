@@ -1,4 +1,4 @@
-namespace NiziKit.AssetPacks;
+namespace NiziKit.Assets.Pack;
 
 internal sealed class FolderAssetPackProvider(string rootPath) : IAssetPackProvider
 {

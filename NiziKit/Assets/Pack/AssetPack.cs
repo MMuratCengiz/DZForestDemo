@@ -1,9 +1,8 @@
 using System.Collections.Concurrent;
-using NiziKit.Assets;
 using NiziKit.Assets.Serde;
 using NiziKit.ContentPipeline;
 
-namespace NiziKit.AssetPacks;
+namespace NiziKit.Assets.Pack;
 
 public sealed class AssetPack : IDisposable
 {
@@ -180,7 +179,7 @@ public sealed class AssetPack : IDisposable
     {
         Parallel.ForEach(textureDefs, kvp =>
         {
-            var texture = Assets.Assets.LoadTexture(kvp.Value);
+            var texture = NiziKit.Assets.Assets.LoadTexture(kvp.Value);
             _textures[kvp.Key] = texture;
         });
     }
@@ -189,7 +188,7 @@ public sealed class AssetPack : IDisposable
     {
         var tasks = textureDefs.Select(async kvp =>
         {
-            var texture = await Assets.Assets.LoadTextureAsync(kvp.Value, ct);
+            var texture = await NiziKit.Assets.Assets.LoadTextureAsync(kvp.Value, ct);
             return (kvp.Key, texture);
         });
 
@@ -203,7 +202,7 @@ public sealed class AssetPack : IDisposable
     {
         Parallel.ForEach(shaderDefs, kvp =>
         {
-            var shader = Assets.Assets.LoadShaderFromJson(kvp.Value);
+            var shader = NiziKit.Assets.Assets.LoadShaderFromJson(kvp.Value);
             _shaders[kvp.Key] = shader;
         });
     }
@@ -212,7 +211,7 @@ public sealed class AssetPack : IDisposable
     {
         var tasks = shaderDefs.Select(async kvp =>
         {
-            var shader = await Assets.Assets.LoadShaderFromJsonAsync(kvp.Value, null, ct);
+            var shader = await NiziKit.Assets.Assets.LoadShaderFromJsonAsync(kvp.Value, null, ct);
             return (kvp.Key, shader);
         });
 
@@ -226,7 +225,7 @@ public sealed class AssetPack : IDisposable
     {
         Parallel.ForEach(materialDefs, kvp =>
         {
-            var material = Assets.Assets.LoadMaterial(kvp.Value);
+            var material = NiziKit.Assets.Assets.LoadMaterial(kvp.Value);
             _materials[kvp.Key] = material;
         });
     }
@@ -235,7 +234,7 @@ public sealed class AssetPack : IDisposable
     {
         var tasks = materialDefs.Select(async kvp =>
         {
-            var material = await Assets.Assets.LoadMaterialAsync(kvp.Value, ct);
+            var material = await NiziKit.Assets.Assets.LoadMaterialAsync(kvp.Value, ct);
             return (kvp.Key, material);
         });
 
@@ -249,7 +248,7 @@ public sealed class AssetPack : IDisposable
     {
         Parallel.ForEach(modelDefs, kvp =>
         {
-            var model = Assets.Assets.LoadModel(kvp.Value);
+            var model = NiziKit.Assets.Assets.LoadModel(kvp.Value);
             _models[kvp.Key] = model;
             _modelPaths[kvp.Key] = kvp.Value;
         });
@@ -259,7 +258,7 @@ public sealed class AssetPack : IDisposable
     {
         var tasks = modelDefs.Select(async kvp =>
         {
-            var model = await Assets.Assets.LoadModelAsync(kvp.Value, ct);
+            var model = await NiziKit.Assets.Assets.LoadModelAsync(kvp.Value, ct);
             return (kvp.Key, kvp.Value, model);
         });
 

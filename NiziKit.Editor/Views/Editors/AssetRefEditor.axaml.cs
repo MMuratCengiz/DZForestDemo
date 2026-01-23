@@ -126,7 +126,7 @@ public partial class AssetRefEditor : UserControl
             return;
         }
 
-        IEnumerable<string> filtered = string.IsNullOrWhiteSpace(searchText)
+        var filtered = string.IsNullOrWhiteSpace(searchText)
             ? _allPacks
             : _allPacks.Where(p => p.Contains(searchText, StringComparison.OrdinalIgnoreCase));
 

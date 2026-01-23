@@ -130,7 +130,7 @@ public partial class AssetPickerDialog : UserControl
         }
 
         var searchText = _searchBox?.Text ?? "";
-        IEnumerable<AssetInfo> filtered = string.IsNullOrWhiteSpace(searchText)
+        var filtered = string.IsNullOrWhiteSpace(searchText)
             ? _allAssets
             : _allAssets.Where(a => a.Name.Contains(searchText, StringComparison.OrdinalIgnoreCase));
 

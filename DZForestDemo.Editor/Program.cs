@@ -7,9 +7,12 @@ Editor.Run(new EditorConfig
     InitialScene = "Scenes/VikingShowcase.niziscene.json"
 });
 
-public partial class Program
+namespace DZForestDemo.Editor
 {
-    public static AppBuilder BuildAvaloniaApp()
-        => AppBuilder.Configure<EditorApp>()
-            .UseSkia();
+    public partial class Program
+    {
+        public static AppBuilder BuildAvaloniaApp()
+            => AppBuilder.Configure<EditorApp>()
+                .UseSkia();
+    }
 }

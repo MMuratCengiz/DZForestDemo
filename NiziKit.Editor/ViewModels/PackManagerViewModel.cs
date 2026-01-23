@@ -627,7 +627,7 @@ public partial class PackManagerViewModel : ObservableObject
             }
         };
 
-        var json = JsonSerializer.Serialize(shader, new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(shader, NiziJsonSerializationOptions.Default);
         File.WriteAllText(path, json);
     }
 
@@ -713,7 +713,7 @@ public partial class PackManagerViewModel : ObservableObject
             }
         };
 
-        var json = JsonSerializer.Serialize(shader, new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(shader, NiziJsonSerializationOptions.Default);
         File.WriteAllText(filePath, json);
 
         var relativePath = GetRelativePath(filePath) ?? fileName;

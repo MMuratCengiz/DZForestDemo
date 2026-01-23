@@ -6,16 +6,8 @@
   "cameras": [
     {
       "name": "Main Camera",
-      "position": [
-        0,
-        0,
-        -4
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
+      "position": [-1.3112752, -2.4158978, 13.539951],
+      "rotation": [-17.29619, 14.695007, -2.2066125E-07],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -35,21 +27,9 @@
     {
       "name": "Character_Viking",
       "active": true,
-      "position": [
-        0,
-        0,
-        0
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [0, 0, 0],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -65,21 +45,9 @@
     {
       "name": "Character_Viking2",
       "active": true,
-      "position": [
-        3,
-        0,
-        0
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [3, 0, 0],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -95,21 +63,9 @@
     {
       "name": "Character_Viking3",
       "active": true,
-      "position": [
-        -3,
-        0,
-        0
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [-3, 0, 0],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -125,21 +81,9 @@
     {
       "name": "Boat",
       "active": true,
-      "position": [
-        25.431843,
-        0,
-        16.022827
-      ],
-      "rotation": [
-        -11.965881,
-        27.716335,
-        74.37626
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [25.431843, 0, 16.022827],
+      "rotation": [1.8307657, 29.949268, 77.82803],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -155,21 +99,9 @@
     {
       "name": "SmallBoat",
       "active": true,
-      "position": [
-        -15,
-        0,
-        8
-      ],
-      "rotation": [
-        0,
-        45.000004,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [-15, 0, 8],
+      "rotation": [0, 45.000004, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -185,21 +117,9 @@
     {
       "name": "Cart",
       "active": true,
-      "position": [
-        -8,
-        0,
-        -5
-      ],
-      "rotation": [
-        0,
-        20,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [-8, 0, -5],
+      "rotation": [0, 20, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -215,21 +135,9 @@
     {
       "name": "Table",
       "active": true,
-      "position": [
-        8,
-        0,
-        -3
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [8, 0, -3],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -245,21 +153,9 @@
     {
       "name": "Chair1",
       "active": true,
-      "position": [
-        7,
-        0,
-        -2
-      ],
-      "rotation": [
-        0,
-        89.98021,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [7, 0, -2],
+      "rotation": [0, 89.98021, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -275,21 +171,9 @@
     {
       "name": "Chair2",
       "active": true,
-      "position": [
-        9,
-        0,
-        -2
-      ],
-      "rotation": [
-        0,
-        -89.98021,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [9, 0, -2],
+      "rotation": [0, -89.98021, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -305,21 +189,9 @@
     {
       "name": "Bench",
       "active": true,
-      "position": [
-        8,
-        0,
-        -5
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [8, 0, -5],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -335,21 +207,9 @@
     {
       "name": "Anvil",
       "active": true,
-      "position": [
-        -6,
-        0,
-        3
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [-6, 0, 3],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -365,21 +225,9 @@
     {
       "name": "Barrel2",
       "active": true,
-      "position": [
-        5,
-        0,
-        5
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [5, 0, 5],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -395,21 +243,9 @@
     {
       "name": "Barrel",
       "active": true,
-      "position": [
-        6,
-        0,
-        6
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [6, 0, 6],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -425,21 +261,9 @@
     {
       "name": "Firepit",
       "active": true,
-      "position": [
-        -0.1732735,
-        0,
-        8
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [-0.1732735, 0, 8],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -455,21 +279,9 @@
     {
       "name": "Flag",
       "active": true,
-      "position": [
-        10,
-        0,
-        3
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [10, 0, 3],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -485,21 +297,9 @@
     {
       "name": "Axe",
       "active": true,
-      "position": [
-        -5,
-        1,
-        3
-      ],
-      "rotation": [
-        0,
-        0,
-        45.000004
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [-5, 1, 3],
+      "rotation": [0, 0, 45.000004],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -515,21 +315,9 @@
     {
       "name": "Sword",
       "active": true,
-      "position": [
-        -4,
-        0.5,
-        3.5
-      ],
-      "rotation": [
-        -30,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [-4, 0.5, 3.5],
+      "rotation": [-30, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -545,21 +333,9 @@
     {
       "name": "Shield",
       "active": true,
-      "position": [
-        -5.5,
-        0.8,
-        2
-      ],
-      "rotation": [
-        80,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [-5.5, 0.8, 2],
+      "rotation": [80, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -575,21 +351,9 @@
     {
       "name": "Hammer",
       "active": true,
-      "position": [
-        -6.5,
-        0.3,
-        3
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [-6.5, 0.3, 3],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -605,21 +369,9 @@
     {
       "name": "Spear",
       "active": true,
-      "position": [
-        -7,
-        0,
-        4
-      ],
-      "rotation": [
-        70.00001,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [-7, 0, 4],
+      "rotation": [70.00001, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -635,21 +387,9 @@
     {
       "name": "Tree1",
       "active": true,
-      "position": [
-        -20,
-        0,
-        0
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [-20, 0, 0],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -665,21 +405,9 @@
     {
       "name": "Tree2",
       "active": true,
-      "position": [
-        20,
-        0,
-        5
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [20, 0, 5],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -695,21 +423,9 @@
     {
       "name": "Tree3",
       "active": true,
-      "position": [
-        -18,
-        0,
-        39.888638
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1.2,
-        1.2,
-        1.2
-      ],
+      "position": [-18, 0, 39.888638],
+      "rotation": [0, 0, 0],
+      "scale": [1.2, 1.2, 1.2],
       "components": [
         {
           "type": "mesh",
@@ -725,21 +441,9 @@
     {
       "name": "Rock1",
       "active": true,
-      "position": [
-        12,
-        0,
-        -8
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [12, 0, -8],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -755,21 +459,9 @@
     {
       "name": "Rock2",
       "active": true,
-      "position": [
-        -2.0833063,
-        -1.965992,
-        30.781567
-      ],
-      "rotation": [
-        0,
-        45.000004,
-        0
-      ],
-      "scale": [
-        0.8,
-        0.8,
-        0.8
-      ],
+      "position": [-2.0833063, -1.965992, 30.781567],
+      "rotation": [0, 45.000004, 0],
+      "scale": [0.8, 0.8, 0.8],
       "components": [
         {
           "type": "mesh",
@@ -785,21 +477,9 @@
     {
       "name": "Bush1",
       "active": true,
-      "position": [
-        -15,
-        0,
-        -3
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [-15, 0, -3],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -815,21 +495,9 @@
     {
       "name": "Bush2",
       "active": true,
-      "position": [
-        14,
-        0,
-        -5
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [14, 0, -5],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -845,21 +513,9 @@
     {
       "name": "Fox",
       "active": true,
-      "position": [
-        -2.8303068,
-        0,
-        -2.5645638
-      ],
-      "rotation": [
-        90.125015,
-        0,
-        0
-      ],
-      "scale": [
-        0.01,
-        0.01,
-        0.01
-      ],
+      "position": [-2.8303068, 0, -2.5645638],
+      "rotation": [90.125015, 0, 0],
+      "scale": [0.01, 0.01, 0.01],
       "components": [
         {
           "type": "mesh",
@@ -880,21 +536,9 @@
     {
       "name": "New Object",
       "active": true,
-      "position": [
-        -0.28755423,
-        0.642045,
-        -5.34352
-      ],
-      "rotation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        1,
-        1,
-        1
-      ],
+      "position": [-0.28755423, 0.642045, -5.34352],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
       "components": [
         {
           "type": "mesh",
@@ -906,10 +550,12 @@
         },
         {
           "type": "animator",
+          "skeleton": "viking:PolygonSyntyCharacter",
+          "defaultAnimation": "A_Idle_Crouching_Masc",
           "animations": [
             {
-              "name": "Take 001",
-              "source": "viking:characters/Take 001"
+              "name": "A_Idle_Crouching_Masc",
+              "source": "viking:A_Idle_Crouching_Masc/A_Idle_Crouching_Masc"
             }
           ]
         }

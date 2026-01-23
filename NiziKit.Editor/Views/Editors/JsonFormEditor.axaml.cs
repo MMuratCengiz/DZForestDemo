@@ -5,6 +5,10 @@ using Avalonia.Controls;
 using Avalonia.Layout;
 using Avalonia.Threading;
 using FluentAvalonia.UI.Controls;
+using NiziKit.Assets.Serde;
+using NiziKit.Components;
+using NiziKit.Editor.Services;
+using NiziKit.Editor.ViewModels;
 
 namespace NiziKit.Editor.Views.Editors;
 
@@ -102,7 +106,7 @@ public class ParsedJsonSchema
         }
 
         var tokens = TokenizePath(propertyPath);
-        JsonObject? current = _schemaRoot;
+        var current = _schemaRoot;
 
         foreach (var token in tokens)
         {
@@ -262,6 +266,26 @@ public class ParsedJsonSchema
         return null;
     }
 
+    public string? GetAssetRefType(string propertyPath)
+    {
+        var propDef = NavigateToPath(propertyPath);
+        if (propDef?["$assetRef"] is JsonValue assetRefVal && assetRefVal.TryGetValue<string>(out var assetRefType))
+        {
+            return assetRefType;
+        }
+        return null;
+    }
+
+    public bool ShouldShowEmpty(string propertyPath)
+    {
+        var propDef = NavigateToPath(propertyPath);
+        if (propDef?["$showEmpty"] is JsonValue showEmptyVal && showEmptyVal.TryGetValue<bool>(out var showEmpty))
+        {
+            return showEmpty;
+        }
+        return false;
+    }
+
     public JsonObject? GetArrayItemSchema(string propertyPath)
     {
         var propDef = NavigateToPath(propertyPath);
@@ -395,6 +419,9 @@ public partial class JsonFormEditor : UserControl
 
     private static readonly Dictionary<string, ParsedJsonSchema> SchemaCache = new();
 
+    public EditorViewModel? EditorViewModel { get; set; }
+    public AssetBrowserService? AssetBrowser { get; set; }
+
     private static double GetIconSize(string key, double fallback = 12)
     {
         if (Avalonia.Application.Current?.TryFindResource(key, out var resource) == true && resource is double size)
@@ -442,9 +469,36 @@ public partial class JsonFormEditor : UserControl
 
     private void LoadSchemaFromJson(JsonObject rootObj)
     {
-        if (rootObj["$schema"] is not JsonValue schemaVal || !schemaVal.TryGetValue<string>(out var schemaPath))
+        if (rootObj["$schema"] is JsonValue schemaVal && schemaVal.TryGetValue<string>(out var schemaPath))
         {
-            return;
+            if (_filePath != null)
+            {
+                var fileDir = Path.GetDirectoryName(_filePath);
+                if (fileDir != null)
+                {
+                    var schemaFullPath = Path.GetFullPath(Path.Combine(fileDir, schemaPath));
+
+                    if (SchemaCache.TryGetValue(schemaFullPath, out var cached))
+                    {
+                        _schema = cached;
+                        return;
+                    }
+
+                    if (File.Exists(schemaFullPath))
+                    {
+                        try
+                        {
+                            var schemaJson = File.ReadAllText(schemaFullPath);
+                            _schema = new ParsedJsonSchema(schemaJson);
+                            SchemaCache[schemaFullPath] = _schema;
+                            return;
+                        }
+                        catch
+                        {
+                        }
+                    }
+                }
+            }
         }
 
         if (_filePath == null)
@@ -452,33 +506,18 @@ public partial class JsonFormEditor : UserControl
             return;
         }
 
-        var fileDir = Path.GetDirectoryName(_filePath);
-        if (fileDir == null)
+        var embeddedSchema = JsonSchemaRegistry.GetSchemaForFile(_filePath);
+        if (embeddedSchema != null)
         {
-            return;
-        }
+            var cacheKey = $"embedded:{_filePath}";
+            if (SchemaCache.TryGetValue(cacheKey, out var cached))
+            {
+                _schema = cached;
+                return;
+            }
 
-        var schemaFullPath = Path.GetFullPath(Path.Combine(fileDir, schemaPath));
-
-        if (SchemaCache.TryGetValue(schemaFullPath, out var cached))
-        {
-            _schema = cached;
-            return;
-        }
-
-        if (!File.Exists(schemaFullPath))
-        {
-            return;
-        }
-
-        try
-        {
-            var schemaJson = File.ReadAllText(schemaFullPath);
-            _schema = new ParsedJsonSchema(schemaJson);
-            SchemaCache[schemaFullPath] = _schema;
-        }
-        catch
-        {
+            _schema = new ParsedJsonSchema(embeddedSchema);
+            SchemaCache[cacheKey] = _schema;
         }
     }
 
@@ -489,12 +528,13 @@ public partial class JsonFormEditor : UserControl
             return _originalJson ?? "{}";
         }
 
-        var options = new JsonSerializerOptions { WriteIndented = true };
-        return _rootNode.ToJsonString(options);
+        return _rootNode.ToJsonString(NiziJsonSerializationOptions.Default);
     }
 
     private void BuildFormFromJsonNode(JsonObject obj, Panel container, string pathPrefix)
     {
+        var existingKeys = obj.Select(kvp => kvp.Key).ToHashSet();
+
         foreach (var kvp in obj)
         {
             if (kvp.Key == "$schema")
@@ -527,6 +567,35 @@ public partial class JsonFormEditor : UserControl
             {
                 var row = CreatePropertyRow(displayName, CreateEditorForValue(kvp.Key, kvp.Value, obj, propertyPath));
                 container.Children.Add(row);
+            }
+        }
+
+        var schemaProps = _schema?.GetObjectProperties(pathPrefix);
+        if (schemaProps != null)
+        {
+            foreach (var prop in schemaProps)
+            {
+                if (existingKeys.Contains(prop) || prop == "$schema")
+                {
+                    continue;
+                }
+
+                var propertyPath = string.IsNullOrEmpty(pathPrefix) ? prop : $"{pathPrefix}.{prop}";
+                if (_schema?.ShouldShowEmpty(propertyPath) == true)
+                {
+                    var emptyObj = new JsonObject();
+                    obj[prop] = emptyObj;
+                    var displayName = FormatPropertyName(prop);
+                    var section = CreateObjectSection(prop, displayName, emptyObj, propertyPath);
+                    container.Children.Add(section);
+                }
+            }
+
+            var missingProps = schemaProps.Where(p => !existingKeys.Contains(p) && p != "$schema" && _schema?.ShouldShowEmpty(string.IsNullOrEmpty(pathPrefix) ? p : $"{pathPrefix}.{p}") != true).ToList();
+            if (missingProps.Count > 0)
+            {
+                var addPropRow = CreateAddPropertyRow(obj, pathPrefix, missingProps);
+                container.Children.Add(addPropRow);
             }
         }
     }
@@ -1125,6 +1194,12 @@ public partial class JsonFormEditor : UserControl
                     return CreateEnumEditor(key, strVal, parent, enumValues);
                 }
 
+                var assetRefType = _schema?.GetAssetRefType(propertyPath);
+                if (assetRefType != null)
+                {
+                    return CreateAssetRefEditor(key, strVal, parent, assetRefType);
+                }
+
                 return CreateStringEditor(key, strVal, parent);
             }
         }
@@ -1133,6 +1208,12 @@ public partial class JsonFormEditor : UserControl
         if (enumVals != null && enumVals.Length > 0)
         {
             return CreateEnumEditor(key, value?.ToString(), parent, enumVals);
+        }
+
+        var assetRef = _schema?.GetAssetRefType(propertyPath);
+        if (assetRef != null)
+        {
+            return CreateAssetRefEditor(key, value?.ToString() ?? "", parent, assetRef);
         }
 
         return CreateStringEditor(key, value?.ToString() ?? "", parent);
@@ -1161,6 +1242,92 @@ public partial class JsonFormEditor : UserControl
         };
 
         return textBox;
+    }
+
+    private Control CreateAssetRefEditor(string key, string? value, JsonObject parent, string assetRefTypeName)
+    {
+        var assetType = assetRefTypeName switch
+        {
+            "Texture" => AssetRefType.Texture,
+            "Mesh" => AssetRefType.Mesh,
+            "Material" => AssetRefType.Material,
+            "Skeleton" => AssetRefType.Skeleton,
+            "Animation" => AssetRefType.Animation,
+            "Shader" => AssetRefType.Shader,
+            _ => AssetRefType.Texture
+        };
+
+        var grid = new Grid
+        {
+            ColumnDefinitions = new ColumnDefinitions("*,Auto"),
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+
+        var textBox = new TextBox
+        {
+            Text = value ?? "",
+            Watermark = $"(Select {assetRefTypeName})",
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            IsReadOnly = true
+        };
+
+        textBox.LostFocus += (s, e) =>
+        {
+            if (string.IsNullOrEmpty(textBox.Text))
+            {
+                parent.Remove(key);
+            }
+            else
+            {
+                parent[key] = textBox.Text;
+            }
+            ValueChanged?.Invoke();
+        };
+
+        Grid.SetColumn(textBox, 0);
+        grid.Children.Add(textBox);
+
+        var browseButton = new Button
+        {
+            Content = new SymbolIcon { Symbol = Symbol.OpenFolder, FontSize = GetIconSize("IconSizeSmall") },
+            Padding = new Thickness(6, 4),
+            Margin = new Thickness(4, 0, 0, 0),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        ToolTip.SetTip(browseButton, $"Browse {assetRefTypeName}s");
+
+        browseButton.Click += (s, e) =>
+        {
+            if (EditorViewModel == null || AssetBrowser == null)
+            {
+                return;
+            }
+
+            string? currentPack = null;
+            string? currentAssetName = null;
+
+            if (!string.IsNullOrEmpty(value) && value.Contains(':'))
+            {
+                var colonIndex = value.IndexOf(':');
+                currentPack = value.Substring(0, colonIndex);
+                currentAssetName = value.Substring(colonIndex + 1);
+            }
+
+            EditorViewModel.OpenAssetPicker(assetType, currentPack, currentAssetName, asset =>
+            {
+                if (asset != null)
+                {
+                    textBox.Text = asset.FullReference;
+                    parent[key] = asset.FullReference;
+                    ValueChanged?.Invoke();
+                }
+            });
+        };
+
+        Grid.SetColumn(browseButton, 1);
+        grid.Children.Add(browseButton);
+
+        return grid;
     }
 
     private Control CreateEnumEditor(string key, string? value, JsonObject parent, string[] enumValues)

@@ -228,7 +228,7 @@ public static class ComponentRegistry
                 return;
             }
 
-            object? convertedValue = ConvertJsonValue(value, targetType);
+            var convertedValue = ConvertJsonValue(value, targetType);
             property.SetValue(instance, convertedValue);
         }
         catch (Exception)

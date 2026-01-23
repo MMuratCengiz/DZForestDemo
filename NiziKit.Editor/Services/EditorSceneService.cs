@@ -1,6 +1,7 @@
 using System.Numerics;
 using System.Text.Json;
 using NiziKit.Animation;
+using NiziKit.Assets.Pack;
 using NiziKit.Assets.Serde;
 using NiziKit.Components;
 using NiziKit.ContentPipeline;
@@ -333,10 +334,10 @@ public class EditorSceneService
 
     private static List<string>? GetLoadedPackPaths()
     {
-        var field = typeof(AssetPacks.AssetPacks).GetField("_packs",
+        var field = typeof(AssetPacks).GetField("_packs",
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
 
-        if (field?.GetValue(null) is Dictionary<string, AssetPacks.AssetPack> packs)
+        if (field?.GetValue(null) is Dictionary<string, AssetPack> packs)
         {
             return packs.Values.Select(p => p.SourcePath).Where(p => !string.IsNullOrEmpty(p)).ToList();
         }

@@ -1,4 +1,4 @@
-namespace NiziKit.AssetPacks;
+namespace NiziKit.Assets.Pack;
 
 internal interface IAssetPackProvider : IDisposable
 {

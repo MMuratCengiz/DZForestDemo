@@ -89,7 +89,7 @@ public class Skeleton : IDisposable
         }
 
         var names = AnimationNames;
-        for (int i = 0; i < names.Count; i++)
+        for (var i = 0; i < names.Count; i++)
         {
             if (names[i] == animationName)
             {
@@ -186,7 +186,7 @@ public class Skeleton : IDisposable
             throw new InvalidOperationException($"Failed to load glTF for animation: {cacheKey}");
         }
 
-        var animationData = exporter.BuildAnimation(animationName);
+        var animationData = exporter.BuildAnimationForSkeleton(OzzSkeleton, animationName);
         if (animationData == null)
         {
             throw new InvalidOperationException($"Animation '{animationName}' not found in file");

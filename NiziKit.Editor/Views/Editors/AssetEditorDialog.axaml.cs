@@ -43,6 +43,8 @@ public partial class AssetEditorDialog : UserControl
             return;
         }
 
+        FormEditor.EditorViewModel = vm.EditorViewModel;
+        FormEditor.AssetBrowser = vm.AssetBrowser;
         _currentSchema = JsonAssetSchema.GetSchemaForFile(vm.EditingItem.FullPath);
         FormEditor.LoadJson(vm.EditingJson, _currentSchema, vm.EditingItem.FullPath);
         _formLoaded = true;
@@ -62,6 +64,8 @@ public partial class AssetEditorDialog : UserControl
         if (EditorTabs.SelectedIndex == 0) // Switching to Form
         {
             // Update form from JSON text (if JSON was edited)
+            FormEditor.EditorViewModel = vm.EditorViewModel;
+            FormEditor.AssetBrowser = vm.AssetBrowser;
             FormEditor.LoadJson(vm.EditingJson, _currentSchema, vm.EditingItem?.FullPath);
         }
         else if (EditorTabs.SelectedIndex == 1) // Switching to JSON

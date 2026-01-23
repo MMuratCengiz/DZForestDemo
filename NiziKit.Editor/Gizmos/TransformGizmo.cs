@@ -198,8 +198,8 @@ public class TransformGizmo
         var axisY = Vector3.Transform(Vector3.UnitY, rotation);
         var axisZ = Vector3.Transform(Vector3.UnitZ, rotation);
 
-        GizmoAxis closestAxis = GizmoAxis.None;
-        float closestDist = float.MaxValue;
+        var closestAxis = GizmoAxis.None;
+        var closestDist = float.MaxValue;
 
         switch (Mode)
         {

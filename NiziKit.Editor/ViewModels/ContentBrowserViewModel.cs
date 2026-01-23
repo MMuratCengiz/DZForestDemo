@@ -3,8 +3,8 @@ using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NiziKit.Assets;
+using NiziKit.Assets.Pack;
 using NiziKit.Assets.Serde;
-using NiziKit.AssetPacks;
 using NiziKit.ContentPipeline;
 using NiziKit.Editor.Services;
 
@@ -147,6 +147,9 @@ public partial class ContentBrowserViewModel : ObservableObject
     private readonly string _assetsDirectory;
     private readonly string _packsDirectory;
     private readonly AssetFileService _fileService;
+
+    public EditorViewModel? EditorViewModel { get; set; }
+    public AssetBrowserService AssetBrowser { get; } = new();
 
     public ContentBrowserViewModel()
     {
@@ -483,7 +486,7 @@ public partial class ContentBrowserViewModel : ObservableObject
         try
         {
             // Use reflection to check loaded models in AssetPacks
-            var packsType = typeof(AssetPacks.AssetPacks);
+            var packsType = typeof(AssetPacks);
             var packsField = packsType.GetField("_packs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             if (packsField?.GetValue(null) is Dictionary<string, AssetPack> packs)
             {
@@ -679,26 +682,28 @@ public partial class ContentBrowserViewModel : ObservableObject
             path = Path.Combine(SelectedTab.CurrentPath, fileName);
         }
 
-        var shader = new
+        var schemaPath = GetRelativeSchemaPath(path, "nizishp.schema.json");
+        var shader = new Dictionary<string, object>
         {
-            name = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(fileName)),
-            type = "graphics",
-            stages = new[]
+            ["$schema"] = schemaPath,
+            ["name"] = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(fileName)),
+            ["type"] = "graphics",
+            ["stages"] = new[]
             {
-                new { stage = "vertex", path = "", entryPoint = "VSMain" },
-                new { stage = "pixel", path = "", entryPoint = "PSMain" }
+                new Dictionary<string, object> { ["stage"] = "vertex", ["path"] = "", ["entryPoint"] = "VSMain" },
+                new Dictionary<string, object> { ["stage"] = "pixel", ["path"] = "", ["entryPoint"] = "PSMain" }
             },
-            pipeline = new
+            ["pipeline"] = new Dictionary<string, object>
             {
-                primitiveTopology = "triangle",
-                cullMode = "backFace",
-                fillMode = "solid",
-                depthTest = new { enable = true, compareOp = "less", write = true },
-                blend = new { enable = false, renderTargetWriteMask = 15 }
+                ["primitiveTopology"] = "triangle",
+                ["cullMode"] = "backFace",
+                ["fillMode"] = "solid",
+                ["depthTest"] = new Dictionary<string, object> { ["enable"] = true, ["compareOp"] = "less", ["write"] = true },
+                ["blend"] = new Dictionary<string, object> { ["enable"] = false, ["renderTargetWriteMask"] = 15 }
             }
         };
 
-        var json = JsonSerializer.Serialize(shader, new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(shader, NiziJsonSerializationOptions.Default);
         File.WriteAllText(path, json);
         StatusMessage = $"Created shader: {fileName}";
         RefreshCurrentTab();
@@ -873,12 +878,12 @@ public partial class ContentBrowserViewModel : ObservableObject
 
             NormalizePackPaths(packData);
             File.WriteAllText(packFile, packData.ToJson());
-            
-            if (AssetPacks.AssetPacks.IsLoaded(SelectedPack.PackName))
+
+            if (AssetPacks.IsLoaded(SelectedPack.PackName))
             {
-                AssetPacks.AssetPacks.Reload(SelectedPack.PackName);
+                AssetPacks.Reload(SelectedPack.PackName);
             }
-            
+
             StatusMessage = $"Added '{assetKey}' to pack '{SelectedPack.PackName}'";
             LoadFolderTree();
         }
@@ -935,12 +940,12 @@ public partial class ContentBrowserViewModel : ObservableObject
             {
                 NormalizePackPaths(packData);
                 File.WriteAllText(packFile, packData.ToJson());
-                
-                if (AssetPacks.AssetPacks.IsLoaded(SelectedPack.PackName))
+
+                if (AssetPacks.IsLoaded(SelectedPack.PackName))
                 {
-                    AssetPacks.AssetPacks.Reload(SelectedPack.PackName);
+                    AssetPacks.Reload(SelectedPack.PackName);
                 }
-                
+
                 StatusMessage = $"Removed '{assetKey}' from pack '{SelectedPack.PackName}'";
                 LoadFolderTree();
             }
@@ -1016,6 +1021,15 @@ public partial class ContentBrowserViewModel : ObservableObject
     private string GetRelativePath(string fullPath)
     {
         return Path.GetRelativePath(_assetsDirectory, fullPath);
+    }
+
+    private string GetRelativeSchemaPath(string filePath, string schemaFileName)
+    {
+        var fileDir = Path.GetDirectoryName(filePath) ?? _assetsDirectory;
+        var schemaDir = Path.GetFullPath(Path.Combine(_assetsDirectory, "..", "NiziKit", "Assets", "Serde", "Schemas"));
+        var schemaPath = Path.Combine(schemaDir, schemaFileName);
+        var relativePath = Path.GetRelativePath(fileDir, schemaPath).Replace('\\', '/');
+        return relativePath;
     }
 
     private static void NormalizePackPaths(AssetPackJson pack)

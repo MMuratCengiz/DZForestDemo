@@ -29,6 +29,7 @@ public sealed class Assets : IDisposable
     private readonly List<Material> _materialList = [];
     private readonly Lock _listLock = new();
     private readonly Lock _shaderLoadLock = new();
+    private readonly SemaphoreSlim _shaderLoadSemaphore = new(1, 1);
 
     public Assets()
     {
@@ -409,19 +410,33 @@ public sealed class Assets : IDisposable
             return cached;
         }
 
-        var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
-        if (diskCached != null)
+        await _shaderLoadSemaphore.WaitAsync(ct);
+        try
         {
-            _shaderStore.RegisterProgram(cacheKey, diskCached);
-            return diskCached;
+            cached = _shaderStore.GetProgram(cacheKey);
+            if (cached != null)
+            {
+                return cached;
+            }
+
+            var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
+            if (diskCached != null)
+            {
+                _shaderStore.RegisterProgram(cacheKey, diskCached);
+                return diskCached;
+            }
+
+            var program = await _shaderBuilder.CompileGraphicsAsync(vsFullPath, psFullPath, defines: defines, ct: ct);
+
+            _shaderStore.SaveToDisk(cacheKey, program);
+            _shaderStore.RegisterProgram(cacheKey, program);
+
+            return program;
         }
-
-        var program = await _shaderBuilder.CompileGraphicsAsync(vsFullPath, psFullPath, defines: defines, ct: ct);
-
-        _shaderStore.SaveToDisk(cacheKey, program);
-        _shaderStore.RegisterProgram(cacheKey, program);
-
-        return program;
+        finally
+        {
+            _shaderLoadSemaphore.Release();
+        }
     }
 
     private async Task<ShaderProgram> _LoadComputeProgramAsync(string computePath, Dictionary<string, string?>? defines, CancellationToken ct)
@@ -436,19 +451,33 @@ public sealed class Assets : IDisposable
             return cached;
         }
 
-        var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
-        if (diskCached != null)
+        await _shaderLoadSemaphore.WaitAsync(ct);
+        try
         {
-            _shaderStore.RegisterProgram(cacheKey, diskCached);
-            return diskCached;
+            cached = _shaderStore.GetProgram(cacheKey);
+            if (cached != null)
+            {
+                return cached;
+            }
+
+            var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
+            if (diskCached != null)
+            {
+                _shaderStore.RegisterProgram(cacheKey, diskCached);
+                return diskCached;
+            }
+
+            var program = await _shaderBuilder.CompileComputeAsync(csFullPath, defines: defines, ct: ct);
+
+            _shaderStore.SaveToDisk(cacheKey, program);
+            _shaderStore.RegisterProgram(cacheKey, program);
+
+            return program;
         }
-
-        var program = await _shaderBuilder.CompileComputeAsync(csFullPath, defines: defines, ct: ct);
-
-        _shaderStore.SaveToDisk(cacheKey, program);
-        _shaderStore.RegisterProgram(cacheKey, program);
-
-        return program;
+        finally
+        {
+            _shaderLoadSemaphore.Release();
+        }
     }
 
     private Material _RegisterMaterial(Material material)
@@ -605,50 +634,64 @@ public sealed class Assets : IDisposable
             return existingShader;
         }
 
-        var json = await Content.ReadTextAsync(path, ct);
-        var shaderJson = ShaderProgramJson.FromJson(json);
-
-        var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;
-        var pipelineType = shaderJson.DetectPipelineType(variant);
-
-        var program = await _shaderBuilder.CompileFromJsonAsync(shaderJson, basePath, variant, ct);
-
-        GpuShader shader;
-        switch (pipelineType)
+        await _shaderLoadSemaphore.WaitAsync(ct);
+        try
         {
-            case PipelineType.Compute:
-                shader = GpuShader.Compute(program, ownsProgram: false);
-                break;
+            existingShader = _shaderStore[cacheKey];
+            if (existingShader != null)
+            {
+                return existingShader;
+            }
 
-            case PipelineType.RayTracing:
-                var rtPipelineDesc = new RayTracingPipelineDesc
-                {
-                    HitGroups = shaderJson.ToHitGroupDescArray(variant)
-                };
-                var explicitIndicesAsync = shaderJson.GetExplicitLocalRootSignatureIndices(variant);
-                shader = GpuShader.RayTracing(program, rtPipelineDesc, ownsProgram: false, explicitIndicesAsync);
-                break;
+            var json = await Content.ReadTextAsync(path, ct);
+            var shaderJson = ShaderProgramJson.FromJson(json);
 
-            case PipelineType.Mesh:
-                var meshPipelineDesc = shaderJson.ToMeshPipelineDesc(
-                    GraphicsContext.BackBufferFormat,
-                    GraphicsContext.DepthBufferFormat,
-                    variant);
-                shader = GpuShader.Mesh(program, meshPipelineDesc, ownsProgram: false);
-                break;
+            var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;
+            var pipelineType = shaderJson.DetectPipelineType(variant);
 
-            case PipelineType.Graphics:
-            default:
-                var graphicsPipelineDesc = shaderJson.ToGraphicsPipelineDesc(
-                    GraphicsContext.BackBufferFormat,
-                    GraphicsContext.DepthBufferFormat,
-                    variant);
-                shader = GpuShader.Graphics(program, graphicsPipelineDesc, ownsProgram: false);
-                break;
+            var program = await _shaderBuilder.CompileFromJsonAsync(shaderJson, basePath, variant, ct);
+
+            GpuShader shader;
+            switch (pipelineType)
+            {
+                case PipelineType.Compute:
+                    shader = GpuShader.Compute(program, ownsProgram: false);
+                    break;
+
+                case PipelineType.RayTracing:
+                    var rtPipelineDesc = new RayTracingPipelineDesc
+                    {
+                        HitGroups = shaderJson.ToHitGroupDescArray(variant)
+                    };
+                    var explicitIndicesAsync = shaderJson.GetExplicitLocalRootSignatureIndices(variant);
+                    shader = GpuShader.RayTracing(program, rtPipelineDesc, ownsProgram: false, explicitIndicesAsync);
+                    break;
+
+                case PipelineType.Mesh:
+                    var meshPipelineDesc = shaderJson.ToMeshPipelineDesc(
+                        GraphicsContext.BackBufferFormat,
+                        GraphicsContext.DepthBufferFormat,
+                        variant);
+                    shader = GpuShader.Mesh(program, meshPipelineDesc, ownsProgram: false);
+                    break;
+
+                case PipelineType.Graphics:
+                default:
+                    var graphicsPipelineDesc = shaderJson.ToGraphicsPipelineDesc(
+                        GraphicsContext.BackBufferFormat,
+                        GraphicsContext.DepthBufferFormat,
+                        variant);
+                    shader = GpuShader.Graphics(program, graphicsPipelineDesc, ownsProgram: false);
+                    break;
+            }
+
+            _shaderStore.Register(cacheKey, shader);
+            return shader;
         }
-
-        _shaderStore.Register(cacheKey, shader);
-        return shader;
+        finally
+        {
+            _shaderLoadSemaphore.Release();
+        }
     }
 
     private Mesh _CreateBox(float width, float height, float depth)

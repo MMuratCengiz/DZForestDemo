@@ -15,7 +15,7 @@
 
     <ItemGroup>
       <PackageReference Include="BepuPhysics" Version="2.4.0" />
-      <PackageReference Include="DenOfIzGraphics" Version="0.7.1-alpha" />
+      <PackageReference Include="DenOfIzGraphics" Version="0.7.2-alpha" />
       <PackageReference Include="ImGui.NET" Version="1.91.6.1" />
       <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
       <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.0" />
@@ -29,6 +29,9 @@
     <ItemGroup>
       <EmbeddedResource Include="Graphics\BuiltInShaders\**\*">
         <LogicalName>NiziKit.Graphics.BuiltInShaders.%(Filename)%(Extension)</LogicalName>
+      </EmbeddedResource>
+      <EmbeddedResource Include="Assets\Serde\Schemas\*.schema.json">
+        <LogicalName>NiziKit.Schemas.%(Filename)%(Extension)</LogicalName>
       </EmbeddedResource>
     </ItemGroup>
 

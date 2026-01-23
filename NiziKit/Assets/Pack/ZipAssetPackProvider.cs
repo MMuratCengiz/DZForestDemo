@@ -1,6 +1,6 @@
 using System.IO.Compression;
 
-namespace NiziKit.AssetPacks;
+namespace NiziKit.Assets.Pack;
 
 internal sealed class ZipAssetPackProvider : IAssetPackProvider
 {

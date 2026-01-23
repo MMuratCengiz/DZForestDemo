@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
+using System.Reflection;
 using NiziKit.Assets;
-using NiziKit.AssetPacks;
+using NiziKit.Assets.Pack;
 using NiziKit.Components;
 
 namespace NiziKit.Editor.Services;
@@ -20,9 +21,8 @@ public class AssetBrowserService
     {
         var packs = new List<string>();
 
-        // Use reflection to access the private _packs dictionary
-        var field = typeof(AssetPacks.AssetPacks).GetField("_packs",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+        var field = typeof(AssetPacks).GetField("_packs",
+            BindingFlags.NonPublic | BindingFlags.Static);
 
         if (field?.GetValue(null) is Dictionary<string, AssetPack> packsDict)
         {
@@ -30,56 +30,6 @@ public class AssetBrowserService
         }
 
         return packs;
-    }
-
-    /// <summary>
-    /// Alias for GetLoadedPacks for consistency.
-    /// </summary>
-    public IReadOnlyList<string> GetLoadedPackNames() => GetLoadedPacks();
-
-    /// <summary>
-    /// Gets all models in a pack that have skeletons (and thus can have animations).
-    /// </summary>
-    public IReadOnlyList<string> GetModelsWithSkeletons(string packName)
-    {
-        var models = new List<string>();
-
-        if (!AssetPacks.AssetPacks.TryGet(packName, out var pack) || pack == null)
-        {
-            return models;
-        }
-
-        foreach (var modelKey in pack.Models.Keys)
-        {
-            var model = pack.Models[modelKey];
-            if (model.Skeleton != null)
-            {
-                models.Add(modelKey);
-            }
-        }
-
-        return models;
-    }
-
-    /// <summary>
-    /// Gets all animation names from a specific model in a pack.
-    /// </summary>
-    public IReadOnlyList<string> GetAnimationsFromModel(string packName, string modelName)
-    {
-        var animations = new List<string>();
-
-        if (!AssetPacks.AssetPacks.TryGet(packName, out var pack) || pack == null)
-        {
-            return animations;
-        }
-
-        if (!pack.TryGetModel(modelName, out var model) || model?.Skeleton == null)
-        {
-            return animations;
-        }
-
-        animations.AddRange(model.Skeleton.AnimationNames);
-        return animations;
     }
 
     public IReadOnlyList<AssetInfo> GetAssetsOfType(AssetRefType assetType, string packName)
@@ -114,8 +64,8 @@ public class AssetBrowserService
         return assetType switch
         {
             AssetRefType.Mesh => ResolvePackMesh(packName, assetName),
-            AssetRefType.Material => AssetPacks.AssetPacks.GetMaterial(packName, assetName),
-            AssetRefType.Texture => AssetPacks.AssetPacks.GetTexture(packName, assetName),
+            AssetRefType.Material => AssetPacks.GetMaterial(packName, assetName),
+            AssetRefType.Texture => AssetPacks.GetTexture(packName, assetName),
             AssetRefType.Skeleton => ResolvePackSkeleton(packName, assetName),
             AssetRefType.Animation => ResolvePackAnimation(packName, assetName),
             _ => null
@@ -125,20 +75,20 @@ public class AssetBrowserService
     private Mesh? ResolvePackMesh(string packName, string assetName)
     {
         var (modelName, meshSelector) = ParseMeshSelector(assetName);
-        var model = AssetPacks.AssetPacks.GetModel(packName, modelName);
+        var model = AssetPacks.GetModel(packName, modelName);
         return GetMeshFromModel(model, meshSelector);
     }
 
     private Skeleton? ResolvePackSkeleton(string packName, string modelName)
     {
-        var model = AssetPacks.AssetPacks.GetModel(packName, modelName);
+        var model = AssetPacks.GetModel(packName, modelName);
         return model.Skeleton;
     }
 
     private NiziKit.Assets.Animation? ResolvePackAnimation(string packName, string assetName)
     {
         var (modelName, animSelector) = ParseMeshSelector(assetName);
-        var model = AssetPacks.AssetPacks.GetModel(packName, modelName);
+        var model = AssetPacks.GetModel(packName, modelName);
         if (model.Skeleton == null)
         {
             return null;
@@ -164,6 +114,7 @@ public class AssetBrowserService
         {
             return (assetReference.Substring(0, slashIndex), assetReference.Substring(slashIndex + 1));
         }
+
         return (assetReference, null);
     }
 
@@ -195,8 +146,7 @@ public class AssetBrowserService
     public IReadOnlyList<AssetInfo> GetMeshesFromPack(string packName)
     {
         var meshes = new List<AssetInfo>();
-
-        if (!AssetPacks.AssetPacks.TryGet(packName, out var pack) || pack == null)
+        if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
         {
             return meshes;
         }
@@ -225,8 +175,7 @@ public class AssetBrowserService
     public IReadOnlyList<AssetInfo> GetMaterialsFromPack(string packName)
     {
         var materials = new List<AssetInfo>();
-
-        if (!AssetPacks.AssetPacks.TryGet(packName, out var pack) || pack == null)
+        if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
         {
             return materials;
         }
@@ -246,6 +195,7 @@ public class AssetBrowserService
         {
             meshes.AddRange(GetMeshesFromPack(packName));
         }
+
         return meshes;
     }
 
@@ -256,14 +206,14 @@ public class AssetBrowserService
         {
             materials.AddRange(GetMaterialsFromPack(packName));
         }
+
         return materials;
     }
 
     public IReadOnlyList<AssetInfo> GetTexturesFromPack(string packName)
     {
         var textures = new List<AssetInfo>();
-
-        if (!AssetPacks.AssetPacks.TryGet(packName, out var pack) || pack == null)
+        if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
         {
             return textures;
         }
@@ -279,13 +229,11 @@ public class AssetBrowserService
     public IReadOnlyList<AssetInfo> GetSkeletonsFromPack(string packName)
     {
         var skeletons = new List<AssetInfo>();
-
-        if (!AssetPacks.AssetPacks.TryGet(packName, out var pack) || pack == null)
+        if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
         {
             return skeletons;
         }
 
-        // Models that have skeletons
         foreach (var modelKey in pack.Models.Keys)
         {
             var model = pack.Models[modelKey];
@@ -302,23 +250,29 @@ public class AssetBrowserService
     {
         var animations = new List<AssetInfo>();
 
-        if (!AssetPacks.AssetPacks.TryGet(packName, out var pack) || pack == null)
+        if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
         {
             return animations;
         }
 
-        // Animations come from model skeletons
         foreach (var modelKey in pack.Models.Keys)
         {
             var model = pack.Models[modelKey];
             if (model.Skeleton != null)
             {
                 var animNames = model.Skeleton.AnimationNames;
-                for (int i = 0; i < animNames.Count; i++)
+                for (var i = 0; i < animNames.Count; i++)
                 {
-                    var animName = string.IsNullOrEmpty(animNames[i]) ? $"{modelKey}/{i}" : $"{modelKey}/{animNames[i]}";
+                    var animName = string.IsNullOrEmpty(animNames[i])
+                        ? $"{modelKey}/{i}"
+                        : $"{modelKey}/{animNames[i]}";
                     animations.Add(new AssetInfo { Name = animName, Pack = packName });
                 }
+            }
+
+            foreach (var animation in model.Animations)
+            {
+                animations.Add(new AssetInfo { Name = $"{modelKey}/{animation.Name}", Pack = packName });
             }
         }
 

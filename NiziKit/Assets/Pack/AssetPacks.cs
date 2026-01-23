@@ -1,7 +1,6 @@
-using NiziKit.Assets;
 using NiziKit.Graphics;
 
-namespace NiziKit.AssetPacks;
+namespace NiziKit.Assets.Pack;
 
 public static class AssetPacks
 {
