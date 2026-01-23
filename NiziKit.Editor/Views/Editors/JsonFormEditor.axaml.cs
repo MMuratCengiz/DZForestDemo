@@ -1289,10 +1289,10 @@ public partial class JsonFormEditor : UserControl
 
         var browseButton = new Button
         {
-            Content = new SymbolIcon { Symbol = Symbol.OpenFolder, FontSize = GetIconSize("IconSizeSmall") },
-            Padding = new Thickness(6, 4),
+            Content = new SymbolIcon { Symbol = Symbol.OpenFolder, FontSize = GetIconSize("IconSizeMedium") },
+            Padding = new Thickness(8, 6),
             Margin = new Thickness(4, 0, 0, 0),
-            VerticalAlignment = VerticalAlignment.Center
+            VerticalAlignment = VerticalAlignment.Stretch
         };
         ToolTip.SetTip(browseButton, $"Browse {assetRefTypeName}s");
 

@@ -10,9 +10,6 @@ using NiziKit.Editor.Services;
 
 namespace NiziKit.Editor.ViewModels;
 
-/// <summary>
-/// Represents a node in the folder tree sidebar
-/// </summary>
 public partial class FolderTreeNode : ObservableObject
 {
     [ObservableProperty]
@@ -50,9 +47,6 @@ public partial class FolderTreeNode : ObservableObject
         };
 }
 
-/// <summary>
-/// Represents a tab in the content browser (Assets or an opened Pack)
-/// </summary>
 public partial class ContentTab : ObservableObject
 {
     [ObservableProperty]
@@ -77,9 +71,6 @@ public partial class ContentTab : ObservableObject
     public ObservableCollection<BreadcrumbItem> Breadcrumbs { get; } = [];
 }
 
-/// <summary>
-/// Represents an item in the content grid
-/// </summary>
 public partial class ContentItem : ObservableObject
 {
     [ObservableProperty]
@@ -98,9 +89,8 @@ public partial class ContentItem : ObservableObject
     private AssetFileType _type;
 
     [ObservableProperty]
-    private string _key = ""; // For pack assets
+    private string _key = "";
 
-    // Model info
     [ObservableProperty]
     private int _meshCount;
 
@@ -157,7 +147,6 @@ public partial class ContentBrowserViewModel : ObservableObject
         _packsDirectory = Path.Combine(_assetsDirectory, "Packs");
         _fileService = new AssetFileService(_assetsDirectory);
 
-        // Create initial Assets tab
         var assetsTab = new ContentTab
         {
             Title = "Assets",
@@ -173,11 +162,9 @@ public partial class ContentBrowserViewModel : ObservableObject
         RefreshCurrentTab();
     }
 
-    // Folder tree
     public ObservableCollection<FolderTreeNode> FolderTree { get; } = [];
     public ObservableCollection<FolderTreeNode> PackTree { get; } = [];
 
-    // Tabs
     public ObservableCollection<ContentTab> Tabs { get; } = [];
 
     [ObservableProperty]
@@ -202,7 +189,6 @@ public partial class ContentBrowserViewModel : ObservableObject
     [ObservableProperty]
     private string _statusMessage = "";
 
-    // Asset editor state
     [ObservableProperty]
     private bool _isAssetEditorOpen;
 
@@ -262,7 +248,6 @@ public partial class ContentBrowserViewModel : ObservableObject
         FolderTree.Clear();
         PackTree.Clear();
 
-        // Load Assets folder tree
         if (Directory.Exists(_assetsDirectory))
         {
             var root = CreateFolderNode(_assetsDirectory);
@@ -361,7 +346,6 @@ public partial class ContentBrowserViewModel : ObservableObject
         {
             foreach (var dir in Directory.GetDirectories(path))
             {
-                // Skip Packs folder in main tree
                 if (Path.GetFileName(dir).Equals("Packs", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
@@ -372,7 +356,6 @@ public partial class ContentBrowserViewModel : ObservableObject
         }
         catch
         {
-            // Ignore access errors
         }
 
         return node;
@@ -389,7 +372,6 @@ public partial class ContentBrowserViewModel : ObservableObject
         SelectedTab.Items.Clear();
         SelectedTab.Breadcrumbs.Clear();
 
-        // Build breadcrumbs
         var pathSegments = new List<(string Name, string FullPath)>();
         var current = SelectedTab.CurrentPath;
         var root = SelectedTab.RootPath;
@@ -418,7 +400,6 @@ public partial class ContentBrowserViewModel : ObservableObject
             SelectedTab.Breadcrumbs.Add(new BreadcrumbItem(name, fullPath));
         }
 
-        // Load items
         var filter = Filter;
         var search = SearchText?.ToLowerInvariant() ?? "";
 
@@ -427,7 +408,6 @@ public partial class ContentBrowserViewModel : ObservableObject
             return;
         }
 
-        // Directories first
         foreach (var dir in Directory.GetDirectories(SelectedTab.CurrentPath))
         {
             var name = Path.GetFileName(dir);
@@ -446,7 +426,6 @@ public partial class ContentBrowserViewModel : ObservableObject
             });
         }
 
-        // Files
         foreach (var file in Directory.GetFiles(SelectedTab.CurrentPath))
         {
             var fileType = _fileService.GetFileType(file);
@@ -471,7 +450,6 @@ public partial class ContentBrowserViewModel : ObservableObject
                 Type = fileType
             };
 
-            // Load model info for model files
             if (fileType == AssetFileType.Model)
             {
                 LoadModelInfo(item);
@@ -485,7 +463,6 @@ public partial class ContentBrowserViewModel : ObservableObject
     {
         try
         {
-            // Use reflection to check loaded models in AssetPacks
             var packsType = typeof(AssetPacks);
             var packsField = packsType.GetField("_packs", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
             if (packsField?.GetValue(null) is Dictionary<string, AssetPack> packs)
@@ -510,7 +487,6 @@ public partial class ContentBrowserViewModel : ObservableObject
         }
         catch
         {
-            // Ignore errors loading model info
         }
     }
 
@@ -562,7 +538,6 @@ public partial class ContentBrowserViewModel : ObservableObject
 
     public void OpenPack(string packName, string packPath)
     {
-        // Check if tab already exists
         var existingTab = Tabs.FirstOrDefault(t => t.IsPack && t.PackName == packName);
         if (existingTab != null)
         {
@@ -601,7 +576,6 @@ public partial class ContentBrowserViewModel : ObservableObject
         }
     }
 
-    // Context menu commands
     [RelayCommand]
     public void CreateFolder()
     {
@@ -655,7 +629,6 @@ public partial class ContentBrowserViewModel : ObservableObject
         StatusMessage = $"Created material: {fileName}";
         RefreshCurrentTab();
 
-        // Open editor for new material
         var item = SelectedTab.Items.FirstOrDefault(i => i.FullPath == path);
         if (item != null)
         {
@@ -744,6 +717,98 @@ public partial class ContentBrowserViewModel : ObservableObject
     }
 
     [RelayCommand]
+    public async Task RenamePack(FolderTreeNode? packNode)
+    {
+        if (packNode == null || !packNode.IsPack)
+        {
+            return;
+        }
+
+        var packFile = Path.Combine(packNode.FullPath, "pack.nizipack.json");
+        if (!File.Exists(packFile))
+        {
+            StatusMessage = "Pack manifest not found";
+            return;
+        }
+
+        IsRenameDialogOpen = true;
+        RenameDialogTitle = "Rename Pack";
+        RenameDialogValue = packNode.PackName;
+        _renamingPack = packNode;
+    }
+
+    [RelayCommand]
+    public void ConfirmRename()
+    {
+        if (_renamingPack == null || string.IsNullOrWhiteSpace(RenameDialogValue))
+        {
+            IsRenameDialogOpen = false;
+            return;
+        }
+
+        try
+        {
+            var packFile = Path.Combine(_renamingPack.FullPath, "pack.nizipack.json");
+            var json = File.ReadAllText(packFile);
+            var packData = AssetPackJson.FromJson(json);
+
+            var newName = RenameDialogValue.Trim().ToLowerInvariant();
+            var oldName = packData.Name;
+
+            if (newName == oldName)
+            {
+                IsRenameDialogOpen = false;
+                return;
+            }
+
+            var existingPack = PackTree.FirstOrDefault(p => p.PackName.Equals(newName, StringComparison.OrdinalIgnoreCase) && p != _renamingPack);
+            if (existingPack != null)
+            {
+                StatusMessage = $"A pack named '{newName}' already exists";
+                return;
+            }
+
+            packData.Name = newName;
+            File.WriteAllText(packFile, packData.ToJson());
+
+            if (AssetPacks.IsLoaded(oldName))
+            {
+                AssetPacks.Reload(newName);
+            }
+
+            StatusMessage = $"Renamed pack '{oldName}' to '{newName}'";
+            LoadFolderTree();
+        }
+        catch (Exception ex)
+        {
+            StatusMessage = $"Error renaming pack: {ex.Message}";
+        }
+        finally
+        {
+            IsRenameDialogOpen = false;
+            _renamingPack = null;
+        }
+    }
+
+    [RelayCommand]
+    public void CancelRename()
+    {
+        IsRenameDialogOpen = false;
+        _renamingPack = null;
+    }
+
+    private FolderTreeNode? _renamingPack;
+
+    [ObservableProperty]
+    private bool _isRenameDialogOpen;
+
+    [ObservableProperty]
+    private string _renameDialogTitle = "";
+
+    [ObservableProperty]
+    private string _renameDialogValue = "";
+
+    [RelayCommand]
     public void DeleteSelected()
     {
         if (SelectedItem == null)
@@ -787,7 +852,23 @@ public partial class ContentBrowserViewModel : ObservableObject
         }
         catch
         {
-            // Ignore
+        }
+    }
+
+    [RelayCommand]
+    public void ShowPackInExplorer(FolderTreeNode? packNode)
+    {
+        if (packNode == null)
+        {
+            return;
+        }
+
+        try
+        {
+            System.Diagnostics.Process.Start("explorer.exe", $"/select,\"{packNode.FullPath}\"");
+        }
+        catch
+        {
         }
     }
 
@@ -999,7 +1080,6 @@ public partial class ContentBrowserViewModel : ObservableObject
 
         try
         {
-            // Validate JSON
             JsonDocument.Parse(EditingJson);
 
             File.WriteAllText(EditingItem.FullPath, EditingJson);

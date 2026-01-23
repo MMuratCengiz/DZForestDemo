@@ -170,4 +170,46 @@ public partial class ContentBrowserView : UserControl
 
         InlineMenu.Show(position, items);
     }
+
+    private void OnPackTreeItemPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        var point = e.GetCurrentPoint(this);
+        if (point.Properties.IsRightButtonPressed && sender is StackPanel panel && panel.DataContext is FolderTreeNode node)
+        {
+            if (node.IsPack)
+            {
+                ShowPackContextMenu(point.Position, node);
+                e.Handled = true;
+            }
+        }
+    }
+
+    private void ShowPackContextMenu(Point position, FolderTreeNode packNode)
+    {
+        if (DataContext is not ContentBrowserViewModel vm)
+        {
+            return;
+        }
+
+        var items = new List<InlineMenuItem>
+        {
+            new()
+            {
+                Header = "Rename",
+                Icon = Symbol.Rename,
+                Command = vm.RenamePackCommand,
+                CommandParameter = packNode
+            },
+            InlineMenuItem.Separator(),
+            new()
+            {
+                Header = "Show in Explorer",
+                Icon = Symbol.OpenFolder,
+                Command = vm.ShowPackInExplorerCommand,
+                CommandParameter = packNode
+            }
+        };
+
+        InlineMenu.Show(position, items);
+    }
 }

@@ -36,12 +36,12 @@
                                   SelectedItem="{Binding SelectedFolder}">
                             <TreeView.ItemTemplate>
                                 <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:FolderTreeNode">
-                                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="4,6">
+                                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="4,6"
+                                                PointerPressed="OnPackTreeItemPointerPressed">
                                         <PathIcon Data="{Binding IconData}"
                                                   Width="24" Height="24"
                                                   Foreground="{DynamicResource AccentFillColorDefaultBrush}"/>
                                         <TextBlock Text="{Binding Name}"
-                                                   Classes="body"
                                                    VerticalAlignment="Center"
                                                    TextWrapping="NoWrap"
                                                    MaxWidth="280"/>
@@ -197,7 +197,39 @@
             </Grid>
         </Grid>
 
-        <views:InlineContextMenu x:Name="InlineMenu"/>
+        <views:InlineContextMenu x:Name="InlineMenu" ZIndex="100"/>
+
+        <!-- Rename Dialog -->
+        <Border IsVisible="{Binding IsRenameDialogOpen}"
+                Classes="dialog-overlay"
+                ZIndex="200">
+            <Border Background="{DynamicResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{DynamicResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    CornerRadius="{DynamicResource OverlayCornerRadius}"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Padding="24"
+                    MinWidth="350">
+                <StackPanel Spacing="16">
+                    <TextBlock Text="{Binding RenameDialogTitle}"
+                               FontWeight="SemiBold"/>
+                    <TextBox Text="{Binding RenameDialogValue, Mode=TwoWay}"
+                             Watermark="Enter new name"/>
+                    <StackPanel Orientation="Horizontal"
+                                HorizontalAlignment="Right"
+                                Spacing="8">
+                        <Button Content="Cancel"
+                                Command="{Binding CancelRenameCommand}"
+                                Padding="16,8"/>
+                        <Button Content="Rename"
+                                Command="{Binding ConfirmRenameCommand}"
+                                Classes="accent"
+                                Padding="16,8"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Border>
     </Panel>
 
 </UserControl>
