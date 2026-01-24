@@ -149,6 +149,9 @@ public sealed class AssetManifest
     [JsonPropertyName("assets")]
     public List<AssetEntry> Assets { get; set; } = [];
 
+    [JsonPropertyName("packs")]
+    public List<string>? Packs { get; set; }
+
     private Dictionary<string, AssetEntry>? _lookup;
 
     public bool TryGetAsset(string path, out AssetEntry? entry)

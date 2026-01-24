@@ -21,7 +21,8 @@ internal sealed class FolderAssetPackProvider(string rootPath) : IAssetPackProvi
     private string ResolvePath(string path)
     {
         var normalized = path.Replace('\\', '/').TrimStart('/');
-        return Path.Combine(_rootPath, normalized);
+        var combined = Path.Combine(_rootPath, normalized);
+        return Path.GetFullPath(combined);
     }
 
     public void Dispose()

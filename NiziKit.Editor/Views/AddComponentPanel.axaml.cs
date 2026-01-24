@@ -1,3 +1,4 @@
+using System.Collections.Specialized;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Avalonia.Markup.Xaml;
@@ -8,6 +9,7 @@ namespace NiziKit.Editor.Views;
 public partial class AddComponentPanel : UserControl
 {
     private ItemsControl? _componentTypesList;
+    private GameObjectViewModel? _currentViewModel;
 
     public AddComponentPanel()
     {
@@ -23,6 +25,24 @@ public partial class AddComponentPanel : UserControl
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
+
+        if (_currentViewModel != null)
+        {
+            _currentViewModel.Components.CollectionChanged -= OnComponentsCollectionChanged;
+        }
+
+        _currentViewModel = DataContext as GameObjectViewModel;
+
+        if (_currentViewModel != null)
+        {
+            _currentViewModel.Components.CollectionChanged += OnComponentsCollectionChanged;
+        }
+
+        RefreshComponentTypes();
+    }
+
+    private void OnComponentsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
         RefreshComponentTypes();
     }
 

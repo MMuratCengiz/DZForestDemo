@@ -3,6 +3,6 @@
   "name": "Wall",
   "shader": "Builtin/Shaders/Default",
   "textures": {
-    "albedo": "../../Textures/Snake/Wall.png"
+    "albedo": "Textures/Snake/Wall.png"
   }
 }

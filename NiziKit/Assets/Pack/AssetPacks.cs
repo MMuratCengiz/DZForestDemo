@@ -1,3 +1,4 @@
+using NiziKit.ContentPipeline;
 using NiziKit.Graphics;
 
 namespace NiziKit.Assets.Pack;
@@ -45,6 +46,51 @@ public static class AssetPacks
     public static Model GetModel(string packName, string assetName)
         => Get(packName).GetModel(assetName);
 
+    public static void LoadFromManifest()
+    {
+        if (Content.Manifest?.Packs == null)
+        {
+            return;
+        }
+
+        var packsToLoad = Content.Manifest.Packs
+            .Select(path => (path, name: GetPackNameFromPath(path)))
+            .Where(p => !IsLoaded(p.name))
+            .ToList();
+
+        Parallel.ForEach(packsToLoad, p => AssetPack.Load(p.path));
+    }
+
+    public static async Task LoadFromManifestAsync(CancellationToken ct = default)
+    {
+        if (Content.Manifest?.Packs == null)
+        {
+            return;
+        }
+
+        var packsToLoad = Content.Manifest.Packs
+            .Select(path => (path, name: GetPackNameFromPath(path)))
+            .Where(p => !IsLoaded(p.name))
+            .ToList();
+
+        var tasks = packsToLoad.Select(p => AssetPack.LoadAsync(p.path, ct));
+        await Task.WhenAll(tasks);
+    }
+
+    private static string GetPackNameFromPath(string path)
+    {
+        var fileName = Path.GetFileName(path);
+        if (fileName.EndsWith(".nizipack.json", StringComparison.OrdinalIgnoreCase))
+        {
+            return fileName[..^".nizipack.json".Length];
+        }
+        if (fileName.EndsWith(".nizipack", StringComparison.OrdinalIgnoreCase))
+        {
+            return fileName[..^".nizipack".Length];
+        }
+        return fileName;
+    }
+
     public static void Clear()
     {
         foreach (var pack in _packs.Values)
@@ -73,4 +119,8 @@ public static class AssetPacks
             await AssetPack.LoadAsync(sourcePath, ct);
         }
     }
+
+    public static IEnumerable<string> GetLoadedPackNames() => _packs.Keys;
+
+    public static IEnumerable<AssetPack> GetLoadedPacks() => _packs.Values;
 }

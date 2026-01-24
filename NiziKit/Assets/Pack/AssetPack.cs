@@ -27,6 +27,8 @@ public sealed class AssetPack : IDisposable
     public IReadOnlyDictionary<string, Material> Materials => _materials;
     public IReadOnlyDictionary<string, Model> Models => _models;
 
+    internal IAssetPackProvider? Provider => _provider;
+
     public static AssetPack Load(string path)
     {
         var pack = new AssetPack();
@@ -86,11 +88,39 @@ public sealed class AssetPack : IDisposable
 
     public IEnumerable<string> GetModelKeys() => _models.Keys;
 
+    public Texture2d LoadTextureFromPack(string path)
+    {
+        if (_provider == null)
+        {
+            throw new InvalidOperationException("Pack provider not initialized");
+        }
+
+        var bytes = _provider.ReadBytes(path);
+        var texture = new Texture2d();
+        texture.LoadFromBytes(path, bytes);
+        return texture;
+    }
+
+    public async Task<Texture2d> LoadTextureFromPackAsync(string path, CancellationToken ct = default)
+    {
+        if (_provider == null)
+        {
+            throw new InvalidOperationException("Pack provider not initialized");
+        }
+
+        var bytes = await _provider.ReadBytesAsync(path, ct);
+        var texture = new Texture2d();
+        texture.LoadFromBytes(path, bytes);
+        return texture;
+    }
+
     private void LoadInternal(string path)
     {
         SourcePath = path;
-        (_provider, _basePath) = CreateProvider(path);
-        var json = _provider.ReadText(ManifestFileName);
+        var (provider, manifestPath) = CreateProvider(path);
+        _provider = provider;
+        _basePath = provider.BasePath;
+        var json = provider.ReadText(manifestPath);
         var definition = AssetPackJson.FromJson(json);
         ApplyDefinition(definition);
         AssetPacks.Register(Name, this);
@@ -99,39 +129,42 @@ public sealed class AssetPack : IDisposable
     private async Task LoadInternalAsync(string path, CancellationToken ct)
     {
         SourcePath = path;
-        (_provider, _basePath) = CreateProvider(path);
-        var json = await _provider.ReadTextAsync(ManifestFileName, ct);
+        var (provider, manifestPath) = CreateProvider(path);
+        _provider = provider;
+        _basePath = provider.BasePath;
+        var json = await provider.ReadTextAsync(manifestPath, ct);
         var definition = AssetPackJson.FromJson(json);
         await ApplyDefinitionAsync(definition, ct);
         AssetPacks.Register(Name, this);
     }
 
-    private static (IAssetPackProvider provider, string basePath) CreateProvider(string path)
+    private static (IAssetPackProvider provider, string manifestPath) CreateProvider(string path)
     {
-        var fullPath = Path.IsPathRooted(path)
-            ? path
-            : Content.ResolvePath(path);
+        var assetsRoot = Content.ResolvePath("");
+        var fullPath = Path.IsPathRooted(path) ? path : Content.ResolvePath(path);
 
-        if (Directory.Exists(fullPath))
+        if (fullPath.EndsWith(".nizipack", StringComparison.OrdinalIgnoreCase) && File.Exists(fullPath))
         {
-            return (new FolderAssetPackProvider(fullPath), fullPath);
+            return (new ZipAssetPackProvider(fullPath), ManifestFileName);
         }
 
-        if (File.Exists(fullPath) && Path.GetExtension(fullPath).Equals(".nizipack", StringComparison.OrdinalIgnoreCase))
+        if (fullPath.EndsWith(".nizipack.json", StringComparison.OrdinalIgnoreCase) && File.Exists(fullPath))
         {
-            return (new ZipAssetPackProvider(fullPath), Path.GetDirectoryName(fullPath) ?? string.Empty);
+            var relativeManifestPath = Path.GetRelativePath(assetsRoot, fullPath).Replace('\\', '/');
+            return (new FolderAssetPackProvider(assetsRoot), relativeManifestPath);
         }
 
         var packFilePath = fullPath + ".nizipack";
         if (File.Exists(packFilePath))
         {
-            return (new ZipAssetPackProvider(packFilePath), Path.GetDirectoryName(packFilePath) ?? string.Empty);
+            return (new ZipAssetPackProvider(packFilePath), ManifestFileName);
         }
 
-        var manifestPath = Path.Combine(fullPath, ManifestFileName);
-        if (File.Exists(manifestPath))
+        var jsonPackFilePath = fullPath + ".nizipack.json";
+        if (File.Exists(jsonPackFilePath))
         {
-            return (new FolderAssetPackProvider(fullPath), fullPath);
+            var relativeManifestPath = Path.GetRelativePath(assetsRoot, jsonPackFilePath).Replace('\\', '/');
+            return (new FolderAssetPackProvider(assetsRoot), relativeManifestPath);
         }
 
         throw new FileNotFoundException($"Asset pack not found: {path}");
@@ -173,7 +206,9 @@ public sealed class AssetPack : IDisposable
     {
         Parallel.ForEach(textureDefs, kvp =>
         {
-            var texture = NiziKit.Assets.Assets.LoadTexture(kvp.Value);
+            var bytes = _provider!.ReadBytes(kvp.Value);
+            var texture = new Texture2d();
+            texture.LoadFromBytes(kvp.Value, bytes);
             _textures[kvp.Key] = texture;
         });
     }
@@ -182,7 +217,9 @@ public sealed class AssetPack : IDisposable
     {
         var tasks = textureDefs.Select(async kvp =>
         {
-            var texture = await NiziKit.Assets.Assets.LoadTextureAsync(kvp.Value, ct);
+            var bytes = await _provider!.ReadBytesAsync(kvp.Value, ct);
+            var texture = new Texture2d();
+            texture.LoadFromBytes(kvp.Value, bytes);
             return (kvp.Key, texture);
         });
 
@@ -219,7 +256,11 @@ public sealed class AssetPack : IDisposable
     {
         Parallel.ForEach(materialDefs, kvp =>
         {
-            var material = NiziKit.Assets.Assets.LoadMaterial(kvp.Value);
+            var json = _provider!.ReadText(kvp.Value);
+            var materialJson = MaterialJson.FromJson(json);
+            var material = new JsonMaterial(materialJson, "", _provider, this);
+            material.EnsureShaderLoaded();
+            material.EnsureTexturesLoaded();
             _materials[kvp.Key] = material;
         });
     }
@@ -228,7 +269,10 @@ public sealed class AssetPack : IDisposable
     {
         var tasks = materialDefs.Select(async kvp =>
         {
-            var material = await NiziKit.Assets.Assets.LoadMaterialAsync(kvp.Value, ct);
+            var json = await _provider!.ReadTextAsync(kvp.Value, ct);
+            var materialJson = MaterialJson.FromJson(json);
+            var material = new JsonMaterial(materialJson, "", _provider, this);
+            await material.LoadAllAsync(ct);
             return (kvp.Key, material);
         });
 
@@ -242,7 +286,13 @@ public sealed class AssetPack : IDisposable
     {
         Parallel.ForEach(modelDefs, kvp =>
         {
-            var model = NiziKit.Assets.Assets.LoadModel(kvp.Value);
+            var bytes = _provider!.ReadBytes(kvp.Value);
+            var model = new Model();
+            model.LoadFromBytes(bytes, kvp.Value);
+            foreach (var mesh in model.Meshes)
+            {
+                Assets.Register(mesh, $"{Name}:{kvp.Key}:{mesh.Name}");
+            }
             _models[kvp.Key] = model;
             _modelPaths[kvp.Key] = kvp.Value;
         });
@@ -252,7 +302,13 @@ public sealed class AssetPack : IDisposable
     {
         var tasks = modelDefs.Select(async kvp =>
         {
-            var model = await NiziKit.Assets.Assets.LoadModelAsync(kvp.Value, ct);
+            var bytes = await _provider!.ReadBytesAsync(kvp.Value, ct);
+            var model = new Model();
+            model.LoadFromBytes(bytes, kvp.Value);
+            foreach (var mesh in model.Meshes)
+            {
+                Assets.Register(mesh, $"{Name}:{kvp.Key}:{mesh.Name}");
+            }
             return (kvp.Key, kvp.Value, model);
         });
 

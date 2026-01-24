@@ -30,6 +30,11 @@ public class Texture2d : IAsset
         LoadFromBytes(GetTextureExtension(path), bytes, path);
     }
 
+    public void LoadFromBytes(string path, byte[] bytes)
+    {
+        LoadFromBytes(GetTextureExtension(path), bytes, path);
+    }
+
     private static TextureExtension GetTextureExtension(string path)
     {
         var ext = Path.GetExtension(path).ToLowerInvariant();

@@ -1,7 +1,7 @@
 ﻿{
   "$schema": "../../../NiziKit/Assets/Serde/Schemas/niziscene.schema.json",
   "name": "default",
-  "assetPacks": ["Packs/Viking"],
+  "assetPacks": ["Packs/viking.nizipack.json"],
   "camera": {
     "name": "Main Camera",
     "position": [0, 30, -25],

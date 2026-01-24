@@ -1,8 +1,8 @@
 {
   "$schema": "../../../NiziKit/Assets/Serde/Schemas/nizimat.schema.json",
   "name": "VikingRealmAlt",
-  "shader": "../Shaders/VikingScene.nizishp.json",
+  "shader": "Shaders/VikingScene.nizishp.json",
   "textures": {
-    "albedo": "../Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.png"
+    "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.png"
   }
 }

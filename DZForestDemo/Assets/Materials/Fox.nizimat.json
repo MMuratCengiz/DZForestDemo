@@ -1,9 +1,9 @@
-﻿{
+{
   "$schema": "../../../NiziKit/Assets/Serde/Schemas/nizimat.schema.json",
   "name": "Fox",
-  "shader": "../Shaders/Default.nizishp.json",
+  "shader": "Shaders/Default.nizishp.json",
   "variant": "SKINNED",
   "textures": {
-    "albedo": "../Textures/Texture.png"
+    "albedo": "Textures/Texture.png"
   }
 }

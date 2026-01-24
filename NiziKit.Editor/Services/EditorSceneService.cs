@@ -334,20 +334,8 @@ public class EditorSceneService
 
     private static List<string>? GetLoadedPackPaths()
     {
-        var field = typeof(AssetPacks).GetField("_packs",
-            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
-
-        if (field?.GetValue(null) is Dictionary<string, AssetPack> packs)
-        {
-            var assetsDir = Content.ResolvePath("");
-            return packs.Values
-                .Select(p => p.SourcePath)
-                .Where(p => !string.IsNullOrEmpty(p))
-                .Select(p => Path.GetRelativePath(assetsDir, p).Replace('\\', '/'))
-                .ToList();
-        }
-
-        return null;
+        var packNames = AssetPacks.GetLoadedPackNames().ToList();
+        return packNames.Count > 0 ? packNames : null;
     }
 
     private static string GetScenesDirectory()

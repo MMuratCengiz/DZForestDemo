@@ -54,12 +54,11 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             return;
         }
 
-        var packsToLoad = packs.Where(p => !AssetPacks.IsLoaded(p)).ToList();
-        var loadedPacks = new AssetPack[packsToLoad.Count];
+        var loadedPacks = new AssetPack[packs.Count];
 
-        Parallel.For(0, packsToLoad.Count, i =>
+        Parallel.For(0, packs.Count, i =>
         {
-            loadedPacks[i] = AssetPack.Load(packsToLoad[i]);
+            loadedPacks[i] = AssetPack.Load(packs[i]);
         });
 
         _loadedPacks.AddRange(loadedPacks);
@@ -72,8 +71,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             return;
         }
 
-        var packsToLoad = packs.Where(p => !AssetPacks.IsLoaded(p)).ToList();
-        var loadTasks = packsToLoad.Select(p => AssetPack.LoadAsync(p, ct));
+        var loadTasks = packs.Select(p => AssetPack.LoadAsync(p, ct));
         var loadedPacks = await Task.WhenAll(loadTasks);
         _loadedPacks.AddRange(loadedPacks);
     }

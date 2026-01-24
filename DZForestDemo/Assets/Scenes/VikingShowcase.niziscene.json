@@ -1,9 +1,6 @@
 {
   "name": "Viking Showcase",
-  "assetPacks": [
-    "Packs/NewPack",
-    "Packs/Viking"
-  ],
+  "assetPacks": ["Packs/newpack.nizipack.json", "Packs/viking.nizipack.json"],
   "cameras": [
     {
       "name": "Main Camera",

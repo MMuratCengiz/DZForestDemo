@@ -1,4 +1,6 @@
+using NiziKit.Assets.Pack;
 using NiziKit.Assets.Serde;
+using NiziKit.ContentPipeline;
 using NiziKit.Graphics;
 
 namespace NiziKit.Assets;
@@ -7,6 +9,8 @@ public sealed class JsonMaterial : Material
 {
     private readonly MaterialJson _json;
     private readonly string _basePath;
+    private readonly IAssetPackProvider? _provider;
+    private readonly AssetPack? _owningPack;
     private bool _shaderLoaded;
     private bool _texturesLoaded;
     private GpuShader? _lazyShader;
@@ -15,6 +19,18 @@ public sealed class JsonMaterial : Material
     {
         _json = json;
         _basePath = basePath;
+        _provider = null;
+        _owningPack = null;
+        Name = json.Name;
+        Variant = json.GetVariant();
+    }
+
+    internal JsonMaterial(MaterialJson json, string basePath, IAssetPackProvider? provider, AssetPack? owningPack)
+    {
+        _json = json;
+        _basePath = basePath;
+        _provider = provider;
+        _owningPack = owningPack;
         Name = json.Name;
         Variant = json.GetVariant();
     }
@@ -89,7 +105,8 @@ public sealed class JsonMaterial : Material
         }
         else
         {
-            _lazyShader = Assets.LoadShaderFromJson(ResolvePath(_json.Shader), Variant);
+            var shaderPath = ResolveShaderPath(_json.Shader);
+            _lazyShader = Assets.LoadShaderFromJson(shaderPath, Variant);
         }
 
         base.GpuShader = _lazyShader;
@@ -106,22 +123,22 @@ public sealed class JsonMaterial : Material
 
         if (!string.IsNullOrEmpty(_json.Textures.Albedo))
         {
-            base.Albedo = Assets.LoadTexture(ResolvePath(_json.Textures.Albedo));
+            base.Albedo = LoadTexture(_json.Textures.Albedo);
         }
 
         if (!string.IsNullOrEmpty(_json.Textures.Normal))
         {
-            base.Normal = Assets.LoadTexture(ResolvePath(_json.Textures.Normal));
+            base.Normal = LoadTexture(_json.Textures.Normal);
         }
 
         if (!string.IsNullOrEmpty(_json.Textures.Metallic))
         {
-            base.Metallic = Assets.LoadTexture(ResolvePath(_json.Textures.Metallic));
+            base.Metallic = LoadTexture(_json.Textures.Metallic);
         }
 
         if (!string.IsNullOrEmpty(_json.Textures.Roughness))
         {
-            base.Roughness = Assets.LoadTexture(ResolvePath(_json.Textures.Roughness));
+            base.Roughness = LoadTexture(_json.Textures.Roughness);
         }
     }
 
@@ -140,7 +157,8 @@ public sealed class JsonMaterial : Material
         }
         else
         {
-            _lazyShader = await Assets.LoadShaderFromJsonAsync(ResolvePath(_json.Shader), Variant, ct);
+            var shaderPath = ResolveShaderPath(_json.Shader);
+            _lazyShader = await Assets.LoadShaderFromJsonAsync(shaderPath, Variant, ct);
         }
 
         base.GpuShader = _lazyShader;
@@ -188,10 +206,64 @@ public sealed class JsonMaterial : Material
         );
     }
 
-    private async Task LoadTextureAsync(string path, Action<Texture2d> setter, CancellationToken ct)
+    private Texture2d LoadTexture(string reference)
     {
-        var texture = await Assets.LoadTextureAsync(ResolvePath(path), ct);
+        var colonIdx = reference.IndexOf(':');
+        if (colonIdx > 0 && !reference.StartsWith("Builtin/"))
+        {
+            var packName = reference[..colonIdx];
+            var assetName = reference[(colonIdx + 1)..];
+            return AssetPacks.GetTexture(packName, assetName);
+        }
+
+        if (_provider != null && _owningPack != null)
+        {
+            var bytes = _provider.ReadBytes(reference);
+            var tex = new Texture2d();
+            tex.LoadFromBytes(reference, bytes);
+            return tex;
+        }
+
+        return Assets.LoadTexture(ResolvePath(reference));
+    }
+
+    private async Task LoadTextureAsync(string reference, Action<Texture2d> setter, CancellationToken ct)
+    {
+        var colonIdx = reference.IndexOf(':');
+        if (colonIdx > 0 && !reference.StartsWith("Builtin/"))
+        {
+            var packName = reference[..colonIdx];
+            var assetName = reference[(colonIdx + 1)..];
+            setter(AssetPacks.GetTexture(packName, assetName));
+            return;
+        }
+
+        if (_provider != null && _owningPack != null)
+        {
+            var bytes = await _provider.ReadBytesAsync(reference, ct);
+            var tex = new Texture2d();
+            tex.LoadFromBytes(reference, bytes);
+            setter(tex);
+            return;
+        }
+
+        var texture = await Assets.LoadTextureAsync(ResolvePath(reference), ct);
         setter(texture);
+    }
+
+    private string ResolveShaderPath(string shaderRef)
+    {
+        if (Path.IsPathRooted(shaderRef))
+        {
+            return shaderRef;
+        }
+
+        if (_provider != null && _owningPack != null)
+        {
+            return shaderRef;
+        }
+
+        return Path.Combine(_basePath, shaderRef).Replace('\\', '/');
     }
 
     private string ResolvePath(string relativePath)

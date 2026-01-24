@@ -427,6 +427,8 @@ public partial class PackManagerViewModel : ObservableObject
             return;
         }
 
+        var packRelativePath = GetPackRelativePath(relativePath);
+
         var key = Path.GetFileNameWithoutExtension(entry.Name);
         if (entry.Name.EndsWith(".nizimat.json", StringComparison.OrdinalIgnoreCase))
         {
@@ -437,14 +439,30 @@ public partial class PackManagerViewModel : ObservableObject
             key = entry.Name[..^".nizishp.json".Length];
         }
 
-        if (!_pendingBrowseCollection.Any(e => e.Path == relativePath))
+        if (!_pendingBrowseCollection.Any(e => e.Path == packRelativePath))
         {
-            _pendingBrowseCollection.Add(new PackAssetEntry(key, relativePath));
+            _pendingBrowseCollection.Add(new PackAssetEntry(key, packRelativePath));
             StatusMessage = $"Added: {key}";
         }
 
         IsFileBrowserOpen = false;
         _pendingBrowseCollection = null;
+    }
+
+    private string GetPackRelativePath(string assetsRelativePath)
+    {
+        if (string.IsNullOrEmpty(PackName))
+        {
+            return assetsRelativePath;
+        }
+
+        var packPrefix = $"Packs/{PackName}/";
+        if (assetsRelativePath.StartsWith(packPrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            return assetsRelativePath[packPrefix.Length..];
+        }
+
+        return assetsRelativePath;
     }
 
     [RelayCommand]
