@@ -213,12 +213,6 @@ public sealed class JsonMaterial : Material
         {
             var packName = reference[..colonIdx];
             var assetName = reference[(colonIdx + 1)..];
-
-            if (_owningPack != null && _owningPack.Name.Equals(packName, StringComparison.OrdinalIgnoreCase))
-            {
-                return _owningPack.GetTexture(assetName);
-            }
-
             return AssetPacks.GetTexture(packName, assetName);
         }
 
@@ -240,13 +234,6 @@ public sealed class JsonMaterial : Material
         {
             var packName = reference[..colonIdx];
             var assetName = reference[(colonIdx + 1)..];
-
-            if (_owningPack != null && _owningPack.Name.Equals(packName, StringComparison.OrdinalIgnoreCase))
-            {
-                setter(_owningPack.GetTexture(assetName));
-                return;
-            }
-
             setter(AssetPacks.GetTexture(packName, assetName));
             return;
         }

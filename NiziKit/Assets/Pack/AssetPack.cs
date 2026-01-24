@@ -122,8 +122,12 @@ public sealed class AssetPack : IDisposable
         _basePath = provider.BasePath;
         var json = provider.ReadText(manifestPath);
         var definition = AssetPackJson.FromJson(json);
-        ApplyDefinition(definition);
+
+        Name = definition.Name;
+        Version = definition.Version;
         AssetPacks.Register(Name, this);
+
+        LoadAssets(definition);
     }
 
     private async Task LoadInternalAsync(string path, CancellationToken ct)
@@ -134,8 +138,12 @@ public sealed class AssetPack : IDisposable
         _basePath = provider.BasePath;
         var json = await provider.ReadTextAsync(manifestPath, ct);
         var definition = AssetPackJson.FromJson(json);
-        await ApplyDefinitionAsync(definition, ct);
+
+        Name = definition.Name;
+        Version = definition.Version;
         AssetPacks.Register(Name, this);
+
+        await LoadAssetsAsync(definition, ct);
     }
 
     private static (IAssetPackProvider provider, string manifestPath) CreateProvider(string path)
@@ -170,11 +178,8 @@ public sealed class AssetPack : IDisposable
         throw new FileNotFoundException($"Asset pack not found: {path}");
     }
 
-    private void ApplyDefinition(AssetPackJson definition)
+    private void LoadAssets(AssetPackJson definition)
     {
-        Name = definition.Name;
-        Version = definition.Version;
-
         Parallel.Invoke(
             () => LoadTextures(definition.Textures),
             () => LoadShaders(definition.Shaders)
@@ -186,11 +191,8 @@ public sealed class AssetPack : IDisposable
         );
     }
 
-    private async Task ApplyDefinitionAsync(AssetPackJson definition, CancellationToken ct)
+    private async Task LoadAssetsAsync(AssetPackJson definition, CancellationToken ct)
     {
-        Name = definition.Name;
-        Version = definition.Version;
-
         await Task.WhenAll(
             LoadTexturesAsync(definition.Textures, ct),
             LoadShadersAsync(definition.Shaders, ct)
