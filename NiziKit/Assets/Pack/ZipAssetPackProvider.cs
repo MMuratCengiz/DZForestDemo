@@ -6,14 +6,18 @@ internal sealed class ZipAssetPackProvider : IAssetPackProvider
 {
     private readonly ZipArchive _archive;
     private readonly Dictionary<string, ZipArchiveEntry> _entryLookup;
+    private readonly string _basePath;
 
     public ZipAssetPackProvider(string zipPath)
     {
         _archive = ZipFile.OpenRead(zipPath);
+        _basePath = Path.GetDirectoryName(Path.GetFullPath(zipPath)) ?? string.Empty;
         _entryLookup = _archive.Entries.ToDictionary(
             e => NormalizePath(e.FullName),
             StringComparer.OrdinalIgnoreCase);
     }
+
+    public string BasePath => _basePath;
 
     public string ReadText(string path)
     {

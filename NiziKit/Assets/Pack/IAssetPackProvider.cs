@@ -7,4 +7,5 @@ internal interface IAssetPackProvider : IDisposable
     Task<string> ReadTextAsync(string path, CancellationToken ct = default);
     Task<byte[]> ReadBytesAsync(string path, CancellationToken ct = default);
     bool Exists(string path);
+    string BasePath { get; }
 }

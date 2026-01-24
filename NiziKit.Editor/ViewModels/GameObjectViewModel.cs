@@ -86,7 +86,7 @@ public partial class GameObjectViewModel : ObservableObject
 
                 if (typeName.Contains("Camera", StringComparison.OrdinalIgnoreCase))
                 {
-                    return new SolidColorBrush(Color.FromRgb(100, 180, 255));
+                    return new SolidColorBrush(Color.FromRgb(100, 180, 160));
                 }
 
                 if (typeName.Contains("Mesh", StringComparison.OrdinalIgnoreCase) ||
@@ -311,12 +311,16 @@ public partial class GameObjectViewModel : ObservableObject
     {
         _gameObject.AddComponent(component);
         Components.Add(new ComponentViewModel(component, this));
+        OnPropertyChanged(nameof(TypeIconData));
+        OnPropertyChanged(nameof(TypeIconColor));
     }
 
     public void RemoveComponent(ComponentViewModel componentVm)
     {
         _gameObject.RemoveComponent(componentVm.Component);
         Components.Remove(componentVm);
+        OnPropertyChanged(nameof(TypeIconData));
+        OnPropertyChanged(nameof(TypeIconColor));
     }
 
     [ObservableProperty]

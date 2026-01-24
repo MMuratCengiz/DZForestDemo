@@ -4,6 +4,8 @@ internal sealed class FolderAssetPackProvider(string rootPath) : IAssetPackProvi
 {
     private readonly string _rootPath = Path.GetFullPath(rootPath);
 
+    public string BasePath => _rootPath;
+
     public string ReadText(string path) => File.ReadAllText(ResolvePath(path));
 
     public byte[] ReadBytes(string path) => File.ReadAllBytes(ResolvePath(path));

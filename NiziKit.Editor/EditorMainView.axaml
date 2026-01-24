@@ -95,11 +95,11 @@
                     </Grid>
                 </Border>
 
-                <Panel Grid.Column="1" MinWidth="200" Background="Transparent" IsHitTestVisible="False">
+                <Panel Grid.Column="1" MinWidth="200">
+                    <Border Background="Transparent" IsHitTestVisible="False"/>
                     <views:ViewportToolbar HorizontalAlignment="Center"
                                            VerticalAlignment="Top"
                                            Margin="0,12,0,0"
-                                           IsHitTestVisible="True"
                                            DataContext="{Binding}"/>
                 </Panel>
 
