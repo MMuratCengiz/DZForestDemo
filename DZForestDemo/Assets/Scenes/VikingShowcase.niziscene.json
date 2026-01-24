@@ -1,11 +1,14 @@
 {
   "name": "Viking Showcase",
-  "assetPacks": ["Packs/newpack.nizipack.json", "Packs/viking.nizipack.json"],
+  "assetPacks": [
+    "newpack",
+    "viking"
+  ],
   "cameras": [
     {
       "name": "Main Camera",
-      "position": [-12.057553, -11.755675, -12.795991],
-      "rotation": [-3.0939765, 24.75179, 0],
+      "position": [-1E-45, -1E-45, -1E-45],
+      "rotation": [0, 0, 0],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -80,7 +83,7 @@
       "name": "Boat",
       "active": true,
       "position": [25.431843, 0, 16.022827],
-      "rotation": [-22.144875, 20.772388, 73.22995],
+      "rotation": [15.35928, 26.090286, 80.91733],
       "scale": [1, 1, 1],
       "components": [
         {

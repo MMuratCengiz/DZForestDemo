@@ -47,33 +47,53 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         LoadObjects(sceneData.Objects);
     }
 
-    private void LoadAssetPacks(List<string>? packs)
+    private void LoadAssetPacks(List<string>? packNames)
     {
-        if (packs == null)
+        if (packNames == null)
         {
             return;
         }
 
-        var loadedPacks = new AssetPack[packs.Count];
+        var packsToLoad = packNames
+            .Where(name => !AssetPacks.IsLoaded(name))
+            .Select(name => ResolvePackPath(name))
+            .ToList();
 
-        Parallel.For(0, packs.Count, i =>
+        var loadedPacks = new AssetPack[packsToLoad.Count];
+
+        Parallel.For(0, packsToLoad.Count, i =>
         {
-            loadedPacks[i] = AssetPack.Load(packs[i]);
+            loadedPacks[i] = AssetPack.Load(packsToLoad[i]);
         });
 
         _loadedPacks.AddRange(loadedPacks);
     }
 
-    private async Task LoadAssetPacksAsync(List<string>? packs, CancellationToken ct)
+    private async Task LoadAssetPacksAsync(List<string>? packNames, CancellationToken ct)
     {
-        if (packs == null)
+        if (packNames == null)
         {
             return;
         }
 
-        var loadTasks = packs.Select(p => AssetPack.LoadAsync(p, ct));
+        var packsToLoad = packNames
+            .Where(name => !AssetPacks.IsLoaded(name))
+            .Select(name => ResolvePackPath(name))
+            .ToList();
+
+        var loadTasks = packsToLoad.Select(p => AssetPack.LoadAsync(p, ct));
         var loadedPacks = await Task.WhenAll(loadTasks);
         _loadedPacks.AddRange(loadedPacks);
+    }
+
+    private static string ResolvePackPath(string packName)
+    {
+        var entry = AssetPacks.GetPackEntry(packName);
+        if (entry != null)
+        {
+            return entry.Path;
+        }
+        return packName;
     }
 
     private void PrewarmMeshes(List<GameObjectJson>? objects)

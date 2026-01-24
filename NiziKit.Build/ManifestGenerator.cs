@@ -16,8 +16,29 @@ public class ManifestGenerator
         var baseDir = Path.GetFullPath(assetsDir);
         foreach (var packFile in Directory.EnumerateFiles(baseDir, "*.nizipack.json", SearchOption.AllDirectories))
         {
-            var relativePath = Path.GetRelativePath(baseDir, packFile).Replace('\\', '/');
-            manifest.Packs.Add(relativePath);
+            try
+            {
+                var packJson = File.ReadAllText(packFile);
+                var packData = JsonSerializer.Deserialize<PackData>(packJson, JsonOptions);
+                if (packData == null)
+                {
+                    continue;
+                }
+
+                var relativePath = Path.GetRelativePath(baseDir, packFile).Replace('\\', '/');
+                var packName = packData.Name;
+
+                manifest.Packs.Add(new GeneratedPackEntry
+                {
+                    Name = packName,
+                    Path = relativePath,
+                    DeploymentName = $"{packName}.nizipack"
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Warning: Failed to read pack {packFile}: {ex.Message}");
+            }
         }
 
         Directory.CreateDirectory(outputDir);
@@ -43,6 +64,26 @@ internal class GeneratedManifest
     public string Version { get; set; } = "1.0.0";
 
     [JsonPropertyName("packs")]
-    public List<string> Packs { get; set; } = [];
+    public List<GeneratedPackEntry> Packs { get; set; } = [];
 }
 
+internal class GeneratedPackEntry
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("path")]
+    public string Path { get; set; } = "";
+
+    [JsonPropertyName("deploymentName")]
+    public string? DeploymentName { get; set; }
+}
+
+internal class PackData
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("version")]
+    public string Version { get; set; } = "1.0.0";
+}

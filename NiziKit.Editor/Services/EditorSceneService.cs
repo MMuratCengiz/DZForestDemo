@@ -103,7 +103,7 @@ public class EditorSceneService
         var json = new SceneJson
         {
             Name = scene.Name,
-            AssetPacks = GetLoadedPackPaths(),
+            AssetPacks = GetLoadedPackNames(),
             Objects = []
         };
 
@@ -332,7 +332,7 @@ public class EditorSceneService
         return new Vector3(roll, pitch, yaw) * (180f / MathF.PI);
     }
 
-    private static List<string>? GetLoadedPackPaths()
+    private static List<string>? GetLoadedPackNames()
     {
         var packNames = AssetPacks.GetLoadedPackNames().ToList();
         return packNames.Count > 0 ? packNames : null;

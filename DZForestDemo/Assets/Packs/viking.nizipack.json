@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "textures": {
     "Texture": "Textures/Texture.png",
-    "T_PolygonApocalypse_01": "Synty/Textures/BaseLocomotion/Demo_Textures/T_PolygonApocalypse_01.png"
+    "T_PolygonApocalypse_01": "Synty/Textures/BaseLocomotion/Demo_Textures/T_PolygonApocalypse_01.png",
+    "T_Polygon_Dummy_01": "Synty/Textures/BaseLocomotion/Demo_Textures/T_Polygon_Dummy_01.png"
   },
   "shaders": {},
   "materials": {

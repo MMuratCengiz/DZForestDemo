@@ -150,7 +150,7 @@ public sealed class AssetManifest
     public List<AssetEntry> Assets { get; set; } = [];
 
     [JsonPropertyName("packs")]
-    public List<string>? Packs { get; set; }
+    public List<PackEntry>? Packs { get; set; }
 
     private Dictionary<string, AssetEntry>? _lookup;
 
@@ -262,6 +262,19 @@ public sealed class AssetManifest
 
         return name.Equals(pattern, StringComparison.OrdinalIgnoreCase);
     }
+}
+
+public sealed class PackEntry
+{
+    [JsonPropertyName("name")]
+    public string Name { get; set; } = "";
+
+    [JsonPropertyName("path")]
+    public string Path { get; set; } = "";
+
+    [JsonPropertyName("deploymentName")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? DeploymentName { get; set; }
 }
 
 public sealed class AssetEntry

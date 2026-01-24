@@ -260,41 +260,36 @@ public partial class ContentBrowserViewModel : ObservableObject
 
         if (Directory.Exists(_packsDirectory))
         {
-            foreach (var dir in Directory.GetDirectories(_packsDirectory))
+            foreach (var packFile in Directory.GetFiles(_packsDirectory, "*.nizipack.json"))
             {
-                var packFile = Path.Combine(dir, "pack.nizipack.json");
-                if (File.Exists(packFile))
+                try
                 {
-                    try
-                    {
-                        var json = File.ReadAllText(packFile);
-                        var pack = AssetPackJson.FromJson(json);
-                        var packNode = CreatePackNode(pack, dir);
+                    var json = File.ReadAllText(packFile);
+                    var pack = AssetPackJson.FromJson(json);
+                    var packNode = CreatePackNode(pack, packFile);
 
-                        // Check if pack is loaded in the scene
-                        if (AssetPacks.IsLoaded(pack.Name))
-                        {
-                            ScenePackTree.Add(packNode);
-                        }
-                        else
-                        {
-                            AvailablePackTree.Add(packNode);
-                        }
-                    }
-                    catch
+                    if (AssetPacks.IsLoaded(pack.Name))
                     {
+                        ScenePackTree.Add(packNode);
                     }
+                    else
+                    {
+                        AvailablePackTree.Add(packNode);
+                    }
+                }
+                catch
+                {
                 }
             }
         }
     }
 
-    private static FolderTreeNode CreatePackNode(AssetPackJson pack, string dir)
+    private FolderTreeNode CreatePackNode(AssetPackJson pack, string packFilePath)
     {
         var packNode = new FolderTreeNode
         {
             Name = pack.Name,
-            FullPath = dir,
+            FullPath = packFilePath,
             IsPack = true,
             PackName = pack.Name,
             IsExpanded = false
@@ -305,7 +300,7 @@ public partial class ContentBrowserViewModel : ObservableObject
             packNode.Children.Add(new FolderTreeNode
             {
                 Name = model.Key,
-                FullPath = Path.Combine(dir, model.Value),
+                FullPath = Path.Combine(_assetsDirectory, model.Value),
                 IsPack = false,
                 PackName = pack.Name,
                 AssetType = AssetFileType.Model
@@ -317,7 +312,7 @@ public partial class ContentBrowserViewModel : ObservableObject
             packNode.Children.Add(new FolderTreeNode
             {
                 Name = texture.Key,
-                FullPath = Path.Combine(dir, texture.Value),
+                FullPath = Path.Combine(_assetsDirectory, texture.Value),
                 IsPack = false,
                 PackName = pack.Name,
                 AssetType = AssetFileType.Texture
@@ -329,7 +324,7 @@ public partial class ContentBrowserViewModel : ObservableObject
             packNode.Children.Add(new FolderTreeNode
             {
                 Name = material.Key,
-                FullPath = Path.Combine(dir, material.Value),
+                FullPath = Path.Combine(_assetsDirectory, material.Value),
                 IsPack = false,
                 PackName = pack.Name,
                 AssetType = AssetFileType.Material
@@ -341,7 +336,7 @@ public partial class ContentBrowserViewModel : ObservableObject
             packNode.Children.Add(new FolderTreeNode
             {
                 Name = shader.Key,
-                FullPath = Path.Combine(dir, shader.Value),
+                FullPath = Path.Combine(_assetsDirectory, shader.Value),
                 IsPack = false,
                 PackName = pack.Name,
                 AssetType = AssetFileType.Shader
@@ -708,40 +703,40 @@ public partial class ContentBrowserViewModel : ObservableObject
     [RelayCommand]
     public void CreatePack()
     {
-        var baseName = "NewPack";
-        var packDir = Path.Combine(_packsDirectory, baseName);
+        Directory.CreateDirectory(_packsDirectory);
+
+        var baseName = "newpack";
+        var packFile = Path.Combine(_packsDirectory, $"{baseName}.nizipack.json");
         var counter = 1;
 
-        while (Directory.Exists(packDir))
+        while (File.Exists(packFile))
         {
-            packDir = Path.Combine(_packsDirectory, $"{baseName}_{counter++}");
+            packFile = Path.Combine(_packsDirectory, $"{baseName}_{counter++}.nizipack.json");
         }
 
-        Directory.CreateDirectory(packDir);
+        var packName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(packFile));
 
         var packData = new AssetPackJson
         {
-            Name = Path.GetFileName(packDir).ToLowerInvariant(),
+            Name = packName,
             Version = "1.0.0"
         };
 
-        var packFile = Path.Combine(packDir, "pack.nizipack.json");
         File.WriteAllText(packFile, packData.ToJson());
 
-        // Load the pack into the runtime
+        var relativePath = Path.GetRelativePath(_assetsDirectory, packFile).Replace('\\', '/');
         try
         {
-            AssetPack.Load(packDir);
+            AssetPack.Load(relativePath);
         }
         catch (Exception ex)
         {
             StatusMessage = $"Created pack but failed to load: {ex.Message}";
         }
 
-        StatusMessage = $"Created pack: {Path.GetFileName(packDir)}";
+        StatusMessage = $"Created pack: {packName}";
         LoadFolderTree();
         RefreshCurrentTab();
-        OpenPack(packData.Name, packDir);
     }
 
     [RelayCommand]
@@ -752,8 +747,7 @@ public partial class ContentBrowserViewModel : ObservableObject
             return;
         }
 
-        var packFile = Path.Combine(packNode.FullPath, "pack.nizipack.json");
-        if (!File.Exists(packFile))
+        if (!File.Exists(packNode.FullPath))
         {
             StatusMessage = "Pack manifest not found";
             return;
@@ -776,7 +770,7 @@ public partial class ContentBrowserViewModel : ObservableObject
 
         try
         {
-            var packFile = Path.Combine(_renamingPack.FullPath, "pack.nizipack.json");
+            var packFile = _renamingPack.FullPath;
             var json = File.ReadAllText(packFile);
             var packData = AssetPackJson.FromJson(json);
 
@@ -799,9 +793,16 @@ public partial class ContentBrowserViewModel : ObservableObject
             packData.Name = newName;
             File.WriteAllText(packFile, packData.ToJson());
 
+            var newPackFile = Path.Combine(_packsDirectory, $"{newName}.nizipack.json");
+            if (packFile != newPackFile)
+            {
+                File.Move(packFile, newPackFile);
+            }
+
             if (AssetPacks.IsLoaded(oldName))
             {
-                AssetPacks.Reload(newName);
+                AssetPacks.Unregister(oldName);
+                AssetPack.Load(Path.GetRelativePath(_assetsDirectory, newPackFile).Replace('\\', '/'));
             }
 
             StatusMessage = $"Renamed pack '{oldName}' to '{newName}'";
@@ -916,7 +917,8 @@ public partial class ContentBrowserViewModel : ObservableObject
 
         try
         {
-            AssetPack.Load(packNode.FullPath);
+            var relativePath = Path.GetRelativePath(_assetsDirectory, packNode.FullPath).Replace('\\', '/');
+            AssetPack.Load(relativePath);
             StatusMessage = $"Added pack '{packNode.PackName}' to scene";
             LoadFolderTree();
             RefreshCurrentTab();
@@ -979,7 +981,7 @@ public partial class ContentBrowserViewModel : ObservableObject
 
         try
         {
-            var packFile = Path.Combine(SelectedPack.FullPath, "pack.nizipack.json");
+            var packFile = SelectedPack.FullPath;
             if (!File.Exists(packFile))
             {
                 StatusMessage = "Pack manifest not found";
@@ -1066,7 +1068,7 @@ public partial class ContentBrowserViewModel : ObservableObject
 
         try
         {
-            var packFile = Path.Combine(SelectedPack.FullPath, "pack.nizipack.json");
+            var packFile = SelectedPack.FullPath;
             if (!File.Exists(packFile))
             {
                 StatusMessage = "Pack manifest not found";

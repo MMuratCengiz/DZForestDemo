@@ -54,11 +54,10 @@ public static class AssetPacks
         }
 
         var packsToLoad = Content.Manifest.Packs
-            .Select(path => (path, name: GetPackNameFromPath(path)))
-            .Where(p => !IsLoaded(p.name))
+            .Where(p => !IsLoaded(p.Name))
             .ToList();
 
-        Parallel.ForEach(packsToLoad, p => AssetPack.Load(p.path));
+        Parallel.ForEach(packsToLoad, p => AssetPack.Load(p.Path));
     }
 
     public static async Task LoadFromManifestAsync(CancellationToken ct = default)
@@ -69,26 +68,17 @@ public static class AssetPacks
         }
 
         var packsToLoad = Content.Manifest.Packs
-            .Select(path => (path, name: GetPackNameFromPath(path)))
-            .Where(p => !IsLoaded(p.name))
+            .Where(p => !IsLoaded(p.Name))
             .ToList();
 
-        var tasks = packsToLoad.Select(p => AssetPack.LoadAsync(p.path, ct));
+        var tasks = packsToLoad.Select(p => AssetPack.LoadAsync(p.Path, ct));
         await Task.WhenAll(tasks);
     }
 
-    private static string GetPackNameFromPath(string path)
+    public static PackEntry? GetPackEntry(string name)
     {
-        var fileName = Path.GetFileName(path);
-        if (fileName.EndsWith(".nizipack.json", StringComparison.OrdinalIgnoreCase))
-        {
-            return fileName[..^".nizipack.json".Length];
-        }
-        if (fileName.EndsWith(".nizipack", StringComparison.OrdinalIgnoreCase))
-        {
-            return fileName[..^".nizipack".Length];
-        }
-        return fileName;
+        return Content.Manifest?.Packs?.FirstOrDefault(p =>
+            p.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
     }
 
     public static void Clear()
