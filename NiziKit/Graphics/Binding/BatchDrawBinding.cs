@@ -6,7 +6,7 @@ using NiziKit.Graphics.Buffers;
 
 namespace NiziKit.Graphics.Binding;
 
-public class BatchDrawBinding : ShaderBinding<DrawBatch>
+public class BatchDrawBinding : ShaderBinding<RenderBatch>
 {
     private readonly UniformBuffer<GpuInstanceArray> _instanceBuffer;
     private readonly UniformBuffer<GpuBoneTransforms> _boneMatricesBuffer;
@@ -46,7 +46,7 @@ public class BatchDrawBinding : ShaderBinding<DrawBatch>
         }
     }
 
-    protected override void OnUpdate(DrawBatch batch)
+    protected override void OnUpdate(RenderBatch batch)
     {
         var objects = batch.AsSpan();
         var count = Math.Min(objects.Length, GpuInstanceArray.MaxInstances);

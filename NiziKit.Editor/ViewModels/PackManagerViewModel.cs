@@ -191,20 +191,23 @@ public partial class PackManagerViewModel : ObservableObject
             PackVersion = packData.Version;
 
             Textures.Clear();
-            foreach (var (key, path) in packData.Textures)
+            foreach (var path in packData.Textures)
             {
+                var key = Path.GetFileNameWithoutExtension(path);
                 Textures.Add(new PackAssetEntry(key, path));
             }
 
             Models.Clear();
-            foreach (var (key, path) in packData.Models)
+            foreach (var path in packData.Models)
             {
+                var key = Path.GetFileNameWithoutExtension(path);
                 Models.Add(new PackAssetEntry(key, path));
             }
 
             Shaders.Clear();
-            foreach (var (key, path) in packData.Shaders)
+            foreach (var path in packData.Shaders)
             {
+                var key = Path.GetFileNameWithoutExtension(path);
                 Shaders.Add(new PackAssetEntry(key, path));
             }
 
@@ -240,25 +243,25 @@ public partial class PackManagerViewModel : ObservableObject
 
             foreach (var entry in Textures)
             {
-                if (!string.IsNullOrWhiteSpace(entry.Key) && !string.IsNullOrWhiteSpace(entry.Path))
+                if (!string.IsNullOrWhiteSpace(entry.Path))
                 {
-                    packData.Textures[entry.Key] = entry.Path;
+                    packData.Textures.Add(entry.Path);
                 }
             }
 
             foreach (var entry in Models)
             {
-                if (!string.IsNullOrWhiteSpace(entry.Key) && !string.IsNullOrWhiteSpace(entry.Path))
+                if (!string.IsNullOrWhiteSpace(entry.Path))
                 {
-                    packData.Models[entry.Key] = entry.Path;
+                    packData.Models.Add(entry.Path);
                 }
             }
 
             foreach (var entry in Shaders)
             {
-                if (!string.IsNullOrWhiteSpace(entry.Key) && !string.IsNullOrWhiteSpace(entry.Path))
+                if (!string.IsNullOrWhiteSpace(entry.Path))
                 {
-                    packData.Shaders[entry.Key] = entry.Path;
+                    packData.Shaders.Add(entry.Path);
                 }
             }
 

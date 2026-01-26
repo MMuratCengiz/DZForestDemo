@@ -146,7 +146,7 @@ public partial class AnimationListEditor : UserControl
             return;
         }
 
-        EditorViewModel.OpenAssetPicker(AssetRefType.Animation, null, null, asset =>
+        EditorViewModel.OpenAssetPicker(AssetRefType.Animation, null, asset =>
         {
             if (asset != null)
             {

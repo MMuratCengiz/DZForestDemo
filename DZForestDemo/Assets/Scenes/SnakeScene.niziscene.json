@@ -1,7 +1,6 @@
 {
   "$schema": "../../../NiziKit/Assets/Serde/Schemas/niziscene.schema.json",
   "name": "Snake Scene",
-  "assetPacks": [],
   "camera": {
     "name": "Main Camera",
     "position": [0, 30, -25],

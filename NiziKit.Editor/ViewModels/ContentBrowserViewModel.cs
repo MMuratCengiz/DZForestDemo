@@ -294,48 +294,48 @@ public partial class ContentBrowserViewModel : ObservableObject
             IsExpanded = false
         };
 
-        foreach (var model in pack.Models)
+        foreach (var modelPath in pack.Models)
         {
             packNode.Children.Add(new FolderTreeNode
             {
-                Name = model.Key,
-                FullPath = Path.Combine(_assetsDirectory, model.Value),
+                Name = Path.GetFileNameWithoutExtension(modelPath),
+                FullPath = Path.Combine(_assetsDirectory, modelPath),
                 IsPack = false,
                 PackName = pack.Name,
                 AssetType = AssetFileType.Model
             });
         }
 
-        foreach (var texture in pack.Textures)
+        foreach (var texturePath in pack.Textures)
         {
             packNode.Children.Add(new FolderTreeNode
             {
-                Name = texture.Key,
-                FullPath = Path.Combine(_assetsDirectory, texture.Value),
+                Name = Path.GetFileNameWithoutExtension(texturePath),
+                FullPath = Path.Combine(_assetsDirectory, texturePath),
                 IsPack = false,
                 PackName = pack.Name,
                 AssetType = AssetFileType.Texture
             });
         }
 
-        foreach (var material in pack.Materials)
+        foreach (var materialPath in pack.Materials)
         {
             packNode.Children.Add(new FolderTreeNode
             {
-                Name = material.Key,
-                FullPath = Path.Combine(_assetsDirectory, material.Value),
+                Name = Path.GetFileNameWithoutExtension(materialPath),
+                FullPath = Path.Combine(_assetsDirectory, materialPath),
                 IsPack = false,
                 PackName = pack.Name,
                 AssetType = AssetFileType.Material
             });
         }
 
-        foreach (var shader in pack.Shaders)
+        foreach (var shaderPath in pack.Shaders)
         {
             packNode.Children.Add(new FolderTreeNode
             {
-                Name = shader.Key,
-                FullPath = Path.Combine(_assetsDirectory, shader.Value),
+                Name = Path.GetFileNameWithoutExtension(shaderPath),
+                FullPath = Path.Combine(_assetsDirectory, shaderPath),
                 IsPack = false,
                 PackName = pack.Name,
                 AssetType = AssetFileType.Shader
@@ -963,39 +963,39 @@ public partial class ContentBrowserViewModel : ObservableObject
             switch (SelectedItem.Type)
             {
                 case AssetFileType.Model:
-                    if (packData.Models.ContainsKey(assetKey))
+                    if (packData.Models.Contains(relativePath))
                     {
                         StatusMessage = $"Model '{assetKey}' already exists in pack";
                         return;
                     }
-                    packData.Models[assetKey] = relativePath;
+                    packData.Models.Add(relativePath);
                     break;
 
                 case AssetFileType.Texture:
-                    if (packData.Textures.ContainsKey(assetKey))
+                    if (packData.Textures.Contains(relativePath))
                     {
                         StatusMessage = $"Texture '{assetKey}' already exists in pack";
                         return;
                     }
-                    packData.Textures[assetKey] = relativePath;
+                    packData.Textures.Add(relativePath);
                     break;
 
                 case AssetFileType.Material:
-                    if (packData.Materials.ContainsKey(assetKey))
+                    if (packData.Materials.Contains(relativePath))
                     {
                         StatusMessage = $"Material '{assetKey}' already exists in pack";
                         return;
                     }
-                    packData.Materials[assetKey] = relativePath;
+                    packData.Materials.Add(relativePath);
                     break;
 
                 case AssetFileType.Shader:
-                    if (packData.Shaders.ContainsKey(assetKey))
+                    if (packData.Shaders.Contains(relativePath))
                     {
                         StatusMessage = $"Shader '{assetKey}' already exists in pack";
                         return;
                     }
-                    packData.Shaders[assetKey] = relativePath;
+                    packData.Shaders.Add(relativePath);
                     break;
 
                 default:
@@ -1040,6 +1040,7 @@ public partial class ContentBrowserViewModel : ObservableObject
             var json = File.ReadAllText(packFile);
             var packData = AssetPackJson.FromJson(json);
 
+            var relativePath = GetRelativePath(item.FullPath) ?? item.Name;
             var assetKey = Path.GetFileNameWithoutExtension(item.Name);
             if (assetKey.EndsWith(".nizimat") || assetKey.EndsWith(".nizishp"))
             {
@@ -1050,16 +1051,16 @@ public partial class ContentBrowserViewModel : ObservableObject
             switch (item.Type)
             {
                 case AssetFileType.Model:
-                    removed = packData.Models.Remove(assetKey);
+                    removed = packData.Models.Remove(relativePath);
                     break;
                 case AssetFileType.Texture:
-                    removed = packData.Textures.Remove(assetKey);
+                    removed = packData.Textures.Remove(relativePath);
                     break;
                 case AssetFileType.Material:
-                    removed = packData.Materials.Remove(assetKey);
+                    removed = packData.Materials.Remove(relativePath);
                     break;
                 case AssetFileType.Shader:
-                    removed = packData.Shaders.Remove(assetKey);
+                    removed = packData.Shaders.Remove(relativePath);
                     break;
             }
 
@@ -1160,18 +1161,17 @@ public partial class ContentBrowserViewModel : ObservableObject
 
     private static void NormalizePackPaths(AssetPackJson pack)
     {
-        NormalizeDictionary(pack.Models);
-        NormalizeDictionary(pack.Textures);
-        NormalizeDictionary(pack.Materials);
-        NormalizeDictionary(pack.Shaders);
+        NormalizePathList(pack.Models);
+        NormalizePathList(pack.Textures);
+        NormalizePathList(pack.Materials);
+        NormalizePathList(pack.Shaders);
     }
 
-    private static void NormalizeDictionary(Dictionary<string, string> dict)
+    private static void NormalizePathList(List<string> paths)
     {
-        var keys = dict.Keys.ToList();
-        foreach (var key in keys)
+        for (var i = 0; i < paths.Count; i++)
         {
-            dict[key] = dict[key].Replace('\\', '/');
+            paths[i] = paths[i].Replace('\\', '/');
         }
     }
 }

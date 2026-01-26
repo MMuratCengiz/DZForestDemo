@@ -152,12 +152,42 @@ public sealed class AssetManifest
     [JsonPropertyName("packs")]
     public List<PackEntry>? Packs { get; set; }
 
+    /// <summary>
+    /// Reverse mapping: asset path -> pack info (which pack contains this asset)
+    /// </summary>
+    [JsonPropertyName("assetIndex")]
+    public Dictionary<string, AssetMapping>? AssetIndex { get; set; }
+
     private Dictionary<string, AssetEntry>? _lookup;
+    private Dictionary<string, AssetMapping>? _assetIndexLookup;
 
     public bool TryGetAsset(string path, out AssetEntry? entry)
     {
         _lookup ??= Assets.ToDictionary(a => a.Path, StringComparer.OrdinalIgnoreCase);
         return _lookup.TryGetValue(NormalizePath(path), out entry);
+    }
+
+    /// <summary>
+    /// Get pack information for an asset path
+    /// </summary>
+    public bool TryGetAssetMapping(string path, out AssetMapping? mapping)
+    {
+        if (AssetIndex == null)
+        {
+            mapping = null;
+            return false;
+        }
+
+        _assetIndexLookup ??= new Dictionary<string, AssetMapping>(AssetIndex, StringComparer.OrdinalIgnoreCase);
+        return _assetIndexLookup.TryGetValue(NormalizePath(path), out mapping);
+    }
+
+    /// <summary>
+    /// Get the pack name that contains the given asset path
+    /// </summary>
+    public string? GetPackForPath(string path)
+    {
+        return TryGetAssetMapping(path, out var mapping) ? mapping?.Pack : null;
     }
 
     public bool Contains(string path) => TryGetAsset(path, out _);
@@ -287,4 +317,16 @@ public sealed class AssetEntry
 
     [JsonPropertyName("hash")]
     public string Hash { get; set; } = "";
+}
+
+/// <summary>
+/// Maps an asset path to the pack that contains it
+/// </summary>
+public sealed class AssetMapping
+{
+    [JsonPropertyName("pack")]
+    public string Pack { get; set; } = "";
+
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "";
 }

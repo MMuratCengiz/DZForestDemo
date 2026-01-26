@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 using NiziKit.Assets;
 using NiziKit.Assets.Pack;
 using NiziKit.Assets.Serde;
@@ -13,7 +14,7 @@ namespace NiziKit.Core;
 
 public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension(jsonPath)), IAssetResolver
 {
-    private readonly List<AssetPack> _loadedPacks = [];
+    private static readonly ILogger Logger = Log.Get<JsonScene>();
 
     public override void Load()
     {
@@ -23,7 +24,8 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
         Name = sceneData.Name;
 
-        LoadAssetPacks(sceneData.AssetPacks);
+        var assetRefs = CollectAssetReferences(sceneData.Objects);
+        LoadRequiredAssets(assetRefs);
         PrewarmMeshes(sceneData.Objects);
         LoadCamera(sceneData.Camera);
         LoadCameras(sceneData.Cameras);
@@ -39,7 +41,8 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
         Name = sceneData.Name;
 
-        await LoadAssetPacksAsync(sceneData.AssetPacks, ct);
+        var assetRefs = CollectAssetReferences(sceneData.Objects);
+        await LoadRequiredAssetsAsync(assetRefs, ct);
         PrewarmMeshes(sceneData.Objects);
         LoadCamera(sceneData.Camera);
         LoadCameras(sceneData.Cameras);
@@ -47,53 +50,93 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         LoadObjects(sceneData.Objects);
     }
 
-    private void LoadAssetPacks(List<string>? packNames)
+    private HashSet<string> CollectAssetReferences(List<GameObjectJson>? objects)
     {
-        if (packNames == null)
-        {
-            return;
-        }
-
-        var packsToLoad = packNames
-            .Where(name => !AssetPacks.IsLoaded(name))
-            .Select(name => ResolvePackPath(name))
-            .ToList();
-
-        var loadedPacks = new AssetPack[packsToLoad.Count];
-
-        Parallel.For(0, packsToLoad.Count, i =>
-        {
-            loadedPacks[i] = AssetPack.Load(packsToLoad[i]);
-        });
-
-        _loadedPacks.AddRange(loadedPacks);
+        var refs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        CollectRefsRecursive(objects, refs);
+        return refs;
     }
 
-    private async Task LoadAssetPacksAsync(List<string>? packNames, CancellationToken ct)
+    private void CollectRefsRecursive(List<GameObjectJson>? objects, HashSet<string> refs)
     {
-        if (packNames == null)
+        if (objects == null) return;
+
+        foreach (var obj in objects)
         {
-            return;
+            if (obj.Components != null)
+            {
+                foreach (var comp in obj.Components)
+                {
+                    if (comp.Properties != null)
+                    {
+                        CollectAssetRef(comp.Properties, "mesh", refs);
+                        CollectAssetRef(comp.Properties, "albedo", refs);
+                        CollectAssetRef(comp.Properties, "normal", refs);
+                        CollectAssetRef(comp.Properties, "metallic", refs);
+                        CollectAssetRef(comp.Properties, "roughness", refs);
+                        CollectAssetRef(comp.Properties, "skeleton", refs);
+                        CollectAnimationRefs(comp.Properties, refs);
+                    }
+                }
+            }
+            CollectRefsRecursive(obj.Children, refs);
         }
-
-        var packsToLoad = packNames
-            .Where(name => !AssetPacks.IsLoaded(name))
-            .Select(name => ResolvePackPath(name))
-            .ToList();
-
-        var loadTasks = packsToLoad.Select(p => AssetPack.LoadAsync(p, ct));
-        var loadedPacks = await Task.WhenAll(loadTasks);
-        _loadedPacks.AddRange(loadedPacks);
     }
 
-    private static string ResolvePackPath(string packName)
+    private void CollectAssetRef(IReadOnlyDictionary<string, JsonElement> props, string key, HashSet<string> refs)
     {
-        var entry = AssetPacks.GetPackEntry(packName);
-        if (entry != null)
+        var value = props.GetStringOrDefault(key);
+        if (!string.IsNullOrEmpty(value) && !value.StartsWith("geometry:"))
         {
-            return entry.Path;
+            refs.Add(ExtractFilePath(value));
         }
-        return packName;
+    }
+
+    private void CollectAnimationRefs(IReadOnlyDictionary<string, JsonElement> props, HashSet<string> refs)
+    {
+        if (props.TryGetValue("animations", out var animElement) && animElement.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var anim in animElement.EnumerateArray())
+            {
+                if (anim.TryGetProperty("source", out var source) && source.ValueKind == JsonValueKind.String)
+                {
+                    var sourceStr = source.GetString();
+                    if (!string.IsNullOrEmpty(sourceStr))
+                    {
+                        refs.Add(ExtractFilePath(sourceStr));
+                    }
+                }
+            }
+        }
+    }
+
+    private string ExtractFilePath(string reference)
+    {
+        var (filePath, _) = ParsePathWithSelector(reference);
+        return filePath;
+    }
+
+    private void LoadRequiredAssets(HashSet<string> assetRefs)
+    {
+        var packsToLoad = assetRefs
+            .Select(r => AssetPacks.GetPackForPath(r))
+            .Where(p => p != null && !AssetPacks.IsLoaded(p))
+            .Distinct()
+            .ToList();
+
+        Parallel.ForEach(packsToLoad, packName => AssetPacks.EnsurePackLoaded(packName!));
+    }
+
+    private async Task LoadRequiredAssetsAsync(HashSet<string> assetRefs, CancellationToken ct)
+    {
+        var packsToLoad = assetRefs
+            .Select(r => AssetPacks.GetPackForPath(r))
+            .Where(p => p != null && !AssetPacks.IsLoaded(p))
+            .Distinct()
+            .ToList();
+
+        var tasks = packsToLoad.Select(p => AssetPacks.EnsurePackLoadedAsync(p!, ct));
+        await Task.WhenAll(tasks);
     }
 
     private void PrewarmMeshes(List<GameObjectJson>? objects)
@@ -119,7 +162,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             if (obj.Components != null)
             {
                 string? meshRef = null;
-                string? materialRef = null;
+                string? variant = null;
 
                 foreach (var comp in obj.Components)
                 {
@@ -127,9 +170,19 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
                     {
                         meshRef = comp.Properties?.GetStringOrDefault("mesh");
                     }
-                    else if (comp.Type.Equals("material", StringComparison.OrdinalIgnoreCase))
+                    else if (comp.Type.Equals("material", StringComparison.OrdinalIgnoreCase) && comp.Properties != null)
                     {
-                        materialRef = comp.Properties?.GetStringOrDefault("material");
+                        // Read variant from material component tags
+                        if (comp.Properties.TryGetValue("tags", out var tagsElement) && tagsElement.ValueKind == JsonValueKind.Object)
+                        {
+                            foreach (var tag in tagsElement.EnumerateObject())
+                            {
+                                if (tag.Name.Equals("variant", StringComparison.OrdinalIgnoreCase) && tag.Value.ValueKind == JsonValueKind.String)
+                                {
+                                    variant = tag.Value.GetString();
+                                }
+                            }
+                        }
                     }
                 }
 
@@ -143,12 +196,11 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
                     if (mesh != null)
                     {
-                        // Use default shader's vertex format
-                        var defaultShader = NiziKit.Assets.Assets.GetShader("Builtin/Shaders/Default");
-                        if (defaultShader != null)
-                        {
-                            pairs.Add((mesh, defaultShader.VertexFormat));
-                        }
+                        // Use skinned vertex format if variant is SKINNED
+                        var isSkinned = !string.IsNullOrEmpty(variant) &&
+                                       variant.Equals("SKINNED", StringComparison.OrdinalIgnoreCase);
+                        var format = isSkinned ? VertexFormat.Skinned : VertexFormat.Static;
+                        pairs.Add((mesh, format));
                     }
                 }
             }
@@ -558,6 +610,32 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
     private void AddComponent(GameObject obj, ComponentJson data)
     {
+        if (data.Type.Equals("material", StringComparison.OrdinalIgnoreCase))
+        {
+            var matComp = obj.AddComponent<MaterialComponent>();
+            if (data.Properties != null)
+            {
+                foreach (var (key, value) in data.Properties)
+                {
+                    if (key == "tags" && value.ValueKind == JsonValueKind.Object)
+                    {
+                        foreach (var tag in value.EnumerateObject())
+                        {
+                            if (tag.Value.ValueKind == JsonValueKind.String)
+                            {
+                                matComp.Tags[tag.Name] = tag.Value.GetString() ?? "";
+                            }
+                        }
+                    }
+                    else if (value.ValueKind == JsonValueKind.String)
+                    {
+                        matComp.Tags[key] = value.GetString() ?? "";
+                    }
+                }
+            }
+            return;
+        }
+
         if (ComponentRegistry.TryCreate(data.Type, data.Properties, this, out var component) && component != null)
         {
             obj.AddComponent(component);
@@ -571,32 +649,6 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
                 var meshRef = data.Properties?.GetStringOrDefault("mesh");
                 meshComp.Mesh = ResolveMeshFromProperties(data.Properties);
                 meshComp.MeshRef = meshRef;
-                break;
-
-            case "material":
-                var matComp = obj.AddComponent<MaterialComponent>();
-                // Parse tags from component properties
-                if (data.Properties != null)
-                {
-                    foreach (var (key, value) in data.Properties)
-                    {
-                        if (key == "tags" && value.ValueKind == JsonValueKind.Object)
-                        {
-                            foreach (var tag in value.EnumerateObject())
-                            {
-                                if (tag.Value.ValueKind == JsonValueKind.String)
-                                {
-                                    matComp.Tags[tag.Name] = tag.Value.GetString() ?? "";
-                                }
-                            }
-                        }
-                        else if (value.ValueKind == JsonValueKind.String)
-                        {
-                            // Treat direct string properties as tags
-                            matComp.Tags[key] = value.GetString() ?? "";
-                        }
-                    }
-                }
                 break;
 
             case "rigidbody":
@@ -694,12 +746,13 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             return CreateGeometry(geoType, parameters);
         }
 
-        return ResolvePackAsset(reference, (packName, assetName) =>
+        var (filePath, meshSelector) = ParsePathWithSelector(reference);
+        var model = AssetPacks.GetModelByPath(filePath);
+        if (model == null)
         {
-            var (modelName, meshSelector) = ParseMeshSelector(assetName);
-            var model = AssetPacks.GetModel(packName, modelName);
-            return GetMeshFromModel(model, meshSelector);
-        });
+            throw new KeyNotFoundException($"Model not found: {filePath}");
+        }
+        return GetMeshFromModel(model, meshSelector);
     }
 
     public Texture2d? ResolveTexture(string reference)
@@ -709,7 +762,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             return null;
         }
 
-        return ResolvePackAsset(reference, AssetPacks.GetTexture);
+        return AssetPacks.GetTextureByPath(reference);
     }
 
     public GpuShader? ResolveShader(string reference)
@@ -719,21 +772,28 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             return null;
         }
 
-        return ResolvePackAsset(reference, AssetPacks.GetShader);
+        return AssetPacks.GetShaderByPath(reference);
     }
 
     public Skeleton? ResolveSkeleton(string reference)
     {
+        Logger.LogInformation("ResolveSkeleton called with reference: '{Reference}'", reference);
+
         if (string.IsNullOrEmpty(reference))
         {
+            Logger.LogWarning("ResolveSkeleton: reference is null or empty");
             return null;
         }
 
-        return ResolvePackAsset(reference, (packName, modelName) =>
-        {
-            var model = AssetPacks.GetModel(packName, modelName);
-            return model.Skeleton ?? throw new InvalidOperationException($"Model '{modelName}' does not have a skeleton");
-        });
+        var packName = AssetPacks.GetPackForPath(reference);
+        Logger.LogInformation("ResolveSkeleton: GetPackForPath returned '{PackName}'", packName ?? "null");
+
+        var model = AssetPacks.GetModelByPath(reference);
+        Logger.LogInformation("ResolveSkeleton: GetModelByPath returned model={Model}, skeleton={Skeleton}",
+            model != null ? "found" : "null",
+            model?.Skeleton != null ? model.Skeleton.Name : "null");
+
+        return model?.Skeleton;
     }
 
     public Assets.Animation? ResolveAnimation(string reference)
@@ -743,13 +803,14 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             return null;
         }
 
-        return ResolvePackAsset(reference, (packName, assetName) =>
+        var (filePath, animationSelector) = ParsePathWithSelector(reference);
+        var model = AssetPacks.GetModelByPath(filePath);
+        var skeleton = model?.Skeleton;
+        if (skeleton == null)
         {
-            var (modelName, animationSelector) = ParseMeshSelector(assetName);
-            var model = AssetPacks.GetModel(packName, modelName);
-            var skeleton = model.Skeleton ?? throw new InvalidOperationException($"Model '{modelName}' does not have a skeleton");
-            return GetAnimationFromSkeleton(skeleton, animationSelector);
-        });
+            return null;
+        }
+        return GetAnimationFromSkeleton(skeleton, animationSelector);
     }
 
     #endregion
@@ -793,12 +854,13 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             };
         }
 
-        return ResolvePackAsset(meshRef, (packName, assetName) =>
+        var (filePath, meshSelector) = ParsePathWithSelector(meshRef);
+        var model = AssetPacks.GetModelByPath(filePath);
+        if (model == null)
         {
-            var (modelName, meshSelector) = ParseMeshSelector(assetName);
-            var model = AssetPacks.GetModel(packName, modelName);
-            return GetMeshFromModel(model, meshSelector);
-        });
+            return null;
+        }
+        return GetMeshFromModel(model, meshSelector);
     }
 
     private static Mesh CreateGeometry(string geoType, IReadOnlyDictionary<string, object>? parameters)
@@ -837,14 +899,29 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         };
     }
 
-    private static (string modelName, string? meshSelector) ParseMeshSelector(string assetReference)
+    private static (string filePath, string? selector) ParsePathWithSelector(string reference)
     {
-        var slashIndex = assetReference.IndexOf('/');
-        if (slashIndex > 0)
+        if (string.IsNullOrEmpty(reference)) return (reference, null);
+
+        var extensions = new[] { ".glb", ".gltf", ".fbx", ".obj", ".png", ".jpg", ".jpeg", ".tga", ".dds" };
+        foreach (var ext in extensions)
         {
-            return (assetReference.Substring(0, slashIndex), assetReference.Substring(slashIndex + 1));
+            var extIndex = reference.IndexOf(ext, StringComparison.OrdinalIgnoreCase);
+            if (extIndex > 0)
+            {
+                var afterExt = extIndex + ext.Length;
+                if (afterExt < reference.Length && reference[afterExt] == '/')
+                {
+                    return (reference.Substring(0, afterExt), reference.Substring(afterExt + 1));
+                }
+                if (afterExt == reference.Length)
+                {
+                    return (reference, null);
+                }
+            }
         }
-        return (assetReference, null);
+
+        return (reference, null);
     }
 
     private static Mesh GetMeshFromModel(Model model, string? meshSelector)
@@ -884,18 +961,6 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         }
 
         return skeleton.GetAnimation(animationSelector);
-    }
-
-    private static T ResolvePackAsset<T>(string reference, Func<string, string, T> resolver)
-    {
-        var colonIndex = reference.IndexOf(':');
-        if (colonIndex > 0)
-        {
-            var packName = reference.Substring(0, colonIndex);
-            var assetName = reference.Substring(colonIndex + 1);
-            return resolver(packName, assetName);
-        }
-        throw new InvalidOperationException($"Invalid asset reference: {reference}. Expected format: 'packName:assetName'");
     }
 
     private static PhysicsShape ParsePhysicsShape(IReadOnlyDictionary<string, JsonElement>? properties)

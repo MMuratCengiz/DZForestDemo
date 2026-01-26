@@ -11,7 +11,7 @@ namespace NiziKit.Assets;
 public sealed class Assets : IDisposable
 {
     private static Assets? _instance;
-    public static Assets Instance => _instance ?? throw new InvalidOperationException("Assets not initialized");
+    private static Assets Instance => _instance ?? throw new InvalidOperationException("Assets not initialized");
 
     private readonly BufferPool _vertexPool;
     private readonly BufferPool _indexPool;
@@ -50,6 +50,7 @@ public sealed class Assets : IDisposable
     public static Skeleton LoadSkeleton(string modelPath) => Instance._LoadSkeleton(modelPath);
     public static Task<Skeleton> LoadSkeletonAsync(string modelPath, CancellationToken ct = default) => Instance._LoadSkeletonAsync(modelPath, ct);
     public static void RegisterShader(string name, GpuShader shader) => Instance._RegisterShader(name, shader);
+    internal static VertexBufferView UploadVertices(byte[] data, VertexFormat format) => Instance._UploadVertices(data, format);
     public static GpuShader? GetShader(string name) => Instance._GetShader(name);
     public static GpuShader? GetShader(string name, ReadOnlySpan<string> variants) => Instance._GetShader(name, variants);
     public static ShaderProgram? GetShaderProgram(string name) => Instance._GetShaderProgram(name);
@@ -83,7 +84,7 @@ public sealed class Assets : IDisposable
             return;
         }
 
-        mesh.VertexBuffer = UploadVertices(mesh.CpuVertices, mesh.Format);
+        mesh.VertexBuffer = _UploadVertices(mesh.CpuVertices, mesh.Format);
         mesh.IndexBuffer = UploadIndices(mesh.CpuIndices);
 
         mesh.CpuVertices = null;
@@ -113,12 +114,7 @@ public sealed class Assets : IDisposable
         return mesh;
     }
 
-    internal VertexBufferView UploadVerticesInternal(byte[] data, VertexFormat format)
-    {
-        return UploadVertices(data, format);
-    }
-
-    private VertexBufferView UploadVertices(byte[] data, VertexFormat format)
+    private VertexBufferView _UploadVertices(byte[] data, VertexFormat format)
     {
         var numBytes = (uint)data.Length;
         var gpuView = _vertexPool.Allocate(numBytes);
@@ -131,7 +127,6 @@ public sealed class Assets : IDisposable
                 IssueBarriers = false
             });
             batchCopy.Begin();
-
             var handle = GCHandle.Alloc(data, GCHandleType.Pinned);
             try
             {

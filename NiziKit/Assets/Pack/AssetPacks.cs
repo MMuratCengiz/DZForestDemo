@@ -1,11 +1,14 @@
 using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 using NiziKit.ContentPipeline;
+using NiziKit.Core;
 using NiziKit.Graphics;
 
 namespace NiziKit.Assets.Pack;
 
 public static class AssetPacks
 {
+    private static readonly ILogger Logger = Log.Get(typeof(AssetPacks));
     private static readonly ConcurrentDictionary<string, AssetPack> _packs = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, (string packName, IAssetPackProvider provider)> _fileIndex = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, IAssetPackProvider> _providers = new(StringComparer.OrdinalIgnoreCase);
@@ -37,14 +40,91 @@ public static class AssetPacks
 
     public static bool IsLoaded(string name) => _packs.ContainsKey(name);
 
-    public static Texture2d GetTexture(string packName, string assetName)
-        => Get(packName).GetTexture(assetName);
+    public static Texture2d GetTexture(string packName, string path)
+        => Get(packName).GetTexture(path);
 
-    public static GpuShader GetShader(string packName, string assetName)
-        => Get(packName).GetShader(assetName);
+    public static GpuShader GetShader(string packName, string path)
+        => Get(packName).GetShader(path);
 
-    public static Model GetModel(string packName, string assetName)
-        => Get(packName).GetModel(assetName);
+    public static Model GetModel(string packName, string path)
+        => Get(packName).GetModel(path);
+
+    public static string? GetPackForPath(string path)
+    {
+        return Content.Manifest?.GetPackForPath(path);
+    }
+
+    public static Model? GetModelByPath(string path)
+    {
+        Logger.LogInformation("GetModelByPath: path='{Path}'", path);
+
+        var packName = GetPackForPath(path);
+        Logger.LogInformation("GetModelByPath: packName='{PackName}'", packName ?? "null");
+
+        if (packName == null)
+        {
+            Logger.LogWarning("GetModelByPath: No pack found for path '{Path}'", path);
+            return null;
+        }
+
+        EnsurePackLoaded(packName);
+        Logger.LogInformation("GetModelByPath: Pack '{PackName}' loaded, IsLoaded={IsLoaded}", packName, IsLoaded(packName));
+
+        if (TryGet(packName, out var pack) && pack != null)
+        {
+            var modelKeys = string.Join(", ", pack.Models.Keys.Take(5));
+            Logger.LogInformation("GetModelByPath: Pack has {Count} models. First few keys: [{Keys}]",
+                pack.Models.Count, modelKeys);
+
+            var model = pack.Models.GetValueOrDefault(path);
+            Logger.LogInformation("GetModelByPath: Model lookup result for '{Path}': {Result}",
+                path, model != null ? "found" : "not found");
+            return model;
+        }
+
+        Logger.LogWarning("GetModelByPath: Could not get pack '{PackName}'", packName);
+        return null;
+    }
+
+    public static Texture2d? GetTextureByPath(string path)
+    {
+        var packName = GetPackForPath(path);
+        if (packName == null) return null;
+
+        EnsurePackLoaded(packName);
+        return TryGet(packName, out var pack) ? pack?.Textures.GetValueOrDefault(path) : null;
+    }
+
+    public static GpuShader? GetShaderByPath(string path)
+    {
+        var packName = GetPackForPath(path);
+        if (packName == null) return null;
+
+        EnsurePackLoaded(packName);
+        return TryGet(packName, out var pack) ? pack?.Shaders.GetValueOrDefault(path) : null;
+    }
+
+    public static void EnsurePackLoaded(string packName)
+    {
+        if (IsLoaded(packName)) return;
+
+        var entry = GetPackEntry(packName);
+        if (entry != null)
+        {
+            AssetPack.Load(entry.Path);
+        }
+    }
+
+    public static async Task EnsurePackLoadedAsync(string packName, CancellationToken ct = default)
+    {
+        if (IsLoaded(packName)) return;
+
+        var entry = GetPackEntry(packName);
+        if (entry != null)
+        {
+            await AssetPack.LoadAsync(entry.Path, ct);
+        }
+    }
 
     public static void LoadFromManifest()
     {
@@ -168,21 +248,30 @@ public static class AssetPacks
 
     internal static void RegisterProvider(string packName, IAssetPackProvider provider)
     {
+        RegisterProvider(packName, provider, provider.GetFilePaths());
+    }
+
+    internal static void RegisterProvider(string packName, IAssetPackProvider provider, IEnumerable<string> filePaths)
+    {
         _providers[packName] = provider;
-        foreach (var path in provider.GetFilePaths())
+        foreach (var path in filePaths)
         {
-            _fileIndex.TryAdd(path, (packName, provider));
+            var normalized = path.Replace('\\', '/').TrimStart('/');
+            _fileIndex.TryAdd(normalized, (packName, provider));
         }
     }
 
     internal static void UnregisterProvider(string packName)
     {
-        if (_providers.TryRemove(packName, out var provider))
+        _providers.TryRemove(packName, out _);
+        // Remove all file index entries for this pack
+        var keysToRemove = _fileIndex
+            .Where(kvp => kvp.Value.packName.Equals(packName, StringComparison.OrdinalIgnoreCase))
+            .Select(kvp => kvp.Key)
+            .ToList();
+        foreach (var key in keysToRemove)
         {
-            foreach (var path in provider.GetFilePaths())
-            {
-                _fileIndex.TryRemove(path, out _);
-            }
+            _fileIndex.TryRemove(key, out _);
         }
     }
 

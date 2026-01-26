@@ -1,8 +1,8 @@
 {
   "name": "newpack_1",
   "version": "1.0.0",
-  "textures": {},
-  "shaders": {},
-  "materials": {},
-  "models": {}
+  "textures": [],
+  "shaders": [],
+  "materials": [],
+  "models": []
 }

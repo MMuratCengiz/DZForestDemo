@@ -12,10 +12,9 @@ public sealed class AssetPack : IDisposable
     public string Version { get; private set; } = "1.0.0";
     public string SourcePath { get; private set; } = string.Empty;
 
-    private readonly ConcurrentDictionary<string, Texture2d> _textures = new();
-    private readonly ConcurrentDictionary<string, Graphics.GpuShader> _shaders = new();
-    private readonly ConcurrentDictionary<string, Model> _models = new();
-    private readonly ConcurrentDictionary<string, string> _modelPaths = new();
+    private readonly ConcurrentDictionary<string, Texture2d> _textures = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, Graphics.GpuShader> _shaders = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, Model> _models = new(StringComparer.OrdinalIgnoreCase);
 
     private IAssetPackProvider? _provider;
     private string _basePath = string.Empty;
@@ -41,40 +40,40 @@ public sealed class AssetPack : IDisposable
         return pack;
     }
 
-    public Texture2d GetTexture(string key)
+    public Texture2d GetTexture(string path)
     {
-        if (!_textures.TryGetValue(key, out var texture))
+        if (!_textures.TryGetValue(path, out var texture))
         {
-            throw new KeyNotFoundException($"Texture '{key}' not found in asset pack '{Name}'");
+            throw new KeyNotFoundException($"Texture '{path}' not found in asset pack '{Name}'");
         }
         return texture;
     }
 
-    public Graphics.GpuShader GetShader(string key)
+    public Graphics.GpuShader GetShader(string path)
     {
-        if (!_shaders.TryGetValue(key, out var shader))
+        if (!_shaders.TryGetValue(path, out var shader))
         {
-            throw new KeyNotFoundException($"Shader '{key}' not found in asset pack '{Name}'");
+            throw new KeyNotFoundException($"Shader '{path}' not found in asset pack '{Name}'");
         }
         return shader;
     }
 
-    public Model GetModel(string key)
+    public Model GetModel(string path)
     {
-        if (!_models.TryGetValue(key, out var model))
+        if (!_models.TryGetValue(path, out var model))
         {
-            throw new KeyNotFoundException($"Model '{key}' not found in asset pack '{Name}'");
+            throw new KeyNotFoundException($"Model '{path}' not found in asset pack '{Name}'");
         }
         return model;
     }
 
-    public bool TryGetTexture(string key, out Texture2d? texture) => _textures.TryGetValue(key, out texture);
-    public bool TryGetShader(string key, out Graphics.GpuShader? shader) => _shaders.TryGetValue(key, out shader);
-    public bool TryGetModel(string key, out Model? model) => _models.TryGetValue(key, out model);
+    public bool TryGetTexture(string path, out Texture2d? texture) => _textures.TryGetValue(path, out texture);
+    public bool TryGetShader(string path, out Graphics.GpuShader? shader) => _shaders.TryGetValue(path, out shader);
+    public bool TryGetModel(string path, out Model? model) => _models.TryGetValue(path, out model);
 
-    public string? GetModelPath(string key) => _modelPaths.GetValueOrDefault(key);
-
-    public IEnumerable<string> GetModelKeys() => _models.Keys;
+    public IEnumerable<string> GetModelPaths() => _models.Keys;
+    public IEnumerable<string> GetTexturePaths() => _textures.Keys;
+    public IEnumerable<string> GetShaderPaths() => _shaders.Keys;
 
     public Texture2d LoadTextureFromPack(string path)
     {
@@ -115,6 +114,9 @@ public sealed class AssetPack : IDisposable
         Version = definition.Version;
         AssetPacks.Register(Name, this);
 
+        var allPaths = GetAllFilePaths(definition);
+        AssetPacks.RegisterProvider(Name, _provider, allPaths);
+
         LoadAssets(definition);
     }
 
@@ -131,7 +133,17 @@ public sealed class AssetPack : IDisposable
         Version = definition.Version;
         AssetPacks.Register(Name, this);
 
+        var allPaths = GetAllFilePaths(definition);
+        AssetPacks.RegisterProvider(Name, _provider, allPaths);
+
         await LoadAssetsAsync(definition, ct);
+    }
+
+    private static IEnumerable<string> GetAllFilePaths(AssetPackJson definition)
+    {
+        return definition.Textures
+            .Concat(definition.Models)
+            .Concat(definition.Shaders);
     }
 
     private static (IAssetPackProvider provider, string manifestPath) CreateProvider(string path)
@@ -189,90 +201,88 @@ public sealed class AssetPack : IDisposable
         );
     }
 
-    private void LoadTextures(Dictionary<string, string> textureDefs)
+    private void LoadTextures(List<string> texturePaths)
     {
-        Parallel.ForEach(textureDefs, kvp =>
+        Parallel.ForEach(texturePaths, path =>
         {
-            var bytes = _provider!.ReadBytes(kvp.Value);
+            var bytes = _provider!.ReadBytes(path);
             var texture = new Texture2d();
-            texture.LoadFromBytes(kvp.Value, bytes);
-            _textures[kvp.Key] = texture;
+            texture.LoadFromBytes(path, bytes);
+            _textures[path] = texture;
         });
     }
 
-    private async Task LoadTexturesAsync(Dictionary<string, string> textureDefs, CancellationToken ct)
+    private async Task LoadTexturesAsync(List<string> texturePaths, CancellationToken ct)
     {
-        var tasks = textureDefs.Select(async kvp =>
+        var tasks = texturePaths.Select(async path =>
         {
-            var bytes = await _provider!.ReadBytesAsync(kvp.Value, ct);
+            var bytes = await _provider!.ReadBytesAsync(path, ct);
             var texture = new Texture2d();
-            texture.LoadFromBytes(kvp.Value, bytes);
-            return (kvp.Key, texture);
+            texture.LoadFromBytes(path, bytes);
+            return (path, texture);
         });
 
-        foreach (var (key, texture) in await Task.WhenAll(tasks))
+        foreach (var (path, texture) in await Task.WhenAll(tasks))
         {
-            _textures[key] = texture;
+            _textures[path] = texture;
         }
     }
 
-    private void LoadShaders(Dictionary<string, string> shaderDefs)
+    private void LoadShaders(List<string> shaderPaths)
     {
-        Parallel.ForEach(shaderDefs, kvp =>
+        Parallel.ForEach(shaderPaths, path =>
         {
-            var shader = NiziKit.Assets.Assets.LoadShaderFromJson(kvp.Value);
-            _shaders[kvp.Key] = shader;
+            var shader = NiziKit.Assets.Assets.LoadShaderFromJson(path);
+            _shaders[path] = shader;
         });
     }
 
-    private async Task LoadShadersAsync(Dictionary<string, string> shaderDefs, CancellationToken ct)
+    private async Task LoadShadersAsync(List<string> shaderPaths, CancellationToken ct)
     {
-        var tasks = shaderDefs.Select(async kvp =>
+        var tasks = shaderPaths.Select(async path =>
         {
-            var shader = await NiziKit.Assets.Assets.LoadShaderFromJsonAsync(kvp.Value, null, ct);
-            return (kvp.Key, shader);
+            var shader = await NiziKit.Assets.Assets.LoadShaderFromJsonAsync(path, null, ct);
+            return (path, shader);
         });
 
-        foreach (var (key, shader) in await Task.WhenAll(tasks))
+        foreach (var (path, shader) in await Task.WhenAll(tasks))
         {
-            _shaders[key] = shader;
+            _shaders[path] = shader;
         }
     }
 
-    private void LoadModels(Dictionary<string, string> modelDefs)
+    private void LoadModels(List<string> modelPaths)
     {
-        Parallel.ForEach(modelDefs, kvp =>
+        Parallel.ForEach(modelPaths, path =>
         {
-            var bytes = _provider!.ReadBytes(kvp.Value);
+            var bytes = _provider!.ReadBytes(path);
             var model = new Model();
-            model.LoadFromBytes(bytes, kvp.Value);
+            model.LoadFromBytes(bytes, path);
             foreach (var mesh in model.Meshes)
             {
-                Assets.Register(mesh, $"{Name}:{kvp.Key}:{mesh.Name}");
+                Assets.Register(mesh, $"{path}:{mesh.Name}");
             }
-            _models[kvp.Key] = model;
-            _modelPaths[kvp.Key] = kvp.Value;
+            _models[path] = model;
         });
     }
 
-    private async Task LoadModelsAsync(Dictionary<string, string> modelDefs, CancellationToken ct)
+    private async Task LoadModelsAsync(List<string> modelPaths, CancellationToken ct)
     {
-        var tasks = modelDefs.Select(async kvp =>
+        var tasks = modelPaths.Select(async path =>
         {
-            var bytes = await _provider!.ReadBytesAsync(kvp.Value, ct);
+            var bytes = await _provider!.ReadBytesAsync(path, ct);
             var model = new Model();
-            model.LoadFromBytes(bytes, kvp.Value);
+            model.LoadFromBytes(bytes, path);
             foreach (var mesh in model.Meshes)
             {
-                Assets.Register(mesh, $"{Name}:{kvp.Key}:{mesh.Name}");
+                Assets.Register(mesh, $"{path}:{mesh.Name}");
             }
-            return (kvp.Key, kvp.Value, model);
+            return (path, model);
         });
 
-        foreach (var (key, path, model) in await Task.WhenAll(tasks))
+        foreach (var (path, model) in await Task.WhenAll(tasks))
         {
-            _models[key] = model;
-            _modelPaths[key] = path;
+            _models[path] = model;
         }
     }
 
@@ -290,6 +300,7 @@ public sealed class AssetPack : IDisposable
         _models.Clear();
 
         _provider?.Dispose();
+        AssetPacks.UnregisterProvider(Name);
         AssetPacks.Unregister(Name);
     }
 }

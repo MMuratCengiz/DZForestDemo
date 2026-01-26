@@ -12,16 +12,16 @@ public sealed class AssetPackJson
     public string Version { get; set; } = "1.0.0";
 
     [JsonPropertyName("textures")]
-    public Dictionary<string, string> Textures { get; set; } = new();
+    public List<string> Textures { get; set; } = [];
 
     [JsonPropertyName("shaders")]
-    public Dictionary<string, string> Shaders { get; set; } = new();
+    public List<string> Shaders { get; set; } = [];
 
     [JsonPropertyName("materials")]
-    public Dictionary<string, string> Materials { get; set; } = new();
+    public List<string> Materials { get; set; } = [];
 
     [JsonPropertyName("models")]
-    public Dictionary<string, string> Models { get; set; } = new();
+    public List<string> Models { get; set; } = [];
 
     public static AssetPackJson FromJson(string json)
         => JsonSerializer.Deserialize<AssetPackJson>(json, NiziJsonSerializationOptions.Default)

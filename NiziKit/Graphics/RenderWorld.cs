@@ -5,29 +5,60 @@ using NiziKit.Core;
 
 namespace NiziKit.Graphics;
 
-public struct RenderObject
+public struct Renderable
 {
-    public SurfaceComponent Surface;
-    public GpuShader? Shader;
-    public Mesh Mesh;
     public GameObject Owner;
+    public MeshComponent MeshComp;
+    public SurfaceComponent Surface;
+    public IReadOnlyDictionary<string, string>? Tags;
+}
+
+public class RenderBatch
+{
+    public SurfaceComponent Surface { get; }
+    public Mesh Mesh { get; }
+    public List<Renderable> Objects { get; } = new(32);
+
+    public int Count => Objects.Count;
+
+    public RenderBatch(SurfaceComponent surface, Mesh mesh)
+    {
+        Surface = surface;
+        Mesh = mesh;
+    }
+
+    public void Add(Renderable obj)
+    {
+        Objects.Add(obj);
+    }
+
+    public void RemoveAt(int index)
+    {
+        var lastIndex = Objects.Count - 1;
+        if (index < lastIndex)
+        {
+            Objects[index] = Objects[lastIndex];
+        }
+        Objects.RemoveAt(lastIndex);
+    }
+
+    public ReadOnlySpan<Renderable> AsSpan()
+    {
+        return CollectionsMarshal.AsSpan(Objects);
+    }
 }
 
 public class RenderWorld : IWorldEventListener
 {
-    private readonly List<GpuShader> _shaders = new(64);
-    private readonly Dictionary<GpuShader, Dictionary<SurfaceComponent, Dictionary<Mesh, DrawBatch>>> _shaderSurfaceMeshBuckets = new(64);
-    private readonly Dictionary<object, (GpuShader? shader, SurfaceComponent surface, Mesh mesh, int index)> _objectLookup = new(256);
+    private readonly Dictionary<SurfaceComponent, Dictionary<Mesh, RenderBatch>> _surfaceMeshBatches = new(64);
+    private readonly Dictionary<object, (SurfaceComponent surface, Mesh mesh, int index)> _objectLookup = new(256);
 
-    private readonly List<DrawBatch> _batchCache = new(64);
+    private readonly List<RenderBatch> _batchCache = new(64);
     private readonly List<SurfaceComponent> _surfaceCache = new(64);
-
-    private const string DefaultShaderPath = "Builtin/Shaders/Default";
 
     public void SceneReset()
     {
-        _shaders.Clear();
-        _shaderSurfaceMeshBuckets.Clear();
+        _surfaceMeshBatches.Clear();
         _objectLookup.Clear();
     }
 
@@ -83,62 +114,28 @@ public class RenderWorld : IWorldEventListener
             return;
         }
 
-        var shader = ResolveShader(materialComp);
-        if (shader == null)
+        if (!_surfaceMeshBatches.TryGetValue(surfaceComp, out var meshBatches))
         {
-            return;
+            meshBatches = new Dictionary<Mesh, RenderBatch>(16);
+            _surfaceMeshBatches[surfaceComp] = meshBatches;
         }
 
-        if (!_shaderSurfaceMeshBuckets.TryGetValue(shader, out var surfaceBuckets))
+        if (!meshBatches.TryGetValue(mesh, out var batch))
         {
-            surfaceBuckets = new Dictionary<SurfaceComponent, Dictionary<Mesh, DrawBatch>>(16);
-            _shaderSurfaceMeshBuckets[shader] = surfaceBuckets;
-            _shaders.Add(shader);
+            batch = new RenderBatch(surfaceComp, mesh);
+            meshBatches[mesh] = batch;
         }
 
-        if (!surfaceBuckets.TryGetValue(surfaceComp, out var meshBuckets))
+        var renderable = new Renderable
         {
-            meshBuckets = new Dictionary<Mesh, DrawBatch>(16);
-            surfaceBuckets[surfaceComp] = meshBuckets;
-        }
-
-        if (!meshBuckets.TryGetValue(mesh, out var batch))
-        {
-            batch = new DrawBatch(mesh);
-            meshBuckets[mesh] = batch;
-        }
-
-        var renderObj = new RenderObject
-        {
+            Owner = go,
+            MeshComp = meshComp!,
             Surface = surfaceComp,
-            Shader = shader,
-            Mesh = mesh,
-            Owner = go
+            Tags = materialComp?.Tags
         };
 
-        _objectLookup[go] = (shader, surfaceComp, mesh, batch.Count);
-        batch.Add(renderObj);
-    }
-
-    private GpuShader? ResolveShader(MaterialComponent? materialComp)
-    {
-        if (materialComp?.Tags != null && materialComp.Tags.TryGetValue("shader", out var shaderPath))
-        {
-            string? variant = null;
-            materialComp.Tags.TryGetValue("variant", out variant);
-
-            if (shaderPath.StartsWith("Builtin/"))
-            {
-                var fullName = string.IsNullOrEmpty(variant) ? shaderPath : $"{shaderPath}_{variant}";
-                return NiziKit.Assets.Assets.GetShader(fullName);
-            }
-            else
-            {
-                return NiziKit.Assets.Assets.LoadShaderFromJson(shaderPath, variant);
-            }
-        }
-
-        return NiziKit.Assets.Assets.GetShader(DefaultShaderPath);
+        _objectLookup[go] = (surfaceComp, mesh, batch.Count);
+        batch.Add(renderable);
     }
 
     private void Unregister(GameObject go)
@@ -148,78 +145,49 @@ public class RenderWorld : IWorldEventListener
             return;
         }
 
-        if (entry.shader == null)
-        {
-            return;
-        }
-
-        var surfaceBuckets = _shaderSurfaceMeshBuckets[entry.shader];
-        var meshBuckets = surfaceBuckets[entry.surface];
-        var batch = meshBuckets[entry.mesh];
+        var meshBatches = _surfaceMeshBatches[entry.surface];
+        var batch = meshBatches[entry.mesh];
         var lastIndex = batch.Count - 1;
 
         if (entry.index < lastIndex)
         {
             var swapped = batch.Objects[lastIndex];
-            _objectLookup[swapped.Owner] = (entry.shader, entry.surface, entry.mesh, entry.index);
+            _objectLookup[swapped.Owner] = (entry.surface, entry.mesh, entry.index);
         }
 
         batch.RemoveAt(entry.index);
 
         if (batch.Count == 0)
         {
-            meshBuckets.Remove(entry.mesh);
+            meshBatches.Remove(entry.mesh);
 
-            if (meshBuckets.Count == 0)
+            if (meshBatches.Count == 0)
             {
-                surfaceBuckets.Remove(entry.surface);
-
-                if (surfaceBuckets.Count == 0)
-                {
-                    _shaderSurfaceMeshBuckets.Remove(entry.shader);
-                    _shaders.Remove(entry.shader);
-                }
+                _surfaceMeshBatches.Remove(entry.surface);
             }
         }
     }
 
-    public ReadOnlySpan<GpuShader> GetShaders()
-    {
-        return CollectionsMarshal.AsSpan(_shaders);
-    }
-
-    public ReadOnlySpan<SurfaceComponent> GetSurfaces(GpuShader shader)
+    public ReadOnlySpan<SurfaceComponent> GetSurfaces()
     {
         _surfaceCache.Clear();
-
-        if (!_shaderSurfaceMeshBuckets.TryGetValue(shader, out var surfaceBuckets))
-        {
-            return ReadOnlySpan<SurfaceComponent>.Empty;
-        }
-
-        foreach (var surface in surfaceBuckets.Keys)
+        foreach (var surface in _surfaceMeshBatches.Keys)
         {
             _surfaceCache.Add(surface);
         }
-
         return CollectionsMarshal.AsSpan(_surfaceCache);
     }
 
-    public ReadOnlySpan<DrawBatch> GetDrawBatches(GpuShader shader, SurfaceComponent surface)
+    public ReadOnlySpan<RenderBatch> GetBatches(SurfaceComponent surface)
     {
         _batchCache.Clear();
 
-        if (!_shaderSurfaceMeshBuckets.TryGetValue(shader, out var surfaceBuckets))
+        if (!_surfaceMeshBatches.TryGetValue(surface, out var meshBatches))
         {
-            return ReadOnlySpan<DrawBatch>.Empty;
+            return ReadOnlySpan<RenderBatch>.Empty;
         }
 
-        if (!surfaceBuckets.TryGetValue(surface, out var meshBuckets))
-        {
-            return ReadOnlySpan<DrawBatch>.Empty;
-        }
-
-        foreach (var (_, batch) in meshBuckets)
+        foreach (var (_, batch) in meshBatches)
         {
             _batchCache.Add(batch);
         }

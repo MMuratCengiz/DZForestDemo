@@ -139,10 +139,7 @@ public partial class EditorViewModel : ObservableObject
     private AssetRefType _assetPickerAssetType;
 
     [ObservableProperty]
-    private string? _assetPickerCurrentPack;
-
-    [ObservableProperty]
-    private string? _assetPickerCurrentAssetName;
+    private string? _assetPickerCurrentAssetPath;
 
     private Action<AssetInfo?>? _assetPickerCallback;
 
@@ -470,11 +467,10 @@ public partial class EditorViewModel : ObservableObject
         IsContentBrowserOpen = false;
     }
 
-    public void OpenAssetPicker(AssetRefType assetType, string? currentPack, string? currentAssetName, Action<AssetInfo?> callback)
+    public void OpenAssetPicker(AssetRefType assetType, string? currentAssetPath, Action<AssetInfo?> callback)
     {
         AssetPickerAssetType = assetType;
-        AssetPickerCurrentPack = currentPack;
-        AssetPickerCurrentAssetName = currentAssetName;
+        AssetPickerCurrentAssetPath = currentAssetPath;
         _assetPickerCallback = callback;
         IsAssetPickerOpen = true;
     }

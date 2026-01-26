@@ -178,14 +178,24 @@ public partial class Animator : IDisposable
 
     public void Initialize()
     {
+        Logger.LogInformation("Animator.Initialize called. SkeletonRef={SkeletonRef}, Skeleton={Skeleton}, DefaultAnimation={DefaultAnimation}",
+            SkeletonRef, Skeleton != null ? Skeleton.Name : "null", DefaultAnimation);
+
         if (Skeleton == null)
         {
+            Logger.LogWarning("Animator.Initialize: Skeleton is null, skipping initialization");
             return;
         }
 
         if (Animations.Count == 0)
         {
+            Logger.LogInformation("Animator.Initialize: No animations, syncing from skeleton. Skeleton has {Count} animations",
+                Skeleton.AnimationNames.Count);
             SyncAnimationsFromSkeleton();
+        }
+        else
+        {
+            Logger.LogInformation("Animator.Initialize: Has {Count} animations configured", Animations.Count);
         }
 
         BoneCount = Math.Min(Skeleton.JointCount, MaxBones);
@@ -205,8 +215,12 @@ public partial class Animator : IDisposable
 
         LoadExternalAnimations();
 
+        Logger.LogInformation("Animator.Initialize: Checking DefaultAnimation '{DefaultAnimation}', HasAnimation={HasAnim}",
+            DefaultAnimation, !string.IsNullOrEmpty(DefaultAnimation) && HasAnimation(DefaultAnimation));
+
         if (!string.IsNullOrEmpty(DefaultAnimation) && HasAnimation(DefaultAnimation))
         {
+            Logger.LogInformation("Animator.Initialize: Playing default animation '{DefaultAnimation}'", DefaultAnimation);
             Play(DefaultAnimation);
         }
     }
@@ -244,34 +258,30 @@ public partial class Animator : IDisposable
 
     private static (string modelPath, string animationName) ParseAnimationSourceRef(string sourceRef)
     {
-        var colonIndex = sourceRef.IndexOf(':');
-        if (colonIndex <= 0)
+        if (string.IsNullOrEmpty(sourceRef))
         {
             return (string.Empty, string.Empty);
         }
 
-        var packName = sourceRef[..colonIndex];
-        var remainder = sourceRef[(colonIndex + 1)..];
-
-        var slashIndex = remainder.IndexOf('/');
-        if (slashIndex <= 0)
+        var extensions = new[] { ".glb", ".gltf", ".fbx", ".obj" };
+        foreach (var ext in extensions)
         {
-            return (string.Empty, string.Empty);
-        }
-
-        var modelName = remainder[..slashIndex];
-        var animationName = remainder[(slashIndex + 1)..];
-
-        if (AssetPacks.TryGetPack(packName, out var pack))
-        {
-            var modelPath = pack.GetModelPath(modelName);
-            if (!string.IsNullOrEmpty(modelPath))
+            var extIndex = sourceRef.IndexOf(ext, StringComparison.OrdinalIgnoreCase);
+            if (extIndex > 0)
             {
-                return (modelPath, animationName);
+                var afterExt = extIndex + ext.Length;
+                if (afterExt < sourceRef.Length && sourceRef[afterExt] == '/')
+                {
+                    return (sourceRef[..afterExt], sourceRef[(afterExt + 1)..]);
+                }
+                if (afterExt == sourceRef.Length)
+                {
+                    return (sourceRef, string.Empty);
+                }
             }
         }
 
-        return (string.Empty, string.Empty);
+        return (sourceRef, string.Empty);
     }
 
     public int GetJointIndex(string name)

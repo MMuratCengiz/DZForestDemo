@@ -1,20 +1,170 @@
 {
-  "version": "1.0.0",
+  "version": "2.0.0",
   "packs": [
-    {
-      "name": "newpack",
-      "path": "Packs/newpack.nizipack.json",
-      "deploymentName": "newpack.nizipack"
-    },
     {
       "name": "newpack_1",
       "path": "Packs/newpack_1.nizipack.json",
       "deploymentName": "newpack_1.nizipack"
     },
     {
+      "name": "newpack",
+      "path": "Packs/newpack.nizipack.json",
+      "deploymentName": "newpack.nizipack"
+    },
+    {
       "name": "viking",
       "path": "Packs/viking.nizipack.json",
       "deploymentName": "viking.nizipack"
     }
-  ]
+  ],
+  "assetIndex": {
+    "Synty/Textures/DarkFantasy/Textures/Alts/PolygonDarkFantasy_Texture_01_A.png": {
+      "pack": "newpack",
+      "type": "texture"
+    },
+    "Synty/Models/DarkFantasy/FBX/Vehicles/SM_Veh_Wagon_01.glb": {
+      "pack": "newpack",
+      "type": "model"
+    },
+    "Synty/Models/DarkFantasy/FBX/Buildings/Base/SM_Bld_Base_45_Wall_01.glb": {
+      "pack": "newpack",
+      "type": "model"
+    },
+    "Materials/NewMaterial_1.nizimat.json": {
+      "pack": "newpack",
+      "type": "material"
+    },
+    "Textures/Texture.png": {
+      "pack": "viking",
+      "type": "texture"
+    },
+    "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.png": {
+      "pack": "viking",
+      "type": "texture"
+    },
+    "Synty/Textures/BaseLocomotion/Demo_Textures/T_PolygonApocalypse_01.png": {
+      "pack": "viking",
+      "type": "texture"
+    },
+    "Synty/Textures/BaseLocomotion/Demo_Textures/T_Polygon_Dummy_01.png": {
+      "pack": "viking",
+      "type": "texture"
+    },
+    "Synty/Models/VikingRealm/FBX/VikingRealm_Characters.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Large_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Small_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Veh_Cart_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Barrel_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Barrel_02.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Anvil_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Table_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Chair_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Bench_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Wep_Axe_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Wep_Sword_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Wep_Shield_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Wep_Hammer_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Wep_Spear_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Env_Tree_Pine_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Env_Rock_Cliff_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Env_Bush_Berries_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Torch_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Fire_Pit_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Flag_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Models/Fox.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/BaseLocomotion/Demo_Models/SM_Prop_Target_01.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/Idle/A_Idle_Crouching_Masc.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/InAir/A_Jump_Sprinting_Masc.glb": {
+      "pack": "viking",
+      "type": "model"
+    },
+    "Materials/VikingScene.nizimat.json": {
+      "pack": "viking",
+      "type": "material"
+    },
+    "Materials/Fox.nizimat.json": {
+      "pack": "viking",
+      "type": "material"
+    },
+    "Materials/NewMaterial.nizimat.json": {
+      "pack": "viking",
+      "type": "material"
+    }
+  }
 }

@@ -8,8 +8,9 @@ namespace NiziKit.Editor.Services;
 public class AssetInfo
 {
     public required string Name { get; init; }
-    public required string Pack { get; init; }
-    public string FullReference => $"{Pack}:{Name}";
+    public required string Path { get; init; }
+    public string? Pack { get; init; }
+    public string FullReference => Path;
 
     public override string ToString() => Name;
 }
@@ -31,14 +32,16 @@ public class AssetBrowserService
         return packs;
     }
 
-    public IReadOnlyList<AssetInfo> GetAssetsOfType(AssetRefType assetType, string packName)
+    public IReadOnlyList<AssetInfo> GetAllAssetsOfType(AssetRefType assetType)
     {
         return assetType switch
         {
-            AssetRefType.Mesh => GetMeshesFromPack(packName),
-            AssetRefType.Texture => GetTexturesFromPack(packName),
-            AssetRefType.Skeleton => GetSkeletonsFromPack(packName),
-            AssetRefType.Animation => GetAnimationsFromPack(packName),
+            AssetRefType.Mesh => GetAllMeshes(),
+            AssetRefType.Texture => GetAllTextures(),
+            AssetRefType.Skeleton => GetAllSkeletons(),
+            AssetRefType.Animation => GetAllAnimations(),
+            AssetRefType.Shader => GetAllShaders(),
+            AssetRefType.Material => GetAllMaterials(),
             _ => []
         };
     }
@@ -50,43 +53,36 @@ public class AssetBrowserService
             return null;
         }
 
-        var colonIndex = reference.IndexOf(':');
-        if (colonIndex <= 0)
-        {
-            return null;
-        }
-
-        var packName = reference.Substring(0, colonIndex);
-        var assetName = reference.Substring(colonIndex + 1);
-
         return assetType switch
         {
-            AssetRefType.Mesh => ResolvePackMesh(packName, assetName),
-            AssetRefType.Texture => AssetPacks.GetTexture(packName, assetName),
-            AssetRefType.Skeleton => ResolvePackSkeleton(packName, assetName),
-            AssetRefType.Animation => ResolvePackAnimation(packName, assetName),
+            AssetRefType.Mesh => ResolveMesh(reference),
+            AssetRefType.Texture => AssetPacks.GetTextureByPath(reference),
+            AssetRefType.Skeleton => ResolveSkeleton(reference),
+            AssetRefType.Animation => ResolveAnimation(reference),
+            AssetRefType.Shader => ResolveShader(reference),
             _ => null
         };
     }
 
-    private Mesh? ResolvePackMesh(string packName, string assetName)
+    private Mesh? ResolveMesh(string reference)
     {
-        var (modelName, meshSelector) = ParseMeshSelector(assetName);
-        var model = AssetPacks.GetModel(packName, modelName);
-        return GetMeshFromModel(model, meshSelector);
+        var (filePath, meshSelector) = ParsePathWithSelector(reference);
+        var model = AssetPacks.GetModelByPath(filePath);
+        return model != null ? GetMeshFromModel(model, meshSelector) : null;
     }
 
-    private Skeleton? ResolvePackSkeleton(string packName, string modelName)
+    private Skeleton? ResolveSkeleton(string reference)
     {
-        var model = AssetPacks.GetModel(packName, modelName);
-        return model.Skeleton;
+        var (filePath, _) = ParsePathWithSelector(reference);
+        var model = AssetPacks.GetModelByPath(filePath);
+        return model?.Skeleton;
     }
 
-    private NiziKit.Assets.Animation? ResolvePackAnimation(string packName, string assetName)
+    private NiziKit.Assets.Animation? ResolveAnimation(string reference)
     {
-        var (modelName, animSelector) = ParseMeshSelector(assetName);
-        var model = AssetPacks.GetModel(packName, modelName);
-        if (model.Skeleton == null)
+        var (filePath, animSelector) = ParsePathWithSelector(reference);
+        var model = AssetPacks.GetModelByPath(filePath);
+        if (model?.Skeleton == null)
         {
             return null;
         }
@@ -104,15 +100,42 @@ public class AssetBrowserService
         return model.Skeleton.GetAnimation(animSelector);
     }
 
-    private static (string modelName, string? selector) ParseMeshSelector(string assetReference)
+    private NiziKit.Graphics.GpuShader? ResolveShader(string reference)
     {
-        var slashIndex = assetReference.IndexOf('/');
-        if (slashIndex > 0)
+        foreach (var packName in GetLoadedPacks())
         {
-            return (assetReference.Substring(0, slashIndex), assetReference.Substring(slashIndex + 1));
+            if (!AssetPacks.TryGet(packName, out var pack) || pack == null) continue;
+            if (pack.TryGetShader(reference, out var shader))
+            {
+                return shader;
+            }
+        }
+        return null;
+    }
+
+    private static (string filePath, string? selector) ParsePathWithSelector(string reference)
+    {
+        if (string.IsNullOrEmpty(reference)) return (reference, null);
+
+        var extensions = new[] { ".glb", ".gltf", ".fbx", ".obj", ".png", ".jpg", ".jpeg", ".tga", ".dds" };
+        foreach (var ext in extensions)
+        {
+            var extIndex = reference.IndexOf(ext, StringComparison.OrdinalIgnoreCase);
+            if (extIndex > 0)
+            {
+                var afterExt = extIndex + ext.Length;
+                if (afterExt < reference.Length && reference[afterExt] == '/')
+                {
+                    return (reference.Substring(0, afterExt), reference.Substring(afterExt + 1));
+                }
+                if (afterExt == reference.Length)
+                {
+                    return (reference, null);
+                }
+            }
         }
 
-        return (assetReference, null);
+        return (reference, null);
     }
 
     private static Mesh? GetMeshFromModel(Model model, string? meshSelector)
@@ -140,112 +163,140 @@ public class AssetBrowserService
         return model.Meshes.FirstOrDefault(m => m.Name == meshSelector);
     }
 
-    public IReadOnlyList<AssetInfo> GetMeshesFromPack(string packName)
-    {
-        var meshes = new List<AssetInfo>();
-        if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
-        {
-            return meshes;
-        }
-
-        foreach (var modelKey in pack.Models.Keys)
-        {
-            var model = pack.Models[modelKey];
-            if (model.Meshes.Count == 1)
-            {
-                meshes.Add(new AssetInfo { Name = modelKey, Pack = packName });
-            }
-            else
-            {
-                for (var i = 0; i < model.Meshes.Count; i++)
-                {
-                    var meshName = model.Meshes[i].Name;
-                    var reference = string.IsNullOrEmpty(meshName) ? $"{modelKey}/{i}" : $"{modelKey}/{meshName}";
-                    meshes.Add(new AssetInfo { Name = reference, Pack = packName });
-                }
-            }
-        }
-
-        return meshes;
-    }
-
     public IReadOnlyList<AssetInfo> GetAllMeshes()
     {
         var meshes = new List<AssetInfo>();
         foreach (var packName in GetLoadedPacks())
         {
-            meshes.AddRange(GetMeshesFromPack(packName));
-        }
+            if (!AssetPacks.TryGet(packName, out var pack) || pack == null) continue;
 
+            foreach (var modelPath in pack.GetModelPaths())
+            {
+                var model = pack.Models[modelPath];
+                var fileName = System.IO.Path.GetFileName(modelPath);
+
+                if (model.Meshes.Count == 1)
+                {
+                    meshes.Add(new AssetInfo { Name = fileName, Path = modelPath, Pack = packName });
+                }
+                else
+                {
+                    for (var i = 0; i < model.Meshes.Count; i++)
+                    {
+                        var meshName = model.Meshes[i].Name;
+                        var selector = string.IsNullOrEmpty(meshName) ? i.ToString() : meshName;
+                        var reference = $"{modelPath}/{selector}";
+                        meshes.Add(new AssetInfo { Name = $"{fileName}/{selector}", Path = reference, Pack = packName });
+                    }
+                }
+            }
+        }
         return meshes;
     }
 
-    public IReadOnlyList<AssetInfo> GetTexturesFromPack(string packName)
+    public IReadOnlyList<AssetInfo> GetAllTextures()
     {
         var textures = new List<AssetInfo>();
-        if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
+        foreach (var packName in GetLoadedPacks())
         {
-            return textures;
-        }
+            if (!AssetPacks.TryGet(packName, out var pack) || pack == null) continue;
 
-        foreach (var textureKey in pack.Textures.Keys)
-        {
-            textures.Add(new AssetInfo { Name = textureKey, Pack = packName });
+            foreach (var texturePath in pack.GetTexturePaths())
+            {
+                var fileName = System.IO.Path.GetFileName(texturePath);
+                textures.Add(new AssetInfo { Name = fileName, Path = texturePath, Pack = packName });
+            }
         }
-
         return textures;
     }
 
-    public IReadOnlyList<AssetInfo> GetSkeletonsFromPack(string packName)
+    public IReadOnlyList<AssetInfo> GetAllSkeletons()
     {
         var skeletons = new List<AssetInfo>();
-        if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
+        foreach (var packName in GetLoadedPacks())
         {
-            return skeletons;
-        }
+            if (!AssetPacks.TryGet(packName, out var pack) || pack == null) continue;
 
-        foreach (var modelKey in pack.Models.Keys)
-        {
-            var model = pack.Models[modelKey];
-            if (model.Skeleton != null)
+            foreach (var modelPath in pack.GetModelPaths())
             {
-                skeletons.Add(new AssetInfo { Name = modelKey, Pack = packName });
+                var model = pack.Models[modelPath];
+                if (model.Skeleton != null)
+                {
+                    var fileName = System.IO.Path.GetFileName(modelPath);
+                    skeletons.Add(new AssetInfo { Name = fileName, Path = modelPath, Pack = packName });
+                }
             }
         }
-
         return skeletons;
     }
 
-    public IReadOnlyList<AssetInfo> GetAnimationsFromPack(string packName)
+    public IReadOnlyList<AssetInfo> GetAllAnimations()
     {
         var animations = new List<AssetInfo>();
-
-        if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
+        foreach (var packName in GetLoadedPacks())
         {
-            return animations;
-        }
+            if (!AssetPacks.TryGet(packName, out var pack) || pack == null) continue;
 
-        foreach (var modelKey in pack.Models.Keys)
-        {
-            var model = pack.Models[modelKey];
-            if (model.Skeleton != null)
+            foreach (var modelPath in pack.GetModelPaths())
             {
-                var animNames = model.Skeleton.AnimationNames;
-                for (var i = 0; i < animNames.Count; i++)
+                var model = pack.Models[modelPath];
+                var fileName = System.IO.Path.GetFileName(modelPath);
+
+                if (model.Skeleton != null)
                 {
-                    var animName = string.IsNullOrEmpty(animNames[i])
-                        ? $"{modelKey}/{i}"
-                        : $"{modelKey}/{animNames[i]}";
-                    animations.Add(new AssetInfo { Name = animName, Pack = packName });
+                    var animNames = model.Skeleton.AnimationNames;
+                    for (var i = 0; i < animNames.Count; i++)
+                    {
+                        var animName = string.IsNullOrEmpty(animNames[i]) ? i.ToString() : animNames[i];
+                        var reference = $"{modelPath}/{animName}";
+                        animations.Add(new AssetInfo { Name = $"{fileName}/{animName}", Path = reference, Pack = packName });
+                    }
+                }
+
+                foreach (var animation in model.Animations)
+                {
+                    var reference = $"{modelPath}/{animation.Name}";
+                    animations.Add(new AssetInfo { Name = $"{fileName}/{animation.Name}", Path = reference, Pack = packName });
                 }
             }
+        }
+        return animations;
+    }
 
-            foreach (var animation in model.Animations)
+    public IReadOnlyList<AssetInfo> GetAllShaders()
+    {
+        var shaders = new List<AssetInfo>();
+        foreach (var packName in GetLoadedPacks())
+        {
+            if (!AssetPacks.TryGet(packName, out var pack) || pack == null) continue;
+
+            foreach (var shaderPath in pack.GetShaderPaths())
             {
-                animations.Add(new AssetInfo { Name = $"{modelKey}/{animation.Name}", Pack = packName });
+                var fileName = System.IO.Path.GetFileName(shaderPath);
+                shaders.Add(new AssetInfo { Name = fileName, Path = shaderPath, Pack = packName });
             }
         }
+        return shaders;
+    }
 
-        return animations;
+    public IReadOnlyList<AssetInfo> GetAllMaterials()
+    {
+        var materials = new List<AssetInfo>();
+        foreach (var packName in GetLoadedPacks())
+        {
+            if (!AssetPacks.TryGet(packName, out var pack) || pack == null) continue;
+
+            var packDir = System.IO.Path.GetDirectoryName(pack.Name) ?? "";
+            var materialsDir = System.IO.Path.Combine(packDir, "Materials");
+            if (System.IO.Directory.Exists(materialsDir))
+            {
+                foreach (var materialFile in System.IO.Directory.GetFiles(materialsDir, "*.nizimat.json"))
+                {
+                    var fileName = System.IO.Path.GetFileName(materialFile);
+                    materials.Add(new AssetInfo { Name = fileName, Path = materialFile, Pack = packName });
+                }
+            }
+        }
+        return materials;
     }
 }

@@ -1,15 +1,15 @@
 {
   "name": "newpack",
   "version": "1.0.0",
-  "textures": {
-    "PolygonDarkFantasy_Texture_01_A": "Synty/Textures/DarkFantasy/Textures/Alts/PolygonDarkFantasy_Texture_01_A.png"
-  },
-  "shaders": {},
-  "materials": {
-    "NewMaterial_1": "Materials/NewMaterial_1.nizimat.json"
-  },
-  "models": {
-    "SM_Veh_Wagon_01": "Synty/Models/DarkFantasy/FBX/Vehicles/SM_Veh_Wagon_01.glb",
-    "SM_Bld_Base_45_Wall_01": "Synty/Models/DarkFantasy/FBX/Buildings/Base/SM_Bld_Base_45_Wall_01.glb"
-  }
+  "textures": [
+    "Synty/Textures/DarkFantasy/Textures/Alts/PolygonDarkFantasy_Texture_01_A.png"
+  ],
+  "shaders": [],
+  "materials": [
+    "Materials/NewMaterial_1.nizimat.json"
+  ],
+  "models": [
+    "Synty/Models/DarkFantasy/FBX/Vehicles/SM_Veh_Wagon_01.glb",
+    "Synty/Models/DarkFantasy/FBX/Buildings/Base/SM_Bld_Base_45_Wall_01.glb"
+  ]
 }

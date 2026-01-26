@@ -81,6 +81,13 @@ public class TransformGizmo
             return 1f;
         }
 
+        if (camera.ProjectionType == ProjectionType.Orthographic)
+        {
+            // In orthographic mode, scale based on viewport size, not camera distance
+            var orthoScale = camera.OrthographicSize * 0.15f;
+            return Math.Clamp(orthoScale, MinGizmoScale, MaxGizmoScale);
+        }
+
         var cameraDistance = Vector3.Distance(camera.WorldPosition, _target.WorldPosition);
         var distanceScale = cameraDistance * 0.08f;
         return Math.Clamp(distanceScale, MinGizmoScale, MaxGizmoScale);

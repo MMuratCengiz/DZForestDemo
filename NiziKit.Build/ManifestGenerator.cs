@@ -9,8 +9,9 @@ public class ManifestGenerator
     {
         var manifest = new GeneratedManifest
         {
-            Version = "1.0.0",
-            Packs = []
+            Version = "2.0.0",
+            Packs = [],
+            AssetIndex = new Dictionary<string, GeneratedAssetMapping>()
         };
 
         var baseDir = Path.GetFullPath(assetsDir);
@@ -34,6 +35,24 @@ public class ManifestGenerator
                     Path = relativePath,
                     DeploymentName = $"{packName}.nizipack"
                 });
+
+                // Build reverse mapping: asset path -> pack info
+                foreach (var texturePath in packData.Textures)
+                {
+                    manifest.AssetIndex[texturePath] = new GeneratedAssetMapping { Pack = packName, Type = "texture" };
+                }
+                foreach (var modelPath in packData.Models)
+                {
+                    manifest.AssetIndex[modelPath] = new GeneratedAssetMapping { Pack = packName, Type = "model" };
+                }
+                foreach (var shaderPath in packData.Shaders)
+                {
+                    manifest.AssetIndex[shaderPath] = new GeneratedAssetMapping { Pack = packName, Type = "shader" };
+                }
+                foreach (var materialPath in packData.Materials)
+                {
+                    manifest.AssetIndex[materialPath] = new GeneratedAssetMapping { Pack = packName, Type = "material" };
+                }
             }
             catch (Exception ex)
             {
@@ -48,6 +67,7 @@ public class ManifestGenerator
 
         Console.WriteLine($"Generated manifest at: {outputPath}");
         Console.WriteLine($"  Packs: {manifest.Packs.Count}");
+        Console.WriteLine($"  Assets indexed: {manifest.AssetIndex.Count}");
     }
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -61,10 +81,13 @@ public class ManifestGenerator
 internal class GeneratedManifest
 {
     [JsonPropertyName("version")]
-    public string Version { get; set; } = "1.0.0";
+    public string Version { get; set; } = "2.0.0";
 
     [JsonPropertyName("packs")]
     public List<GeneratedPackEntry> Packs { get; set; } = [];
+
+    [JsonPropertyName("assetIndex")]
+    public Dictionary<string, GeneratedAssetMapping> AssetIndex { get; set; } = new();
 }
 
 internal class GeneratedPackEntry
@@ -79,6 +102,15 @@ internal class GeneratedPackEntry
     public string? DeploymentName { get; set; }
 }
 
+internal class GeneratedAssetMapping
+{
+    [JsonPropertyName("pack")]
+    public string Pack { get; set; } = "";
+
+    [JsonPropertyName("type")]
+    public string Type { get; set; } = "";
+}
+
 internal class PackData
 {
     [JsonPropertyName("name")]
@@ -86,4 +118,16 @@ internal class PackData
 
     [JsonPropertyName("version")]
     public string Version { get; set; } = "1.0.0";
+
+    [JsonPropertyName("textures")]
+    public List<string> Textures { get; set; } = [];
+
+    [JsonPropertyName("models")]
+    public List<string> Models { get; set; } = [];
+
+    [JsonPropertyName("shaders")]
+    public List<string> Shaders { get; set; } = [];
+
+    [JsonPropertyName("materials")]
+    public List<string> Materials { get; set; } = [];
 }

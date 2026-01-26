@@ -45,8 +45,7 @@ public partial class EditorMainView : UserControl
                 _assetPickerDialog?.Initialize(
                     _viewModel.AssetBrowser,
                     _viewModel.AssetPickerAssetType,
-                    _viewModel.AssetPickerCurrentPack,
-                    _viewModel.AssetPickerCurrentAssetName);
+                    _viewModel.AssetPickerCurrentAssetPath);
             }
 
             if (e.PropertyName == nameof(EditorViewModel.SceneBrowserViewModel) && _viewModel.SceneBrowserViewModel != null)

@@ -23,17 +23,9 @@
             <Border Grid.Row="2"
                     Background="{StaticResource EditorPanelSecondaryBackground}"
                     Padding="24,14">
-                <Grid ColumnDefinitions="*,Auto">
-                    <TextBox Grid.Column="0"
-                             x:Name="SearchBox"
-                             Watermark="Search assets..."
-                             VerticalContentAlignment="Center"
-                             Margin="0,0,16,0"/>
-                    <ComboBox Grid.Column="1"
-                              x:Name="PackComboBox"
-                              VerticalContentAlignment="Center"
-                              MinWidth="220"/>
-                </Grid>
+                <TextBox x:Name="SearchBox"
+                         Watermark="Search assets..."
+                         VerticalContentAlignment="Center"/>
             </Border>
 
             <Border Grid.Row="3"

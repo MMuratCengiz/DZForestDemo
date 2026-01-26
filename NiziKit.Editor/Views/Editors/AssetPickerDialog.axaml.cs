@@ -14,7 +14,6 @@ public partial class AssetPickerDialog : UserControl
 {
     private TextBlock? _headerText;
     private TextBox? _searchBox;
-    private ComboBox? _packComboBox;
     private ItemsControl? _assetItemsControl;
     private TextBlock? _selectionText;
     private Button? _cancelButton;
@@ -22,11 +21,9 @@ public partial class AssetPickerDialog : UserControl
 
     private AssetBrowserService? _assetBrowser;
     private AssetRefType _assetType;
-    private IReadOnlyList<string> _allPacks = [];
     private IReadOnlyList<AssetInfo> _allAssets = [];
     private AssetInfo? _selectedAsset;
-    private string? _initialPack;
-    private string? _initialAssetName;
+    private string? _initialAssetPath;
 
     public event Action<AssetInfo?>? AssetSelected;
     public event Action? Cancelled;
@@ -42,7 +39,6 @@ public partial class AssetPickerDialog : UserControl
 
         _headerText = this.FindControl<TextBlock>("HeaderText");
         _searchBox = this.FindControl<TextBox>("SearchBox");
-        _packComboBox = this.FindControl<ComboBox>("PackComboBox");
         _assetItemsControl = this.FindControl<ItemsControl>("AssetItemsControl");
         _selectionText = this.FindControl<TextBlock>("SelectionText");
         _cancelButton = this.FindControl<Button>("CancelButton");
@@ -51,10 +47,6 @@ public partial class AssetPickerDialog : UserControl
         if (_searchBox != null)
         {
             _searchBox.TextChanged += OnSearchTextChanged;
-        }
-        if (_packComboBox != null)
-        {
-            _packComboBox.SelectionChanged += OnPackSelectionChanged;
         }
         if (_cancelButton != null)
         {
@@ -66,43 +58,17 @@ public partial class AssetPickerDialog : UserControl
         }
     }
 
-    public void Initialize(AssetBrowserService assetBrowser, AssetRefType assetType, string? currentPack, string? currentAssetName)
+    public void Initialize(AssetBrowserService assetBrowser, AssetRefType assetType, string? currentAssetPath)
     {
         _assetBrowser = assetBrowser;
         _assetType = assetType;
-        _initialPack = currentPack;
-        _initialAssetName = currentAssetName;
+        _initialAssetPath = currentAssetPath;
 
         if (_headerText != null)
         {
             _headerText.Text = $"Select {assetType}";
         }
 
-        LoadPacks();
-    }
-
-    private void LoadPacks()
-    {
-        if (_assetBrowser == null || _packComboBox == null)
-        {
-            return;
-        }
-
-        _allPacks = _assetBrowser.GetLoadedPacks();
-        _packComboBox.ItemsSource = _allPacks;
-
-        if (!string.IsNullOrEmpty(_initialPack) && _allPacks.Contains(_initialPack))
-        {
-            _packComboBox.SelectedItem = _initialPack;
-        }
-        else if (_allPacks.Count > 0)
-        {
-            _packComboBox.SelectedIndex = 0;
-        }
-    }
-
-    private void OnPackSelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
         LoadAssets();
     }
 
@@ -113,12 +79,12 @@ public partial class AssetPickerDialog : UserControl
 
     private void LoadAssets()
     {
-        if (_assetBrowser == null || _packComboBox?.SelectedItem is not string selectedPack)
+        if (_assetBrowser == null)
         {
             return;
         }
 
-        _allAssets = _assetBrowser.GetAssetsOfType(_assetType, selectedPack);
+        _allAssets = _assetBrowser.GetAllAssetsOfType(_assetType);
         FilterAssets();
     }
 
@@ -156,7 +122,7 @@ public partial class AssetPickerDialog : UserControl
     private Border CreateAssetItem(AssetInfo asset)
     {
         var iconData = GetIconForAssetType(_assetType);
-        var isSelected = asset.Name == _initialAssetName;
+        var isSelected = asset.Path == _initialAssetPath;
 
         var selectionBrush = GetResourceBrush("SelectionColor") ?? Brushes.Transparent;
         var textSecondaryBrush = GetResourceBrush("TextSecondaryBrush") ?? Brushes.Gray;
@@ -259,7 +225,7 @@ public partial class AssetPickerDialog : UserControl
     {
         if (_selectionText != null)
         {
-            _selectionText.Text = _selectedAsset?.Name ?? "";
+            _selectionText.Text = _selectedAsset?.Path ?? "";
         }
     }
 

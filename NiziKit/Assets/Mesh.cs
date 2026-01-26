@@ -81,7 +81,7 @@ public class Mesh : IDisposable
         }
 
         var packed = VertexPacker.Pack(SourceAttributes, format);
-        var view = Assets.Instance.UploadVerticesInternal(packed, format);
+        var view = Assets.UploadVertices(packed, format);
         _formatVariants[format.Name] = view;
         return view;
     }

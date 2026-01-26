@@ -1303,17 +1303,7 @@ public partial class JsonFormEditor : UserControl
                 return;
             }
 
-            string? currentPack = null;
-            string? currentAssetName = null;
-
-            if (!string.IsNullOrEmpty(value) && value.Contains(':'))
-            {
-                var colonIndex = value.IndexOf(':');
-                currentPack = value.Substring(0, colonIndex);
-                currentAssetName = value.Substring(colonIndex + 1);
-            }
-
-            EditorViewModel.OpenAssetPicker(assetType, currentPack, currentAssetName, asset =>
+            EditorViewModel.OpenAssetPicker(assetType, value, asset =>
             {
                 if (asset != null)
                 {
