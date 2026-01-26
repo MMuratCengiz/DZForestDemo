@@ -178,24 +178,14 @@ public partial class Animator : IDisposable
 
     public void Initialize()
     {
-        Logger.LogInformation("Animator.Initialize called. SkeletonRef={SkeletonRef}, Skeleton={Skeleton}, DefaultAnimation={DefaultAnimation}",
-            SkeletonRef, Skeleton != null ? Skeleton.Name : "null", DefaultAnimation);
-
         if (Skeleton == null)
         {
-            Logger.LogWarning("Animator.Initialize: Skeleton is null, skipping initialization");
             return;
         }
 
         if (Animations.Count == 0)
         {
-            Logger.LogInformation("Animator.Initialize: No animations, syncing from skeleton. Skeleton has {Count} animations",
-                Skeleton.AnimationNames.Count);
             SyncAnimationsFromSkeleton();
-        }
-        else
-        {
-            Logger.LogInformation("Animator.Initialize: Has {Count} animations configured", Animations.Count);
         }
 
         BoneCount = Math.Min(Skeleton.JointCount, MaxBones);
@@ -215,12 +205,8 @@ public partial class Animator : IDisposable
 
         LoadExternalAnimations();
 
-        Logger.LogInformation("Animator.Initialize: Checking DefaultAnimation '{DefaultAnimation}', HasAnimation={HasAnim}",
-            DefaultAnimation, !string.IsNullOrEmpty(DefaultAnimation) && HasAnimation(DefaultAnimation));
-
         if (!string.IsNullOrEmpty(DefaultAnimation) && HasAnimation(DefaultAnimation))
         {
-            Logger.LogInformation("Animator.Initialize: Playing default animation '{DefaultAnimation}'", DefaultAnimation);
             Play(DefaultAnimation);
         }
     }
