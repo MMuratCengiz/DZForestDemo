@@ -56,40 +56,27 @@ public static class AssetPacks
 
     public static Model? GetModelByPath(string path)
     {
-        Logger.LogInformation("GetModelByPath: path='{Path}'", path);
-
         var packName = GetPackForPath(path);
-        Logger.LogInformation("GetModelByPath: packName='{PackName}'", packName ?? "null");
-
         if (packName == null)
         {
-            Logger.LogWarning("GetModelByPath: No pack found for path '{Path}'", path);
             return null;
         }
 
         EnsurePackLoaded(packName);
-        Logger.LogInformation("GetModelByPath: Pack '{PackName}' loaded, IsLoaded={IsLoaded}", packName, IsLoaded(packName));
-
         if (TryGet(packName, out var pack) && pack != null)
         {
-            var modelKeys = string.Join(", ", pack.Models.Keys.Take(5));
-            Logger.LogInformation("GetModelByPath: Pack has {Count} models. First few keys: [{Keys}]",
-                pack.Models.Count, modelKeys);
-
-            var model = pack.Models.GetValueOrDefault(path);
-            Logger.LogInformation("GetModelByPath: Model lookup result for '{Path}': {Result}",
-                path, model != null ? "found" : "not found");
-            return model;
+            return pack.Models.GetValueOrDefault(path);
         }
-
-        Logger.LogWarning("GetModelByPath: Could not get pack '{PackName}'", packName);
         return null;
     }
 
     public static Texture2d? GetTextureByPath(string path)
     {
         var packName = GetPackForPath(path);
-        if (packName == null) return null;
+        if (packName == null)
+        {
+            return null;
+        }
 
         EnsurePackLoaded(packName);
         return TryGet(packName, out var pack) ? pack?.Textures.GetValueOrDefault(path) : null;
@@ -98,7 +85,10 @@ public static class AssetPacks
     public static GpuShader? GetShaderByPath(string path)
     {
         var packName = GetPackForPath(path);
-        if (packName == null) return null;
+        if (packName == null)
+        {
+            return null;
+        }
 
         EnsurePackLoaded(packName);
         return TryGet(packName, out var pack) ? pack?.Shaders.GetValueOrDefault(path) : null;
@@ -106,7 +96,10 @@ public static class AssetPacks
 
     public static void EnsurePackLoaded(string packName)
     {
-        if (IsLoaded(packName)) return;
+        if (IsLoaded(packName))
+        {
+            return;
+        }
 
         var entry = GetPackEntry(packName);
         if (entry != null)
@@ -117,7 +110,10 @@ public static class AssetPacks
 
     public static async Task EnsurePackLoadedAsync(string packName, CancellationToken ct = default)
     {
-        if (IsLoaded(packName)) return;
+        if (IsLoaded(packName))
+        {
+            return;
+        }
 
         var entry = GetPackEntry(packName);
         if (entry != null)

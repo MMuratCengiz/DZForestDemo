@@ -40,7 +40,7 @@ public class Game : IDisposable
     {
         desc ??= new GameDesc();
         _fixedTimestep = new FixedTimestep(desc.FixedUpdateRate);
-        Window = new AppWindow(desc.Title, desc.Width, desc.Height);
+        Window = new AppWindow(desc.Title, desc.Width, desc.Height, desc.Resizable);
 
         _composition = new GameComposition(Window.NativeWindow, desc.Graphics);
         _ = _composition.Time;

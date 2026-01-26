@@ -6,12 +6,9 @@ namespace NiziKit.Animation;
 
 public sealed class AnimationWorld : IWorldEventListener
 {
-    private static readonly ILogger Logger = Log.Get<AnimationWorld>();
-
     private readonly HashSet<Animator> _animatorsSet = new(64);
     private readonly List<Animator> _animatorsList = new(64);
     private bool _dirty;
-    private int _updateLogCounter;
 
     public void SceneReset()
     {
@@ -29,8 +26,6 @@ public sealed class AnimationWorld : IWorldEventListener
         var animator = go.GetComponent<Animator>();
         if (animator != null && _animatorsSet.Add(animator))
         {
-            Logger.LogInformation("AnimationWorld: Registered animator for '{Name}', total animators: {Count}",
-                go.Name, _animatorsSet.Count);
             _dirty = true;
         }
     }
@@ -73,16 +68,6 @@ public sealed class AnimationWorld : IWorldEventListener
             _animatorsList.Clear();
             _animatorsList.AddRange(_animatorsSet);
             _dirty = false;
-            Logger.LogInformation("AnimationWorld: Rebuilt animator list, count: {Count}", _animatorsList.Count);
-        }
-
-        // Log every 60 frames (roughly once per second)
-        _updateLogCounter++;
-        if (_updateLogCounter >= 60)
-        {
-            Logger.LogInformation("AnimationWorld.Update: deltaTime={DeltaTime:F4}, animators={Count}",
-                deltaTime, _animatorsList.Count);
-            _updateLogCounter = 0;
         }
 
         for (var i = 0; i < _animatorsList.Count; i++)

@@ -59,7 +59,10 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
     private void CollectRefsRecursive(List<GameObjectJson>? objects, HashSet<string> refs)
     {
-        if (objects == null) return;
+        if (objects == null)
+        {
+            return;
+        }
 
         foreach (var obj in objects)
         {
@@ -901,7 +904,10 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
     private static (string filePath, string? selector) ParsePathWithSelector(string reference)
     {
-        if (string.IsNullOrEmpty(reference)) return (reference, null);
+        if (string.IsNullOrEmpty(reference))
+        {
+            return (reference, null);
+        }
 
         var extensions = new[] { ".glb", ".gltf", ".fbx", ".obj", ".png", ".jpg", ".jpeg", ".tga", ".dds" };
         foreach (var ext in extensions)

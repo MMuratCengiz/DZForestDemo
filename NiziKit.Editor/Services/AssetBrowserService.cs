@@ -104,7 +104,11 @@ public class AssetBrowserService
     {
         foreach (var packName in GetLoadedPacks())
         {
-            if (!AssetPacks.TryGet(packName, out var pack) || pack == null) continue;
+            if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
+            {
+                continue;
+            }
+
             if (pack.TryGetShader(reference, out var shader))
             {
                 return shader;
@@ -115,7 +119,10 @@ public class AssetBrowserService
 
     private static (string filePath, string? selector) ParsePathWithSelector(string reference)
     {
-        if (string.IsNullOrEmpty(reference)) return (reference, null);
+        if (string.IsNullOrEmpty(reference))
+        {
+            return (reference, null);
+        }
 
         var extensions = new[] { ".glb", ".gltf", ".fbx", ".obj", ".png", ".jpg", ".jpeg", ".tga", ".dds" };
         foreach (var ext in extensions)
@@ -168,7 +175,10 @@ public class AssetBrowserService
         var meshes = new List<AssetInfo>();
         foreach (var packName in GetLoadedPacks())
         {
-            if (!AssetPacks.TryGet(packName, out var pack) || pack == null) continue;
+            if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
+            {
+                continue;
+            }
 
             foreach (var modelPath in pack.GetModelPaths())
             {
@@ -199,7 +209,10 @@ public class AssetBrowserService
         var textures = new List<AssetInfo>();
         foreach (var packName in GetLoadedPacks())
         {
-            if (!AssetPacks.TryGet(packName, out var pack) || pack == null) continue;
+            if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
+            {
+                continue;
+            }
 
             foreach (var texturePath in pack.GetTexturePaths())
             {
@@ -215,7 +228,10 @@ public class AssetBrowserService
         var skeletons = new List<AssetInfo>();
         foreach (var packName in GetLoadedPacks())
         {
-            if (!AssetPacks.TryGet(packName, out var pack) || pack == null) continue;
+            if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
+            {
+                continue;
+            }
 
             foreach (var modelPath in pack.GetModelPaths())
             {
@@ -235,7 +251,10 @@ public class AssetBrowserService
         var animations = new List<AssetInfo>();
         foreach (var packName in GetLoadedPacks())
         {
-            if (!AssetPacks.TryGet(packName, out var pack) || pack == null) continue;
+            if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
+            {
+                continue;
+            }
 
             foreach (var modelPath in pack.GetModelPaths())
             {
@@ -268,7 +287,10 @@ public class AssetBrowserService
         var shaders = new List<AssetInfo>();
         foreach (var packName in GetLoadedPacks())
         {
-            if (!AssetPacks.TryGet(packName, out var pack) || pack == null) continue;
+            if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
+            {
+                continue;
+            }
 
             foreach (var shaderPath in pack.GetShaderPaths())
             {
@@ -284,7 +306,10 @@ public class AssetBrowserService
         var materials = new List<AssetInfo>();
         foreach (var packName in GetLoadedPacks())
         {
-            if (!AssetPacks.TryGet(packName, out var pack) || pack == null) continue;
+            if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
+            {
+                continue;
+            }
 
             var packDir = System.IO.Path.GetDirectoryName(pack.Name) ?? "";
             var materialsDir = System.IO.Path.Combine(packDir, "Materials");

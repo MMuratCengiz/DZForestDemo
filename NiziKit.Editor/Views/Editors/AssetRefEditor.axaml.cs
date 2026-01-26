@@ -91,7 +91,10 @@ public partial class AssetRefEditor : UserControl
 
     private void UpdateDisplay()
     {
-        if (_assetDisplayText == null) return;
+        if (_assetDisplayText == null)
+        {
+            return;
+        }
 
         if (string.IsNullOrEmpty(_selectedAssetPath))
         {

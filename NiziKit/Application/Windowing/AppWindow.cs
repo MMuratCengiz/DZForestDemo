@@ -2,7 +2,7 @@ using DenOfIz;
 
 namespace NiziKit.Application.Windowing;
 
-public sealed class AppWindow(string title, uint width, uint height) : IDisposable
+public sealed class AppWindow(string title, uint width, uint height, bool resizable = false) : IDisposable
 {
     public uint Width { get; private set; } = width;
     public uint Height { get; private set; } = height;
@@ -14,8 +14,19 @@ public sealed class AppWindow(string title, uint width, uint height) : IDisposab
     {
         Width = (int)width,
         Height = (int)height,
-        Title = StringView.Create(title)
+        Title = StringView.Create(title),
+        Flags = new WindowFlags
+        {
+            Resizable = resizable
+        }
     });
+
+    private WindowFlags GetWindowFlags()
+    {
+        return new WindowFlags()
+        {
+        };
+    }
 
     public void Dispose()
     {

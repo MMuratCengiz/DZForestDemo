@@ -425,7 +425,10 @@ public partial class JsonFormEditor : UserControl
     private static double GetIconSize(string key, double fallback = 12)
     {
         if (Avalonia.Application.Current?.TryFindResource(key, out var resource) == true && resource is double size)
+        {
             return size;
+        }
+
         return fallback;
     }
 

@@ -39,6 +39,7 @@ public static class Editor
             Title = Config.Title,
             Width = width,
             Height = height,
+            Resizable = true,
             Graphics = new GraphicsDesc
             {
                 ApiPreference = new APIPreference

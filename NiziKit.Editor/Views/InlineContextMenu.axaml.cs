@@ -18,7 +18,10 @@ public partial class InlineContextMenu : UserControl
     private static double GetIconSize(string key, double fallback = 16)
     {
         if (Avalonia.Application.Current?.TryFindResource(key, out var resource) == true && resource is double size)
+        {
             return size;
+        }
+
         return fallback;
     }
 
