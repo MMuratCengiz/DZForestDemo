@@ -493,8 +493,6 @@ public sealed class EditorGame : Game
             return;
         }
 
-        GraphicsContext.WaitIdle();
-
         _width = width;
         _height = height;
 

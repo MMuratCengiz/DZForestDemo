@@ -1,11 +1,16 @@
+using System.Text;
+using System.Text.RegularExpressions;
 using DenOfIz;
 using NiziKit.Assets.Serde;
 using NiziKit.ContentPipeline;
 
 namespace NiziKit.Graphics;
 
-public class ShaderBuilder
+public partial class ShaderBuilder
 {
+    [GeneratedRegex("""#include\s*["<]([^">]+)[">]""", RegexOptions.Multiline)]
+    private static partial Regex IncludeRegex();
+
     public ShaderProgram CompileGraphics(
         string vertexPath,
         string pixelPath,
@@ -13,20 +18,25 @@ public class ShaderBuilder
         string psEntry = "PSMain",
         Dictionary<string, string?>? defines = null)
     {
-        var vsFullPath = ResolvePath(vertexPath);
-        var psFullPath = ResolvePath(pixelPath);
+        var includeHandler = new ShaderIncludeHandler();
+        var loadedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        var vsData = LoadShaderWithIncludes(vertexPath, includeHandler, loadedFiles);
+        var psData = LoadShaderWithIncludes(pixelPath, includeHandler, loadedFiles);
 
         var vsDesc = new ShaderStageDesc
         {
             Stage = (uint)ShaderStageFlagBits.Vertex,
-            Path = StringView.Create(vsFullPath),
+            Path = StringView.Create(vertexPath),
+            Data = ByteArray.Create(vsData),
             EntryPoint = StringView.Create(vsEntry)
         };
 
         var psDesc = new ShaderStageDesc
         {
             Stage = (uint)ShaderStageFlagBits.Pixel,
-            Path = StringView.Create(psFullPath),
+            Path = StringView.Create(pixelPath),
+            Data = ByteArray.Create(psData),
             EntryPoint = StringView.Create(psEntry)
         };
 
@@ -40,7 +50,8 @@ public class ShaderBuilder
         using var stagesArray = ShaderStageDescArray.Create([vsDesc, psDesc]);
         var programDesc = new ShaderProgramDesc
         {
-            ShaderStages = stagesArray
+            ShaderStages = stagesArray,
+            IncludeHandler = includeHandler
         };
 
         return new ShaderProgram(programDesc);
@@ -51,12 +62,16 @@ public class ShaderBuilder
         string csEntry = "CSMain",
         Dictionary<string, string?>? defines = null)
     {
-        var csFullPath = ResolvePath(computePath);
+        var includeHandler = new ShaderIncludeHandler();
+        var loadedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        var csData = LoadShaderWithIncludes(computePath, includeHandler, loadedFiles);
 
         var csDesc = new ShaderStageDesc
         {
             Stage = (uint)ShaderStageFlagBits.Compute,
-            Path = StringView.Create(csFullPath),
+            Path = StringView.Create(computePath),
+            Data = ByteArray.Create(csData),
             EntryPoint = StringView.Create(csEntry)
         };
 
@@ -68,7 +83,8 @@ public class ShaderBuilder
         using var stagesArray = ShaderStageDescArray.Create([csDesc]);
         var programDesc = new ShaderProgramDesc
         {
-            ShaderStages = stagesArray
+            ShaderStages = stagesArray,
+            IncludeHandler = includeHandler
         };
 
         return new ShaderProgram(programDesc);
@@ -76,19 +92,23 @@ public class ShaderBuilder
 
     public ShaderProgram CompileFromJson(ShaderProgramJson shaderJson, string basePath, string? variantName = null)
     {
+        var includeHandler = new ShaderIncludeHandler();
+        var loadedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var stages = new List<ShaderStageDesc>();
 
         foreach (var stageJson in shaderJson.GetStages(variantName))
         {
             var stagePath = Path.IsPathRooted(stageJson.Path)
                 ? stageJson.Path
-                : Path.Combine(basePath, stageJson.Path);
-            stagePath = ResolvePath(stagePath);
+                : Path.Combine(basePath, stageJson.Path).Replace('\\', '/');
+
+            var stageData = LoadShaderWithIncludes(stagePath, includeHandler, loadedFiles);
 
             var stageDesc = new ShaderStageDesc
             {
                 Stage = (uint)stageJson.Stage,
                 Path = StringView.Create(stagePath),
+                Data = ByteArray.Create(stageData),
                 EntryPoint = StringView.Create(stageJson.EntryPoint)
             };
 
@@ -114,7 +134,8 @@ public class ShaderBuilder
         using var stagesArray = ShaderStageDescArray.Create(stages.ToArray());
         var programDesc = new ShaderProgramDesc
         {
-            ShaderStages = stagesArray
+            ShaderStages = stagesArray,
+            IncludeHandler = includeHandler
         };
 
         var pipelineType = shaderJson.DetectPipelineType(variantName);
@@ -137,35 +158,42 @@ public class ShaderBuilder
         string psEntry = "PSMain",
         Dictionary<string, string?>? defines = null)
     {
-        var vsFullPath = ResolvePath(vertexPath);
-        var hsFullPath = ResolvePath(hullPath);
-        var dsFullPath = ResolvePath(domainPath);
-        var psFullPath = ResolvePath(pixelPath);
+        var includeHandler = new ShaderIncludeHandler();
+        var loadedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        var vsData = LoadShaderWithIncludes(vertexPath, includeHandler, loadedFiles);
+        var hsData = LoadShaderWithIncludes(hullPath, includeHandler, loadedFiles);
+        var dsData = LoadShaderWithIncludes(domainPath, includeHandler, loadedFiles);
+        var psData = LoadShaderWithIncludes(pixelPath, includeHandler, loadedFiles);
 
         var stages = new List<ShaderStageDesc>
         {
             new()
             {
                 Stage = (uint)ShaderStageFlagBits.Vertex,
-                Path = StringView.Create(vsFullPath),
+                Path = StringView.Create(vertexPath),
+                Data = ByteArray.Create(vsData),
                 EntryPoint = StringView.Create(vsEntry)
             },
             new()
             {
                 Stage = (uint)ShaderStageFlagBits.Hull,
-                Path = StringView.Create(hsFullPath),
+                Path = StringView.Create(hullPath),
+                Data = ByteArray.Create(hsData),
                 EntryPoint = StringView.Create(hsEntry)
             },
             new()
             {
                 Stage = (uint)ShaderStageFlagBits.Domain,
-                Path = StringView.Create(dsFullPath),
+                Path = StringView.Create(domainPath),
+                Data = ByteArray.Create(dsData),
                 EntryPoint = StringView.Create(dsEntry)
             },
             new()
             {
                 Stage = (uint)ShaderStageFlagBits.Pixel,
-                Path = StringView.Create(psFullPath),
+                Path = StringView.Create(pixelPath),
+                Data = ByteArray.Create(psData),
                 EntryPoint = StringView.Create(psEntry)
             }
         };
@@ -184,7 +212,8 @@ public class ShaderBuilder
         using var stagesArray = ShaderStageDescArray.Create(stages.ToArray());
         var programDesc = new ShaderProgramDesc
         {
-            ShaderStages = stagesArray
+            ShaderStages = stagesArray,
+            IncludeHandler = includeHandler
         };
 
         return new ShaderProgram(programDesc);
@@ -199,28 +228,34 @@ public class ShaderBuilder
         string psEntry = "PSMain",
         Dictionary<string, string?>? defines = null)
     {
-        var vsFullPath = ResolvePath(vertexPath);
-        var gsFullPath = ResolvePath(geometryPath);
-        var psFullPath = ResolvePath(pixelPath);
+        var includeHandler = new ShaderIncludeHandler();
+        var loadedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        var vsData = LoadShaderWithIncludes(vertexPath, includeHandler, loadedFiles);
+        var gsData = LoadShaderWithIncludes(geometryPath, includeHandler, loadedFiles);
+        var psData = LoadShaderWithIncludes(pixelPath, includeHandler, loadedFiles);
 
         var stages = new List<ShaderStageDesc>
         {
             new()
             {
                 Stage = (uint)ShaderStageFlagBits.Vertex,
-                Path = StringView.Create(vsFullPath),
+                Path = StringView.Create(vertexPath),
+                Data = ByteArray.Create(vsData),
                 EntryPoint = StringView.Create(vsEntry)
             },
             new()
             {
                 Stage = (uint)ShaderStageFlagBits.Geometry,
-                Path = StringView.Create(gsFullPath),
+                Path = StringView.Create(geometryPath),
+                Data = ByteArray.Create(gsData),
                 EntryPoint = StringView.Create(gsEntry)
             },
             new()
             {
                 Stage = (uint)ShaderStageFlagBits.Pixel,
-                Path = StringView.Create(psFullPath),
+                Path = StringView.Create(pixelPath),
+                Data = ByteArray.Create(psData),
                 EntryPoint = StringView.Create(psEntry)
             }
         };
@@ -239,7 +274,8 @@ public class ShaderBuilder
         using var stagesArray = ShaderStageDescArray.Create(stages.ToArray());
         var programDesc = new ShaderProgramDesc
         {
-            ShaderStages = stagesArray
+            ShaderStages = stagesArray,
+            IncludeHandler = includeHandler
         };
 
         return new ShaderProgram(programDesc);
@@ -254,33 +290,38 @@ public class ShaderBuilder
         string asEntry = "ASMain",
         Dictionary<string, string?>? defines = null)
     {
-        var msFullPath = ResolvePath(meshPath);
-        var psFullPath = ResolvePath(pixelPath);
+        var includeHandler = new ShaderIncludeHandler();
+        var loadedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         var stages = new List<ShaderStageDesc>();
 
         if (!string.IsNullOrEmpty(taskPath))
         {
-            var asFullPath = ResolvePath(taskPath);
+            var asData = LoadShaderWithIncludes(taskPath, includeHandler, loadedFiles);
             stages.Add(new ShaderStageDesc
             {
                 Stage = (uint)ShaderStageFlagBits.Task,
-                Path = StringView.Create(asFullPath),
+                Path = StringView.Create(taskPath),
+                Data = ByteArray.Create(asData),
                 EntryPoint = StringView.Create(asEntry)
             });
         }
 
+        var msData = LoadShaderWithIncludes(meshPath, includeHandler, loadedFiles);
         stages.Add(new ShaderStageDesc
         {
             Stage = (uint)ShaderStageFlagBits.Mesh,
-            Path = StringView.Create(msFullPath),
+            Path = StringView.Create(meshPath),
+            Data = ByteArray.Create(msData),
             EntryPoint = StringView.Create(msEntry)
         });
 
+        var psData = LoadShaderWithIncludes(pixelPath, includeHandler, loadedFiles);
         stages.Add(new ShaderStageDesc
         {
             Stage = (uint)ShaderStageFlagBits.Pixel,
-            Path = StringView.Create(psFullPath),
+            Path = StringView.Create(pixelPath),
+            Data = ByteArray.Create(psData),
             EntryPoint = StringView.Create(psEntry)
         });
 
@@ -298,7 +339,8 @@ public class ShaderBuilder
         using var stagesArray = ShaderStageDescArray.Create(stages.ToArray());
         var programDesc = new ShaderProgramDesc
         {
-            ShaderStages = stagesArray
+            ShaderStages = stagesArray,
+            IncludeHandler = includeHandler
         };
 
         return new ShaderProgram(programDesc);
@@ -309,15 +351,18 @@ public class ShaderBuilder
         ShaderRayTracingDescJson rayTracingConfig,
         Dictionary<string, string?>? defines = null)
     {
+        var includeHandler = new ShaderIncludeHandler();
+        var loadedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var stages = new List<ShaderStageDesc>();
 
         foreach (var (stage, path, entryPoint, rtDesc) in shaderStages)
         {
-            var fullPath = ResolvePath(path);
+            var stageData = LoadShaderWithIncludes(path, includeHandler, loadedFiles);
             var stageDesc = new ShaderStageDesc
             {
                 Stage = (uint)stage,
-                Path = StringView.Create(fullPath),
+                Path = StringView.Create(path),
+                Data = ByteArray.Create(stageData),
                 EntryPoint = StringView.Create(entryPoint)
             };
 
@@ -344,6 +389,7 @@ public class ShaderBuilder
         var programDesc = new ShaderProgramDesc
         {
             ShaderStages = stagesArray,
+            IncludeHandler = includeHandler,
             RayTracing = new ShaderRayTracingDesc
             {
                 MaxNumPayloadBytes = rayTracingConfig.MaxPayloadBytes,
@@ -384,16 +430,84 @@ public class ShaderBuilder
         return Task.Run(() => CompileFromJson(shaderJson, basePath, variantName), ct);
     }
 
-    private static string ResolvePath(string shaderPath)
+    private static byte[] LoadShaderWithIncludes(
+        string shaderPath,
+        ShaderIncludeHandler includeHandler,
+        HashSet<string> loadedFiles)
     {
-        var fullPath = Path.IsPathRooted(shaderPath) ? shaderPath : Content.ResolvePath(shaderPath);
+        var normalizedPath = shaderPath.Replace('\\', '/');
 
-        if (!File.Exists(fullPath))
+        if (!loadedFiles.Add(normalizedPath))
         {
-            throw new FileNotFoundException($"Shader file not found: {fullPath}");
+            return Content.ReadBytes(normalizedPath);
         }
 
-        return fullPath;
+        if (!Content.Exists(normalizedPath))
+        {
+            throw new FileNotFoundException($"Shader file not found: {normalizedPath}");
+        }
+
+        var shaderText = Content.ReadText(normalizedPath);
+        var shaderBytes = Encoding.UTF8.GetBytes(shaderText);
+
+        var baseDir = Path.GetDirectoryName(normalizedPath)?.Replace('\\', '/') ?? "";
+
+        foreach (Match match in IncludeRegex().Matches(shaderText))
+        {
+            var includePath = match.Groups[1].Value;
+            var resolvedIncludePath = ResolveIncludePath(includePath, baseDir);
+
+            if (loadedFiles.Contains(resolvedIncludePath))
+            {
+                continue;
+            }
+
+            if (!Content.Exists(resolvedIncludePath))
+            {
+                continue;
+            }
+
+            var includeBytes = LoadShaderWithIncludes(resolvedIncludePath, includeHandler, loadedFiles);
+            includeHandler.AddFile(includePath, includeBytes);
+        }
+
+        return shaderBytes;
+    }
+
+    private static string ResolveIncludePath(string includePath, string baseDir)
+    {
+        includePath = includePath.Replace('\\', '/');
+
+        if (includePath.StartsWith('/') || Path.IsPathRooted(includePath))
+        {
+            return includePath.TrimStart('/');
+        }
+
+        if (string.IsNullOrEmpty(baseDir))
+        {
+            return includePath;
+        }
+
+        var combined = Path.Combine(baseDir, includePath).Replace('\\', '/');
+        var parts = combined.Split('/').ToList();
+        var result = new List<string>();
+
+        foreach (var part in parts)
+        {
+            if (part == "..")
+            {
+                if (result.Count > 0)
+                {
+                    result.RemoveAt(result.Count - 1);
+                }
+            }
+            else if (part != ".")
+            {
+                result.Add(part);
+            }
+        }
+
+        return string.Join("/", result);
     }
 
     private static StringViewArray CreateDefinesArray(Dictionary<string, string?> defines)

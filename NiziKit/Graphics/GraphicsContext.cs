@@ -30,9 +30,10 @@ public sealed class GraphicsContext : IDisposable
     public static UniformBufferArena UniformBufferArena => Instance._uniformBufferArena;
     public static BindGroupLayoutStore BindGroupLayoutStore => Instance._bindGroupLayoutStore;
     public static RootSignatureStore RootSignatureStore => Instance._rootSignatureStore;
-    public static void Resize(uint width, uint height) => Instance._Resize(width, height);
+    public static void Resize(uint width, uint height) => Instance._QueueResize(width, height);
     public static void BeginFrame() => Instance._BeginFrame();
     public static void WaitIdle() => Instance._WaitIdle();
+    public static event Action<uint, uint>? OnResize;
 
     private readonly GraphicsApi _graphicsApi;
     private readonly LogicalDevice _logicalDevice;
@@ -55,6 +56,10 @@ public sealed class GraphicsContext : IDisposable
     private readonly UniformBufferArena _uniformBufferArena;
     private readonly BindGroupLayoutStore _bindGroupLayoutStore;
     private readonly RootSignatureStore _rootSignatureStore;
+
+    private bool _resizePending;
+    private uint _pendingWidth;
+    private uint _pendingHeight;
 
     public GraphicsContext(Window window, GraphicsDesc? desc = null)
     {
@@ -102,10 +107,6 @@ public sealed class GraphicsContext : IDisposable
         _instance = this;
     }
 
-    /// <summary>
-    /// Creates a headless GraphicsContext without a SwapChain.
-    /// Use this for offscreen rendering, editor applications, or compute-only workloads.
-    /// </summary>
     public GraphicsContext(GraphicsDesc? desc = null)
     {
         desc ??= new GraphicsDesc();
@@ -136,19 +137,43 @@ public sealed class GraphicsContext : IDisposable
         _instance = this;
     }
 
-    /// <summary>
-    /// Returns true if this context has a SwapChain for presenting to a window.
-    /// </summary>
     public static bool HasSwapChain => Instance._swapChain != null;
 
-    private void _Resize(uint width, uint height)
+    private void _QueueResize(uint width, uint height)
     {
         if (width == 0 || height == 0)
         {
             return;
         }
 
+        if (width == _width && height == _height)
+        {
+            return;
+        }
+
+        _pendingWidth = width;
+        _pendingHeight = height;
+        _resizePending = true;
+    }
+
+    private void _ProcessPendingResize()
+    {
+        if (!_resizePending)
+        {
+            return;
+        }
+
+        _resizePending = false;
+        var width = _pendingWidth;
+        var height = _pendingHeight;
+
+        if (width == _width && height == _height)
+        {
+            return;
+        }
+
         _WaitIdle();
+
         _swapChain.Resize(width, height);
         _width = width;
         _height = height;
@@ -157,10 +182,13 @@ public sealed class GraphicsContext : IDisposable
         {
             _resourceTracking.TrackTexture(_swapChain.GetRenderTarget(i), QueueType.Graphics);
         }
+
+        OnResize?.Invoke(width, height);
     }
 
     public void _BeginFrame()
     {
+        _ProcessPendingResize();
         _currentFrame = _nextFrame;
         _nextFrame = (_nextFrame + 1) % (int)NumFrames;
     }

@@ -8,27 +8,30 @@ public partial class CycledTexture
     public static CycledTexture ColorAttachment(string name, int width = 0, int height = 0,
         Format format = Format.Undefined)
     {
+        var isScreenSized = width == 0 && height == 0;
         var desc = Common(name, width, height);
         desc.Format = format == Format.Undefined ? GraphicsContext.BackBufferFormat : format;
         desc.Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding |
                             TextureUsageFlagBits.CopyDst | TextureUsageFlagBits.CopySrc);
-        return new CycledTexture(desc);
+        return new CycledTexture(desc, isScreenSized);
     }
 
     public static CycledTexture DepthAttachment(string name, int width = 0, int height = 0)
     {
+        var isScreenSized = width == 0 && height == 0;
         var desc = Common(name, width, height);
         desc.Format = Format.D32Float;
         desc.Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding);
         desc.ClearDepthStencilHint = new Vector2(1.0f, 0.0f);
-        return new CycledTexture(desc);
+        return new CycledTexture(desc, isScreenSized);
     }
 
     public static CycledTexture DepthStencilAttachment(string name, int width = 0, int height = 0)
     {
+        var isScreenSized = width == 0 && height == 0;
         var desc = Common(name, width, height);
         desc.Format = Format.D24UnormS8Uint;
-        return new CycledTexture(desc);
+        return new CycledTexture(desc, isScreenSized);
     }
 
     private static TextureDesc Common(string name, int width, int height)

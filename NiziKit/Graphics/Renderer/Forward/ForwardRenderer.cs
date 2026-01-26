@@ -15,10 +15,8 @@ public class ForwardRenderer : IRenderer
     private readonly GpuShader _skinnedShader;
     private readonly List<(GpuShader shader, SurfaceComponent surface, RenderBatch batch)> _drawList = new(256);
 
-    private CycledTexture _sceneColor = null!;
-    private CycledTexture _sceneDepth = null!;
-    private uint _width;
-    private uint _height;
+    private readonly CycledTexture _sceneColor;
+    private readonly CycledTexture _sceneDepth;
 
     public CameraComponent? Camera
     {
@@ -29,19 +27,12 @@ public class ForwardRenderer : IRenderer
     public ForwardRenderer()
     {
         _viewData = new ViewData();
-        _width = GraphicsContext.Width;
-        _height = GraphicsContext.Height;
-        CreateRenderTargets();
+        _sceneColor = CycledTexture.ColorAttachment("SceneColor");
+        _sceneDepth = CycledTexture.DepthAttachment("SceneDepth");
 
         var defaultShader = new DefaultShader();
         _defaultShader = defaultShader.StaticVariant;
         _skinnedShader = defaultShader.SkinnedVariant;
-    }
-
-    private void CreateRenderTargets()
-    {
-        _sceneColor = CycledTexture.ColorAttachment("SceneColor");
-        _sceneDepth = CycledTexture.DepthAttachment("SceneDepth");
     }
 
     public CycledTexture Render(RenderFrame frame)
@@ -119,24 +110,10 @@ public class ForwardRenderer : IRenderer
 
     public void OnResize(uint width, uint height)
     {
-        if (_width == width && _height == height)
-        {
-            return;
-        }
-
-        GraphicsContext.WaitIdle();
-
-        _sceneColor.Dispose();
-        _sceneDepth.Dispose();
-
-        _width = width;
-        _height = height;
-        CreateRenderTargets();
     }
 
     public void Dispose()
     {
-        GraphicsContext.WaitIdle();
         _sceneColor.Dispose();
         _sceneDepth.Dispose();
     }

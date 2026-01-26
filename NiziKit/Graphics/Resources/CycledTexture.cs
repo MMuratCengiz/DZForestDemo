@@ -5,16 +5,20 @@ namespace NiziKit.Graphics.Resources;
 
 public partial class CycledTexture : IDisposable
 {
-    private readonly TextureDesc _textureDesc;
+    private TextureDesc _textureDesc;
     private readonly List<Texture> _textures = [];
+    private readonly bool _isScreenSized;
+    private bool _disposed;
 
-    public CycledTexture(TextureDesc textureDesc)
+    public CycledTexture(TextureDesc textureDesc, bool isScreenSized = false)
     {
         _textureDesc = textureDesc;
-        for (var i = 0; i < GraphicsContext.NumFrames; ++i)
+        _isScreenSized = isScreenSized;
+        CreateTextures();
+
+        if (_isScreenSized)
         {
-            _textures.Add(GraphicsContext.Device.CreateTexture(textureDesc));
-            GraphicsContext.ResourceTracking.TrackTexture(_textures[i], QueueType.Graphics);
+            GraphicsContext.OnResize += HandleResize;
         }
     }
 
@@ -24,7 +28,18 @@ public partial class CycledTexture : IDisposable
     public Format Format => _textureDesc.Format;
     public Vector4 ClearColor => _textureDesc.ClearColorHint;
     public Vector2 ClearDepthStencil => _textureDesc.ClearDepthStencilHint;
-    public void Dispose()
+
+    private void CreateTextures()
+    {
+        for (var i = 0; i < GraphicsContext.NumFrames; ++i)
+        {
+            var texture = GraphicsContext.Device.CreateTexture(_textureDesc);
+            _textures.Add(texture);
+            GraphicsContext.ResourceTracking.TrackTexture(texture, QueueType.Graphics);
+        }
+    }
+
+    private void DestroyTextures()
     {
         foreach (var texture in _textures)
         {
@@ -32,5 +47,40 @@ public partial class CycledTexture : IDisposable
             texture.Dispose();
         }
         _textures.Clear();
+    }
+
+    private void HandleResize(uint width, uint height)
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        if (_textureDesc.Width == width && _textureDesc.Height == height)
+        {
+            return;
+        }
+
+        DestroyTextures();
+        _textureDesc.Width = width;
+        _textureDesc.Height = height;
+        CreateTextures();
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+
+        if (_isScreenSized)
+        {
+            GraphicsContext.OnResize -= HandleResize;
+        }
+
+        DestroyTextures();
     }
 }

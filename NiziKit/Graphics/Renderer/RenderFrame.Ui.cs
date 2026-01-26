@@ -114,6 +114,8 @@ public partial class RenderFrame
         _uiRtAttachment = null;
         _uiBlitPass?.Dispose();
         _uiBlitPass = null;
+        _uiRenderTarget?.Dispose();
+        _uiRenderTarget = null;
         _uiContext?.Dispose();
         _uiContext = null;
     }

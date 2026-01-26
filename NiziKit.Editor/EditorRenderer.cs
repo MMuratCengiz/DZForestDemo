@@ -20,11 +20,9 @@ public class EditorRenderer : IDisposable
     private readonly DenOfIzTopLevel _topLevel;
     private readonly IRenderer _gameRenderer;
 
-    private CycledTexture _sceneDepth = null!;
-    private uint _width;
-    private uint _height;
+    private readonly CycledTexture _sceneDepth;
 
-    private GizmoPass _gizmoPass = null!;
+    private readonly GizmoPass _gizmoPass;
     private EditorViewModel? _editorViewModel;
 
     public EditorViewModel? EditorViewModel
@@ -41,7 +39,6 @@ public class EditorRenderer : IDisposable
         set
         {
             _viewData.Camera = value;
-            // Also set on the game renderer so it renders from the correct camera
             _gameRenderer.Camera = value;
         }
     }
@@ -52,8 +49,6 @@ public class EditorRenderer : IDisposable
         _gameRenderer = gameRenderer;
         _renderFrame = new RenderFrame();
         _viewData = new ViewData();
-        _width = GraphicsContext.Width;
-        _height = GraphicsContext.Height;
         _sceneDepth = CycledTexture.DepthAttachment("EditorSceneDepth");
         _gizmoPass = new GizmoPass();
     }
@@ -126,25 +121,11 @@ public class EditorRenderer : IDisposable
 
     public void OnResize(uint width, uint height)
     {
-        if (_width == width && _height == height)
-        {
-            return;
-        }
-
-        GraphicsContext.WaitIdle();
-
-        _sceneDepth.Dispose();
-
-        _width = width;
-        _height = height;
-        _sceneDepth = CycledTexture.DepthAttachment("EditorSceneDepth");
-
         _gameRenderer.OnResize(width, height);
     }
 
     public void Dispose()
     {
-        GraphicsContext.WaitIdle();
         _gizmoPass.Dispose();
         _sceneDepth.Dispose();
         _renderFrame.Dispose();
