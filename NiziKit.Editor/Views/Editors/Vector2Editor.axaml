@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:views="using:NiziKit.Editor.Views"
+             x:Class="NiziKit.Editor.Views.Editors.Vector2Editor">
+
+    <Grid ColumnDefinitions="*,*">
+        <views:DraggableValueEditor Grid.Column="0"
+                                    x:Name="XEditor"
+                                    Label="X"
+                                    LabelColor="{DynamicResource AxisXBrush}"
+                                    DragSensitivity="0.05"
+                                    Margin="0,0,4,0"/>
+        <views:DraggableValueEditor Grid.Column="1"
+                                    x:Name="YEditor"
+                                    Label="Y"
+                                    LabelColor="{DynamicResource AxisYBrush}"
+                                    DragSensitivity="0.05"/>
+    </Grid>
+</UserControl>

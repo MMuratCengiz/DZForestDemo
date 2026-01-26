@@ -133,18 +133,22 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
                     }
                 }
 
-                if (!string.IsNullOrEmpty(meshRef) && !string.IsNullOrEmpty(materialRef))
+                if (!string.IsNullOrEmpty(meshRef))
                 {
                     var mesh = ResolveMeshFromProperties(
                         new Dictionary<string, JsonElement>
                         {
                             ["mesh"] = JsonSerializer.SerializeToElement(meshRef)
                         });
-                    var material = ResolveMaterial(materialRef);
 
-                    if (mesh != null && material?.GpuShader != null)
+                    if (mesh != null)
                     {
-                        pairs.Add((mesh, material.GpuShader.VertexFormat));
+                        // Use default shader's vertex format
+                        var defaultShader = NiziKit.Assets.Assets.GetShader("Builtin/Shaders/Default");
+                        if (defaultShader != null)
+                        {
+                            pairs.Add((mesh, defaultShader.VertexFormat));
+                        }
                     }
                 }
             }
@@ -571,11 +575,27 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
             case "material":
                 var matComp = obj.AddComponent<MaterialComponent>();
-                var materialRef = data.Properties?.GetStringOrDefault("material");
-                if (!string.IsNullOrEmpty(materialRef))
+                // Parse tags from component properties
+                if (data.Properties != null)
                 {
-                    matComp.Material = ResolveMaterial(materialRef);
-                    matComp.MaterialRef = materialRef;
+                    foreach (var (key, value) in data.Properties)
+                    {
+                        if (key == "tags" && value.ValueKind == JsonValueKind.Object)
+                        {
+                            foreach (var tag in value.EnumerateObject())
+                            {
+                                if (tag.Value.ValueKind == JsonValueKind.String)
+                                {
+                                    matComp.Tags[tag.Name] = tag.Value.GetString() ?? "";
+                                }
+                            }
+                        }
+                        else if (value.ValueKind == JsonValueKind.String)
+                        {
+                            // Treat direct string properties as tags
+                            matComp.Tags[key] = value.GetString() ?? "";
+                        }
+                    }
                 }
                 break;
 
@@ -592,6 +612,69 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
                     _ => RigidbodyComponent.Static(shape)
                 };
                 obj.AddComponent(rb);
+                break;
+
+            case "surface":
+                var surfaceComp = obj.AddComponent<SurfaceComponent>();
+                if (data.Properties != null)
+                {
+                    var albedoRef = data.Properties.GetStringOrDefault("albedo");
+                    if (!string.IsNullOrEmpty(albedoRef))
+                    {
+                        surfaceComp.AlbedoRef = albedoRef;
+                        surfaceComp.Albedo = ResolveTexture(albedoRef);
+                    }
+
+                    var normalRef = data.Properties.GetStringOrDefault("normal");
+                    if (!string.IsNullOrEmpty(normalRef))
+                    {
+                        surfaceComp.NormalRef = normalRef;
+                        surfaceComp.Normal = ResolveTexture(normalRef);
+                    }
+
+                    var metallicRef = data.Properties.GetStringOrDefault("metallic");
+                    if (!string.IsNullOrEmpty(metallicRef))
+                    {
+                        surfaceComp.MetallicRef = metallicRef;
+                        surfaceComp.Metallic = ResolveTexture(metallicRef);
+                    }
+
+                    var roughnessRef = data.Properties.GetStringOrDefault("roughness");
+                    if (!string.IsNullOrEmpty(roughnessRef))
+                    {
+                        surfaceComp.RoughnessRef = roughnessRef;
+                        surfaceComp.Roughness = ResolveTexture(roughnessRef);
+                    }
+
+                    surfaceComp.MetallicValue = data.Properties.GetSingleOrDefault("metallicValue", 0.0f);
+                    surfaceComp.RoughnessValue = data.Properties.GetSingleOrDefault("roughnessValue", 0.5f);
+
+                    var albedoColor = data.Properties.GetFloatArrayOrDefault("albedoColor");
+                    if (albedoColor != null && albedoColor.Length >= 4)
+                    {
+                        surfaceComp.AlbedoColor = new Vector4(albedoColor[0], albedoColor[1], albedoColor[2], albedoColor[3]);
+                    }
+
+                    var emissiveColor = data.Properties.GetFloatArrayOrDefault("emissiveColor");
+                    if (emissiveColor != null && emissiveColor.Length >= 3)
+                    {
+                        surfaceComp.EmissiveColor = new Vector3(emissiveColor[0], emissiveColor[1], emissiveColor[2]);
+                    }
+
+                    surfaceComp.EmissiveIntensity = data.Properties.GetSingleOrDefault("emissiveIntensity", 0.0f);
+
+                    var uvScale = data.Properties.GetFloatArrayOrDefault("uvScale");
+                    if (uvScale != null && uvScale.Length >= 2)
+                    {
+                        surfaceComp.UVScale = new Vector2(uvScale[0], uvScale[1]);
+                    }
+
+                    var uvOffset = data.Properties.GetFloatArrayOrDefault("uvOffset");
+                    if (uvOffset != null && uvOffset.Length >= 2)
+                    {
+                        surfaceComp.UVOffset = new Vector2(uvOffset[0], uvOffset[1]);
+                    }
+                }
                 break;
         }
     }
@@ -617,16 +700,6 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             var model = AssetPacks.GetModel(packName, modelName);
             return GetMeshFromModel(model, meshSelector);
         });
-    }
-
-    public Material? ResolveMaterial(string reference)
-    {
-        if (string.IsNullOrEmpty(reference))
-        {
-            return null;
-        }
-
-        return ResolvePackAsset(reference, AssetPacks.GetMaterial);
     }
 
     public Texture2d? ResolveTexture(string reference)

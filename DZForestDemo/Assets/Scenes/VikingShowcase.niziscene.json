@@ -37,8 +37,8 @@
           "mesh": "viking:characters/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -55,8 +55,8 @@
           "mesh": "viking:characters/1"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -73,8 +73,8 @@
           "mesh": "viking:characters/2"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -91,8 +91,8 @@
           "mesh": "viking:boat-large/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -109,8 +109,8 @@
           "mesh": "viking:boat-small/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -127,8 +127,8 @@
           "mesh": "viking:cart/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -145,8 +145,8 @@
           "mesh": "viking:table/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -163,8 +163,8 @@
           "mesh": "viking:chair/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -181,8 +181,8 @@
           "mesh": "viking:chair/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -199,8 +199,8 @@
           "mesh": "viking:bench/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -217,8 +217,8 @@
           "mesh": "viking:anvil/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -235,8 +235,8 @@
           "mesh": "viking:barrel2/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -253,8 +253,8 @@
           "mesh": "viking:barrel/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -271,8 +271,8 @@
           "mesh": "viking:firepit/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -289,8 +289,8 @@
           "mesh": "viking:flag/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -307,8 +307,8 @@
           "mesh": "viking:axe/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -325,8 +325,8 @@
           "mesh": "viking:sword/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -343,8 +343,8 @@
           "mesh": "viking:shield/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -361,8 +361,8 @@
           "mesh": "viking:hammer/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -379,8 +379,8 @@
           "mesh": "viking:spear/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -397,8 +397,8 @@
           "mesh": "viking:tree-pine/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -415,8 +415,8 @@
           "mesh": "viking:tree-pine/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -433,8 +433,8 @@
           "mesh": "viking:tree-pine/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -451,8 +451,8 @@
           "mesh": "viking:characters/SM_Chr_Warrior_Female_02"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -469,8 +469,8 @@
           "mesh": "viking:rock/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -487,8 +487,8 @@
           "mesh": "viking:bush/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -505,8 +505,8 @@
           "mesh": "viking:bush/0"
         },
         {
-          "type": "material",
-          "material": "viking:VikingRealmAlt"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         }
       ],
       "children": []
@@ -523,8 +523,8 @@
           "mesh": "viking:Fox"
         },
         {
-          "type": "material",
-          "material": "viking:FoxMat"
+          "type": "surface",
+          "albedo": "viking:Texture"
         },
         {
           "type": "animator",
@@ -546,8 +546,8 @@
           "mesh": "viking:PolygonSyntyCharacter"
         },
         {
-          "type": "material",
-          "material": "viking:NewMaterial"
+          "type": "surface",
+          "albedo": "viking:VikingRealm_Albedo"
         },
         {
           "type": "animator",
@@ -579,7 +579,8 @@
           "mesh": "newpack:SM_Veh_Wagon_01/SM_Veh_Wagon_01"
         },
         {
-          "type": "material"
+          "type": "surface",
+          "albedo": "newpack:PolygonDarkFantasy_Texture_01_A"
         }
       ],
       "children": []

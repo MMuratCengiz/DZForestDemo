@@ -1,5 +1,6 @@
 using System.Reflection;
 using DenOfIz;
+using NiziKit.Assets.Pack;
 using NiziKit.Graphics;
 
 namespace NiziKit.ContentPipeline;
@@ -49,16 +50,26 @@ public static class Content
         return _provider!.ExistsAsync(NormalizePath(path), ct);
     }
 
-    public static ValueTask<byte[]> ReadBytesAsync(string path, CancellationToken ct = default)
+    public static async ValueTask<byte[]> ReadBytesAsync(string path, CancellationToken ct = default)
     {
         EnsureInitialized();
-        return _provider!.ReadAllBytesAsync(NormalizePath(path), ct);
+        var normalized = NormalizePath(path);
+        if (TryReadBytesFromPacks(normalized, out var bytes))
+        {
+            return bytes!;
+        }
+        return await _provider!.ReadAllBytesAsync(normalized, ct);
     }
 
-    public static ValueTask<string> ReadTextAsync(string path, CancellationToken ct = default)
+    public static async ValueTask<string> ReadTextAsync(string path, CancellationToken ct = default)
     {
         EnsureInitialized();
-        return _provider!.ReadAllTextAsync(NormalizePath(path), ct);
+        var normalized = NormalizePath(path);
+        if (TryReadTextFromPacks(normalized, out var text))
+        {
+            return text!;
+        }
+        return await _provider!.ReadAllTextAsync(normalized, ct);
     }
 
     public static Stream Open(string path)
@@ -74,9 +85,14 @@ public static class Content
     public static byte[] ReadBytes(string path)
     {
         EnsureInitialized();
+        var normalized = NormalizePath(path);
+        if (TryReadBytesFromPacks(normalized, out var bytes))
+        {
+            return bytes!;
+        }
         if (_provider is FileContentProvider fileProvider)
         {
-            return fileProvider.ReadAllBytesAsync(NormalizePath(path)).GetAwaiter().GetResult();
+            return fileProvider.ReadAllBytesAsync(normalized).GetAwaiter().GetResult();
         }
         throw new InvalidOperationException("Synchronous ReadBytes() is only available on desktop. Use ReadBytesAsync() instead.");
     }
@@ -84,9 +100,14 @@ public static class Content
     public static string ReadText(string path)
     {
         EnsureInitialized();
+        var normalized = NormalizePath(path);
+        if (TryReadTextFromPacks(normalized, out var text))
+        {
+            return text!;
+        }
         if (_provider is FileContentProvider fileProvider)
         {
-            return fileProvider.ReadAllTextAsync(NormalizePath(path)).GetAwaiter().GetResult();
+            return fileProvider.ReadAllTextAsync(normalized).GetAwaiter().GetResult();
         }
         throw new InvalidOperationException("Synchronous ReadText() is only available on desktop. Use ReadTextAsync() instead.");
     }
@@ -94,13 +115,18 @@ public static class Content
     public static bool Exists(string path)
     {
         EnsureInitialized();
+        var normalized = NormalizePath(path);
+        if (ExistsInPacks(normalized))
+        {
+            return true;
+        }
         if (_provider is FileContentProvider)
         {
-            return _provider.ExistsAsync(NormalizePath(path)).GetAwaiter().GetResult();
+            return _provider.ExistsAsync(normalized).GetAwaiter().GetResult();
         }
         if (Manifest != null)
         {
-            return Manifest.Contains(NormalizePath(path));
+            return Manifest.Contains(normalized);
         }
         throw new InvalidOperationException("Synchronous Exists() requires filesystem or loaded manifest.");
     }
@@ -148,12 +174,6 @@ public static class Content
         CancellationToken ct = default)
         => Assets.Assets.LoadComputeProgramAsync(computePath, defines, ct);
 
-    public static Assets.Material LoadMaterial(string path)
-        => Assets.Assets.LoadMaterial(path);
-
-    public static Task<Assets.Material> LoadMaterialAsync(string path, CancellationToken ct = default)
-        => Assets.Assets.LoadMaterialAsync(path, ct);
-
     public static GpuShader LoadShader(string path, string? variant = null)
         => Assets.Assets.LoadShaderFromJson(path, variant);
 
@@ -188,6 +208,8 @@ public static class Content
             {
                 Manifest = AssetManifest.FromJson(File.ReadAllText(manifestPath));
             }
+
+            AssetPacks.DiscoverAndIndexPacks();
         }
     }
 
@@ -223,5 +245,104 @@ public static class Content
             return path;
         }
         return path.Replace('\\', '/').TrimStart('/');
+    }
+
+    private static bool TryReadTextFromPacks(string path, out string? text)
+    {
+        if (TryReadTextFromEmbeddedResources(path, out text))
+        {
+            return true;
+        }
+        if (AssetPacks.TryGetProviderForPath(path, out var provider) && provider != null)
+        {
+            text = provider.ReadText(path);
+            return true;
+        }
+        text = null;
+        return false;
+    }
+
+    private static bool TryReadBytesFromPacks(string path, out byte[]? bytes)
+    {
+        if (TryReadBytesFromEmbeddedResources(path, out bytes))
+        {
+            return true;
+        }
+        if (AssetPacks.TryGetProviderForPath(path, out var provider) && provider != null)
+        {
+            bytes = provider.ReadBytes(path);
+            return true;
+        }
+        bytes = null;
+        return false;
+    }
+
+    private static bool ExistsInPacks(string path)
+    {
+        if (ExistsInEmbeddedResources(path))
+        {
+            return true;
+        }
+        return AssetPacks.FileExistsInPacks(path);
+    }
+
+    private static bool TryReadTextFromEmbeddedResources(string path, out string? text)
+    {
+        var resourceName = PathToResourceName(path);
+        var assembly = Assembly.GetEntryAssembly();
+        if (assembly != null)
+        {
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+            if (stream != null)
+            {
+                using var reader = new StreamReader(stream);
+                text = reader.ReadToEnd();
+                return true;
+            }
+        }
+        text = null;
+        return false;
+    }
+
+    private static bool TryReadBytesFromEmbeddedResources(string path, out byte[]? bytes)
+    {
+        var resourceName = PathToResourceName(path);
+        var assembly = Assembly.GetEntryAssembly();
+        if (assembly != null)
+        {
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+            if (stream != null)
+            {
+                bytes = new byte[stream.Length];
+                stream.ReadExactly(bytes);
+                return true;
+            }
+        }
+        bytes = null;
+        return false;
+    }
+
+    private static bool ExistsInEmbeddedResources(string path)
+    {
+        var resourceName = PathToResourceName(path);
+        var assembly = Assembly.GetEntryAssembly();
+        if (assembly != null)
+        {
+            var names = assembly.GetManifestResourceNames();
+            return names.Contains(resourceName);
+        }
+        return false;
+    }
+
+    private static string PathToResourceName(string path)
+    {
+        var normalized = path.Replace('\\', '/');
+        var fileName = Path.GetFileName(normalized);
+        var directory = Path.GetDirectoryName(normalized)?.Replace('\\', '/').Replace('/', '.');
+        if (string.IsNullOrEmpty(directory))
+        {
+            return fileName;
+        }
+        return $"{directory}.{fileName}";
     }
 }

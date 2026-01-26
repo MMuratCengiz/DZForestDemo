@@ -8,4 +8,5 @@ internal interface IAssetPackProvider : IDisposable
     Task<byte[]> ReadBytesAsync(string path, CancellationToken ct = default);
     bool Exists(string path);
     string BasePath { get; }
+    IEnumerable<string> GetFilePaths();
 }

@@ -2,7 +2,6 @@ using System.Collections.ObjectModel;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using NiziKit.Assets;
 using NiziKit.Assets.Pack;
 using NiziKit.Assets.Serde;
 using NiziKit.ContentPipeline;
@@ -542,7 +541,7 @@ public partial class ContentBrowserViewModel : ObservableObject
         {
             NavigateTo(item.FullPath);
         }
-        else if (item.Type == AssetFileType.Material || item.Type == AssetFileType.Shader)
+        else if (item.Type == AssetFileType.Shader)
         {
             OpenAssetEditor(item);
         }
@@ -609,43 +608,6 @@ public partial class ContentBrowserViewModel : ObservableObject
         StatusMessage = $"Created folder: {Path.GetFileName(path)}";
         RefreshCurrentTab();
         RefreshFolderTree();
-    }
-
-    [RelayCommand]
-    public void CreateMaterial()
-    {
-        if (SelectedTab == null)
-        {
-            return;
-        }
-
-        var baseName = "NewMaterial";
-        var fileName = $"{baseName}.nizimat.json";
-        var path = Path.Combine(SelectedTab.CurrentPath, fileName);
-        var counter = 1;
-
-        while (File.Exists(path))
-        {
-            fileName = $"{baseName}_{counter++}.nizimat.json";
-            path = Path.Combine(SelectedTab.CurrentPath, fileName);
-        }
-
-        var material = new MaterialJson
-        {
-            Name = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(fileName)),
-            Shader = "",
-            Textures = new TexturesJson()
-        };
-
-        File.WriteAllText(path, material.ToJson());
-        StatusMessage = $"Created material: {fileName}";
-        RefreshCurrentTab();
-
-        var item = SelectedTab.Items.FirstOrDefault(i => i.FullPath == path);
-        if (item != null)
-        {
-            OpenAssetEditor(item);
-        }
     }
 
     [RelayCommand]

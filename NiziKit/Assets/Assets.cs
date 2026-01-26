@@ -20,13 +20,11 @@ public sealed class Assets : IDisposable
     private readonly ConcurrentDictionary<string, Texture2d> _textureCache = new();
     private readonly ConcurrentDictionary<string, Skeleton> _skeletonCache = new();
     private readonly ConcurrentDictionary<string, Mesh> _meshCache = new();
-    private readonly ConcurrentDictionary<string, Material> _materialCache = new();
     private readonly ShaderStore _shaderStore = new();
     private readonly ShaderBuilder _shaderBuilder = new();
 
     private readonly List<Mesh> _meshList = [];
     private readonly List<Texture2d> _textureList = [];
-    private readonly List<Material> _materialList = [];
     private readonly Lock _listLock = new();
     private readonly Lock _shaderLoadLock = new();
     private readonly SemaphoreSlim _shaderLoadSemaphore = new(1, 1);
@@ -41,7 +39,6 @@ public sealed class Assets : IDisposable
         var defaultShader = new DefaultShader();
         _shaderStore.Register("Builtin/Shaders/Default", defaultShader.StaticVariant);
         _shaderStore.Register("Builtin/Shaders/Default_SKINNED", defaultShader.SkinnedVariant);
-        _materialCache["Builtin/Materials/Default"] = new DefaultMaterial(_shaderStore);
 
         _instance = this;
     }
@@ -64,10 +61,6 @@ public sealed class Assets : IDisposable
     public static GpuShader LoadShader(string vertexPath, string pixelPath, GraphicsPipelineDesc pipelineDesc, Dictionary<string, string?>? defines = null) => Instance._LoadShader(vertexPath, pixelPath, pipelineDesc, defines);
     public static async Task<GpuShader> LoadShaderAsync(string vertexPath, string pixelPath, GraphicsPipelineDesc pipelineDesc, Dictionary<string, string?>? defines = null, CancellationToken ct = default) => GpuShader.Graphics(await Instance._LoadShaderProgramAsync(vertexPath, pixelPath, defines, ct), pipelineDesc, ownsProgram: false);
     public static void ClearShaderCache() => Instance._shaderStore.ClearDiskCache();
-    public static Material RegisterMaterial(Material material) => Instance._RegisterMaterial(material);
-    public static Material? GetMaterial(string name) => Instance._GetMaterial(name);
-    public static Material LoadMaterial(string path) => Instance._LoadMaterial(path);
-    public static Task<Material> LoadMaterialAsync(string path, CancellationToken ct = default) => Instance._LoadMaterialAsync(path, ct);
     public static GpuShader LoadShaderFromJson(string path, string? variant = null) => Instance._LoadShaderFromJson(path, variant);
     public static Task<GpuShader> LoadShaderFromJsonAsync(string path, string? variant = null, CancellationToken ct = default) => Instance._LoadShaderFromJsonAsync(path, variant, ct);
     public static Mesh CreateBox(float width, float height, float depth) => Instance._CreateBox(width, height, depth);
@@ -82,7 +75,6 @@ public sealed class Assets : IDisposable
 
     public static IReadOnlyList<Mesh> AllMeshes => Instance._meshList;
     public static IReadOnlyList<Texture2d> AllTextures => Instance._textureList;
-    public static IReadOnlyList<Material> AllMaterials => Instance._materialList;
 
     private void _Upload(Mesh mesh)
     {
@@ -480,83 +472,6 @@ public sealed class Assets : IDisposable
         }
     }
 
-    private Material _RegisterMaterial(Material material)
-    {
-        if (!_materialCache.TryAdd(material.Name, material))
-        {
-            return _materialCache[material.Name];
-        }
-
-        lock (_listLock)
-        {
-            _materialList.Add(material);
-        }
-
-        return material;
-    }
-
-    private Material? _GetMaterial(string name)
-    {
-        return _materialCache.GetValueOrDefault(name);
-    }
-
-    private Material _LoadMaterial(string path)
-    {
-        var fullPath = Content.ResolvePath(path);
-
-        if (_materialCache.TryGetValue(fullPath, out var cached))
-        {
-            return cached;
-        }
-
-        var json = Content.ReadText(path);
-        var materialJson = MaterialJson.FromJson(json);
-
-        var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;
-        var material = new JsonMaterial(materialJson, basePath);
-
-        material.EnsureShaderLoaded();
-        material.EnsureTexturesLoaded();
-
-        if (_materialCache.TryAdd(fullPath, material))
-        {
-            lock (_listLock)
-            {
-                _materialList.Add(material);
-            }
-        }
-
-        return _materialCache[fullPath];
-    }
-
-    private async Task<Material> _LoadMaterialAsync(string path, CancellationToken ct = default)
-    {
-        var fullPath = Content.ResolvePath(path);
-
-        if (_materialCache.TryGetValue(fullPath, out var cached))
-        {
-            return cached;
-        }
-
-        var json = await Content.ReadTextAsync(path, ct);
-        var materialJson = MaterialJson.FromJson(json);
-
-        var basePath = Path.GetDirectoryName(fullPath) ?? string.Empty;
-        var material = new JsonMaterial(materialJson, basePath);
-
-        await material.LoadAllAsync(ct);
-
-        if (_materialCache.TryAdd(fullPath, material))
-        {
-            lock (_listLock)
-            {
-                _materialList.Add(material);
-            }
-        }
-
-        return _materialCache[fullPath];
-    }
-
     private GpuShader _LoadShaderFromJson(string path, string? variant = null)
     {
         var fullPath = Content.ResolvePath(path);
@@ -799,13 +714,6 @@ public sealed class Assets : IDisposable
         }
 
         _meshCache.Clear();
-
-        foreach (var material in _materialCache.Values)
-        {
-            material.Dispose();
-        }
-
-        _materialCache.Clear();
 
         _shaderStore.Dispose();
         _vertexPool.Dispose();

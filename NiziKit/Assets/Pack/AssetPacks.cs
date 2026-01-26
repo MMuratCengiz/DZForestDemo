@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using NiziKit.ContentPipeline;
 using NiziKit.Graphics;
 
@@ -5,7 +6,9 @@ namespace NiziKit.Assets.Pack;
 
 public static class AssetPacks
 {
-    private static readonly Dictionary<string, AssetPack> _packs = new();
+    private static readonly ConcurrentDictionary<string, AssetPack> _packs = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, (string packName, IAssetPackProvider provider)> _fileIndex = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly ConcurrentDictionary<string, IAssetPackProvider> _providers = new(StringComparer.OrdinalIgnoreCase);
 
     public static void Register(string name, AssetPack pack)
     {
@@ -14,7 +17,7 @@ public static class AssetPacks
 
     public static void Unregister(string name)
     {
-        _packs.Remove(name);
+        _packs.TryRemove(name, out _);
     }
 
     public static AssetPack Get(string name)
@@ -40,39 +43,88 @@ public static class AssetPacks
     public static GpuShader GetShader(string packName, string assetName)
         => Get(packName).GetShader(assetName);
 
-    public static Material GetMaterial(string packName, string assetName)
-        => Get(packName).GetMaterial(assetName);
-
     public static Model GetModel(string packName, string assetName)
         => Get(packName).GetModel(assetName);
 
     public static void LoadFromManifest()
     {
-        if (Content.Manifest?.Packs == null)
+        if (Content.Manifest?.Packs != null && Content.Manifest.Packs.Count > 0)
         {
+            var packsToLoad = Content.Manifest.Packs
+                .Where(p => !IsLoaded(p.Name))
+                .ToList();
+
+            Parallel.ForEach(packsToLoad, p => AssetPack.Load(p.Path));
             return;
         }
 
-        var packsToLoad = Content.Manifest.Packs
-            .Where(p => !IsLoaded(p.Name))
-            .ToList();
-
-        Parallel.ForEach(packsToLoad, p => AssetPack.Load(p.Path));
+        DiscoverAndLoadPacks();
     }
 
     public static async Task LoadFromManifestAsync(CancellationToken ct = default)
     {
-        if (Content.Manifest?.Packs == null)
+        if (Content.Manifest?.Packs != null && Content.Manifest.Packs.Count > 0)
+        {
+            var packsToLoad = Content.Manifest.Packs
+                .Where(p => !IsLoaded(p.Name))
+                .ToList();
+
+            var tasks = packsToLoad.Select(p => AssetPack.LoadAsync(p.Path, ct));
+            await Task.WhenAll(tasks);
+            return;
+        }
+
+        await DiscoverAndLoadPacksAsync(ct);
+    }
+
+    private static void DiscoverAndLoadPacks()
+    {
+        DiscoverAndIndexPacks();
+    }
+
+    private static async Task DiscoverAndLoadPacksAsync(CancellationToken ct)
+    {
+        await Task.Run(DiscoverAndIndexPacks, ct);
+    }
+
+    public static void DiscoverAndIndexPacks()
+    {
+        var assetsPath = Content.ResolvePath("");
+        if (!Directory.Exists(assetsPath))
         {
             return;
         }
 
-        var packsToLoad = Content.Manifest.Packs
-            .Where(p => !IsLoaded(p.Name))
-            .ToList();
+        var packFiles = Directory.GetFiles(assetsPath, "*.nizipack", SearchOption.TopDirectoryOnly);
+        foreach (var packFile in packFiles)
+        {
+            var packName = Path.GetFileNameWithoutExtension(packFile);
+            if (!_providers.ContainsKey(packName))
+            {
+                IndexPack(packFile, packName);
+            }
+        }
+    }
 
-        var tasks = packsToLoad.Select(p => AssetPack.LoadAsync(p.Path, ct));
-        await Task.WhenAll(tasks);
+    private static void IndexPack(string packFile, string packName)
+    {
+        var provider = CreatePackProvider(packFile);
+        if (provider != null)
+        {
+            RegisterProvider(packName, provider);
+        }
+    }
+
+    private static IAssetPackProvider? CreatePackProvider(string packPath)
+    {
+        try
+        {
+            return new BinaryAssetPackProvider(packPath);
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     public static PackEntry? GetPackEntry(string name)
@@ -113,4 +165,44 @@ public static class AssetPacks
     public static IEnumerable<string> GetLoadedPackNames() => _packs.Keys;
 
     public static IEnumerable<AssetPack> GetLoadedPacks() => _packs.Values;
+
+    internal static void RegisterProvider(string packName, IAssetPackProvider provider)
+    {
+        _providers[packName] = provider;
+        foreach (var path in provider.GetFilePaths())
+        {
+            _fileIndex.TryAdd(path, (packName, provider));
+        }
+    }
+
+    internal static void UnregisterProvider(string packName)
+    {
+        if (_providers.TryRemove(packName, out var provider))
+        {
+            foreach (var path in provider.GetFilePaths())
+            {
+                _fileIndex.TryRemove(path, out _);
+            }
+        }
+    }
+
+    internal static bool TryGetProviderForPath(string path, out IAssetPackProvider? provider)
+    {
+        var normalized = path.Replace('\\', '/').TrimStart('/');
+        if (_fileIndex.TryGetValue(normalized, out var entry))
+        {
+            provider = entry.provider;
+            return true;
+        }
+        provider = null;
+        return false;
+    }
+
+    internal static bool FileExistsInPacks(string path)
+    {
+        var normalized = path.Replace('\\', '/').TrimStart('/');
+        return _fileIndex.ContainsKey(normalized);
+    }
+
+    internal static IEnumerable<string> GetIndexedProviderNames() => _providers.Keys;
 }

@@ -8,8 +8,7 @@ public class Model : IAsset
     public string SourcePath { get; set; } = string.Empty;
     public List<Mesh> Meshes { get; set; } = [];
     public Skeleton? Skeleton { get; set; }
-    public List<Animation> Animations { get; set; }
-    public List<Material> Materials { get; set; } = [];
+    public List<Animation> Animations { get; set; } = [];
 
     public void Load(string path)
     {

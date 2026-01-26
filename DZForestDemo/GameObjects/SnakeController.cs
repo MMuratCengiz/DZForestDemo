@@ -1,6 +1,5 @@
 using System.Numerics;
 using DenOfIz;
-using DZForestDemo.Scenes;
 using NiziKit.Application.Timing;
 using NiziKit.Assets;
 using NiziKit.Components;
@@ -38,9 +37,7 @@ public class SnakeController : IComponent
     private float CurrentMoveInterval => MathF.Max(MinMoveInterval, BaseMoveInterval - _score * SpeedIncreasePerFood);
 
     public Mesh? HeadMesh { get; set; }
-    public Material? HeadMaterial { get; set; }
     public Mesh? BodyMesh { get; set; }
-    public Material? BodyMaterial { get; set; }
 
     public event Action<Vector3>? OnAteFood;
     public event Action<string>? OnGameOver;
@@ -60,7 +57,7 @@ public class SnakeController : IComponent
 
         EnsureAssetsCreated();
 
-        var headSegment = CreateSegment("Head", true, HeadMesh!, HeadMaterial!);
+        var headSegment = CreateSegment("Head", true, HeadMesh!, new Vector4(0.2f, 0.8f, 0.2f, 1.0f));
         headSegment.SetPositionImmediate(Vector3.Zero);
         _segments.Add(headSegment);
 
@@ -75,44 +72,25 @@ public class SnakeController : IComponent
         var cubeMesh = Assets.CreateBox(SegmentSize, SegmentSize, SegmentSize);
         HeadMesh ??= cubeMesh;
         BodyMesh ??= cubeMesh;
-
-        if (HeadMaterial == null)
-        {
-            var existing = Assets.GetMaterial("SnakeHead");
-            if (existing != null)
-            {
-                HeadMaterial = existing;
-            }
-            else
-            {
-                HeadMaterial = new AnimatedSnakeMaterial("SnakeHead", 50, 200, 50);
-                Assets.RegisterMaterial(HeadMaterial);
-            }
-        }
-
-        if (BodyMaterial == null)
-        {
-            var existing = Assets.GetMaterial("SnakeBody");
-            if (existing != null)
-            {
-                BodyMaterial = existing;
-            }
-            else
-            {
-                BodyMaterial = new AnimatedSnakeMaterial("SnakeBody", 30, 150, 30);
-                Assets.RegisterMaterial(BodyMaterial);
-            }
-        }
     }
 
-    private SnakeSegment CreateSegment(string name, bool isHead, Mesh mesh, Material material)
+    private SnakeSegment CreateSegment(string name, bool isHead, Mesh mesh, Vector4 color)
     {
         var go = new GameObject(name);
 
         var segment = new SnakeSegment { IsHead = isHead };
         go.AddComponent(segment);
         go.AddComponent(new MeshComponent { Mesh = mesh });
-        go.AddComponent(new MaterialComponent { Material = material });
+        go.AddComponent(new SurfaceComponent
+        {
+            AlbedoColor = color,
+            EmissiveColor = new Vector3(color.X, color.Y, color.Z),
+            EmissiveIntensity = isHead ? 1.5f : 1.0f
+        });
+        go.AddComponent(new MaterialComponent
+        {
+            Tags = { ["shader"] = "Shaders/AnimatedSnake.nizishp.json" }
+        });
         go.AddComponent(RigidbodyComponent.Kinematic(PhysicsShape.Cube(1f)));
 
         Owner?.AddChild(go);
@@ -121,12 +99,12 @@ public class SnakeController : IComponent
 
     private void AddBodySegment(Vector3 position)
     {
-        if (Owner == null || BodyMesh == null || BodyMaterial == null)
+        if (Owner == null || BodyMesh == null)
         {
             return;
         }
 
-        var segment = CreateSegment($"Body_{_segments.Count}", false, BodyMesh, BodyMaterial);
+        var segment = CreateSegment($"Body_{_segments.Count}", false, BodyMesh, new Vector4(0.12f, 0.6f, 0.12f, 1.0f));
         segment.SetPositionImmediate(position);
         _segments.Add(segment);
     }

@@ -18,6 +18,8 @@ internal sealed class FolderAssetPackProvider(string rootPath) : IAssetPackProvi
 
     public bool Exists(string path) => File.Exists(ResolvePath(path));
 
+    public IEnumerable<string> GetFilePaths() => [];
+
     private string ResolvePath(string path)
     {
         var normalized = path.Replace('\\', '/').TrimStart('/');

@@ -1,7 +1,5 @@
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
-using NiziKit.Editor.Services;
 using NiziKit.Editor.ViewModels;
 
 namespace NiziKit.Editor.Views;

@@ -8,7 +8,7 @@ public class ForwardRootSignature(BindGroupLayoutStore layoutStore, LogicalDevic
     {
         BindGroupLayouts = BindGroupLayoutArray.Create([
             layoutStore.Camera,
-            layoutStore.Material,
+            layoutStore.Surface,
             layoutStore.Draw
         ])
     });

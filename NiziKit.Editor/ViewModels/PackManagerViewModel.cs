@@ -1,7 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Text.Json;
 using Avalonia.Controls;
-using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NiziKit.Assets.Serde;
@@ -75,9 +74,6 @@ public partial class PackManagerViewModel : ObservableObject
     private ObservableCollection<PackAssetEntry> _textures = [];
 
     [ObservableProperty]
-    private ObservableCollection<PackAssetEntry> _materials = [];
-
-    [ObservableProperty]
     private ObservableCollection<PackAssetEntry> _models = [];
 
     [ObservableProperty]
@@ -115,21 +111,6 @@ public partial class PackManagerViewModel : ObservableObject
 
     [ObservableProperty]
     private string _editingAssetName = "";
-
-    [ObservableProperty]
-    private string _editingAssetShader = "";
-
-    [ObservableProperty]
-    private string _editingAssetAlbedo = "";
-
-    [ObservableProperty]
-    private string _editingAssetNormal = "";
-
-    [ObservableProperty]
-    private string _editingAssetMetallic = "";
-
-    [ObservableProperty]
-    private string _editingAssetRoughness = "";
 
     [ObservableProperty]
     private string _editingShaderName = "";
@@ -186,7 +167,6 @@ public partial class PackManagerViewModel : ObservableObject
         PackName = "NewPack";
         PackVersion = "1.0.0";
         Textures.Clear();
-        Materials.Clear();
         Models.Clear();
         Shaders.Clear();
         SelectedPack = null;
@@ -214,12 +194,6 @@ public partial class PackManagerViewModel : ObservableObject
             foreach (var (key, path) in packData.Textures)
             {
                 Textures.Add(new PackAssetEntry(key, path));
-            }
-
-            Materials.Clear();
-            foreach (var (key, path) in packData.Materials)
-            {
-                Materials.Add(new PackAssetEntry(key, path));
             }
 
             Models.Clear();
@@ -272,14 +246,6 @@ public partial class PackManagerViewModel : ObservableObject
                 }
             }
 
-            foreach (var entry in Materials)
-            {
-                if (!string.IsNullOrWhiteSpace(entry.Key) && !string.IsNullOrWhiteSpace(entry.Path))
-                {
-                    packData.Materials[entry.Key] = entry.Path;
-                }
-            }
-
             foreach (var entry in Models)
             {
                 if (!string.IsNullOrWhiteSpace(entry.Key) && !string.IsNullOrWhiteSpace(entry.Path))
@@ -317,12 +283,6 @@ public partial class PackManagerViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public void AddMaterial()
-    {
-        Materials.Add(new PackAssetEntry());
-    }
-
-    [RelayCommand]
     public void AddModel()
     {
         Models.Add(new PackAssetEntry());
@@ -340,15 +300,6 @@ public partial class PackManagerViewModel : ObservableObject
         if (entry != null)
         {
             Textures.Remove(entry);
-        }
-    }
-
-    [RelayCommand]
-    public void RemoveMaterial(PackAssetEntry? entry)
-    {
-        if (entry != null)
-        {
-            Materials.Remove(entry);
         }
     }
 
@@ -381,12 +332,6 @@ public partial class PackManagerViewModel : ObservableObject
     public void BrowseTexture()
     {
         OpenFileBrowser(AssetFileType.Texture, Textures, "Select Texture");
-    }
-
-    [RelayCommand]
-    public void BrowseMaterial()
-    {
-        OpenFileBrowser(AssetFileType.Material, Materials, "Select Material");
     }
 
     [RelayCommand]
@@ -430,11 +375,7 @@ public partial class PackManagerViewModel : ObservableObject
         var packRelativePath = GetPackRelativePath(relativePath);
 
         var key = Path.GetFileNameWithoutExtension(entry.Name);
-        if (entry.Name.EndsWith(".nizimat.json", StringComparison.OrdinalIgnoreCase))
-        {
-            key = entry.Name[..^".nizimat.json".Length];
-        }
-        else if (entry.Name.EndsWith(".nizishp.json", StringComparison.OrdinalIgnoreCase))
+        if (entry.Name.EndsWith(".nizishp.json", StringComparison.OrdinalIgnoreCase))
         {
             key = entry.Name[..^".nizishp.json".Length];
         }
@@ -484,43 +425,16 @@ public partial class PackManagerViewModel : ObservableObject
 
         EditingAsset = entry;
 
-        if (entry.Path.EndsWith(".nizimat.json", StringComparison.OrdinalIgnoreCase))
-        {
-            EditingAssetType = AssetFileType.Material;
-            AssetEditorTitle = $"Edit Material: {entry.Key}";
-            LoadMaterialForEditing(fullPath);
-        }
-        else if (entry.Path.EndsWith(".nizishp.json", StringComparison.OrdinalIgnoreCase))
+        if (entry.Path.EndsWith(".nizishp.json", StringComparison.OrdinalIgnoreCase))
         {
             EditingAssetType = AssetFileType.Shader;
             AssetEditorTitle = $"Edit Shader: {entry.Key}";
             LoadShaderForEditing(fullPath);
+            IsAssetEditorOpen = true;
         }
         else
         {
-            StatusMessage = "Only materials and shaders can be edited";
-            return;
-        }
-
-        IsAssetEditorOpen = true;
-    }
-
-    private void LoadMaterialForEditing(string path)
-    {
-        try
-        {
-            var json = File.ReadAllText(path);
-            var material = MaterialJson.FromJson(json);
-            EditingAssetName = material.Name;
-            EditingAssetShader = material.Shader;
-            EditingAssetAlbedo = material.Textures?.Albedo ?? "";
-            EditingAssetNormal = material.Textures?.Normal ?? "";
-            EditingAssetMetallic = material.Textures?.Metallic ?? "";
-            EditingAssetRoughness = material.Textures?.Roughness ?? "";
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Error loading material: {ex.Message}";
+            StatusMessage = "Only shaders can be edited";
         }
     }
 
@@ -579,11 +493,7 @@ public partial class PackManagerViewModel : ObservableObject
 
         try
         {
-            if (EditingAssetType == AssetFileType.Material)
-            {
-                SaveMaterial(fullPath);
-            }
-            else if (EditingAssetType == AssetFileType.Shader)
+            if (EditingAssetType == AssetFileType.Shader)
             {
                 SaveShader(fullPath);
             }
@@ -596,25 +506,6 @@ public partial class PackManagerViewModel : ObservableObject
         {
             StatusMessage = $"Error saving: {ex.Message}";
         }
-    }
-
-    private void SaveMaterial(string path)
-    {
-        var material = new MaterialJson
-        {
-            Name = EditingAssetName,
-            Shader = EditingAssetShader,
-            Textures = new TexturesJson
-            {
-                Albedo = string.IsNullOrWhiteSpace(EditingAssetAlbedo) ? null : EditingAssetAlbedo,
-                Normal = string.IsNullOrWhiteSpace(EditingAssetNormal) ? null : EditingAssetNormal,
-                Metallic = string.IsNullOrWhiteSpace(EditingAssetMetallic) ? null : EditingAssetMetallic,
-                Roughness = string.IsNullOrWhiteSpace(EditingAssetRoughness) ? null : EditingAssetRoughness
-            }
-        };
-
-        var json = material.ToJson();
-        File.WriteAllText(path, json);
     }
 
     private void SaveShader(string path)
@@ -661,39 +552,6 @@ public partial class PackManagerViewModel : ObservableObject
 
         var relative = normalizedFullPath[(normalizedAssetsDir.Length + 1)..];
         return relative.Replace(Path.DirectorySeparatorChar, '/');
-    }
-
-    [RelayCommand]
-    public void CreateMaterial()
-    {
-        if (string.IsNullOrWhiteSpace(PackName))
-        {
-            StatusMessage = "Create a pack first";
-            return;
-        }
-
-        var packDir = Path.Combine(_packsDirectory, PackName);
-        Directory.CreateDirectory(packDir);
-
-        var baseName = $"material_{Materials.Count + 1}";
-        var fileName = $"{baseName}.nizimat.json";
-        var filePath = Path.Combine(packDir, fileName);
-
-        var material = new MaterialJson
-        {
-            Name = baseName,
-            Shader = "",
-            Textures = new TexturesJson()
-        };
-
-        var json = material.ToJson();
-        File.WriteAllText(filePath, json);
-
-        var relativePath = GetRelativePath(filePath) ?? fileName;
-        var entry = new PackAssetEntry(baseName, relativePath);
-        Materials.Add(entry);
-        StatusMessage = $"Created material: {baseName}";
-        OpenAssetEditor(entry);
     }
 
     [RelayCommand]
@@ -749,9 +607,6 @@ public partial class PackManagerViewModel : ObservableObject
         {
             case AssetFileType.Texture:
                 Textures.Add(entry);
-                break;
-            case AssetFileType.Material:
-                Materials.Add(entry);
                 break;
             case AssetFileType.Model:
                 Models.Add(entry);

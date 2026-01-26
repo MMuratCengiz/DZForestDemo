@@ -14,15 +14,16 @@
         <PackageReference Include="ImGui.NET" Version="1.91.6.1"/>
     </ItemGroup>
 
-    <!-- Copy Assets directory to output -->
-    <ItemGroup>
-        <Content Include="Assets\**\*" Exclude="Assets\**\.gitkeep">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-            <Link>Assets\%(RecursiveDir)%(Filename)%(Extension)</Link>
-        </Content>
-    </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\NiziKit\NiziKit.csproj" />
     </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="Assets\Scenes\*.niziscene.json">
+        <LogicalName>Scenes.%(Filename)%(Extension)</LogicalName>
+      </EmbeddedResource>
+    </ItemGroup>
+
+    <Import Project="..\NiziKit\build\NiziKit.targets" />
 
 </Project>

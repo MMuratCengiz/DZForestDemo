@@ -1,0 +1,354 @@
+using System.Buffers.Binary;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
+namespace NiziKit.Build;
+
+public static class NiziPackBuilder
+{
+    private const uint MagicNumber = 0x4E5A504B;
+    private const uint Version = 1;
+    private const int HeaderSize = 64;
+    private const int Alignment = 8;
+
+    public static void Build(string packJsonPath, string assetsRoot, string outputPath)
+    {
+        var manifestJson = File.ReadAllText(packJsonPath);
+        var manifest = JsonSerializer.Deserialize<PackManifest>(manifestJson)
+            ?? throw new InvalidOperationException($"Failed to parse manifest: {packJsonPath}");
+
+        var packDir = Path.GetDirectoryName(packJsonPath) ?? assetsRoot;
+        var relativePath = Path.GetRelativePath(assetsRoot, packJsonPath).Replace('\\', '/');
+
+        var files = CollectFiles(manifest, assetsRoot, relativePath);
+
+        using var output = File.Create(outputPath);
+        WritePackFile(output, files, assetsRoot);
+
+        Console.WriteLine($"  Built: {Path.GetFileName(outputPath)} ({files.Count} files, {output.Length:N0} bytes)");
+    }
+
+    private static List<(string path, string fullPath)> CollectFiles(PackManifest manifest, string assetsRoot, string manifestRelativePath)
+    {
+        var files = new List<(string path, string fullPath)>();
+
+        var manifestFullPath = Path.Combine(assetsRoot, manifestRelativePath.Replace('/', Path.DirectorySeparatorChar));
+        files.Add(("pack.nizipack.json", manifestFullPath));
+
+        foreach (var (_, path) in manifest.Textures)
+        {
+            AddFile(files, path, assetsRoot);
+        }
+
+        foreach (var (_, path) in manifest.Shaders)
+        {
+            AddFile(files, path, assetsRoot);
+            CollectShaderIncludes(files, path, assetsRoot);
+        }
+
+        foreach (var (_, path) in manifest.Materials)
+        {
+            AddFile(files, path, assetsRoot);
+            CollectMaterialDependencies(files, path, assetsRoot);
+        }
+
+        foreach (var (_, path) in manifest.Models)
+        {
+            AddFile(files, path, assetsRoot);
+        }
+
+        return files;
+    }
+
+    private static void AddFile(List<(string path, string fullPath)> files, string path, string assetsRoot)
+    {
+        var normalizedPath = path.Replace('\\', '/').TrimStart('/');
+        var fullPath = Path.Combine(assetsRoot, normalizedPath.Replace('/', Path.DirectorySeparatorChar));
+
+        if (!File.Exists(fullPath))
+        {
+            Console.WriteLine($"  Warning: File not found: {normalizedPath}");
+            return;
+        }
+
+        if (files.Any(f => f.path.Equals(normalizedPath, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        files.Add((normalizedPath, fullPath));
+    }
+
+    private static void CollectShaderIncludes(List<(string path, string fullPath)> files, string shaderPath, string assetsRoot)
+    {
+        var fullPath = Path.Combine(assetsRoot, shaderPath.Replace('/', Path.DirectorySeparatorChar));
+        if (!File.Exists(fullPath))
+        {
+            return;
+        }
+
+        var shaderDir = Path.GetDirectoryName(shaderPath)?.Replace('\\', '/') ?? "";
+
+        try
+        {
+            var shaderJson = File.ReadAllText(fullPath);
+            var shader = JsonSerializer.Deserialize<ShaderJson>(shaderJson);
+            if (shader?.Base?.Stages != null)
+            {
+                foreach (var stage in shader.Base.Stages)
+                {
+                    if (stage.Path != null)
+                    {
+                        var stagePath = string.IsNullOrEmpty(shaderDir)
+                            ? stage.Path
+                            : $"{shaderDir}/{stage.Path}";
+                        AddFile(files, stagePath, assetsRoot);
+                    }
+                }
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private static bool IsPackReference(string? path) => path != null && path.Contains(':');
+
+    private static void AddTextureIfFilePath(List<(string path, string fullPath)> files, string? texturePath, string assetsRoot)
+    {
+        if (texturePath != null && !IsPackReference(texturePath))
+        {
+            AddFile(files, texturePath, assetsRoot);
+        }
+    }
+
+    private static void CollectMaterialDependencies(List<(string path, string fullPath)> files, string materialPath, string assetsRoot)
+    {
+        var fullPath = Path.Combine(assetsRoot, materialPath.Replace('/', Path.DirectorySeparatorChar));
+        if (!File.Exists(fullPath))
+        {
+            return;
+        }
+
+        try
+        {
+            var materialJson = File.ReadAllText(fullPath);
+            var material = JsonSerializer.Deserialize<MaterialJson>(materialJson);
+
+            if (material?.Shader != null && !material.Shader.StartsWith("Builtin/", StringComparison.OrdinalIgnoreCase))
+            {
+                AddFile(files, material.Shader, assetsRoot);
+                CollectShaderIncludes(files, material.Shader, assetsRoot);
+            }
+
+            if (material?.Textures != null)
+            {
+                var textures = material.Textures;
+                AddTextureIfFilePath(files, textures.Albedo, assetsRoot);
+                AddTextureIfFilePath(files, textures.Normal, assetsRoot);
+                AddTextureIfFilePath(files, textures.Metallic, assetsRoot);
+                AddTextureIfFilePath(files, textures.Roughness, assetsRoot);
+                AddTextureIfFilePath(files, textures.Ao, assetsRoot);
+                AddTextureIfFilePath(files, textures.Emissive, assetsRoot);
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    private static void WritePackFile(FileStream output, List<(string path, string fullPath)> files, string assetsRoot)
+    {
+        var indexEntries = new List<(string path, byte[] pathBytes, long size)>();
+        long totalDataSize = 0;
+
+        foreach (var (path, fullPath) in files)
+        {
+            var pathBytes = Encoding.UTF8.GetBytes(path);
+            var fileSize = new FileInfo(fullPath).Length;
+            indexEntries.Add((path, pathBytes, fileSize));
+            totalDataSize += AlignUp(fileSize, Alignment);
+        }
+
+        long indexSize = 0;
+        foreach (var (_, pathBytes, _) in indexEntries)
+        {
+            indexSize += 2 + pathBytes.Length + 8 + 8;
+        }
+
+        long indexOffset = HeaderSize;
+        long dataOffset = AlignUp(indexOffset + indexSize, Alignment);
+
+        WriteHeader(output, (uint)files.Count, indexOffset, indexSize, dataOffset, totalDataSize);
+
+        long currentDataOffset = 0;
+        foreach (var (path, pathBytes, size) in indexEntries)
+        {
+            WriteIndexEntry(output, pathBytes, currentDataOffset, size);
+            currentDataOffset += AlignUp(size, Alignment);
+        }
+
+        var paddingNeeded = dataOffset - output.Position;
+        if (paddingNeeded > 0)
+        {
+            output.Write(new byte[paddingNeeded]);
+        }
+
+        foreach (var (path, fullPath) in files)
+        {
+            var data = File.ReadAllBytes(fullPath);
+            output.Write(data);
+
+            var padding = AlignUp(data.Length, Alignment) - data.Length;
+            if (padding > 0)
+            {
+                output.Write(new byte[padding]);
+            }
+        }
+    }
+
+    private static void WriteHeader(FileStream output, uint entryCount, long indexOffset, long indexSize, long dataOffset, long dataSize)
+    {
+        Span<byte> header = stackalloc byte[HeaderSize];
+        header.Clear();
+
+        BinaryPrimitives.WriteUInt32LittleEndian(header, MagicNumber);
+        BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(4), Version);
+        BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(8), 0);
+        BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(12), entryCount);
+        BinaryPrimitives.WriteUInt64LittleEndian(header.Slice(16), (ulong)indexOffset);
+        BinaryPrimitives.WriteUInt64LittleEndian(header.Slice(24), (ulong)indexSize);
+        BinaryPrimitives.WriteUInt64LittleEndian(header.Slice(32), (ulong)dataOffset);
+        BinaryPrimitives.WriteUInt64LittleEndian(header.Slice(40), (ulong)dataSize);
+
+        output.Write(header);
+    }
+
+    private static void WriteIndexEntry(FileStream output, byte[] pathBytes, long dataOffset, long size)
+    {
+        Span<byte> entry = stackalloc byte[2 + pathBytes.Length + 16];
+
+        BinaryPrimitives.WriteUInt16LittleEndian(entry, (ushort)pathBytes.Length);
+        pathBytes.CopyTo(entry.Slice(2));
+        BinaryPrimitives.WriteUInt64LittleEndian(entry.Slice(2 + pathBytes.Length), (ulong)dataOffset);
+        BinaryPrimitives.WriteUInt64LittleEndian(entry.Slice(2 + pathBytes.Length + 8), (ulong)size);
+
+        output.Write(entry);
+    }
+
+    private static long AlignUp(long value, int alignment)
+    {
+        return (value + alignment - 1) / alignment * alignment;
+    }
+
+    public static void BuildAll(string assetsDir, string outputDir)
+    {
+        Console.WriteLine($"Building NiziPacks from: {assetsDir}");
+
+        if (!Directory.Exists(assetsDir))
+        {
+            Console.WriteLine($"Assets directory not found: {assetsDir}");
+            return;
+        }
+
+        Directory.CreateDirectory(outputDir);
+
+        var packJsonFiles = Directory.GetFiles(assetsDir, "*.nizipack.json", SearchOption.AllDirectories);
+
+        if (packJsonFiles.Length == 0)
+        {
+            Console.WriteLine("No .nizipack.json files found");
+            return;
+        }
+
+        Console.WriteLine($"Found {packJsonFiles.Length} pack(s)");
+
+        foreach (var packJsonPath in packJsonFiles)
+        {
+            var packName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(packJsonPath));
+            var outputPath = Path.Combine(outputDir, packName + ".nizipack");
+
+            try
+            {
+                Build(packJsonPath, assetsDir, outputPath);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"  Error building {packName}: {ex.Message}");
+            }
+        }
+    }
+
+    private class PackManifest
+    {
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("version")]
+        public string Version { get; set; } = "1.0.0";
+
+        [JsonPropertyName("textures")]
+        public Dictionary<string, string> Textures { get; set; } = new();
+
+        [JsonPropertyName("shaders")]
+        public Dictionary<string, string> Shaders { get; set; } = new();
+
+        [JsonPropertyName("materials")]
+        public Dictionary<string, string> Materials { get; set; } = new();
+
+        [JsonPropertyName("models")]
+        public Dictionary<string, string> Models { get; set; } = new();
+    }
+
+    private class ShaderJson
+    {
+        [JsonPropertyName("base")]
+        public ShaderBaseJson? Base { get; set; }
+    }
+
+    private class ShaderBaseJson
+    {
+        [JsonPropertyName("stages")]
+        public List<ShaderStageJson>? Stages { get; set; }
+    }
+
+    private class ShaderStageJson
+    {
+        [JsonPropertyName("stage")]
+        public string? Stage { get; set; }
+
+        [JsonPropertyName("path")]
+        public string? Path { get; set; }
+    }
+
+    private class MaterialJson
+    {
+        [JsonPropertyName("shader")]
+        public string? Shader { get; set; }
+
+        [JsonPropertyName("textures")]
+        public MaterialTexturesJson? Textures { get; set; }
+    }
+
+    private class MaterialTexturesJson
+    {
+        [JsonPropertyName("albedo")]
+        public string? Albedo { get; set; }
+
+        [JsonPropertyName("normal")]
+        public string? Normal { get; set; }
+
+        [JsonPropertyName("metallic")]
+        public string? Metallic { get; set; }
+
+        [JsonPropertyName("roughness")]
+        public string? Roughness { get; set; }
+
+        [JsonPropertyName("ao")]
+        public string? Ao { get; set; }
+
+        [JsonPropertyName("emissive")]
+        public string? Emissive { get; set; }
+    }
+}

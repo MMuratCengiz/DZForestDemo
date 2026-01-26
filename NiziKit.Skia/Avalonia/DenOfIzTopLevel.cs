@@ -3,7 +3,6 @@ using Avalonia.Controls;
 using Avalonia.Controls.Embedding;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
-using Avalonia.Media;
 using Avalonia.Skia.Helpers;
 using Avalonia.VisualTree;
 using DenOfIz;

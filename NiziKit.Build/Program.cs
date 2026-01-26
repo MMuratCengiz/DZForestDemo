@@ -12,6 +12,18 @@ if (args.Length > 0 && args[0] == "generate-manifest")
     return 0;
 }
 
+if (args.Length > 0 && args[0] == "build-packs")
+{
+    if (args.Length < 3)
+    {
+        Console.WriteLine("Usage: NiziKit.Build build-packs <assets-dir> <output-dir>");
+        return 1;
+    }
+
+    NiziPackBuilder.BuildAll(args[1], args[2]);
+    return 0;
+}
+
 DenOfIz.DenOfIzRuntime.Initialize();
 
 var projectDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));

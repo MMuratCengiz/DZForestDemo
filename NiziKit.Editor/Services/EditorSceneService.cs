@@ -257,13 +257,66 @@ public class EditorSceneService
         }
         else if (component is MaterialComponent matComp)
         {
-            if (!string.IsNullOrEmpty(matComp.MaterialRef))
+            if (matComp.Tags.Count > 0)
             {
-                json.Properties["material"] = JsonSerializer.SerializeToElement(matComp.MaterialRef);
+                json.Properties["tags"] = JsonSerializer.SerializeToElement(matComp.Tags);
             }
-            else if (matComp.Material != null)
+        }
+        else if (component is SurfaceComponent surfaceComp)
+        {
+            json.Type = "surface";
+            if (!string.IsNullOrEmpty(surfaceComp.AlbedoRef))
             {
-                json.Properties["material"] = JsonSerializer.SerializeToElement(matComp.Material.Name ?? "unknown");
+                json.Properties["albedo"] = JsonSerializer.SerializeToElement(surfaceComp.AlbedoRef);
+            }
+            if (!string.IsNullOrEmpty(surfaceComp.NormalRef))
+            {
+                json.Properties["normal"] = JsonSerializer.SerializeToElement(surfaceComp.NormalRef);
+            }
+            if (!string.IsNullOrEmpty(surfaceComp.MetallicRef))
+            {
+                json.Properties["metallic"] = JsonSerializer.SerializeToElement(surfaceComp.MetallicRef);
+            }
+            if (!string.IsNullOrEmpty(surfaceComp.RoughnessRef))
+            {
+                json.Properties["roughness"] = JsonSerializer.SerializeToElement(surfaceComp.RoughnessRef);
+            }
+            if (surfaceComp.MetallicValue != 0.0f)
+            {
+                json.Properties["metallicValue"] = JsonSerializer.SerializeToElement(surfaceComp.MetallicValue);
+            }
+            if (surfaceComp.RoughnessValue != 0.5f)
+            {
+                json.Properties["roughnessValue"] = JsonSerializer.SerializeToElement(surfaceComp.RoughnessValue);
+            }
+            if (surfaceComp.AlbedoColor != System.Numerics.Vector4.One)
+            {
+                json.Properties["albedoColor"] = JsonSerializer.SerializeToElement(new[] {
+                    surfaceComp.AlbedoColor.X, surfaceComp.AlbedoColor.Y,
+                    surfaceComp.AlbedoColor.Z, surfaceComp.AlbedoColor.W
+                });
+            }
+            if (surfaceComp.EmissiveColor != System.Numerics.Vector3.Zero)
+            {
+                json.Properties["emissiveColor"] = JsonSerializer.SerializeToElement(new[] {
+                    surfaceComp.EmissiveColor.X, surfaceComp.EmissiveColor.Y, surfaceComp.EmissiveColor.Z
+                });
+            }
+            if (surfaceComp.EmissiveIntensity != 0.0f)
+            {
+                json.Properties["emissiveIntensity"] = JsonSerializer.SerializeToElement(surfaceComp.EmissiveIntensity);
+            }
+            if (surfaceComp.UVScale != System.Numerics.Vector2.One)
+            {
+                json.Properties["uvScale"] = JsonSerializer.SerializeToElement(new[] {
+                    surfaceComp.UVScale.X, surfaceComp.UVScale.Y
+                });
+            }
+            if (surfaceComp.UVOffset != System.Numerics.Vector2.Zero)
+            {
+                json.Properties["uvOffset"] = JsonSerializer.SerializeToElement(new[] {
+                    surfaceComp.UVOffset.X, surfaceComp.UVOffset.Y
+                });
             }
         }
         else if (component is Animator animComp)
@@ -281,7 +334,6 @@ public class EditorSceneService
                 json.Properties["defaultAnimation"] = JsonSerializer.SerializeToElement(animComp.DefaultAnimation);
             }
 
-            // Serialize animations list (only external animations need to be saved)
             var externalAnimations = animComp.Animations
                 .Where(a => a.IsExternal)
                 .Select(a => new { name = a.Name, source = a.SourceRef })

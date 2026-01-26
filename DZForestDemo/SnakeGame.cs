@@ -3,6 +3,7 @@ using DZForestDemo.GameObjects;
 using Microsoft.Extensions.Logging;
 using NiziKit.Application;
 using NiziKit.Core;
+using NiziKit.Graphics.Renderer;
 using NiziKit.Graphics.Renderer.Forward;
 using NiziKit.Inputs;
 using NiziKit.UI;
@@ -12,11 +13,18 @@ namespace DZForestDemo;
 public sealed class SnakeGame(GameDesc? desc = null) : Game(desc)
 {
     private static readonly ILogger Logger = Log.Get<SnakeGame>();
-    private ForwardRenderer _renderer = null!;
+    private IRenderer _renderer = null!;
+    private RenderFrame _renderFrame = null!;
+
+    public override Type RendererType => typeof(ForwardRenderer);
 
     protected override void Load(Game game)
     {
-        _renderer = new ForwardRenderer(RenderUi);
+        _renderFrame = new RenderFrame();
+        _renderFrame.EnableDebugOverlay(DebugOverlayConfig.Default);
+        _renderFrame.EnableUi(UiContextDesc.Default);
+
+        _renderer = new ForwardRenderer();
         World.LoadScene("Scenes/SnakeScene.niziscene.json");
 
         Logger.LogInformation("=== SNAKE 3D ===");
@@ -39,7 +47,19 @@ public sealed class SnakeGame(GameDesc? desc = null) : Game(desc)
             RestartGame();
         }
 
-        _renderer.Render();
+        _renderFrame.BeginFrame();
+        var sceneTexture = _renderer.Render(_renderFrame);
+
+        // Add debug overlay
+        var debugOverlay = _renderFrame.RenderDebugOverlay();
+        _renderFrame.AlphaBlit(debugOverlay, sceneTexture);
+
+        // Add UI overlay
+        var ui = _renderFrame.RenderUi(RenderUi);
+        _renderFrame.AlphaBlit(ui, sceneTexture);
+
+        _renderFrame.Submit();
+        _renderFrame.Present(sceneTexture);
     }
 
     private void RestartGame()
@@ -50,6 +70,7 @@ public sealed class SnakeGame(GameDesc? desc = null) : Game(desc)
     protected override void OnShutdown()
     {
         _renderer?.Dispose();
+        _renderFrame?.Dispose();
     }
 
     private void RenderUi(UiFrame ui)

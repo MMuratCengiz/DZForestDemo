@@ -1,4 +1,3 @@
-using System.Collections.ObjectModel;
 using System.Reflection;
 using NiziKit.Assets;
 using NiziKit.Assets.Pack;
@@ -37,7 +36,6 @@ public class AssetBrowserService
         return assetType switch
         {
             AssetRefType.Mesh => GetMeshesFromPack(packName),
-            AssetRefType.Material => GetMaterialsFromPack(packName),
             AssetRefType.Texture => GetTexturesFromPack(packName),
             AssetRefType.Skeleton => GetSkeletonsFromPack(packName),
             AssetRefType.Animation => GetAnimationsFromPack(packName),
@@ -64,7 +62,6 @@ public class AssetBrowserService
         return assetType switch
         {
             AssetRefType.Mesh => ResolvePackMesh(packName, assetName),
-            AssetRefType.Material => AssetPacks.GetMaterial(packName, assetName),
             AssetRefType.Texture => AssetPacks.GetTexture(packName, assetName),
             AssetRefType.Skeleton => ResolvePackSkeleton(packName, assetName),
             AssetRefType.Animation => ResolvePackAnimation(packName, assetName),
@@ -172,22 +169,6 @@ public class AssetBrowserService
         return meshes;
     }
 
-    public IReadOnlyList<AssetInfo> GetMaterialsFromPack(string packName)
-    {
-        var materials = new List<AssetInfo>();
-        if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
-        {
-            return materials;
-        }
-
-        foreach (var materialKey in pack.Materials.Keys)
-        {
-            materials.Add(new AssetInfo { Name = materialKey, Pack = packName });
-        }
-
-        return materials;
-    }
-
     public IReadOnlyList<AssetInfo> GetAllMeshes()
     {
         var meshes = new List<AssetInfo>();
@@ -197,17 +178,6 @@ public class AssetBrowserService
         }
 
         return meshes;
-    }
-
-    public IReadOnlyList<AssetInfo> GetAllMaterials()
-    {
-        var materials = new List<AssetInfo>();
-        foreach (var packName in GetLoadedPacks())
-        {
-            materials.AddRange(GetMaterialsFromPack(packName));
-        }
-
-        return materials;
     }
 
     public IReadOnlyList<AssetInfo> GetTexturesFromPack(string packName)

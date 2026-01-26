@@ -8,6 +8,7 @@ using NiziKit.Core;
 using NiziKit.Editor.Gizmos;
 using NiziKit.Editor.ViewModels;
 using NiziKit.Graphics;
+using NiziKit.Graphics.Renderer;
 using NiziKit.Skia;
 using NiziKit.Skia.Avalonia;
 
@@ -16,6 +17,7 @@ namespace NiziKit.Editor;
 public sealed class EditorGame : Game
 {
     private EditorRenderer _renderer = null!;
+    private IRenderer _gameRenderer = null!;
     private DenOfIzTopLevel _topLevel = null!;
     private Avalonia.Application _avaloniaApp = null!;
     private SkiaContext _skiaContext = null!;
@@ -53,7 +55,8 @@ public sealed class EditorGame : Game
         _topLevel = new DenOfIzTopLevel((int)_width, (int)_height, _scaling);
         _topLevel.Content = new EditorMainView();
 
-        _renderer = new EditorRenderer(_topLevel);
+        _gameRenderer = (IRenderer)Activator.CreateInstance(RendererType)!;
+        _renderer = new EditorRenderer(_topLevel, _gameRenderer);
 
         _editorCameraObject = new GameObject("EditorCamera");
         _editorCameraObject.LocalPosition = new Vector3(0, 15, -15);

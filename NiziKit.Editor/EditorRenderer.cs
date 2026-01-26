@@ -13,13 +13,13 @@ using NiziKit.Skia.Avalonia;
 
 namespace NiziKit.Editor;
 
-public class EditorRenderer : IRenderer
+public class EditorRenderer : IDisposable
 {
     private readonly RenderFrame _renderFrame;
     private readonly ViewData _viewData;
     private readonly DenOfIzTopLevel _topLevel;
+    private readonly IRenderer _gameRenderer;
 
-    private CycledTexture _sceneColor = null!;
     private CycledTexture _sceneDepth = null!;
     private uint _width;
     private uint _height;
@@ -38,93 +38,66 @@ public class EditorRenderer : IRenderer
     public CameraComponent? Camera
     {
         get => _viewData.Camera;
-        set => _viewData.Camera = value;
+        set
+        {
+            _viewData.Camera = value;
+            // Also set on the game renderer so it renders from the correct camera
+            _gameRenderer.Camera = value;
+        }
     }
 
-    public EditorRenderer(DenOfIzTopLevel topLevel)
+    public EditorRenderer(DenOfIzTopLevel topLevel, IRenderer gameRenderer)
     {
         _topLevel = topLevel;
+        _gameRenderer = gameRenderer;
         _renderFrame = new RenderFrame();
         _viewData = new ViewData();
         _width = GraphicsContext.Width;
         _height = GraphicsContext.Height;
-        CreateRenderTargets();
+        _sceneDepth = CycledTexture.DepthAttachment("EditorSceneDepth");
         _gizmoPass = new GizmoPass();
     }
 
-    private void CreateRenderTargets()
+    public CycledTexture Render(RenderFrame frame)
     {
-        _sceneColor = CycledTexture.ColorAttachment("SceneColor");
-        _sceneDepth = CycledTexture.DepthAttachment("SceneDepth");
-    }
-
-    public void Render()
-    {
-        Render(0);
+        // Get scene render from game's renderer
+        return _gameRenderer.Render(frame);
     }
 
     public void Render(float dt)
     {
         _renderFrame.BeginFrame();
 
-        RenderScene();
-        RenderGizmos();
+        // Get scene render from game's renderer
+        var sceneColor = _gameRenderer.Render(_renderFrame);
 
+        // Add gizmos on top
+        RenderGizmos(sceneColor);
+
+        // Render Avalonia UI
         DenOfIzPlatform.TriggerRenderTick(TimeSpan.FromSeconds(dt));
         Dispatcher.UIThread.RunJobs();
         _topLevel.Render();
 
         if (_topLevel.Texture != null)
         {
-            _renderFrame.AlphaBlit(_topLevel.Texture, _sceneColor);
+            _renderFrame.AlphaBlit(_topLevel.Texture, sceneColor);
         }
 
         _renderFrame.Submit();
-        _renderFrame.Present(_sceneColor);
+        _renderFrame.Present(sceneColor);
     }
 
-    private void RenderScene()
+    private void RenderGizmos(CycledTexture sceneColor)
     {
-        var pass = _renderFrame.BeginGraphicsPass();
-        pass.SetRenderTarget(0, _sceneColor, LoadOp.Clear);
-        pass.SetDepthTarget(_sceneDepth, LoadOp.Clear);
-        pass.Begin();
-
         var scene = World.CurrentScene;
         if (scene != null)
         {
-            var renderWorld = World.RenderWorld;
-
             _viewData.Scene = scene;
             _viewData.DeltaTime = Time.DeltaTime;
             _viewData.TotalTime = Time.TotalTime;
-
-            pass.Bind<ViewBinding>(_viewData);
-
-            foreach (var material in renderWorld.GetMaterials())
-            {
-                var gpuShader = material.GpuShader;
-                if (gpuShader == null)
-                {
-                    continue;
-                }
-
-                pass.BindShader(gpuShader);
-                pass.Bind<MaterialBinding>(material);
-
-                foreach (var batch in renderWorld.GetDrawBatches(material))
-                {
-                    pass.Bind<BatchDrawBinding>(batch);
-                    pass.DrawMesh(batch.Mesh, (uint)batch.Count);
-                }
-            }
         }
 
-        pass.End();
-    }
-
-    private void RenderGizmos()
-    {
         _gizmoPass.BeginFrame();
 
         var selected = _editorViewModel?.SelectedGameObject?.GameObject;
@@ -141,7 +114,7 @@ public class EditorRenderer : IRenderer
         }
 
         var pass = _renderFrame.BeginGraphicsPass();
-        pass.SetRenderTarget(0, _sceneColor, LoadOp.Load);
+        pass.SetRenderTarget(0, sceneColor, LoadOp.Load);
         pass.SetDepthTarget(_sceneDepth, LoadOp.Load);
         pass.Begin();
 
@@ -160,20 +133,21 @@ public class EditorRenderer : IRenderer
 
         GraphicsContext.WaitIdle();
 
-        _sceneColor.Dispose();
         _sceneDepth.Dispose();
 
         _width = width;
         _height = height;
-        CreateRenderTargets();
+        _sceneDepth = CycledTexture.DepthAttachment("EditorSceneDepth");
+
+        _gameRenderer.OnResize(width, height);
     }
 
     public void Dispose()
     {
         GraphicsContext.WaitIdle();
         _gizmoPass.Dispose();
-        _sceneColor.Dispose();
         _sceneDepth.Dispose();
         _renderFrame.Dispose();
+        _gameRenderer.Dispose();
     }
 }

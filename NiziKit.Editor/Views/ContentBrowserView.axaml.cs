@@ -1,7 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Interactivity;
 using FluentAvalonia.UI.Controls;
 using NiziKit.Editor.ViewModels;
 
@@ -93,12 +92,6 @@ public partial class ContentBrowserView : UserControl
                 Command = vm.CreateFolderCommand
             },
             InlineMenuItem.Separator(),
-            new()
-            {
-                Header = "Create Material",
-                Icon = Symbol.Globe,
-                Command = vm.CreateMaterialCommand
-            },
             new()
             {
                 Header = "Create Shader",

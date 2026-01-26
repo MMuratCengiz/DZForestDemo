@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "textures": {
     "Texture": "Textures/Texture.png",
+    "VikingRealm_Albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.png",
     "T_PolygonApocalypse_01": "Synty/Textures/BaseLocomotion/Demo_Textures/T_PolygonApocalypse_01.png",
     "T_Polygon_Dummy_01": "Synty/Textures/BaseLocomotion/Demo_Textures/T_Polygon_Dummy_01.png"
   },

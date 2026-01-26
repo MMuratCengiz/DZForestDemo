@@ -12,7 +12,6 @@ public class ShapeSpawner() : GameObject("ShapeSpawner")
 
     public Mesh? CubeMesh { get; set; }
     public Mesh? SphereMesh { get; set; }
-    public Material? Material { get; set; }
 
     public void SpawnRandomShape()
     {
@@ -34,7 +33,7 @@ public class ShapeSpawner() : GameObject("ShapeSpawner")
 
     public void SpawnCube(Vector3 position)
     {
-        if (Scene == null || CubeMesh == null || Material == null)
+        if (Scene == null || CubeMesh == null)
         {
             return;
         }
@@ -48,13 +47,13 @@ public class ShapeSpawner() : GameObject("ShapeSpawner")
         );
 
         cube.AddComponent(new MeshComponent { Mesh = CubeMesh });
-        cube.AddComponent(new MaterialComponent { Material = Material });
+        cube.AddComponent(new SurfaceComponent { AlbedoColor = Vector4.One });
         cube.AddComponent(RigidbodyComponent.Dynamic(PhysicsShape.Box(Vector3.One), 1f));
     }
 
     public void SpawnSphere(Vector3 position)
     {
-        if (Scene == null || SphereMesh == null || Material == null)
+        if (Scene == null || SphereMesh == null)
         {
             return;
         }
@@ -63,7 +62,7 @@ public class ShapeSpawner() : GameObject("ShapeSpawner")
         sphere.LocalPosition = position;
 
         sphere.AddComponent(new MeshComponent { Mesh = SphereMesh });
-        sphere.AddComponent(new MaterialComponent { Material = Material });
+        sphere.AddComponent(new SurfaceComponent { AlbedoColor = Vector4.One });
         sphere.AddComponent(RigidbodyComponent.Dynamic(PhysicsShape.Sphere(1f), 1f));
     }
 

@@ -1,7 +1,5 @@
 using Avalonia.Controls;
-using Avalonia.Data.Converters;
 using Avalonia.Markup.Xaml;
-using Avalonia.Media;
 
 namespace NiziKit.Editor.Views;
 

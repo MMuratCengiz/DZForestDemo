@@ -26,7 +26,7 @@ public class GpuShader : IDisposable
         var bindGroupLayouts = new[]
         {
             store.Camera,
-            store.Material,
+            store.Surface,
             store.Draw
         };
 

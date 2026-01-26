@@ -212,7 +212,6 @@ public static class ComponentRegistry
                     object? asset = assetRefAttr.AssetType switch
                     {
                         AssetRefType.Mesh => resolver.ResolveMesh(reference),
-                        AssetRefType.Material => resolver.ResolveMaterial(reference),
                         AssetRefType.Texture => resolver.ResolveTexture(reference),
                         AssetRefType.Shader => resolver.ResolveShader(reference),
                         AssetRefType.Skeleton => resolver.ResolveSkeleton(reference),

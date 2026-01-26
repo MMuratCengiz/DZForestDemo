@@ -1,5 +1,4 @@
 using System.Numerics;
-using DZForestDemo.Scenes;
 using NiziKit.Assets;
 using NiziKit.Components;
 using NiziKit.Core;
@@ -14,7 +13,6 @@ public class FoodSpawnerController : IComponent
     private readonly Random _random = new();
 
     public Mesh? FoodMesh { get; set; }
-    public Material? FoodMaterial { get; set; }
 
     [JsonProperty("arenaSize")]
     public int ArenaSize { get; set; } = 15;
@@ -26,7 +24,7 @@ public class FoodSpawnerController : IComponent
 
     public void Begin()
     {
-        EnsureAssetsCreated();
+        FoodMesh ??= Assets.CreateSphere(FoodSize);
 
         var snakeController = Scene?.FindComponent<SnakeController>();
         if (snakeController != null)
@@ -36,28 +34,9 @@ public class FoodSpawnerController : IComponent
         SpawnFood();
     }
 
-    private void EnsureAssetsCreated()
-    {
-        FoodMesh ??= Assets.CreateSphere(FoodSize);
-
-        if (FoodMaterial == null)
-        {
-            var existing = Assets.GetMaterial("Food");
-            if (existing != null)
-            {
-                FoodMaterial = existing;
-            }
-            else
-            {
-                FoodMaterial = new GlowingFoodMaterial("Food", 255, 100, 50);
-                Assets.RegisterMaterial(FoodMaterial);
-            }
-        }
-    }
-
     public void SpawnFood()
     {
-        if (Scene == null || FoodMesh == null || FoodMaterial == null)
+        if (Scene == null || FoodMesh == null)
         {
             return;
         }
@@ -77,7 +56,16 @@ public class FoodSpawnerController : IComponent
         var go = new GameObject("Food") { LocalPosition = position };
         go.AddComponent(new Food());
         go.AddComponent(new MeshComponent { Mesh = FoodMesh });
-        go.AddComponent(new MaterialComponent { Material = FoodMaterial });
+        go.AddComponent(new SurfaceComponent
+        {
+            AlbedoColor = new Vector4(1.0f, 0.4f, 0.2f, 1.0f),
+            EmissiveColor = new Vector3(1.0f, 0.4f, 0.2f),
+            EmissiveIntensity = 2.0f
+        });
+        go.AddComponent(new MaterialComponent
+        {
+            Tags = { ["shader"] = "Shaders/GlowingFood.nizishp.json" }
+        });
         go.AddComponent(RigidbodyComponent.Kinematic(PhysicsShape.Sphere(FoodSize)));
 
         Scene.Add(go);

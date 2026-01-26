@@ -1,7 +1,6 @@
 using System.Reflection;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
-using NiziKit.Animation;
 using NiziKit.Assets;
 
 namespace NiziKit.Editor.Views.Editors;

@@ -2,7 +2,7 @@ using DenOfIz;
 
 namespace NiziKit.Graphics.Binding.Layout;
 
-public class GpuMaterialLayout : ILayout
+public class GpuSurfaceLayout : ILayout
 {
     public static readonly BindingSlot Albedo = BindingSlot.ShaderResource(0);
     public static readonly BindingSlot Normal = BindingSlot.ShaderResource(1);
@@ -14,7 +14,7 @@ public class GpuMaterialLayout : ILayout
 
     public BindGroupLayout Layout { get; }
 
-    public GpuMaterialLayout(LogicalDevice device)
+    public GpuSurfaceLayout(LogicalDevice device)
     {
         var bindings = new List<BindingDesc>
         {

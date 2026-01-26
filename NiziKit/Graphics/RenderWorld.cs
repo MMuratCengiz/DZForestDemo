@@ -7,23 +7,27 @@ namespace NiziKit.Graphics;
 
 public struct RenderObject
 {
-    public Material Material;
+    public SurfaceComponent Surface;
+    public GpuShader? Shader;
     public Mesh Mesh;
     public GameObject Owner;
 }
 
 public class RenderWorld : IWorldEventListener
 {
-    private readonly List<Material> _materials = new(64);
-    private readonly Dictionary<Material, Dictionary<Mesh, DrawBatch>> _materialMeshBuckets = new(64);
-    private readonly Dictionary<object, (Material material, Mesh mesh, int index)> _objectLookup = new(256);
+    private readonly List<GpuShader> _shaders = new(64);
+    private readonly Dictionary<GpuShader, Dictionary<SurfaceComponent, Dictionary<Mesh, DrawBatch>>> _shaderSurfaceMeshBuckets = new(64);
+    private readonly Dictionary<object, (GpuShader? shader, SurfaceComponent surface, Mesh mesh, int index)> _objectLookup = new(256);
 
     private readonly List<DrawBatch> _batchCache = new(64);
+    private readonly List<SurfaceComponent> _surfaceCache = new(64);
+
+    private const string DefaultShaderPath = "Builtin/Shaders/Default";
 
     public void SceneReset()
     {
-        _materials.Clear();
-        _materialMeshBuckets.Clear();
+        _shaders.Clear();
+        _shaderSurfaceMeshBuckets.Clear();
         _objectLookup.Clear();
     }
 
@@ -39,7 +43,7 @@ public class RenderWorld : IWorldEventListener
 
     public void ComponentAdded(GameObject go, IComponent component)
     {
-        if (component is MeshComponent or MaterialComponent)
+        if (component is MeshComponent or SurfaceComponent or MaterialComponent)
         {
             TryRegister(go);
         }
@@ -47,7 +51,7 @@ public class RenderWorld : IWorldEventListener
 
     public void ComponentRemoved(GameObject go, IComponent component)
     {
-        if (component is MeshComponent or MaterialComponent)
+        if (component is MeshComponent or SurfaceComponent or MaterialComponent)
         {
             Unregister(go);
         }
@@ -55,7 +59,7 @@ public class RenderWorld : IWorldEventListener
 
     public void ComponentChanged(GameObject go, IComponent component)
     {
-        if (component is MeshComponent or MaterialComponent)
+        if (component is MeshComponent or SurfaceComponent or MaterialComponent)
         {
             Unregister(go);
             TryRegister(go);
@@ -69,21 +73,33 @@ public class RenderWorld : IWorldEventListener
             return;
         }
 
-        var materialComp = go.GetComponent<MaterialComponent>();
+        var surfaceComp = go.GetComponent<SurfaceComponent>();
         var meshComp = go.GetComponent<MeshComponent>();
+        var materialComp = go.GetComponent<MaterialComponent>();
 
-        var material = materialComp?.Material;
         var mesh = meshComp?.Mesh;
-        if (material == null || mesh == null)
+        if (surfaceComp == null || mesh == null)
         {
             return;
         }
 
-        if (!_materialMeshBuckets.TryGetValue(material, out var meshBuckets))
+        var shader = ResolveShader(materialComp);
+        if (shader == null)
+        {
+            return;
+        }
+
+        if (!_shaderSurfaceMeshBuckets.TryGetValue(shader, out var surfaceBuckets))
+        {
+            surfaceBuckets = new Dictionary<SurfaceComponent, Dictionary<Mesh, DrawBatch>>(16);
+            _shaderSurfaceMeshBuckets[shader] = surfaceBuckets;
+            _shaders.Add(shader);
+        }
+
+        if (!surfaceBuckets.TryGetValue(surfaceComp, out var meshBuckets))
         {
             meshBuckets = new Dictionary<Mesh, DrawBatch>(16);
-            _materialMeshBuckets[material] = meshBuckets;
-            _materials.Add(material);
+            surfaceBuckets[surfaceComp] = meshBuckets;
         }
 
         if (!meshBuckets.TryGetValue(mesh, out var batch))
@@ -94,13 +110,35 @@ public class RenderWorld : IWorldEventListener
 
         var renderObj = new RenderObject
         {
-            Material = material,
+            Surface = surfaceComp,
+            Shader = shader,
             Mesh = mesh,
             Owner = go
         };
 
-        _objectLookup[go] = (material, mesh, batch.Count);
+        _objectLookup[go] = (shader, surfaceComp, mesh, batch.Count);
         batch.Add(renderObj);
+    }
+
+    private GpuShader? ResolveShader(MaterialComponent? materialComp)
+    {
+        if (materialComp?.Tags != null && materialComp.Tags.TryGetValue("shader", out var shaderPath))
+        {
+            string? variant = null;
+            materialComp.Tags.TryGetValue("variant", out variant);
+
+            if (shaderPath.StartsWith("Builtin/"))
+            {
+                var fullName = string.IsNullOrEmpty(variant) ? shaderPath : $"{shaderPath}_{variant}";
+                return NiziKit.Assets.Assets.GetShader(fullName);
+            }
+            else
+            {
+                return NiziKit.Assets.Assets.LoadShaderFromJson(shaderPath, variant);
+            }
+        }
+
+        return NiziKit.Assets.Assets.GetShader(DefaultShaderPath);
     }
 
     private void Unregister(GameObject go)
@@ -110,14 +148,20 @@ public class RenderWorld : IWorldEventListener
             return;
         }
 
-        var meshBuckets = _materialMeshBuckets[entry.material];
+        if (entry.shader == null)
+        {
+            return;
+        }
+
+        var surfaceBuckets = _shaderSurfaceMeshBuckets[entry.shader];
+        var meshBuckets = surfaceBuckets[entry.surface];
         var batch = meshBuckets[entry.mesh];
         var lastIndex = batch.Count - 1;
 
         if (entry.index < lastIndex)
         {
             var swapped = batch.Objects[lastIndex];
-            _objectLookup[swapped.Owner] = (entry.material, entry.mesh, entry.index);
+            _objectLookup[swapped.Owner] = (entry.shader, entry.surface, entry.mesh, entry.index);
         }
 
         batch.RemoveAt(entry.index);
@@ -128,22 +172,49 @@ public class RenderWorld : IWorldEventListener
 
             if (meshBuckets.Count == 0)
             {
-                _materialMeshBuckets.Remove(entry.material);
-                _materials.Remove(entry.material);
+                surfaceBuckets.Remove(entry.surface);
+
+                if (surfaceBuckets.Count == 0)
+                {
+                    _shaderSurfaceMeshBuckets.Remove(entry.shader);
+                    _shaders.Remove(entry.shader);
+                }
             }
         }
     }
 
-    public ReadOnlySpan<Material> GetMaterials()
+    public ReadOnlySpan<GpuShader> GetShaders()
     {
-        return CollectionsMarshal.AsSpan(_materials);
+        return CollectionsMarshal.AsSpan(_shaders);
     }
 
-    public ReadOnlySpan<DrawBatch> GetDrawBatches(Material material)
+    public ReadOnlySpan<SurfaceComponent> GetSurfaces(GpuShader shader)
+    {
+        _surfaceCache.Clear();
+
+        if (!_shaderSurfaceMeshBuckets.TryGetValue(shader, out var surfaceBuckets))
+        {
+            return ReadOnlySpan<SurfaceComponent>.Empty;
+        }
+
+        foreach (var surface in surfaceBuckets.Keys)
+        {
+            _surfaceCache.Add(surface);
+        }
+
+        return CollectionsMarshal.AsSpan(_surfaceCache);
+    }
+
+    public ReadOnlySpan<DrawBatch> GetDrawBatches(GpuShader shader, SurfaceComponent surface)
     {
         _batchCache.Clear();
 
-        if (!_materialMeshBuckets.TryGetValue(material, out var meshBuckets))
+        if (!_shaderSurfaceMeshBuckets.TryGetValue(shader, out var surfaceBuckets))
+        {
+            return ReadOnlySpan<DrawBatch>.Empty;
+        }
+
+        if (!surfaceBuckets.TryGetValue(surface, out var meshBuckets))
         {
             return ReadOnlySpan<DrawBatch>.Empty;
         }

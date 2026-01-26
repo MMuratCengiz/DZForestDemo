@@ -1,5 +1,6 @@
 using NiziKit.Application;
 using NiziKit.Core;
+using NiziKit.Graphics.Renderer;
 using NiziKit.Graphics.Renderer.Forward;
 using NiziKit.UI;
 
@@ -7,11 +8,18 @@ namespace DZForestDemo;
 
 public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 {
-    private ForwardRenderer _renderer = null!;
+    private IRenderer _renderer = null!;
+    private RenderFrame _renderFrame = null!;
+
+    public override Type RendererType => typeof(ForwardRenderer);
 
     protected override void Load(Game game)
     {
-        _renderer = new ForwardRenderer(RenderUi);
+        _renderFrame = new RenderFrame();
+        _renderFrame.EnableDebugOverlay(DebugOverlayConfig.Default);
+        _renderFrame.EnableUi(UiContextDesc.Default);
+
+        _renderer = new ForwardRenderer();
         World.LoadScene("Scenes/VikingShowcase.niziscene.json");
     }
 
@@ -28,7 +36,20 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
     protected override void Update(float dt)
     {
         HandleInput();
-        _renderer.Render();
+
+        _renderFrame.BeginFrame();
+        var sceneTexture = _renderer.Render(_renderFrame);
+
+        // Add debug overlay
+        var debugOverlay = _renderFrame.RenderDebugOverlay();
+        _renderFrame.AlphaBlit(debugOverlay, sceneTexture);
+
+        // Add UI overlay
+        var ui = _renderFrame.RenderUi(RenderUi);
+        _renderFrame.AlphaBlit(ui, sceneTexture);
+
+        _renderFrame.Submit();
+        _renderFrame.Present(sceneTexture);
     }
 
     private void HandleInput()
@@ -43,5 +64,6 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
     protected override void OnShutdown()
     {
         _renderer?.Dispose();
+        _renderFrame?.Dispose();
     }
 }

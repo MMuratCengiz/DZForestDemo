@@ -1,6 +1,5 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
-using NiziKit.Components;
 using NiziKit.Core;
 
 namespace NiziKit.Physics;

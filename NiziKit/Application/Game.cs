@@ -4,6 +4,7 @@ using NiziKit.Application.Timing;
 using NiziKit.Application.Windowing;
 using NiziKit.Core;
 using NiziKit.Graphics;
+using NiziKit.Graphics.Renderer.Forward;
 using NiziKit.Inputs;
 using NiziKit.Services;
 
@@ -11,6 +12,7 @@ namespace NiziKit.Application;
 
 public class Game : IDisposable
 {
+    public virtual Type RendererType => typeof(ForwardRenderer);
     private static Game? _instance;
     public static Game Instance => _instance ?? throw new InvalidOperationException("Game not initialized");
 

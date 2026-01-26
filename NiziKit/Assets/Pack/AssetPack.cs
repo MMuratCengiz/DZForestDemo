@@ -14,7 +14,6 @@ public sealed class AssetPack : IDisposable
 
     private readonly ConcurrentDictionary<string, Texture2d> _textures = new();
     private readonly ConcurrentDictionary<string, Graphics.GpuShader> _shaders = new();
-    private readonly ConcurrentDictionary<string, Material> _materials = new();
     private readonly ConcurrentDictionary<string, Model> _models = new();
     private readonly ConcurrentDictionary<string, string> _modelPaths = new();
 
@@ -24,7 +23,6 @@ public sealed class AssetPack : IDisposable
 
     public IReadOnlyDictionary<string, Texture2d> Textures => _textures;
     public IReadOnlyDictionary<string, Graphics.GpuShader> Shaders => _shaders;
-    public IReadOnlyDictionary<string, Material> Materials => _materials;
     public IReadOnlyDictionary<string, Model> Models => _models;
 
     internal IAssetPackProvider? Provider => _provider;
@@ -61,15 +59,6 @@ public sealed class AssetPack : IDisposable
         return shader;
     }
 
-    public Material GetMaterial(string key)
-    {
-        if (!_materials.TryGetValue(key, out var material))
-        {
-            throw new KeyNotFoundException($"Material '{key}' not found in asset pack '{Name}'");
-        }
-        return material;
-    }
-
     public Model GetModel(string key)
     {
         if (!_models.TryGetValue(key, out var model))
@@ -81,7 +70,6 @@ public sealed class AssetPack : IDisposable
 
     public bool TryGetTexture(string key, out Texture2d? texture) => _textures.TryGetValue(key, out texture);
     public bool TryGetShader(string key, out Graphics.GpuShader? shader) => _shaders.TryGetValue(key, out shader);
-    public bool TryGetMaterial(string key, out Material? material) => _materials.TryGetValue(key, out material);
     public bool TryGetModel(string key, out Model? model) => _models.TryGetValue(key, out model);
 
     public string? GetModelPath(string key) => _modelPaths.GetValueOrDefault(key);
@@ -153,7 +141,7 @@ public sealed class AssetPack : IDisposable
 
         if (fullPath.EndsWith(".nizipack", StringComparison.OrdinalIgnoreCase) && File.Exists(fullPath))
         {
-            return (new ZipAssetPackProvider(fullPath), ManifestFileName);
+            return (CreatePackProvider(fullPath), ManifestFileName);
         }
 
         if (fullPath.EndsWith(".nizipack.json", StringComparison.OrdinalIgnoreCase) && File.Exists(fullPath))
@@ -165,7 +153,7 @@ public sealed class AssetPack : IDisposable
         var packFilePath = fullPath + ".nizipack";
         if (File.Exists(packFilePath))
         {
-            return (new ZipAssetPackProvider(packFilePath), ManifestFileName);
+            return (CreatePackProvider(packFilePath), ManifestFileName);
         }
 
         var jsonPackFilePath = fullPath + ".nizipack.json";
@@ -178,15 +166,16 @@ public sealed class AssetPack : IDisposable
         throw new FileNotFoundException($"Asset pack not found: {path}");
     }
 
+    private static IAssetPackProvider CreatePackProvider(string packPath)
+    {
+        return new BinaryAssetPackProvider(packPath);
+    }
+
     private void LoadAssets(AssetPackJson definition)
     {
         Parallel.Invoke(
             () => LoadTextures(definition.Textures),
-            () => LoadShaders(definition.Shaders)
-        );
-
-        Parallel.Invoke(
-            () => LoadMaterials(definition.Materials),
+            () => LoadShaders(definition.Shaders),
             () => LoadModels(definition.Models)
         );
     }
@@ -195,11 +184,7 @@ public sealed class AssetPack : IDisposable
     {
         await Task.WhenAll(
             LoadTexturesAsync(definition.Textures, ct),
-            LoadShadersAsync(definition.Shaders, ct)
-        );
-
-        await Task.WhenAll(
-            LoadMaterialsAsync(definition.Materials, ct),
+            LoadShadersAsync(definition.Shaders, ct),
             LoadModelsAsync(definition.Models, ct)
         );
     }
@@ -254,36 +239,6 @@ public sealed class AssetPack : IDisposable
         }
     }
 
-    private void LoadMaterials(Dictionary<string, string> materialDefs)
-    {
-        Parallel.ForEach(materialDefs, kvp =>
-        {
-            var json = _provider!.ReadText(kvp.Value);
-            var materialJson = MaterialJson.FromJson(json);
-            var material = new JsonMaterial(materialJson, "", _provider, this);
-            material.EnsureShaderLoaded();
-            material.EnsureTexturesLoaded();
-            _materials[kvp.Key] = material;
-        });
-    }
-
-    private async Task LoadMaterialsAsync(Dictionary<string, string> materialDefs, CancellationToken ct)
-    {
-        var tasks = materialDefs.Select(async kvp =>
-        {
-            var json = await _provider!.ReadTextAsync(kvp.Value, ct);
-            var materialJson = MaterialJson.FromJson(json);
-            var material = new JsonMaterial(materialJson, "", _provider, this);
-            await material.LoadAllAsync(ct);
-            return (kvp.Key, material);
-        });
-
-        foreach (var (key, material) in await Task.WhenAll(tasks))
-        {
-            _materials[key] = material;
-        }
-    }
-
     private void LoadModels(Dictionary<string, string> modelDefs)
     {
         Parallel.ForEach(modelDefs, kvp =>
@@ -332,7 +287,6 @@ public sealed class AssetPack : IDisposable
 
         _textures.Clear();
         _shaders.Clear();
-        _materials.Clear();
         _models.Clear();
 
         _provider?.Dispose();

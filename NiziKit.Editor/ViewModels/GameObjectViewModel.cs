@@ -1,5 +1,4 @@
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Numerics;
 using Avalonia.Data.Converters;
 using Avalonia.Media;

@@ -1,5 +1,3 @@
-using System.Reflection;
-
 namespace NiziKit.Assets.Serde;
 
 public static class JsonSchemaRegistry

@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Numerics;
 using System.Reflection;
 using Avalonia.Controls;
@@ -29,7 +28,9 @@ public static class PropertyEditorRegistry
         RegisterTypeEditor(typeof(double), CreateDoubleEditor);
         RegisterTypeEditor(typeof(int), CreateIntEditor);
         RegisterTypeEditor(typeof(bool), CreateBoolEditor);
+        RegisterTypeEditor(typeof(Vector2), CreateVector2Editor);
         RegisterTypeEditor(typeof(Vector3), CreateVector3Editor);
+        RegisterTypeEditor(typeof(Vector4), CreateVector4Editor);
     }
 
     public static void RegisterTypeEditor(Type type, Func<PropertyEditorContext, Control> factory)
@@ -337,12 +338,52 @@ public static class PropertyEditorRegistry
         return comboBox;
     }
 
+    private static Control CreateVector2Editor(PropertyEditorContext context)
+    {
+        var value = context.Property.GetValue(context.Instance);
+        var vector = value is Vector2 v ? v : Vector2.Zero;
+
+        return new Views.Editors.Vector2Editor
+        {
+            Value = vector,
+            IsReadOnly = !context.Property.CanWrite,
+            OnValueChanged = newValue =>
+            {
+                if (context.Property.CanWrite)
+                {
+                    context.Property.SetValue(context.Instance, newValue);
+                    context.OnValueChanged();
+                }
+            }
+        };
+    }
+
     private static Control CreateVector3Editor(PropertyEditorContext context)
     {
         var value = context.Property.GetValue(context.Instance);
         var vector = value is Vector3 v ? v : Vector3.Zero;
 
         return new Views.Editors.Vector3Editor
+        {
+            Value = vector,
+            IsReadOnly = !context.Property.CanWrite,
+            OnValueChanged = newValue =>
+            {
+                if (context.Property.CanWrite)
+                {
+                    context.Property.SetValue(context.Instance, newValue);
+                    context.OnValueChanged();
+                }
+            }
+        };
+    }
+
+    private static Control CreateVector4Editor(PropertyEditorContext context)
+    {
+        var value = context.Property.GetValue(context.Instance);
+        var vector = value is Vector4 v ? v : Vector4.Zero;
+
+        return new Views.Editors.Vector4Editor
         {
             Value = vector,
             IsReadOnly = !context.Property.CanWrite,
