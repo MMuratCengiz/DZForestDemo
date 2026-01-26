@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Reflection;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Layout;
 using NiziKit.Animation;
@@ -70,6 +71,11 @@ public static class PropertyEditorRegistry
             return CreateListEditor(context);
         }
 
+        if (IsDictionaryType(propType))
+        {
+            return CreateDictionaryEditor(context);
+        }
+
         if (TypeEditors.TryGetValue(propType, out var factory))
         {
             return factory(context);
@@ -102,6 +108,76 @@ public static class PropertyEditorRegistry
         }
 
         return false;
+    }
+
+    private static bool IsDictionaryType(Type type)
+    {
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+        {
+            return true;
+        }
+
+        if (type.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IDictionary<,>)))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private static Control CreateDictionaryEditor(PropertyEditorContext context)
+    {
+        var value = context.Property.GetValue(context.Instance);
+        if (value == null)
+        {
+            return new TextBlock { Text = "(empty)", Classes = { "muted" } };
+        }
+
+        var dict = value as System.Collections.IDictionary;
+        if (dict == null || dict.Count == 0)
+        {
+            return new TextBlock { Text = "(empty)", Classes = { "muted" } };
+        }
+
+        var panel = new StackPanel { Spacing = 4 };
+        foreach (System.Collections.DictionaryEntry entry in dict)
+        {
+            var row = new Grid
+            {
+                ColumnDefinitions = new ColumnDefinitions("*, Auto, *"),
+                Margin = new Thickness(0, 2)
+            };
+
+            var keyText = new TextBlock
+            {
+                Text = entry.Key?.ToString() ?? "",
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(keyText, 0);
+
+            var separator = new TextBlock
+            {
+                Text = "→",
+                Margin = new Thickness(8, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Classes = { "muted" }
+            };
+            Grid.SetColumn(separator, 1);
+
+            var valueText = new TextBlock
+            {
+                Text = entry.Value?.ToString() ?? "",
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            Grid.SetColumn(valueText, 2);
+
+            row.Children.Add(keyText);
+            row.Children.Add(separator);
+            row.Children.Add(valueText);
+            panel.Children.Add(row);
+        }
+
+        return panel;
     }
 
     private static Type? GetListElementType(Type listType)

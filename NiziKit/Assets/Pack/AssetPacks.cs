@@ -8,7 +8,8 @@ namespace NiziKit.Assets.Pack;
 
 public static class AssetPacks
 {
-    private static readonly ILogger Logger = Log.Get(typeof(AssetPacks));
+    private static ILogger? _logger;
+    private static ILogger Logger => _logger ??= Log.Get(typeof(AssetPacks));
     private static readonly ConcurrentDictionary<string, AssetPack> _packs = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, (string packName, IAssetPackProvider provider)> _fileIndex = new(StringComparer.OrdinalIgnoreCase);
     private static readonly ConcurrentDictionary<string, IAssetPackProvider> _providers = new(StringComparer.OrdinalIgnoreCase);

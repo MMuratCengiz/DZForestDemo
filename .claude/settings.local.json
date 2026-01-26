@@ -97,7 +97,8 @@
       "WebFetch(domain:wieslawsoltes.github.io)",
       "WebFetch(domain:api.skia.org)",
       "WebFetch(domain:blog.chromium.org)",
-      "Bash(pack \")"
+      "Bash(pack \")",
+      "Bash(git log:*)"
     ]
   }
 }

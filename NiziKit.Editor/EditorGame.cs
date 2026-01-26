@@ -73,6 +73,8 @@ public sealed class EditorGame : Game
 
         _topLevel.TextInputActiveChanged += OnTextInputActiveChanged;
 
+        NiziKit.Assets.Pack.AssetPacks.LoadFromManifest();
+
         if (!string.IsNullOrEmpty(Editor.Config.InitialScene))
         {
             World.LoadScene(Editor.Config.InitialScene);

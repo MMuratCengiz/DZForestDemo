@@ -19,17 +19,7 @@ public class AssetBrowserService
 {
     public IReadOnlyList<string> GetLoadedPacks()
     {
-        var packs = new List<string>();
-
-        var field = typeof(AssetPacks).GetField("_packs",
-            BindingFlags.NonPublic | BindingFlags.Static);
-
-        if (field?.GetValue(null) is Dictionary<string, AssetPack> packsDict)
-        {
-            packs.AddRange(packsDict.Keys);
-        }
-
-        return packs;
+        return AssetPacks.GetLoadedPackNames().ToList();
     }
 
     public IReadOnlyList<AssetInfo> GetAllAssetsOfType(AssetRefType assetType)

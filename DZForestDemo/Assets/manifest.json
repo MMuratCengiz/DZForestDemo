@@ -2,14 +2,14 @@
   "version": "2.0.0",
   "packs": [
     {
-      "name": "newpack",
-      "path": "Packs/newpack.nizipack.json",
-      "deploymentName": "newpack.nizipack"
-    },
-    {
       "name": "newpack_1",
       "path": "Packs/newpack_1.nizipack.json",
       "deploymentName": "newpack_1.nizipack"
+    },
+    {
+      "name": "newpack",
+      "path": "Packs/newpack.nizipack.json",
+      "deploymentName": "newpack.nizipack"
     },
     {
       "name": "viking",
