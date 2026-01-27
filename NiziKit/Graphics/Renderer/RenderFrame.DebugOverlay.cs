@@ -147,6 +147,8 @@ public partial class RenderFrame
 
     private void DisposeDebugOverlay()
     {
+        GraphicsContext.OnResize -= OnDebugOverlayResize;
+
         _debugRtAttachment?.Dispose();
         _debugRtAttachment = null;
 
