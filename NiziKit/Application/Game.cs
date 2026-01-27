@@ -40,7 +40,15 @@ public class Game : IDisposable
     {
         desc ??= new GameDesc();
         _fixedTimestep = new FixedTimestep(desc.FixedUpdateRate);
-        Window = new AppWindow(desc.Title, desc.Width, desc.Height, desc.Resizable);
+
+        var windowFlags = new DenOfIz.WindowFlags
+        {
+            Resizable = desc.Resizable,
+            Maximized = desc.Maximized,
+            Borderless = desc.Borderless,
+            Fullscreen = desc.Fullscreen
+        };
+        Window = new AppWindow(desc.Title, desc.Width, desc.Height, windowFlags);
 
         _composition = new GameComposition(Window.NativeWindow, desc.Graphics);
         _ = _composition.Time;
@@ -139,7 +147,7 @@ public class Game : IDisposable
             {
                 Window.HandleWindowEvent(ev.Window.Event, ev.Window.Data1, ev.Window.Data2);
 
-                if (ev.Window.Event == WindowEventType.Resized)
+                if (ev.Window.Event == WindowEventType.SizeChanged)
                 {
                     var width = (uint)ev.Window.Data1;
                     var height = (uint)ev.Window.Data2;

@@ -40,6 +40,7 @@ public static class Editor
             Width = width,
             Height = height,
             Resizable = true,
+            Maximized = true,
             Graphics = new GraphicsDesc
             {
                 ApiPreference = new APIPreference

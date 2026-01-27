@@ -10,7 +10,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="DenOfIzGraphics" Version="0.7.3-alpha" />
+        <PackageReference Include="DenOfIzGraphics" Version="0.7.4-alpha" />
         <PackageReference Include="ImGui.NET" Version="1.91.6.1"/>
     </ItemGroup>
 

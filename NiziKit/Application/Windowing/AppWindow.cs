@@ -2,30 +2,34 @@ using DenOfIz;
 
 namespace NiziKit.Application.Windowing;
 
-public sealed class AppWindow(string title, uint width, uint height, bool resizable = false) : IDisposable
+public sealed class AppWindow : IDisposable
 {
-    public uint Width { get; private set; } = width;
-    public uint Height { get; private set; } = height;
+    public uint Width { get; private set; }
+    public uint Height { get; private set; }
     public bool IsMinimized { get; private set; }
     public bool HasFocus { get; private set; } = true;
     public GraphicsWindowHandle GraphicsHandle => NativeWindow.GetGraphicsWindowHandle();
 
-    public Window NativeWindow { get; } = new(new WindowDesc
-    {
-        Width = (int)width,
-        Height = (int)height,
-        Title = StringView.Create(title),
-        Flags = new WindowFlags
-        {
-            Resizable = resizable
-        }
-    });
+    public Window NativeWindow { get; }
 
-    private WindowFlags GetWindowFlags()
+    public AppWindow(string title, uint width, uint height, WindowFlags flags)
     {
-        return new WindowFlags()
+        NativeWindow = new Window(new WindowDesc
         {
-        };
+            Width = (int)width,
+            Height = (int)height,
+            Title = StringView.Create(title),
+            Flags = flags
+        });
+
+        if (flags.Maximized)
+        {
+            NativeWindow.Sync();
+        }
+
+        var pixelSize = NativeWindow.GetSizeInPixels();
+        Width = (uint)pixelSize.Width;
+        Height = (uint)pixelSize.Height;
     }
 
     public void Dispose()
@@ -47,7 +51,7 @@ public sealed class AppWindow(string title, uint width, uint height, bool resiza
     {
         switch (eventType)
         {
-            case WindowEventType.Resized:
+            case WindowEventType.SizeChanged:
                 Width = (uint)data1;
                 Height = (uint)data2;
                 break;

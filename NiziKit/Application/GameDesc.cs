@@ -1,3 +1,4 @@
+using DenOfIz;
 using NiziKit.Graphics;
 
 namespace NiziKit.Application;
@@ -8,6 +9,9 @@ public sealed class GameDesc
     public uint Width { get; init; } = 1920;
     public uint Height { get; init; } = 1080;
     public bool Resizable { get; init; } = false;
+    public bool Maximized { get; init; } = false;
+    public bool Borderless { get; init; } = false;
+    public bool Fullscreen { get; init; } = false;
     public double FixedUpdateRate { get; init; } = 60.0;
     public GraphicsDesc Graphics { get; init; } = new();
 }

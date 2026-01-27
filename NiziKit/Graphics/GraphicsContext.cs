@@ -81,8 +81,9 @@ public sealed class GraphicsContext : IDisposable
         _computeQueue = _logicalDevice.CreateCommandQueue(new CommandQueueDesc { QueueType = QueueType.Compute });
         _copyQueue = _logicalDevice.CreateCommandQueue(new CommandQueueDesc { QueueType = QueueType.Copy });
 
-        _width = (uint)window.GetSize().Width;
-        _height = (uint)window.GetSize().Height;
+        var pixelSize = window.GetSizeInPixels();
+        _width = (uint)pixelSize.Width;
+        _height = (uint)pixelSize.Height;
 
         _swapChain = _logicalDevice.CreateSwapChain(new SwapChainDesc
         {

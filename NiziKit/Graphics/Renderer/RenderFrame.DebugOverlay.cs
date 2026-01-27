@@ -50,8 +50,8 @@ public partial class RenderFrame
         {
             GraphicsApi = GraphicsContext.GraphicsApi,
             LogicalDevice = GraphicsContext.Device,
-            ScreenWidth = GraphicsContext.Width,
-            ScreenHeight = GraphicsContext.Height,
+            Width = GraphicsContext.Width,
+            Height = GraphicsContext.Height,
             FontAsset = config.FontAsset,
             TextColor = config.TextColor,
             RefreshRate = config.RefreshRate > 0 ? config.RefreshRate : 0.5f,
@@ -62,6 +62,13 @@ public partial class RenderFrame
 
         _debugBlitPass = new BlitPass();
         _debugRtAttachment = new PinnedArray<RenderingAttachmentDesc>(1);
+
+        GraphicsContext.OnResize += OnDebugOverlayResize;
+    }
+
+    private void OnDebugOverlayResize(uint width, uint height)
+    {
+        _debugRenderer?.SetViewportSize(width, height);
     }
 
     public CycledTexture RenderDebugOverlay()

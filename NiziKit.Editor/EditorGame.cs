@@ -210,13 +210,12 @@ public sealed class EditorGame : Game
                 _topLevel.InjectTextInput(text);
             }
         }
-        else if (ev.Type == EventType.WindowEvent && ev.Window.Event == WindowEventType.Resized)
+        else if (ev.Type == EventType.WindowEvent && ev.Window.Event == WindowEventType.SizeChanged)
         {
             var width = (uint)ev.Window.Data1;
             var height = (uint)ev.Window.Data2;
             OnResize(width, height);
         }
-
         if (!UiWantsInput && !_gizmoDragging)
         {
             _editorController.HandleEvent(in ev);

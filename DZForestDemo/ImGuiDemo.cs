@@ -51,6 +51,8 @@ public class ImGuiDemoWindow : IDisposable
             Position = WindowPosition.Centered
         });
 
+        var pixelSize = _window.GetSizeInPixels();
+
         var commandQueueDesc = new CommandQueueDesc
         {
             QueueType = QueueType.Graphics
@@ -64,8 +66,8 @@ public class ImGuiDemoWindow : IDisposable
             DepthBufferFormat = Format.D32Float,
             CommandQueue = _commandQueue,
             WindowHandle = _window.GetGraphicsWindowHandle(),
-            Width = width,
-            Height = height,
+            Width = (uint)pixelSize.Width,
+            Height = (uint)pixelSize.Height,
             NumBuffers = 3
         };
         _swapChain = logicalDevice.CreateSwapChain(swapChainDesc);
