@@ -75,9 +75,9 @@ public sealed class EditorGame : Game
 
         NiziKit.Assets.Pack.AssetPacks.LoadFromManifest();
 
-        if (!string.IsNullOrEmpty(Editor.Config.InitialScene))
+        if (!string.IsNullOrEmpty(Editor.Desc.InitialScene))
         {
-            World.LoadScene(Editor.Config.InitialScene);
+            World.LoadScene(Editor.Desc.InitialScene);
         }
         if (_topLevel.Content is EditorMainView mainView)
         {

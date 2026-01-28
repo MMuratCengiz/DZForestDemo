@@ -29,13 +29,12 @@ public partial class RenderFrame
         _uiBlitPass ??= new BlitPass();
         _uiRenderTarget = CycledTexture.ColorAttachment("UIRT");
         _uiRtAttachment ??= new PinnedArray<RenderingAttachmentDesc>(1);
+        GraphicsContext.OnResize += OnUiResize;
     }
 
-    public void EnableUi(UiContext context)
+    private void OnUiResize(uint width, uint height)
     {
-        _uiContext = context;
-        _uiBlitPass ??= new BlitPass();
-        _uiRtAttachment ??= new PinnedArray<RenderingAttachmentDesc>(1);
+        // _uiContext?.SetViewportSize(width, height);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -44,15 +43,9 @@ public partial class RenderFrame
         _uiContext?.HandleEvent(ev);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void SetUiViewportSize(uint width, uint height)
-    {
-        _uiContext?.SetViewportSize(width, height);
-    }
-
     public CycledTexture RenderUi(UiBuildCallback buildCallback)
     {
-        if (_uiContext == null || _uiRenderTarget == null || _uiRtAttachment == null)
+        if (_uiContext == null || _uiRenderTarget == null)
         {
             throw new InvalidOperationException("UI not enabled. Call EnableUi first.");
         }
@@ -110,8 +103,7 @@ public partial class RenderFrame
 
     private void DisposeUi()
     {
-        _uiRtAttachment?.Dispose();
-        _uiRtAttachment = null;
+        GraphicsContext.OnResize -= OnUiResize;
         _uiBlitPass?.Dispose();
         _uiBlitPass = null;
         _uiRenderTarget?.Dispose();

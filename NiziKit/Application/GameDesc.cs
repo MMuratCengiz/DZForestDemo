@@ -6,8 +6,8 @@ namespace NiziKit.Application;
 public sealed class GameDesc
 {
     public string Title { get; init; } = "DenOfIz Game";
-    public uint Width { get; init; } = 1920;
-    public uint Height { get; init; } = 1080;
+    public uint Width { get; init; } = 0;
+    public uint Height { get; init; } = 0;
     public bool Resizable { get; init; } = false;
     public bool Maximized { get; init; } = false;
     public bool Borderless { get; init; } = false;

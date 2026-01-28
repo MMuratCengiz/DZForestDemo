@@ -33,6 +33,7 @@ public sealed class GraphicsContext : IDisposable
     public static void Resize(uint width, uint height) => Instance._QueueResize(width, height);
     public static void BeginFrame() => Instance._BeginFrame();
     public static void WaitIdle() => Instance._WaitIdle();
+    public static DisplaySize GetWindowPixelSize() => Instance._window?.GetSizeInPixels() ?? new DisplaySize();
     public static event Action<uint, uint>? OnResize;
 
     private readonly GraphicsApi _graphicsApi;
@@ -42,6 +43,7 @@ public sealed class GraphicsContext : IDisposable
     private readonly CommandQueue _computeQueue;
     private readonly CommandQueue _copyQueue;
     private readonly ResourceTracking _resourceTracking = new();
+    private readonly Window? _window;
     private static readonly Lock _gpuLock = new();
 
     public static Lock GpuLock => _gpuLock;
@@ -68,6 +70,7 @@ public sealed class GraphicsContext : IDisposable
         _numFrames = desc.NumFrames;
         _backBufferFormat = desc.BackBufferFormat;
         _depthBufferFormat = desc.DepthBufferFormat;
+        _window = window;
 
         _graphicsApi = new GraphicsApi(desc.ApiPreference);
         _logicalDevice = _graphicsApi.CreateAndLoadOptimalLogicalDevice(new LogicalDeviceDesc
@@ -94,7 +97,9 @@ public sealed class GraphicsContext : IDisposable
             WindowHandle = window.GetGraphicsWindowHandle(),
             Width = _width,
             Height = _height,
-            NumBuffers = desc.NumFrames
+            NumBuffers = desc.NumFrames,
+            ColorSpace = ColorSpace.Srgb,
+            SampleCount = MSAASampleCount._1
         });
 
         for (uint i = 0; i < _numFrames; ++i)

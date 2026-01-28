@@ -40,11 +40,9 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
         _renderFrame.BeginFrame();
         var sceneTexture = _renderer.Render(_renderFrame);
 
-        // Add debug overlay
         var debugOverlay = _renderFrame.RenderDebugOverlay();
         _renderFrame.AlphaBlit(debugOverlay, sceneTexture);
 
-        // Add UI overlay
         var ui = _renderFrame.RenderUi(RenderUi);
         _renderFrame.AlphaBlit(ui, sceneTexture);
 

@@ -9,8 +9,8 @@ internal static class Program
         Game.Run<DemoGame>(new GameDesc
         {
             Title = "DenOfIz Scene Demo - Press F1/F2 to switch scenes",
-            Width = 2560,
-            Height = 1440
+            Maximized = true,
+            Resizable =  true,
         });
     }
 }

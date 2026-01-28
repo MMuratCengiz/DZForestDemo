@@ -26,7 +26,8 @@ public class Game : IDisposable
     {
         if (_instance != null)
         {
-            throw new InvalidOperationException("A game is already running. Only one game instance is allowed per process.");
+            throw new InvalidOperationException(
+                "A game is already running. Only one game instance is allowed per process.");
         }
 
         Log.Initialize();
@@ -41,7 +42,7 @@ public class Game : IDisposable
         desc ??= new GameDesc();
         _fixedTimestep = new FixedTimestep(desc.FixedUpdateRate);
 
-        var windowFlags = new DenOfIz.WindowFlags
+        var windowFlags = new WindowFlags
         {
             Resizable = desc.Resizable,
             Maximized = desc.Maximized,

@@ -19,13 +19,11 @@ public sealed class AppWindow : IDisposable
             Width = (int)width,
             Height = (int)height,
             Title = StringView.Create(title),
+            Position = WindowPosition.Centered,
             Flags = flags
         });
 
-        if (flags.Maximized)
-        {
-            NativeWindow.Sync();
-        }
+        NativeWindow.Sync();
 
         var pixelSize = NativeWindow.GetSizeInPixels();
         Width = (uint)pixelSize.Width;

@@ -1,7 +1,7 @@
 using Avalonia;
 using NiziKit.Editor;
 
-Editor.Run(new EditorConfig
+Editor.Run(new EditorDesc
 {
     GameProjectDir = "../DZForestDemo",
     InitialScene = "Scenes/VikingShowcase.niziscene.json"
