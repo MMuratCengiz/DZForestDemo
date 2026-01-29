@@ -443,6 +443,12 @@ public partial class EditorViewModel : ObservableObject
         IsImportPanelOpen = true;
     }
 
+    public void OpenImportPanelWithFiles(IEnumerable<string> paths)
+    {
+        IsImportPanelOpen = true;
+        ImportViewModel.AddFilesToQueue(paths);
+    }
+
     [RelayCommand]
     private void CloseImportPanel()
     {

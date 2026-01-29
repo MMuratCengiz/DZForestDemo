@@ -510,7 +510,7 @@ public sealed class GizmoPass : IDisposable
             ViewProjection = viewProjection,
             ModelMatrix = Matrix4x4.Identity,
             CameraPosition = cameraPosition,
-            DepthBias = 1.0f,
+            DepthBias = 0.0f,
             SelectionColor = GridColorMajor,
             Opacity = 1f,
             Time = viewData.TotalTime,

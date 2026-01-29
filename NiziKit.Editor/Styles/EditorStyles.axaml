@@ -289,9 +289,7 @@
         <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="{StaticResource RadiusLarge}"/>
         <Setter Property="MinWidth" Value="800"/>
-        <Setter Property="MaxWidth" Value="1600"/>
         <Setter Property="MinHeight" Value="500"/>
-        <Setter Property="MaxHeight" Value="1000"/>
     </Style>
 
     <Style Selector="Border.divider-horizontal">

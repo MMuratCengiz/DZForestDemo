@@ -6,63 +6,254 @@
              x:Class="NiziKit.Editor.Views.ImportPanel"
              x:DataType="vm:ImportViewModel">
 
-    <Grid RowDefinitions="*,Auto,Auto" Margin="16">
-        <Border Grid.Row="0"
-                Background="{StaticResource EditorSurfaceRaised}"
-                BorderBrush="{StaticResource EditorPanelBorder}"
-                BorderThickness="1"
-                Padding="12"
-                Margin="0,0,0,12">
-            <views:FileBrowserGrid DataContext="{Binding FileBrowser}"/>
-        </Border>
+    <Grid RowDefinitions="*,Auto" Margin="16">
+        <!-- Main content: left (browser + queue) | right (details) -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,*" Margin="0,0,0,12">
 
-        <Border Grid.Row="1"
-                Background="{StaticResource EditorSurfaceRaised}"
-                BorderBrush="{StaticResource EditorPanelBorder}"
-                BorderThickness="1"
-                Padding="18,14"
-                Margin="0,0,0,12">
-            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*" RowDefinitions="Auto">
-                <TextBlock Text="Type"
-                           VerticalAlignment="Center"
-                           Foreground="{StaticResource EditorTextSecondary}"
-                           Margin="0,0,16,0"/>
-                <StackPanel Grid.Column="1"
-                            Orientation="Horizontal"
-                            Spacing="20"
-                            Margin="0,0,32,0">
-                    <RadioButton Content="Models"
-                                 IsChecked="{Binding ImportType, Converter={x:Static vm:ImportTypeConverter.Instance}, ConverterParameter={x:Static vm:ImportType.Models}}"
-                                 GroupName="ImportType"/>
-                    <RadioButton Content="Textures"
-                                 IsChecked="{Binding ImportType, Converter={x:Static vm:ImportTypeConverter.Instance}, ConverterParameter={x:Static vm:ImportType.Textures}}"
-                                 GroupName="ImportType"/>
-                    <RadioButton Content="Both"
-                                 IsChecked="{Binding ImportType, Converter={x:Static vm:ImportTypeConverter.Instance}, ConverterParameter={x:Static vm:ImportType.Both}}"
-                                 GroupName="ImportType"/>
+            <!-- LEFT SIDE: File Browser (top) + Import Queue (bottom) -->
+            <Grid Grid.Column="0" RowDefinitions="3*,Auto,2*" Margin="0,0,8,0">
+                <!-- File Browser -->
+                <Border Grid.Row="0"
+                        Background="{StaticResource EditorSurfaceRaised}"
+                        BorderBrush="{StaticResource EditorPanelBorder}"
+                        BorderThickness="1"
+                        Padding="12">
+                    <views:FileBrowserGrid DataContext="{Binding FileBrowser}"/>
+                </Border>
+
+                <!-- Add to Queue button -->
+                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8" Margin="0,8">
+                    <Button Content="Add to Queue"
+                            Command="{Binding AddToQueueCommand}"
+                            Padding="16,8"
+                            Classes="accent"/>
                 </StackPanel>
 
-                <TextBlock Grid.Column="2"
-                           Text="Scale"
-                           VerticalAlignment="Center"
-                           Foreground="{StaticResource EditorTextSecondary}"
-                           Margin="0,0,12,0"/>
-                <TextBox Grid.Column="3"
-                         Text="{Binding ModelScale}"
-                         Width="90"
-                         Margin="0,0,32,0"/>
-
-                <CheckBox Grid.Column="4"
-                          Content="Generate Mipmaps"
-                          IsChecked="{Binding GenerateMips}"
-                          VerticalAlignment="Center"/>
+                <!-- Import Queue -->
+                <Border Grid.Row="2"
+                        Background="{StaticResource EditorSurfaceRaised}"
+                        BorderBrush="{StaticResource EditorPanelBorder}"
+                        BorderThickness="1"
+                        Padding="12"
+                        x:Name="ImportQueueBorder"
+                        DragDrop.AllowDrop="True">
+                    <Grid RowDefinitions="Auto,*">
+                        <TextBlock Grid.Row="0"
+                                   Text="Import Queue"
+                                   Classes="subtitle"
+                                   Margin="0,0,0,8"
+                                   Foreground="{StaticResource EditorTextSecondary}"/>
+                        <ListBox Grid.Row="1"
+                                 ItemsSource="{Binding ImportItems}"
+                                 SelectedItem="{Binding SelectedImportItem}"
+                                 Background="Transparent"
+                                 BorderThickness="0">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ImportAssetItemViewModel">
+                                    <Grid ColumnDefinitions="*,Auto,Auto" Margin="4,2">
+                                        <StackPanel Grid.Column="0" Spacing="2">
+                                            <TextBlock Text="{Binding FileName}" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{Binding StatusText}"
+                                                       Foreground="{StaticResource EditorTextSecondary}"/>
+                                        </StackPanel>
+                                        <ProgressBar Grid.Column="1"
+                                                     IsIndeterminate="True"
+                                                     IsVisible="{Binding IsImporting}"
+                                                     Width="40" Height="4"
+                                                     VerticalAlignment="Center"
+                                                     Margin="8,0"/>
+                                        <Button Grid.Column="2"
+                                                Command="{Binding $parent[ListBox].DataContext.RemoveFromQueueCommand}"
+                                                CommandParameter="{Binding}"
+                                                Padding="4"
+                                                Classes="ghost"
+                                                ToolTip.Tip="Remove">
+                                            <ui:SymbolIcon Symbol="Dismiss" FontSize="{StaticResource IconSizeXS}"/>
+                                        </Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </Border>
             </Grid>
-        </Border>
 
-        <Border Grid.Row="2"
+            <!-- RIGHT SIDE: Asset Details for selected item -->
+            <Border Grid.Column="1"
+                    Background="{StaticResource EditorSurfaceRaised}"
+                    BorderBrush="{StaticResource EditorPanelBorder}"
+                    BorderThickness="1"
+                    Padding="16"
+                    Margin="8,0,0,0">
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="12"
+                                DataContext="{Binding SelectedImportItem}"
+                                IsVisible="{Binding $parent[UserControl].DataContext.HasSelectedItem}">
+
+                        <TextBlock Text="Asset Details" Classes="subtitle" Margin="0,0,0,4"/>
+
+                        <!-- Asset Name -->
+                        <Grid ColumnDefinitions="120,*">
+                            <TextBlock Text="Asset Name"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource EditorTextSecondary}"/>
+                            <TextBox Grid.Column="1" Text="{Binding AssetName}"/>
+                        </Grid>
+
+                        <!-- Output Subdirectory -->
+                        <Grid ColumnDefinitions="120,*">
+                            <TextBlock Text="Output Subdir"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource EditorTextSecondary}"/>
+                            <TextBox Grid.Column="1"
+                                     Text="{Binding OutputSubdirectory}"
+                                     Watermark="(root output)"/>
+                        </Grid>
+
+                        <!-- Scanning indicator -->
+                        <StackPanel Orientation="Horizontal" Spacing="8"
+                                    IsVisible="{Binding IsScanning}">
+                            <ProgressBar IsIndeterminate="True" Width="80" Height="4"/>
+                            <TextBlock Text="Scanning..." Foreground="{StaticResource EditorTextSecondary}"/>
+                        </StackPanel>
+
+                        <!-- Scan error -->
+                        <TextBlock Text="{Binding ScanError}"
+                                   Foreground="Red"
+                                   TextWrapping="Wrap"
+                                   IsVisible="{Binding ScanError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+                        <!-- Meshes section -->
+                        <Expander Header="Meshes" IsExpanded="True"
+                                  IsVisible="{Binding ScanComplete}">
+                            <ItemsControl ItemsSource="{Binding Meshes}" Margin="8,4">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:MeshItemViewModel">
+                                        <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,4">
+                                            <CheckBox Grid.Column="0"
+                                                      IsChecked="{Binding IsEnabled}"
+                                                      Margin="0,0,8,0"/>
+                                            <TextBox Grid.Column="1"
+                                                     Text="{Binding ExportName}"
+                                                     Padding="6,4"
+                                                     MinWidth="120"/>
+                                            <TextBlock Grid.Column="2"
+                                                       Text="{Binding DisplayInfo}"
+                                                       VerticalAlignment="Center"
+                                                       Foreground="{StaticResource EditorTextSecondary}"
+                                                       Margin="12,0,0,0"
+                                                       />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </Expander>
+
+                        <!-- Skeleton section -->
+                        <Border IsVisible="{Binding HasSkeleton}"
+                                Background="{StaticResource EditorPanelSecondaryBackground}"
+                                Padding="12,8"
+                                Margin="0,4">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <CheckBox Grid.Column="0"
+                                          Content="Export Skeleton"
+                                          IsChecked="{Binding ExportSkeleton}"/>
+                                <TextBlock Grid.Column="1"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Right"
+                                           Foreground="{StaticResource EditorTextSecondary}"
+                                           >
+                                    <TextBlock.Text>
+                                        <MultiBinding StringFormat="{}{0} joints, root: {1}">
+                                            <Binding Path="JointCount"/>
+                                            <Binding Path="RootJointName"/>
+                                        </MultiBinding>
+                                    </TextBlock.Text>
+                                </TextBlock>
+                            </Grid>
+                        </Border>
+
+                        <!-- Animations section -->
+                        <Expander Header="Animations" IsExpanded="True"
+                                  IsVisible="{Binding ScanComplete}">
+                            <StackPanel Spacing="4" Margin="8,4">
+                                <CheckBox Content="Export Animations"
+                                          IsChecked="{Binding ExportAnimations}"
+                                          Margin="0,0,0,4"/>
+                                <ItemsControl ItemsSource="{Binding Animations}"
+                                              IsEnabled="{Binding ExportAnimations}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:AnimationItemViewModel">
+                                            <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,4">
+                                                <CheckBox Grid.Column="0"
+                                                          IsChecked="{Binding IsEnabled}"
+                                                          Margin="0,0,8,0"/>
+                                                <TextBox Grid.Column="1"
+                                                         Text="{Binding ExportName}"
+                                                         Padding="6,4"
+                                                         MinWidth="120"/>
+                                                <TextBlock Grid.Column="2"
+                                                           Text="{Binding DisplayInfo}"
+                                                           VerticalAlignment="Center"
+                                                           Foreground="{StaticResource EditorTextSecondary}"
+                                                           Margin="12,0,0,0"
+                                                           />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </Expander>
+
+                        <!-- Options section -->
+                        <Expander Header="Options" IsExpanded="False"
+                                  IsVisible="{Binding ScanComplete}">
+                            <StackPanel Spacing="8" Margin="8,4">
+                                <Grid ColumnDefinitions="120,*">
+                                    <TextBlock Text="Scale"
+                                               VerticalAlignment="Center"
+                                               Foreground="{StaticResource EditorTextSecondary}"/>
+                                    <TextBox Grid.Column="1" Text="{Binding Scale}" Width="90"
+                                             HorizontalAlignment="Left"/>
+                                </Grid>
+
+                                <WrapPanel Orientation="Horizontal">
+                                    <CheckBox Content="Optimize Meshes" IsChecked="{Binding OptimizeMeshes}" Margin="0,0,16,4"/>
+                                    <CheckBox Content="Generate Normals" IsChecked="{Binding GenerateNormals}" Margin="0,0,16,4"/>
+                                    <CheckBox Content="Tangents" IsChecked="{Binding CalculateTangents}" Margin="0,0,16,4"/>
+                                    <CheckBox Content="Triangulate" IsChecked="{Binding TriangulateMeshes}" Margin="0,0,16,4"/>
+                                    <CheckBox Content="Join Vertices" IsChecked="{Binding JoinIdenticalVertices}" Margin="0,0,16,4"/>
+                                </WrapPanel>
+
+                                <WrapPanel Orientation="Horizontal">
+                                    <CheckBox Content="Smooth Normals" IsChecked="{Binding SmoothNormals}" Margin="0,0,16,4"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                        <TextBlock Text="Angle:" VerticalAlignment="Center"
+                                                   Foreground="{StaticResource EditorTextSecondary}"/>
+                                        <TextBox Text="{Binding SmoothNormalsAngle}" Width="60"/>
+                                    </StackPanel>
+                                </WrapPanel>
+
+                                <WrapPanel Orientation="Horizontal">
+                                    <CheckBox Content="Limit Bone Weights" IsChecked="{Binding LimitBoneWeights}" Margin="0,0,16,4"/>
+                                    <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                        <TextBlock Text="Max:" VerticalAlignment="Center"
+                                                   Foreground="{StaticResource EditorTextSecondary}"/>
+                                        <TextBox Text="{Binding MaxBoneWeightsPerVertex}" Width="60"/>
+                                    </StackPanel>
+                                </WrapPanel>
+                            </StackPanel>
+                        </Expander>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <!-- Bottom bar: output, progress, buttons -->
+        <Border Grid.Row="1"
                 Background="{StaticResource EditorPanelSecondaryBackground}"
                 Padding="18,14">
-            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
+            <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto">
                 <TextBlock Text="Output"
                            VerticalAlignment="Center"
                            Foreground="{StaticResource EditorTextSecondary}"
@@ -90,14 +281,21 @@
                                  VerticalAlignment="Center"/>
                 </StackPanel>
 
-                <Button Grid.Column="3"
+                <TextBlock Grid.Column="3"
+                           Text="{Binding ProgressText}"
+                           Foreground="LimeGreen"
+                           VerticalAlignment="Center"
+                           Margin="12,0"
+                           IsVisible="{Binding ImportSucceeded}"/>
+
+                <Button Grid.Column="4"
                         Content="Cancel"
                         Command="{Binding CancelCommand}"
                         Margin="12,0"
                         MinWidth="110"
                         Padding="18,12"/>
-                <Button Grid.Column="4"
-                        Content="Import"
+                <Button Grid.Column="5"
+                        Content="Import All"
                         Command="{Binding ImportCommand}"
                         IsEnabled="{Binding !IsImporting}"
                         MinWidth="110"

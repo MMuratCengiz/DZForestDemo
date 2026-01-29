@@ -17,9 +17,17 @@ public enum ImportType
 
 public partial class ImportViewModel : ObservableObject
 {
+    private static string? _lastBrowsedPath;
+
+    private static readonly HashSet<string> ModelExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".fbx", ".glb", ".gltf", ".obj", ".dae", ".blend"
+    };
+
     public ImportViewModel()
     {
-        var startPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var startPath = _lastBrowsedPath
+                        ?? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         if (string.IsNullOrEmpty(startPath))
         {
             startPath = OperatingSystem.IsWindows() ? "C:\\" : "/";
@@ -27,6 +35,13 @@ public partial class ImportViewModel : ObservableObject
 
         FileBrowser = new FileBrowserViewModel(startPath);
         FileBrowser.SelectionChanged += OnSelectionChanged;
+        FileBrowser.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(FileBrowserViewModel.CurrentPath))
+            {
+                _lastBrowsedPath = FileBrowser.CurrentPath;
+            }
+        };
     }
 
     public FileBrowserViewModel FileBrowser { get; }
@@ -53,12 +68,35 @@ public partial class ImportViewModel : ObservableObject
     private double _progress;
 
     [ObservableProperty]
+    private bool _importSucceeded;
+
+    [ObservableProperty]
+    private int _importedCount;
+
+    [ObservableProperty]
+    private int _failedCount;
+
+    [ObservableProperty]
     private ObservableCollection<FileEntry> _selectedFiles = [];
+
+    public ObservableCollection<ImportAssetItemViewModel> ImportItems { get; } = [];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasSelectedItem))]
+    private ImportAssetItemViewModel? _selectedImportItem;
+
+    public bool HasSelectedItem => SelectedImportItem != null;
 
     public event Action? ImportCompleted;
     public event Action? ImportCancelled;
 
     private CancellationTokenSource? _cancellationTokenSource;
+
+    public static bool IsModelFile(string path)
+    {
+        var ext = Path.GetExtension(path);
+        return ModelExtensions.Contains(ext);
+    }
 
     private void OnSelectionChanged(IReadOnlyList<FileEntry> entries)
     {
@@ -70,10 +108,115 @@ public partial class ImportViewModel : ObservableObject
     }
 
     [RelayCommand]
+    public void AddToQueue()
+    {
+        var filesToAdd = SelectedFiles.ToList();
+        if (filesToAdd.Count == 0 && FileBrowser.SelectedEntry != null)
+        {
+            filesToAdd.Add(FileBrowser.SelectedEntry);
+        }
+
+        foreach (var file in filesToAdd)
+        {
+            if (file.IsDirectory || ImportItems.Any(i => i.FilePath == file.FullPath))
+            {
+                continue;
+            }
+
+            var item = new ImportAssetItemViewModel
+            {
+                FileName = file.Name,
+                FilePath = file.FullPath,
+                AssetName = Path.GetFileNameWithoutExtension(file.Name),
+                Scale = ModelScale
+            };
+
+            ImportItems.Add(item);
+            SelectedImportItem ??= item;
+
+            ScanItemAsync(item);
+        }
+    }
+
+    [RelayCommand]
+    public void RemoveFromQueue(ImportAssetItemViewModel? item)
+    {
+        if (item == null)
+        {
+            return;
+        }
+
+        ImportItems.Remove(item);
+        if (SelectedImportItem == item)
+        {
+            SelectedImportItem = ImportItems.FirstOrDefault();
+        }
+    }
+
+    public void AddFilesToQueue(IEnumerable<string> paths)
+    {
+        foreach (var path in paths)
+        {
+            if (!File.Exists(path))
+            {
+                continue;
+            }
+
+            if (ImportItems.Any(i => i.FilePath == path))
+            {
+                continue;
+            }
+
+            var name = Path.GetFileName(path);
+            var item = new ImportAssetItemViewModel
+            {
+                FileName = name,
+                FilePath = path,
+                AssetName = Path.GetFileNameWithoutExtension(name),
+                Scale = ModelScale
+            };
+
+            ImportItems.Add(item);
+            SelectedImportItem ??= item;
+
+            ScanItemAsync(item);
+        }
+    }
+
+    private async void ScanItemAsync(ImportAssetItemViewModel item)
+    {
+        item.IsScanning = true;
+        try
+        {
+            var result = await Task.Run(() =>
+            {
+                using var introspector = new AssetIntrospector();
+                return introspector.Introspect(item.FilePath);
+            });
+
+            Dispatcher.UIThread.Post(() => item.ApplyIntrospection(result));
+        }
+        catch
+        {
+            Dispatcher.UIThread.Post(() =>
+            {
+                item.ScanComplete = true;
+                item.IsScanning = false;
+            });
+        }
+    }
+
+    [RelayCommand]
     public void Import()
     {
         if (IsImporting)
         {
+            return;
+        }
+
+        if (ImportItems.Count > 0)
+        {
+            ImportFromQueue();
             return;
         }
 
@@ -98,6 +241,163 @@ public partial class ImportViewModel : ObservableObject
         var outputPath = Path.Combine(assetsPath, OutputDirectory);
 
         Task.Run(() => RunImport(filesToImport, outputPath, ct), ct);
+    }
+
+    private void ImportFromQueue()
+    {
+        IsImporting = true;
+        ImportSucceeded = false;
+        Progress = 0;
+        _cancellationTokenSource = new CancellationTokenSource();
+        var ct = _cancellationTokenSource.Token;
+
+        var assetsPath = Content.ResolvePath("");
+        var outputPath = Path.Combine(assetsPath, OutputDirectory);
+
+        var items = ImportItems.ToList();
+
+        Task.Run(() =>
+        {
+            try
+            {
+                var total = items.Count;
+                for (var i = 0; i < total; i++)
+                {
+                    if (ct.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    var item = items[i];
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        item.IsImporting = true;
+                        ProgressText = $"Importing: {item.FileName}";
+                    });
+
+                    try
+                    {
+                        ImportQueueItem(item, outputPath);
+                        Dispatcher.UIThread.Post(() =>
+                        {
+                            item.IsImporting = false;
+                            item.ImportComplete = true;
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        var msg = ex.Message;
+                        Dispatcher.UIThread.Post(() =>
+                        {
+                            item.IsImporting = false;
+                            item.ImportComplete = true;
+                            item.ImportError = msg;
+                        });
+                    }
+
+                    Dispatcher.UIThread.Post(() => Progress = (i + 1) * 100.0 / total);
+                }
+
+                var succeeded = items.Count(i => i.ImportComplete && i.ImportError == null);
+                var failed = items.Count(i => i.ImportError != null);
+
+                Dispatcher.UIThread.Post(() =>
+                {
+                    ImportedCount = succeeded;
+                    FailedCount = failed;
+                    ProgressText = failed > 0
+                        ? $"Imported {succeeded} of {items.Count} ({failed} failed)"
+                        : $"Successfully imported {succeeded} asset(s)";
+                    Progress = 100;
+                    IsImporting = false;
+                    ImportSucceeded = true;
+
+                    var done = ImportItems.Where(i => i.ImportComplete && i.ImportError == null).ToList();
+                    foreach (var d in done)
+                    {
+                        ImportItems.Remove(d);
+                    }
+                    SelectedImportItem = ImportItems.FirstOrDefault();
+
+                    ImportCompleted?.Invoke();
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    ProgressText = "Import cancelled";
+                    IsImporting = false;
+                });
+            }
+            catch (Exception ex)
+            {
+                Dispatcher.UIThread.Post(() =>
+                {
+                    ProgressText = $"Error: {ex.Message}";
+                    IsImporting = false;
+                });
+            }
+            finally
+            {
+                _cancellationTokenSource?.Dispose();
+                _cancellationTokenSource = null;
+            }
+        }, ct);
+    }
+
+    private void ImportQueueItem(ImportAssetItemViewModel item, string outputPath)
+    {
+        var desc = item.ToExportDesc(outputPath);
+        Directory.CreateDirectory(desc.OutputDirectory);
+
+        using var exporter = new AssetExporter();
+        var result = exporter.Export(desc);
+
+        if (!result.Success)
+        {
+            throw new Exception(result.ErrorMessage ?? "Export failed");
+        }
+
+        foreach (var meshVm in item.Meshes)
+        {
+            if (!meshVm.IsEnabled)
+            {
+                continue;
+            }
+
+            if (meshVm.ExportName == meshVm.OriginalName)
+            {
+                continue;
+            }
+
+            var originalFile = Path.Combine(desc.OutputDirectory, $"{meshVm.OriginalName}.nizimesh");
+            var newFile = Path.Combine(desc.OutputDirectory, $"{meshVm.ExportName}.nizimesh");
+            if (File.Exists(originalFile) && originalFile != newFile)
+            {
+                File.Move(originalFile, newFile, overwrite: true);
+            }
+        }
+
+        foreach (var animVm in item.Animations)
+        {
+            if (!animVm.IsEnabled)
+            {
+                continue;
+            }
+
+            if (animVm.ExportName == animVm.OriginalName)
+            {
+                continue;
+            }
+
+            var originalFile = Path.Combine(desc.OutputDirectory, $"{animVm.OriginalName}.ozzanim");
+            var newFile = Path.Combine(desc.OutputDirectory, $"{animVm.ExportName}.ozzanim");
+            if (File.Exists(originalFile) && originalFile != newFile)
+            {
+                File.Move(originalFile, newFile, overwrite: true);
+            }
+        }
     }
 
     private void RunImport(List<FileEntry> filesToImport, string outputPath, CancellationToken ct)

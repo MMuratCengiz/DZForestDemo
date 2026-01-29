@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Markup.Xaml;
+using Avalonia.Platform.Storage;
 using NiziKit.Editor.Services;
 using NiziKit.Editor.ViewModels;
 using NiziKit.Editor.Views.Editors;
@@ -18,6 +19,9 @@ public partial class EditorMainView : UserControl
     {
         AvaloniaXamlLoader.Load(this);
         _assetPickerDialog = this.FindControl<AssetPickerDialog>("AssetPickerDialog");
+
+        AddHandler(DragDrop.DragOverEvent, OnMainDragOver);
+        AddHandler(DragDrop.DropEvent, OnMainDrop);
     }
 
     public void Initialize()
@@ -73,6 +77,52 @@ public partial class EditorMainView : UserControl
         if (sender is Border border && border.DataContext is ContentTab tab && _viewModel != null)
         {
             _viewModel.ContentBrowserViewModel.SelectedTab = tab;
+        }
+    }
+
+    private void OnMainDragOver(object? sender, DragEventArgs e)
+    {
+        if (e.Data.Contains(DataFormats.Files))
+        {
+            e.DragEffects = DragDropEffects.Copy;
+        }
+        else
+        {
+            e.DragEffects = DragDropEffects.None;
+        }
+    }
+
+    private void OnMainDrop(object? sender, DragEventArgs e)
+    {
+        if (_viewModel == null)
+        {
+            return;
+        }
+
+        if (!e.Data.Contains(DataFormats.Files))
+        {
+            return;
+        }
+
+        var files = e.Data.GetFiles();
+        if (files == null)
+        {
+            return;
+        }
+
+        var modelPaths = new List<string>();
+        foreach (var item in files)
+        {
+            if (item.TryGetLocalPath() is { } path && ImportViewModel.IsModelFile(path))
+            {
+                modelPaths.Add(path);
+            }
+        }
+
+        if (modelPaths.Count > 0)
+        {
+            _viewModel.OpenImportPanelWithFiles(modelPaths);
+            e.Handled = true;
         }
     }
 }

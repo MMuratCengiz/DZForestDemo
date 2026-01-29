@@ -6,7 +6,8 @@
              xmlns:ui="using:FluentAvalonia.UI.Controls"
              x:Class="NiziKit.Editor.EditorMainView"
              x:DataType="vm:EditorViewModel"
-             Background="Transparent">
+             Background="Transparent"
+             DragDrop.AllowDrop="True">
 
     <UserControl.Resources>
         <views:BoolToForegroundConverter x:Key="BoolToForegroundConverter"/>
@@ -239,10 +240,8 @@
                 Classes="dialog-overlay"
                 ZIndex="1000">
             <Border Classes="dialog-container-large"
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Width="1436"
-                    Height="900"
+                    HorizontalAlignment="Stretch"
+                    VerticalAlignment="Stretch"
                     Margin="40">
                 <Grid RowDefinitions="Auto,Auto,*">
                     <Border Grid.Row="0"
