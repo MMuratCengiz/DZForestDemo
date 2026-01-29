@@ -28,7 +28,7 @@
       "scale": [1, 1, 1],
       "components": [
         { "type": "mesh", "mesh": "Synty/Models/VikingRealm/FBX/VikingRealm_Characters.glb/0" },
-        { "type": "surface", "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.png" }
+        { "type": "surface", "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex" }
       ]
     }
   ]

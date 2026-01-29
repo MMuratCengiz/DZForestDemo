@@ -2,10 +2,9 @@
   "name": "viking",
   "version": "1.0.0",
   "textures": [
-    "Textures/Texture.png",
-    "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.png",
-    "Synty/Textures/BaseLocomotion/Demo_Textures/T_PolygonApocalypse_01.png",
-    "Synty/Textures/BaseLocomotion/Demo_Textures/T_Polygon_Dummy_01.png"
+    "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+    "Synty/Textures/BaseLocomotion/Demo_Textures/T_PolygonApocalypse_01.dztex",
+    "Synty/Textures/BaseLocomotion/Demo_Textures/T_Polygon_Dummy_01.dztex"
   ],
   "shaders": [],
   "materials": [

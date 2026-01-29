@@ -103,11 +103,6 @@ public sealed class TextureExporter : IDisposable
             return TextureExportResult.Failed("Output directory is required.");
         }
 
-        if (string.IsNullOrEmpty(settings.AssetName))
-        {
-            settings.AssetName = Path.GetFileNameWithoutExtension(settings.SourcePath);
-        }
-
         Directory.CreateDirectory(settings.OutputDirectory);
 
         var desc = settings.ToImportDesc();
@@ -115,7 +110,6 @@ public sealed class TextureExporter : IDisposable
 
         if (result.ResultCode == ImporterResultCode.Success)
         {
-            // Output filename pattern: {AssetNamePrefix}_{OriginalFileName}.dztex
             var originalFileName = Path.GetFileNameWithoutExtension(settings.SourcePath);
             var outputFileName = string.IsNullOrEmpty(settings.AssetName)
                 ? $"{originalFileName}.dztex"

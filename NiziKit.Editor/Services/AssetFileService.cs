@@ -51,6 +51,7 @@ public class AssetFileService
         { ".tga", AssetFileType.Texture },
         { ".bmp", AssetFileType.Texture },
         { ".dds", AssetFileType.Texture },
+        { ".dztex", AssetFileType.Texture },
     };
 
     private readonly string _assetsPath;

@@ -2,7 +2,7 @@
   "name": "newpack",
   "version": "1.0.0",
   "textures": [
-    "Synty/Textures/DarkFantasy/Textures/Alts/PolygonDarkFantasy_Texture_01_A.png"
+    "Synty/Textures/DarkFantasy/Textures/Alts/PolygonDarkFantasy_Texture_01_A.dztex"
   ],
   "shaders": [],
   "materials": [

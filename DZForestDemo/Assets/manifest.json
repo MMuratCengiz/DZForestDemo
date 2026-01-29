@@ -18,7 +18,7 @@
     }
   ],
   "assetIndex": {
-    "Synty/Textures/DarkFantasy/Textures/Alts/PolygonDarkFantasy_Texture_01_A.png": {
+    "Synty/Textures/DarkFantasy/Textures/Alts/PolygonDarkFantasy_Texture_01_A.dztex": {
       "pack": "newpack",
       "type": "texture"
     },
@@ -34,19 +34,15 @@
       "pack": "newpack",
       "type": "material"
     },
-    "Textures/Texture.png": {
+    "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex": {
       "pack": "viking",
       "type": "texture"
     },
-    "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.png": {
+    "Synty/Textures/BaseLocomotion/Demo_Textures/T_PolygonApocalypse_01.dztex": {
       "pack": "viking",
       "type": "texture"
     },
-    "Synty/Textures/BaseLocomotion/Demo_Textures/T_PolygonApocalypse_01.png": {
-      "pack": "viking",
-      "type": "texture"
-    },
-    "Synty/Textures/BaseLocomotion/Demo_Textures/T_Polygon_Dummy_01.png": {
+    "Synty/Textures/BaseLocomotion/Demo_Textures/T_Polygon_Dummy_01.dztex": {
       "pack": "viking",
       "type": "texture"
     },

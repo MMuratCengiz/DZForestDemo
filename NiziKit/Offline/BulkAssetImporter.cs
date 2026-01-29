@@ -110,9 +110,9 @@ public sealed class BulkAssetImporter : IDisposable
 
         if (desc.ImportTextures && textureFiles.Count > 0)
         {
-            Parallel.ForEach(textureFiles, parallelOptions, file =>
+            Parallel.ForEach(textureFiles, parallelOptions, () => new TextureExporter(), (file, _, exporter) =>
             {
-                var result = ExportTexture(file, desc);
+                var result = ExportTexture(file, desc, exporter);
                 if (result.Success)
                 {
                     Interlocked.Increment(ref texturesExported);
@@ -122,7 +122,8 @@ public sealed class BulkAssetImporter : IDisposable
                     Interlocked.Increment(ref texturesFailed);
                     errors.Add($"Texture '{Path.GetFileName(file)}': {result.ErrorMessage}");
                 }
-            });
+                return exporter;
+            }, exporter => exporter.Dispose());
         }
 
         return new BulkImportResult
@@ -171,27 +172,21 @@ public sealed class BulkAssetImporter : IDisposable
         return exporter.Export(exportDesc);
     }
 
-    private TextureExportResult ExportTexture(string sourceFile, BulkImportDesc desc)
+    private TextureExportResult ExportTexture(string sourceFile, BulkImportDesc desc, TextureExporter exporter)
     {
         var relativePath = Path.GetRelativePath(desc.SourceDirectory, sourceFile);
         var relativeDir = Path.GetDirectoryName(relativePath) ?? "";
-        var fileName = Path.GetFileName(sourceFile);
 
         var outputDir = desc.PreserveDirectoryStructure
             ? Path.Combine(desc.OutputDirectory, "Textures", relativeDir)
             : Path.Combine(desc.OutputDirectory, "Textures");
 
-        Directory.CreateDirectory(outputDir);
-
-        var outputPath = Path.Combine(outputDir, fileName);
-        try
+        return exporter.Export(new TextureExportSettings
         {
-            File.Copy(sourceFile, outputPath, overwrite: true);
-            return TextureExportResult.Succeeded(outputPath);
-        }
-        catch (Exception ex)
-        {
-            return TextureExportResult.Failed(ex.Message);
-        }
+            SourcePath = sourceFile,
+            OutputDirectory = outputDir,
+            AssetName = "",
+            GenerateMips = desc.GenerateMips
+        });
     }
 }
