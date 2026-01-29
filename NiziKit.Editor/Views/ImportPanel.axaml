@@ -14,8 +14,8 @@
             <Grid Grid.Column="0" RowDefinitions="3*,Auto,2*" Margin="0,0,8,0">
                 <!-- File Browser -->
                 <Border Grid.Row="0"
-                        Background="{StaticResource EditorSurfaceRaised}"
-                        BorderBrush="{StaticResource EditorPanelBorder}"
+                        Background="{DynamicResource EditorSurfaceRaised}"
+                        BorderBrush="{DynamicResource EditorPanelBorder}"
                         BorderThickness="1"
                         Padding="12">
                     <views:FileBrowserGrid DataContext="{Binding FileBrowser}"/>
@@ -31,8 +31,8 @@
 
                 <!-- Import Queue -->
                 <Border Grid.Row="2"
-                        Background="{StaticResource EditorSurfaceRaised}"
-                        BorderBrush="{StaticResource EditorPanelBorder}"
+                        Background="{DynamicResource EditorSurfaceRaised}"
+                        BorderBrush="{DynamicResource EditorPanelBorder}"
                         BorderThickness="1"
                         Padding="12"
                         x:Name="ImportQueueBorder"
@@ -42,7 +42,7 @@
                                    Text="Import Queue"
                                    Classes="subtitle"
                                    Margin="0,0,0,8"
-                                   Foreground="{StaticResource EditorTextSecondary}"/>
+                                   Foreground="{DynamicResource EditorTextSecondary}"/>
                         <ListBox Grid.Row="1"
                                  ItemsSource="{Binding ImportItems}"
                                  SelectedItem="{Binding SelectedImportItem}"
@@ -54,7 +54,7 @@
                                         <StackPanel Grid.Column="0" Spacing="2">
                                             <TextBlock Text="{Binding FileName}" FontWeight="SemiBold"/>
                                             <TextBlock Text="{Binding StatusText}"
-                                                       Foreground="{StaticResource EditorTextSecondary}"/>
+                                                       Foreground="{DynamicResource EditorTextSecondary}"/>
                                         </StackPanel>
                                         <ProgressBar Grid.Column="1"
                                                      IsIndeterminate="True"
@@ -68,7 +68,7 @@
                                                 Padding="4"
                                                 Classes="ghost"
                                                 ToolTip.Tip="Remove">
-                                            <ui:SymbolIcon Symbol="Dismiss" FontSize="{StaticResource IconSizeXS}"/>
+                                            <ui:SymbolIcon Symbol="Dismiss" FontSize="{DynamicResource IconSizeXS}"/>
                                         </Button>
                                     </Grid>
                                 </DataTemplate>
@@ -80,8 +80,8 @@
 
             <!-- RIGHT SIDE: Asset Details for selected item -->
             <Border Grid.Column="1"
-                    Background="{StaticResource EditorSurfaceRaised}"
-                    BorderBrush="{StaticResource EditorPanelBorder}"
+                    Background="{DynamicResource EditorSurfaceRaised}"
+                    BorderBrush="{DynamicResource EditorPanelBorder}"
                     BorderThickness="1"
                     Padding="16"
                     Margin="8,0,0,0">
@@ -93,18 +93,22 @@
                         <TextBlock Text="Asset Details" Classes="subtitle" Margin="0,0,0,4"/>
 
                         <!-- Asset Name -->
-                        <Grid ColumnDefinitions="120,*">
+                        <Grid ColumnDefinitions="Auto,*" Margin="0,0,0,0">
                             <TextBlock Text="Asset Name"
                                        VerticalAlignment="Center"
-                                       Foreground="{StaticResource EditorTextSecondary}"/>
+                                       Classes="caption"
+                                       MinWidth="140"
+                                       Margin="0,0,12,0"/>
                             <TextBox Grid.Column="1" Text="{Binding AssetName}"/>
                         </Grid>
 
                         <!-- Output Subdirectory -->
-                        <Grid ColumnDefinitions="120,*">
-                            <TextBlock Text="Output Subdir"
+                        <Grid ColumnDefinitions="Auto,*">
+                            <TextBlock Text="Output Subdirectory"
                                        VerticalAlignment="Center"
-                                       Foreground="{StaticResource EditorTextSecondary}"/>
+                                       Classes="caption"
+                                       MinWidth="140"
+                                       Margin="0,0,12,0"/>
                             <TextBox Grid.Column="1"
                                      Text="{Binding OutputSubdirectory}"
                                      Watermark="(root output)"/>
@@ -119,11 +123,11 @@
                         <StackPanel Orientation="Horizontal" Spacing="8"
                                     IsVisible="{Binding IsScanning}">
                             <ProgressBar IsIndeterminate="True" Width="80" Height="4"/>
-                            <TextBlock Text="Scanning..." Foreground="{StaticResource EditorTextSecondary}"/>
+                            <TextBlock Text="Scanning..." Foreground="{DynamicResource EditorTextSecondary}"/>
                         </StackPanel>
 
                         <TextBlock Text="{Binding ScanError}"
-                                   Foreground="Red"
+                                   Foreground="{DynamicResource EditorError}"
                                    TextWrapping="Wrap"
                                    IsVisible="{Binding ScanError, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
 
@@ -144,7 +148,7 @@
                                             <TextBlock Grid.Column="2"
                                                        Text="{Binding DisplayInfo}"
                                                        VerticalAlignment="Center"
-                                                       Foreground="{StaticResource EditorTextSecondary}"
+                                                       Foreground="{DynamicResource EditorTextSecondary}"
                                                        Margin="12,0,0,0"/>
                                         </Grid>
                                     </DataTemplate>
@@ -154,7 +158,7 @@
 
                         <!-- Model: Skeleton -->
                         <Border IsVisible="{Binding HasSkeleton}"
-                                Background="{StaticResource EditorPanelSecondaryBackground}"
+                                Background="{DynamicResource EditorPanelSecondaryBackground}"
                                 Padding="12,8"
                                 Margin="0,4">
                             <Grid ColumnDefinitions="Auto,*">
@@ -164,7 +168,7 @@
                                 <TextBlock Grid.Column="1"
                                            VerticalAlignment="Center"
                                            HorizontalAlignment="Right"
-                                           Foreground="{StaticResource EditorTextSecondary}">
+                                           Foreground="{DynamicResource EditorTextSecondary}">
                                     <TextBlock.Text>
                                         <MultiBinding StringFormat="{}{0} joints, root: {1}">
                                             <Binding Path="JointCount"/>
@@ -197,7 +201,7 @@
                                                 <TextBlock Grid.Column="2"
                                                            Text="{Binding DisplayInfo}"
                                                            VerticalAlignment="Center"
-                                                           Foreground="{StaticResource EditorTextSecondary}"
+                                                           Foreground="{DynamicResource EditorTextSecondary}"
                                                            Margin="12,0,0,0"/>
                                             </Grid>
                                         </DataTemplate>
@@ -210,10 +214,12 @@
                         <Expander Header="Options" IsExpanded="False"
                                   IsVisible="{Binding ScanComplete}">
                             <StackPanel Spacing="8" Margin="8,4">
-                                <Grid ColumnDefinitions="120,*">
+                                <Grid ColumnDefinitions="Auto,*">
                                     <TextBlock Text="Scale"
                                                VerticalAlignment="Center"
-                                               Foreground="{StaticResource EditorTextSecondary}"/>
+                                               Classes="caption"
+                                               MinWidth="140"
+                                               Margin="0,0,12,0"/>
                                     <TextBox Grid.Column="1" Text="{Binding Scale}" Width="90"
                                              HorizontalAlignment="Left"/>
                                 </Grid>
@@ -230,7 +236,7 @@
                                     <CheckBox Content="Smooth Normals" IsChecked="{Binding SmoothNormals}" Margin="0,0,16,4"/>
                                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                                         <TextBlock Text="Angle:" VerticalAlignment="Center"
-                                                   Foreground="{StaticResource EditorTextSecondary}"/>
+                                                   Classes="caption"/>
                                         <TextBox Text="{Binding SmoothNormalsAngle}" Width="60"/>
                                     </StackPanel>
                                 </WrapPanel>
@@ -239,7 +245,7 @@
                                     <CheckBox Content="Limit Bone Weights" IsChecked="{Binding LimitBoneWeights}" Margin="0,0,16,4"/>
                                     <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
                                         <TextBlock Text="Max:" VerticalAlignment="Center"
-                                                   Foreground="{StaticResource EditorTextSecondary}"/>
+                                                   Classes="caption"/>
                                         <TextBox Text="{Binding MaxBoneWeightsPerVertex}" Width="60"/>
                                     </StackPanel>
                                 </WrapPanel>
@@ -252,13 +258,13 @@
 
         <!-- Bottom bar: output, progress, buttons -->
         <Border Grid.Row="1"
-                Background="{StaticResource EditorPanelSecondaryBackground}"
+                Background="{DynamicResource EditorPanelSecondaryBackground}"
                 Padding="18,14">
             <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto,Auto">
-                <TextBlock Text="Output"
+                <TextBlock Text="Output Directory"
                            VerticalAlignment="Center"
-                           Foreground="{StaticResource EditorTextSecondary}"
-                           Margin="0,0,16,0"/>
+                           Classes="caption"
+                           Margin="0,0,12,0"/>
                 <TextBox Grid.Column="1"
                          Text="{Binding OutputDirectory}"
                          Watermark="Assets/..."
@@ -274,7 +280,7 @@
                                VerticalAlignment="Center"
                                MaxWidth="220"
                                TextTrimming="CharacterEllipsis"
-                               Foreground="{StaticResource EditorTextSecondary}"/>
+                               Foreground="{DynamicResource EditorTextSecondary}"/>
                     <ProgressBar Value="{Binding Progress}"
                                  Maximum="100"
                                  Width="120"
@@ -284,7 +290,7 @@
 
                 <TextBlock Grid.Column="3"
                            Text="{Binding ProgressText}"
-                           Foreground="LimeGreen"
+                           Foreground="{DynamicResource EditorSuccess}"
                            VerticalAlignment="Center"
                            Margin="12,0"
                            IsVisible="{Binding ImportSucceeded}"/>
