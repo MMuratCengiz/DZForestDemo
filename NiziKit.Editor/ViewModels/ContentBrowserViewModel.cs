@@ -238,6 +238,7 @@ public partial class ContentBrowserViewModel : ObservableObject
             }
             else
             {
+                SelectedPack = null;
                 NavigateTo(value.FullPath);
             }
         }
@@ -245,6 +246,8 @@ public partial class ContentBrowserViewModel : ObservableObject
 
     private void LoadFolderTree()
     {
+        var previousPackName = SelectedPack?.PackName;
+
         FolderTree.Clear();
         ScenePackTree.Clear();
         AvailablePackTree.Clear();
@@ -280,6 +283,12 @@ public partial class ContentBrowserViewModel : ObservableObject
                 {
                 }
             }
+        }
+
+        if (previousPackName != null)
+        {
+            SelectedPack = ScenePackTree.Concat(AvailablePackTree)
+                .FirstOrDefault(p => p.PackName == previousPackName);
         }
     }
 
@@ -1007,6 +1016,7 @@ public partial class ContentBrowserViewModel : ObservableObject
 
             StatusMessage = $"Added '{assetKey}' to pack '{SelectedPack.PackName}'";
             LoadFolderTree();
+            RefreshCurrentTab();
         }
         catch (Exception ex)
         {

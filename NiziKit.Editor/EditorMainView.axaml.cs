@@ -110,18 +110,18 @@ public partial class EditorMainView : UserControl
             return;
         }
 
-        var modelPaths = new List<string>();
+        var importPaths = new List<string>();
         foreach (var item in files)
         {
-            if (item.TryGetLocalPath() is { } path && ImportViewModel.IsModelFile(path))
+            if (item.TryGetLocalPath() is { } path && ImportViewModel.IsImportableFile(path))
             {
-                modelPaths.Add(path);
+                importPaths.Add(path);
             }
         }
 
-        if (modelPaths.Count > 0)
+        if (importPaths.Count > 0)
         {
-            _viewModel.OpenImportPanelWithFiles(modelPaths);
+            _viewModel.OpenImportPanelWithFiles(importPaths);
             e.Handled = true;
         }
     }

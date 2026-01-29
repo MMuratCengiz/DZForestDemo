@@ -436,6 +436,14 @@ public sealed class EditorGame : Game
             vm.Is2DMode = false;
         }
 
+        var gizmoPass = _renderer.GizmoPass;
+        gizmoPass.GridOrientation = preset switch
+        {
+            ViewPreset.Front or ViewPreset.Back => Matrix4x4.CreateRotationX(MathF.PI / 2),
+            ViewPreset.Right or ViewPreset.Left => Matrix4x4.CreateRotationZ(MathF.PI / 2),
+            _ => Matrix4x4.Identity
+        };
+
         _editorController.SetPositionAndLookAt(position, target, immediate: true);
     }
 
@@ -463,6 +471,7 @@ public sealed class EditorGame : Game
         {
             _editorCamera.ProjectionType = ProjectionType.Perspective;
             vm.CurrentViewPreset = ViewPreset.Free;
+            _renderer.GizmoPass.GridOrientation = Matrix4x4.Identity;
         }
     }
 

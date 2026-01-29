@@ -24,6 +24,11 @@ public partial class ImportViewModel : ObservableObject
         ".fbx", ".glb", ".gltf", ".obj", ".dae", ".blend"
     };
 
+    private static readonly HashSet<string> TextureExtensions = new(StringComparer.OrdinalIgnoreCase)
+    {
+        ".png", ".jpg", ".jpeg", ".tga", ".bmp", ".dds"
+    };
+
     public ImportViewModel()
     {
         var startPath = _lastBrowsedPath
@@ -56,7 +61,7 @@ public partial class ImportViewModel : ObservableObject
     private bool _generateMips = true;
 
     [ObservableProperty]
-    private string _outputDirectory = "Synty";
+    private string _outputDirectory = "";
 
     [ObservableProperty]
     private string _progressText = "";
@@ -98,6 +103,17 @@ public partial class ImportViewModel : ObservableObject
         return ModelExtensions.Contains(ext);
     }
 
+    public static bool IsTextureFile(string path)
+    {
+        var ext = Path.GetExtension(path);
+        return TextureExtensions.Contains(ext);
+    }
+
+    public static bool IsImportableFile(string path)
+    {
+        return IsModelFile(path) || IsTextureFile(path);
+    }
+
     private void OnSelectionChanged(IReadOnlyList<FileEntry> entries)
     {
         SelectedFiles.Clear();
@@ -128,13 +144,18 @@ public partial class ImportViewModel : ObservableObject
                 FileName = file.Name,
                 FilePath = file.FullPath,
                 AssetName = Path.GetFileNameWithoutExtension(file.Name),
-                Scale = ModelScale
+                Scale = ModelScale,
+                FileType = file.Type,
+                GenerateMips = GenerateMips
             };
 
             ImportItems.Add(item);
             SelectedImportItem ??= item;
 
-            ScanItemAsync(item);
+            if (item.IsModel)
+            {
+                ScanItemAsync(item);
+            }
         }
     }
 
@@ -168,18 +189,27 @@ public partial class ImportViewModel : ObservableObject
             }
 
             var name = Path.GetFileName(path);
+            var fileType = IsModelFile(path) ? AssetFileType.Model
+                         : IsTextureFile(path) ? AssetFileType.Texture
+                         : AssetFileType.Other;
+
             var item = new ImportAssetItemViewModel
             {
                 FileName = name,
                 FilePath = path,
                 AssetName = Path.GetFileNameWithoutExtension(name),
-                Scale = ModelScale
+                Scale = ModelScale,
+                FileType = fileType,
+                GenerateMips = GenerateMips
             };
 
             ImportItems.Add(item);
             SelectedImportItem ??= item;
 
-            ScanItemAsync(item);
+            if (item.IsModel)
+            {
+                ScanItemAsync(item);
+            }
         }
     }
 
@@ -347,6 +377,40 @@ public partial class ImportViewModel : ObservableObject
     }
 
     private void ImportQueueItem(ImportAssetItemViewModel item, string outputPath)
+    {
+        if (item.IsTexture)
+        {
+            ImportTextureItem(item, outputPath);
+            return;
+        }
+
+        ImportModelItem(item, outputPath);
+    }
+
+    private void ImportTextureItem(ImportAssetItemViewModel item, string outputPath)
+    {
+        var outDir = string.IsNullOrEmpty(item.OutputSubdirectory)
+            ? outputPath
+            : Path.Combine(outputPath, item.OutputSubdirectory);
+        var texturesPath = Path.Combine(outDir, "Textures");
+        Directory.CreateDirectory(texturesPath);
+
+        using var exporter = new TextureExporter();
+        var result = exporter.Export(new TextureExportSettings
+        {
+            SourcePath = item.FilePath,
+            OutputDirectory = texturesPath,
+            AssetName = item.AssetName,
+            GenerateMips = item.GenerateMips
+        });
+
+        if (!result.Success)
+        {
+            throw new Exception(result.ErrorMessage ?? "Texture export failed");
+        }
+    }
+
+    private void ImportModelItem(ImportAssetItemViewModel item, string outputPath)
     {
         var desc = item.ToExportDesc(outputPath);
         Directory.CreateDirectory(desc.OutputDirectory);

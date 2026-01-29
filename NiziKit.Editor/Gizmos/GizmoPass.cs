@@ -60,6 +60,7 @@ public sealed class GizmoPass : IDisposable
     public float GridSize { get; set; } = 50f;
     public float GridSpacing { get; set; } = 1f;
     public int GridSubdivisions { get; set; } = 5;
+    public Matrix4x4 GridOrientation { get; set; } = Matrix4x4.Identity;
 
     public TransformGizmo Gizmo { get; } = new();
 
@@ -508,7 +509,7 @@ public sealed class GizmoPass : IDisposable
         var constants = new GizmoConstants
         {
             ViewProjection = viewProjection,
-            ModelMatrix = Matrix4x4.Identity,
+            ModelMatrix = GridOrientation,
             CameraPosition = cameraPosition,
             DepthBias = 0.0f,
             SelectionColor = GridColorMajor,

@@ -31,6 +31,8 @@ public class AssetIntrospectionResult
     public List<MeshInfo> Meshes { get; set; } = [];
     public SkeletonInfo? Skeleton { get; set; }
     public List<AnimationInfo> Animations { get; set; } = [];
+    public int EmbeddedTextureCount { get; set; }
+    public int MaterialCount { get; set; }
     public string? Error { get; set; }
 
     public bool HasError => !string.IsNullOrEmpty(Error);
@@ -125,6 +127,9 @@ public sealed class AssetIntrospector : IDisposable
                     ChannelCount = anim->MNumChannels
                 });
             }
+
+            result.EmbeddedTextureCount = (int)scene->MNumTextures;
+            result.MaterialCount = (int)scene->MNumMaterials;
 
             return result;
         }

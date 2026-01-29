@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using NiziKit.Editor.Services;
 using NiziKit.Offline;
 
 namespace NiziKit.Editor.ViewModels;
@@ -33,6 +34,14 @@ public partial class ImportAssetItemViewModel : ObservableObject
     [ObservableProperty] private string _filePath = string.Empty;
     [ObservableProperty] private string _assetName = string.Empty;
     [ObservableProperty] private string _outputSubdirectory = string.Empty;
+    [ObservableProperty] private AssetFileType _fileType = AssetFileType.Other;
+
+    public bool IsModel => FileType == AssetFileType.Model;
+    public bool IsTexture => FileType == AssetFileType.Texture;
+
+    [ObservableProperty] private bool _generateMips = true;
+
+    [ObservableProperty] private int _embeddedTextureCount;
 
     [ObservableProperty] private bool _isScanning;
     [ObservableProperty] private bool _scanComplete;
@@ -93,8 +102,20 @@ public partial class ImportAssetItemViewModel : ObservableObject
                 return $"{Meshes.Count} meshes, {Animations.Count} anims";
             }
 
+            if (IsTexture)
+            {
+                return "Texture";
+            }
+
             return "Pending";
         }
+    }
+
+    partial void OnFileTypeChanged(AssetFileType value)
+    {
+        OnPropertyChanged(nameof(IsModel));
+        OnPropertyChanged(nameof(IsTexture));
+        OnPropertyChanged(nameof(StatusText));
     }
 
     partial void OnIsScanningChanged(bool value) => OnPropertyChanged(nameof(StatusText));
@@ -147,6 +168,8 @@ public partial class ImportAssetItemViewModel : ObservableObject
             JointCount = result.Skeleton.JointCount;
             RootJointName = result.Skeleton.RootJointName;
         }
+
+        EmbeddedTextureCount = result.EmbeddedTextureCount;
 
         ScanComplete = true;
         IsScanning = false;
