@@ -92,7 +92,7 @@ public sealed class AssetExporter : IDisposable
 
             var meshFileName = gltfModel.Meshes.Count == 1
                 ? $"{desc.AssetName}.nizimesh"
-                : $"{desc.AssetName}_{i}.nizimesh";
+                : $"{mesh.Name}.nizimesh";
 
             var meshPath = Path.Combine(desc.OutputDirectory, meshFileName);
 

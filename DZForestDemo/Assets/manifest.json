@@ -22,7 +22,7 @@
       "pack": "newpack",
       "type": "texture"
     },
-    "Synty/Models/DarkFantasy/FBX/Vehicles/SM_Veh_Wagon_01_0.nizimesh": {
+    "Synty/Models/DarkFantasy/FBX/Vehicles/SM_Veh_Wagon_01.nizimesh": {
       "pack": "newpack",
       "type": "mesh"
     },
@@ -50,19 +50,19 @@
       "pack": "viking",
       "type": "texture"
     },
-    "Synty/Models/VikingRealm/FBX/VikingRealm_Characters_0.nizimesh": {
+    "Synty/Models/VikingRealm/FBX/SM_Chr_Attach_Bear_01.nizimesh": {
       "pack": "viking",
       "type": "mesh"
     },
-    "Synty/Models/VikingRealm/FBX/VikingRealm_Characters_1.nizimesh": {
+    "Synty/Models/VikingRealm/FBX/SM_Chr_Attach_Fur_01.nizimesh": {
       "pack": "viking",
       "type": "mesh"
     },
-    "Synty/Models/VikingRealm/FBX/VikingRealm_Characters_2.nizimesh": {
+    "Synty/Models/VikingRealm/FBX/SM_Chr_Attach_Fur_02.nizimesh": {
       "pack": "viking",
       "type": "mesh"
     },
-    "Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Large_01_0.nizimesh": {
+    "Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Large_01.nizimesh": {
       "pack": "viking",
       "type": "mesh"
     },
@@ -70,7 +70,7 @@
       "pack": "viking",
       "type": "mesh"
     },
-    "Synty/Models/VikingRealm/FBX/SM_Veh_Cart_01_0.nizimesh": {
+    "Synty/Models/VikingRealm/FBX/SM_Veh_Cart_01.nizimesh": {
       "pack": "viking",
       "type": "mesh"
     },
@@ -138,7 +138,7 @@
       "pack": "viking",
       "type": "mesh"
     },
-    "Synty/Models/VikingRealm/FBX/SM_Prop_Flag_01_0.nizimesh": {
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Flag_01.nizimesh": {
       "pack": "viking",
       "type": "mesh"
     },

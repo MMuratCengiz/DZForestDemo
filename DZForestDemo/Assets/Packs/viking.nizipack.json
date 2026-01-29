@@ -13,12 +13,12 @@
     "Materials/NewMaterial.nizimat.json"
   ],
   "meshes": [
-    "Synty/Models/VikingRealm/FBX/VikingRealm_Characters_0.nizimesh",
-    "Synty/Models/VikingRealm/FBX/VikingRealm_Characters_1.nizimesh",
-    "Synty/Models/VikingRealm/FBX/VikingRealm_Characters_2.nizimesh",
-    "Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Large_01_0.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Chr_Attach_Bear_01.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Chr_Attach_Fur_01.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Chr_Attach_Fur_02.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Large_01.nizimesh",
     "Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Small_01.nizimesh",
-    "Synty/Models/VikingRealm/FBX/SM_Veh_Cart_01_0.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Veh_Cart_01.nizimesh",
     "Synty/Models/VikingRealm/FBX/SM_Prop_Barrel_01.nizimesh",
     "Synty/Models/VikingRealm/FBX/SM_Prop_Barrel_02.nizimesh",
     "Synty/Models/VikingRealm/FBX/SM_Prop_Anvil_01.nizimesh",
@@ -35,7 +35,7 @@
     "Synty/Models/VikingRealm/FBX/SM_Env_Bush_Berries_01.nizimesh",
     "Synty/Models/VikingRealm/FBX/SM_Prop_Torch_01.nizimesh",
     "Synty/Models/VikingRealm/FBX/SM_Prop_Fire_Pit_01.nizimesh",
-    "Synty/Models/VikingRealm/FBX/SM_Prop_Flag_01_0.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Flag_01.nizimesh",
     "Synty/Models/BaseLocomotion/Demo_Models/SM_Prop_Target_01.nizimesh",
     "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.nizimesh"
   ],
