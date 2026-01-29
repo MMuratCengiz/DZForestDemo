@@ -47,7 +47,7 @@ public class AssetBrowserService
             AssetRefType.Mesh => ResolveMesh(reference),
             AssetRefType.Texture => AssetPacks.GetTextureByPath(reference),
             AssetRefType.Skeleton => ResolveSkeleton(reference),
-            AssetRefType.Animation => ResolveAnimation(reference),
+            AssetRefType.Animation => ResolveAnimationData(reference),
             AssetRefType.Shader => ResolveShader(reference),
             _ => null
         };
@@ -63,10 +63,9 @@ public class AssetBrowserService
         return AssetPacks.GetSkeletonByPath(reference);
     }
 
-    private NiziKit.Assets.Animation? ResolveAnimation(string reference)
+    private byte[]? ResolveAnimationData(string reference)
     {
-        var data = AssetPacks.GetAnimationDataByPath(reference);
-        return data != null ? null : null;
+        return AssetPacks.GetAnimationDataByPath(reference);
     }
 
     private NiziKit.Graphics.GpuShader? ResolveShader(string reference)

@@ -150,8 +150,13 @@ public partial class AnimationListEditor : UserControl
         {
             if (asset != null)
             {
-                var slashIndex = asset.Name.IndexOf('/');
-                var animName = slashIndex > 0 ? asset.Name[(slashIndex + 1)..] : asset.Name;
+                var rawName = asset.Name;
+                var slashIndex = rawName.IndexOf('/');
+                var animName = slashIndex > 0 ? rawName[(slashIndex + 1)..] : rawName;
+                if (animName.EndsWith(".ozzanim", StringComparison.OrdinalIgnoreCase))
+                {
+                    animName = animName[..^".ozzanim".Length];
+                }
                 
                 var entry = AnimationEntry.External(animName, asset.FullReference);
                 list.Add(entry);

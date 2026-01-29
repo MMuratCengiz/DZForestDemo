@@ -17,8 +17,18 @@ public class Skeleton : IDisposable
     private IReadOnlyList<string>? _animationNames;
     private byte[]? _sourceBytes;
 
-    public IReadOnlyList<string> AnimationNames => _animationNames ??= _exporter?.GetAnimationNames() ?? [];
-    public uint AnimationCount => _exporter?.NumAnimations ?? 0;
+    public IReadOnlyList<string> AnimationNames => _animationNames ??= BuildAnimationNames();
+    public uint AnimationCount => (uint)AnimationNames.Count;
+
+    private List<string> BuildAnimationNames()
+    {
+        if (_exporter != null)
+        {
+            return _exporter.GetAnimationNames()?.ToList() ?? [];
+        }
+
+        return _animations.Keys.ToList();
+    }
 
     public static Skeleton Load(string modelPath)
     {
@@ -135,6 +145,7 @@ public class Skeleton : IDisposable
         var duration = Ozz.GetAnimationDuration(context);
         var animation = new Animation(animName, duration, context, animContainer, this);
         _animations[animName] = animation;
+        _animationNames = null;
         return animation;
     }
 

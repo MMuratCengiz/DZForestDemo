@@ -231,7 +231,7 @@ public partial class Animator : IDisposable
                 var animData = AssetPacks.GetAnimationDataByPath(entry.SourceRef!);
                 if (animData != null)
                 {
-                    Skeleton.LoadAnimation(animData);
+                    Skeleton.LoadAnimation(animData, entry.Name);
                 }
             }
             catch (Exception ex)
@@ -317,7 +317,7 @@ public partial class Animator : IDisposable
                 var animData = AssetPacks.GetAnimationDataByPath(entry.SourceRef!);
                 if (animData != null)
                 {
-                    return Skeleton.LoadAnimation(animData);
+                    return Skeleton.LoadAnimation(animData, entry.Name);
                 }
             }
             catch
