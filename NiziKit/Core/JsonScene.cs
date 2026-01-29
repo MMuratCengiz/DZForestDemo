@@ -115,8 +115,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
     private string ExtractFilePath(string reference)
     {
-        var (filePath, _) = ParsePathWithSelector(reference);
-        return filePath;
+        return reference;
     }
 
     private void LoadRequiredAssets(HashSet<string> assetRefs)
@@ -749,13 +748,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             return CreateGeometry(geoType, parameters);
         }
 
-        var (filePath, meshSelector) = ParsePathWithSelector(reference);
-        var model = AssetPacks.GetModelByPath(filePath);
-        if (model == null)
-        {
-            throw new KeyNotFoundException($"Model not found: {filePath}");
-        }
-        return GetMeshFromModel(model, meshSelector);
+        return AssetPacks.GetMeshByPath(reference);
     }
 
     public Texture2d? ResolveTexture(string reference)
@@ -780,40 +773,28 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
     public Skeleton? ResolveSkeleton(string reference)
     {
-        Logger.LogInformation("ResolveSkeleton called with reference: '{Reference}'", reference);
-
         if (string.IsNullOrEmpty(reference))
         {
-            Logger.LogWarning("ResolveSkeleton: reference is null or empty");
             return null;
         }
 
-        var packName = AssetPacks.GetPackForPath(reference);
-        Logger.LogInformation("ResolveSkeleton: GetPackForPath returned '{PackName}'", packName ?? "null");
-
-        var model = AssetPacks.GetModelByPath(reference);
-        Logger.LogInformation("ResolveSkeleton: GetModelByPath returned model={Model}, skeleton={Skeleton}",
-            model != null ? "found" : "null",
-            model?.Skeleton != null ? model.Skeleton.Name : "null");
-
-        return model?.Skeleton;
+        return AssetPacks.GetSkeletonByPath(reference);
     }
 
-    public Assets.Animation? ResolveAnimation(string reference)
+    public Assets.Animation? ResolveAnimation(string reference, Skeleton? skeleton = null)
     {
-        if (string.IsNullOrEmpty(reference))
+        if (string.IsNullOrEmpty(reference) || skeleton == null)
         {
             return null;
         }
 
-        var (filePath, animationSelector) = ParsePathWithSelector(reference);
-        var model = AssetPacks.GetModelByPath(filePath);
-        var skeleton = model?.Skeleton;
-        if (skeleton == null)
+        var animData = AssetPacks.GetAnimationDataByPath(reference);
+        if (animData == null)
         {
             return null;
         }
-        return GetAnimationFromSkeleton(skeleton, animationSelector);
+
+        return skeleton.LoadAnimation(animData);
     }
 
     #endregion
@@ -857,13 +838,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             };
         }
 
-        var (filePath, meshSelector) = ParsePathWithSelector(meshRef);
-        var model = AssetPacks.GetModelByPath(filePath);
-        if (model == null)
-        {
-            return null;
-        }
-        return GetMeshFromModel(model, meshSelector);
+        return AssetPacks.GetMeshByPath(meshRef);
     }
 
     private static Mesh CreateGeometry(string geoType, IReadOnlyDictionary<string, object>? parameters)
@@ -900,73 +875,6 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             int i => i,
             _ => defaultValue
         };
-    }
-
-    private static (string filePath, string? selector) ParsePathWithSelector(string reference)
-    {
-        if (string.IsNullOrEmpty(reference))
-        {
-            return (reference, null);
-        }
-
-        var extensions = new[] { ".glb", ".gltf", ".fbx", ".obj", ".png", ".jpg", ".jpeg", ".tga", ".dds" };
-        foreach (var ext in extensions)
-        {
-            var extIndex = reference.IndexOf(ext, StringComparison.OrdinalIgnoreCase);
-            if (extIndex > 0)
-            {
-                var afterExt = extIndex + ext.Length;
-                if (afterExt < reference.Length && reference[afterExt] == '/')
-                {
-                    return (reference.Substring(0, afterExt), reference.Substring(afterExt + 1));
-                }
-                if (afterExt == reference.Length)
-                {
-                    return (reference, null);
-                }
-            }
-        }
-
-        return (reference, null);
-    }
-
-    private static Mesh GetMeshFromModel(Model model, string? meshSelector)
-    {
-        if (string.IsNullOrEmpty(meshSelector))
-        {
-            return model.Meshes[0];
-        }
-
-        if (int.TryParse(meshSelector, out var index))
-        {
-            if (index < 0 || index >= model.Meshes.Count)
-            {
-                throw new IndexOutOfRangeException($"Mesh index {index} is out of range. Model has {model.Meshes.Count} meshes.");
-            }
-            return model.Meshes[index];
-        }
-
-        var mesh = model.Meshes.FirstOrDefault(m => m.Name == meshSelector);
-        if (mesh == null)
-        {
-            throw new KeyNotFoundException($"Mesh '{meshSelector}' not found in model. Available meshes: {string.Join(", ", model.Meshes.Select(m => m.Name))}");
-        }
-        return mesh;
-    }
-
-    private static Assets.Animation GetAnimationFromSkeleton(Skeleton skeleton, string? animationSelector)
-    {
-        if (string.IsNullOrEmpty(animationSelector))
-        {
-            return skeleton.GetAnimation(0);
-        }
-
-        if (uint.TryParse(animationSelector, out var index))
-        {
-            return skeleton.GetAnimation(index);
-        }
-
-        return skeleton.GetAnimation(animationSelector);
     }
 
     private static PhysicsShape ParsePhysicsShape(IReadOnlyDictionary<string, JsonElement>? properties)

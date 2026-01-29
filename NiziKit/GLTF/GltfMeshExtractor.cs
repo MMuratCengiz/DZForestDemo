@@ -8,7 +8,7 @@ namespace NiziKit.GLTF;
 
 public static class GltfMeshExtractor
 {
-    public static List<Mesh> ExtractMeshes(GltfDocument document, HashSet<int>? skinnedMeshIndices = null, bool convertToLeftHanded = true)
+    public static List<Mesh> ExtractMeshes(GltfDocument document, HashSet<int>? skinnedMeshIndices = null, bool convertToLeftHanded = true, bool skipFallbackTangents = false)
     {
         var result = new List<Mesh>();
         var root = document.Root;
@@ -22,7 +22,7 @@ public static class GltfMeshExtractor
         {
             var gltfMesh = root.Meshes[meshIndex];
             var isSkinned = skinnedMeshIndices?.Contains(meshIndex) ?? false;
-            var mesh = ExtractMesh(document, gltfMesh, meshIndex, isSkinned, convertToLeftHanded);
+            var mesh = ExtractMesh(document, gltfMesh, meshIndex, isSkinned, convertToLeftHanded, skipFallbackTangents);
             result.Add(mesh);
         }
 
@@ -50,7 +50,7 @@ public static class GltfMeshExtractor
         return result;
     }
 
-    private static Mesh ExtractMesh(GltfDocument document, GltfMesh gltfMesh, int meshIndex, bool isSkinned, bool convertToLeftHanded)
+    private static Mesh ExtractMesh(GltfDocument document, GltfMesh gltfMesh, int meshIndex, bool isSkinned, bool convertToLeftHanded, bool skipFallbackTangents = false)
     {
         var attributeData = new Dictionary<string, List<byte>>();
         var allIndices = new List<uint>();
@@ -83,24 +83,27 @@ public static class GltfMeshExtractor
                 ExtractAttributeData(document, accessorIndex, attrName, vertexCount, convertToLeftHanded, attributeData[attrName]);
             }
 
-            if (!primitive.Attributes.ContainsKey("NORMAL"))
+            if (!skipFallbackTangents)
             {
-                if (!attributeData.ContainsKey("NORMAL"))
+                if (!primitive.Attributes.ContainsKey("NORMAL"))
                 {
-                    attributeData["NORMAL"] = [];
-                }
-                GenerateDefaultNormals(vertexCount, attributeData["NORMAL"]);
-            }
-
-            if (!primitive.Attributes.ContainsKey("TANGENT"))
-            {
-                if (!attributeData.ContainsKey("TANGENT"))
-                {
-                    attributeData["TANGENT"] = [];
+                    if (!attributeData.ContainsKey("NORMAL"))
+                    {
+                        attributeData["NORMAL"] = [];
+                    }
+                    GenerateDefaultNormals(vertexCount, attributeData["NORMAL"]);
                 }
 
-                var normalBytes = attributeData.GetValueOrDefault("NORMAL");
-                GenerateDefaultTangents(vertexCount, normalBytes, (int)(baseVertex * 12), attributeData["TANGENT"]);
+                if (!primitive.Attributes.ContainsKey("TANGENT"))
+                {
+                    if (!attributeData.ContainsKey("TANGENT"))
+                    {
+                        attributeData["TANGENT"] = [];
+                    }
+
+                    var normalBytes = attributeData.GetValueOrDefault("NORMAL");
+                    GenerateDefaultTangents(vertexCount, normalBytes, (int)(baseVertex * 12), attributeData["TANGENT"]);
+                }
             }
 
             ExtractIndices(document, primitive, vertexCount, baseVertex, convertToLeftHanded, allIndices);
@@ -128,17 +131,10 @@ public static class GltfMeshExtractor
             Indices = indices
         };
 
-        var defaultFormat = isSkinned ? VertexFormat.Skinned : VertexFormat.Static;
-        var packedVertices = VertexPacker.Pack(sourceAttributes, defaultFormat);
-
         return new Mesh
         {
             Name = gltfMesh.Name ?? $"Mesh_{meshIndex}",
-            Format = defaultFormat,
-            MeshType = isSkinned ? MeshType.Skinned : MeshType.Static,
             SourceAttributes = sourceAttributes,
-            CpuVertices = packedVertices,
-            CpuIndices = indices,
             Bounds = ComputeBoundsFromAttributes(sourceAttributes)
         };
     }

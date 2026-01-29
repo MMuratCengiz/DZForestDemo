@@ -19,7 +19,6 @@ public partial class ImportViewModel : ObservableObject
 {
     public ImportViewModel()
     {
-        // Start at the user's home directory or a common location
         var startPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         if (string.IsNullOrEmpty(startPath))
         {
@@ -71,7 +70,7 @@ public partial class ImportViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public async Task Import()
+    public void Import()
     {
         if (IsImporting)
         {
@@ -93,25 +92,30 @@ public partial class ImportViewModel : ObservableObject
         IsImporting = true;
         Progress = 0;
         _cancellationTokenSource = new CancellationTokenSource();
+        var ct = _cancellationTokenSource.Token;
 
+        var assetsPath = Content.ResolvePath("");
+        var outputPath = Path.Combine(assetsPath, OutputDirectory);
+
+        Task.Run(() => RunImport(filesToImport, outputPath, ct), ct);
+    }
+
+    private void RunImport(List<FileEntry> filesToImport, string outputPath, CancellationToken ct)
+    {
         try
         {
-            var assetsPath = Content.ResolvePath("");
-            var outputPath = Path.Combine(assetsPath, OutputDirectory);
-
             using var importer = new BulkAssetImporter();
 
             foreach (var file in filesToImport)
             {
-                if (_cancellationTokenSource.Token.IsCancellationRequested)
+                if (ct.IsCancellationRequested)
                 {
                     break;
                 }
 
                 if (file.IsDirectory)
                 {
-                    // Import entire directory
-                    ProgressText = $"Importing directory: {file.Name}";
+                    Dispatcher.UIThread.Post(() => ProgressText = $"Importing directory: {file.Name}");
                     var settings = new BulkImportDesc
                     {
                         SourceDirectory = file.FullPath,
@@ -123,39 +127,50 @@ public partial class ImportViewModel : ObservableObject
                         OnProgress = msg => Dispatcher.UIThread.Post(() => ProgressText = msg)
                     };
 
-                    await Task.Run(() => importer.Import(settings), _cancellationTokenSource.Token);
+                    importer.Import(settings);
                 }
                 else
                 {
-                    // Import single file
-                    ProgressText = $"Importing: {file.Name}";
-                    await ImportSingleFile(file, outputPath);
+                    Dispatcher.UIThread.Post(() => ProgressText = $"Importing: {file.Name}");
+                    ImportSingleFile(file, outputPath);
                 }
 
-                Progress += 100.0 / filesToImport.Count;
+                var progressIncrement = 100.0 / filesToImport.Count;
+                Dispatcher.UIThread.Post(() => Progress += progressIncrement);
             }
 
-            ProgressText = "Import completed";
-            Progress = 100;
-            ImportCompleted?.Invoke();
+            Dispatcher.UIThread.Post(() =>
+            {
+                ProgressText = "Import completed";
+                Progress = 100;
+                IsImporting = false;
+                ImportCompleted?.Invoke();
+            });
         }
         catch (OperationCanceledException)
         {
-            ProgressText = "Import cancelled";
+            Dispatcher.UIThread.Post(() =>
+            {
+                ProgressText = "Import cancelled";
+                IsImporting = false;
+            });
         }
         catch (Exception ex)
         {
-            ProgressText = $"Error: {ex.Message}";
+            Dispatcher.UIThread.Post(() =>
+            {
+                ProgressText = $"Error: {ex.Message}";
+                IsImporting = false;
+            });
         }
         finally
         {
-            IsImporting = false;
             _cancellationTokenSource?.Dispose();
             _cancellationTokenSource = null;
         }
     }
 
-    private async Task ImportSingleFile(FileEntry file, string outputPath)
+    private void ImportSingleFile(FileEntry file, string outputPath)
     {
         var fileType = new AssetFileService().GetFileType(file.FullPath);
 
@@ -185,7 +200,7 @@ public partial class ImportViewModel : ObservableObject
                 ExportAnimations = true
             };
 
-            await Task.Run(() => exporter.Export(desc));
+            exporter.Export(desc);
         }
         else if (fileType == AssetFileType.Texture && ImportType is ImportType.Textures or ImportType.Both)
         {
@@ -193,7 +208,7 @@ public partial class ImportViewModel : ObservableObject
             Directory.CreateDirectory(texturesPath);
 
             var destPath = Path.Combine(texturesPath, file.Name);
-            await Task.Run(() => File.Copy(file.FullPath, destPath, overwrite: true));
+            File.Copy(file.FullPath, destPath, overwrite: true);
         }
     }
 

@@ -41,9 +41,17 @@ public class ManifestGenerator
                 {
                     manifest.AssetIndex[texturePath] = new GeneratedAssetMapping { Pack = packName, Type = "texture" };
                 }
-                foreach (var modelPath in packData.Models)
+                foreach (var meshPath in packData.Meshes)
                 {
-                    manifest.AssetIndex[modelPath] = new GeneratedAssetMapping { Pack = packName, Type = "model" };
+                    manifest.AssetIndex[meshPath] = new GeneratedAssetMapping { Pack = packName, Type = "mesh" };
+                }
+                foreach (var skeletonPath in packData.Skeletons)
+                {
+                    manifest.AssetIndex[skeletonPath] = new GeneratedAssetMapping { Pack = packName, Type = "skeleton" };
+                }
+                foreach (var animationPath in packData.Animations)
+                {
+                    manifest.AssetIndex[animationPath] = new GeneratedAssetMapping { Pack = packName, Type = "animation" };
                 }
                 foreach (var shaderPath in packData.Shaders)
                 {
@@ -122,8 +130,14 @@ internal class PackData
     [JsonPropertyName("textures")]
     public List<string> Textures { get; set; } = [];
 
-    [JsonPropertyName("models")]
-    public List<string> Models { get; set; } = [];
+    [JsonPropertyName("meshes")]
+    public List<string> Meshes { get; set; } = [];
+
+    [JsonPropertyName("skeletons")]
+    public List<string> Skeletons { get; set; } = [];
+
+    [JsonPropertyName("animations")]
+    public List<string> Animations { get; set; } = [];
 
     [JsonPropertyName("shaders")]
     public List<string> Shaders { get; set; } = [];

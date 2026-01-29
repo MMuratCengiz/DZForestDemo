@@ -38,6 +38,7 @@ public sealed class GltfExportResult
 {
     public bool Success { get; init; }
     public string? GltfFilePath { get; init; }
+    public byte[]? GltfBytes { get; init; }
     public string? ErrorMessage { get; init; }
 
     public static GltfExportResult Succeeded(string gltfPath)
@@ -46,6 +47,15 @@ public sealed class GltfExportResult
         {
             Success = true,
             GltfFilePath = gltfPath
+        };
+    }
+
+    public static GltfExportResult SucceededWithBytes(byte[] bytes)
+    {
+        return new GltfExportResult
+        {
+            Success = true,
+            GltfBytes = bytes
         };
     }
 
@@ -207,6 +217,135 @@ public sealed class GltfExporter : IDisposable
         {
             _assimp.ReleaseImport(scene);
         }
+    }
+
+    public unsafe GltfExportResult ExportToBytes(in GltfExportDesc desc)
+    {
+        if (string.IsNullOrEmpty(desc.SourceFilePath))
+        {
+            return GltfExportResult.Failed("Source file path is required.");
+        }
+
+        if (!System.IO.File.Exists(desc.SourceFilePath))
+        {
+            return GltfExportResult.Failed($"Source file not found: {desc.SourceFilePath}");
+        }
+
+        var importFlags = BuildImportFlags(desc);
+
+        var propertyStore = _assimp.CreatePropertyStore();
+        _assimp.SetImportPropertyFloat(propertyStore, AiConfigGlobalScaleFactorKey, desc.ScaleFactor);
+        _assimp.SetImportPropertyInteger(propertyStore, AiConfigFbxPreservePivotsKey, desc.FbxPreservePivots ? 1 : 0);
+
+        var finalFlags = (uint)importFlags | AiProcessGlobalScale;
+        var scene = _assimp.ImportFileExWithProperties(desc.SourceFilePath, finalFlags, null, propertyStore);
+        _assimp.ReleasePropertyStore(propertyStore);
+
+        if (scene == null || scene->MRootNode == null)
+        {
+            var errorPtr = _assimp.GetErrorString();
+            var error = errorPtr != null ? new string((sbyte*)errorPtr) : "Unknown error";
+            return GltfExportResult.Failed($"Failed to load scene: {error}");
+        }
+
+        try
+        {
+            var formatId = desc.OutputFormat == GltfExportFormat.Glb ? "glb2" : "gltf2";
+
+            var exportFlags = PostProcessSteps.JoinIdenticalVertices |
+                              PostProcessSteps.Triangulate |
+                              PostProcessSteps.SortByPrimitiveType;
+
+            var blob = _assimp.ExportSceneToBlob(scene, formatId, (uint)exportFlags);
+            if (blob == null)
+            {
+                var errorPtr = _assimp.GetErrorString();
+                var error = errorPtr != null ? new string((sbyte*)errorPtr) : "Unknown error";
+                return GltfExportResult.Failed($"Failed to export scene to blob: {error}");
+            }
+
+            try
+            {
+                var size = (int)blob->Size;
+                var bytes = new byte[size];
+                System.Runtime.InteropServices.Marshal.Copy((nint)blob->Data, bytes, 0, size);
+                return GltfExportResult.SucceededWithBytes(bytes);
+            }
+            finally
+            {
+                _assimp.ReleaseExportBlob(blob);
+            }
+        }
+        finally
+        {
+            _assimp.ReleaseImport(scene);
+        }
+    }
+
+    private PostProcessSteps BuildImportFlags(in GltfExportDesc desc)
+    {
+        var importFlags = PostProcessSteps.ImproveCacheLocality |
+                          PostProcessSteps.SortByPrimitiveType |
+                          PostProcessSteps.ValidateDataStructure;
+
+        if (desc.TriangulateMeshes)
+        {
+            importFlags |= PostProcessSteps.Triangulate;
+        }
+
+        if (desc.JoinIdenticalVertices)
+        {
+            importFlags |= PostProcessSteps.JoinIdenticalVertices;
+        }
+
+        if (desc.CalculateTangentSpace)
+        {
+            importFlags |= PostProcessSteps.CalculateTangentSpace;
+        }
+
+        if (desc.FixInfacingNormals)
+        {
+            importFlags |= PostProcessSteps.FixInFacingNormals;
+        }
+
+        if (desc.LimitBoneWeights)
+        {
+            importFlags |= PostProcessSteps.LimitBoneWeights;
+        }
+
+        if (desc.RemoveRedundantMaterials)
+        {
+            importFlags |= PostProcessSteps.RemoveRedundantMaterials;
+        }
+
+        if (desc.GenerateNormals && !desc.DropNormals)
+        {
+            importFlags |= desc.SmoothNormals
+                ? PostProcessSteps.GenerateSmoothNormals
+                : PostProcessSteps.GenerateNormals;
+        }
+        if (desc.PreTransformVertices)
+        {
+            importFlags |= PostProcessSteps.PreTransformVertices;
+        }
+        else if (desc.OptimizeGraph)
+        {
+            importFlags |= PostProcessSteps.OptimizeGraph;
+        }
+
+        if (desc.OptimizeMeshes)
+        {
+            importFlags |= PostProcessSteps.OptimizeMeshes;
+        }
+
+        if (desc.MergeMeshes)
+        {
+            importFlags |= PostProcessSteps.OptimizeMeshes |
+                           PostProcessSteps.JoinIdenticalVertices |
+                           PostProcessSteps.SortByPrimitiveType;
+        }
+
+        return importFlags;
     }
 
     public void Dispose()

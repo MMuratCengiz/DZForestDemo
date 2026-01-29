@@ -7,6 +7,7 @@ namespace NiziKit.GLTF;
 public sealed class GltfLoadOptions
 {
     public bool ConvertToLeftHanded { get; set; } = true;
+    public bool SkipFallbackTangents { get; set; }
 }
 
 public sealed class GltfModel : IDisposable
@@ -60,6 +61,16 @@ public sealed class GltfModel : IDisposable
 
     public static GltfModel LoadFromBytes(byte[] bytes, string name, GltfLoadOptions? options = null)
     {
+        return LoadFromBytesInternal(bytes, name, options, meshesOnly: false);
+    }
+
+    public static GltfModel LoadMeshesOnly(byte[] bytes, string name, GltfLoadOptions? options = null)
+    {
+        return LoadFromBytesInternal(bytes, name, options, meshesOnly: true);
+    }
+
+    private static GltfModel LoadFromBytesInternal(byte[] bytes, string name, GltfLoadOptions? options, bool meshesOnly)
+    {
         options ??= new GltfLoadOptions();
         var basePath = Path.GetDirectoryName(name)?.Replace('\\', '/');
 
@@ -80,7 +91,15 @@ public sealed class GltfModel : IDisposable
             _rawBytes = bytes
         };
 
-        model.ExtractAll();
+        if (meshesOnly)
+        {
+            model.ExtractMeshesOnly();
+        }
+        else
+        {
+            model.ExtractAll();
+        }
+
         return model;
     }
 
@@ -114,6 +133,14 @@ public sealed class GltfModel : IDisposable
         _ozzSkeleton?.Dispose();
         _ozzSkeleton = null;
         _rawBytes = null;
+    }
+
+    private void ExtractMeshesOnly()
+    {
+        var skinnedMeshIndices = GltfMeshExtractor.GetSkinnedMeshIndices(Document);
+        Meshes = GltfMeshExtractor.ExtractMeshes(Document, skinnedMeshIndices, Options.ConvertToLeftHanded, Options.SkipFallbackTangents);
+        AssignInverseBindMatrices();
+        AssignNodeTransforms();
     }
 
     private void ExtractAll()

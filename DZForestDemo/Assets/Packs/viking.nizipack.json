@@ -10,35 +10,40 @@
   "shaders": [],
   "materials": [
     "Materials/VikingScene.nizimat.json",
-    "Materials/Fox.nizimat.json",
     "Materials/NewMaterial.nizimat.json"
   ],
-  "models": [
-    "Synty/Models/VikingRealm/FBX/VikingRealm_Characters.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Large_01.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Small_01.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Veh_Cart_01.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Prop_Barrel_01.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Prop_Barrel_02.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Prop_Anvil_01.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Prop_Table_01.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Prop_Chair_01.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Prop_Bench_01.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Wep_Axe_01.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Wep_Sword_01.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Wep_Shield_01.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Wep_Hammer_01.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Wep_Spear_01.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Env_Tree_Pine_01.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Env_Rock_Cliff_01.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Env_Bush_Berries_01.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Prop_Torch_01.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Prop_Fire_Pit_01.glb",
-    "Synty/Models/VikingRealm/FBX/SM_Prop_Flag_01.glb",
-    "Models/Fox.glb",
-    "Synty/Models/BaseLocomotion/Demo_Models/SM_Prop_Target_01.glb",
-    "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/Idle/A_Idle_Crouching_Masc.glb",
-    "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.glb",
-    "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/InAir/A_Jump_Sprinting_Masc.glb"
+  "meshes": [
+    "Synty/Models/VikingRealm/FBX/VikingRealm_Characters_0.nizimesh",
+    "Synty/Models/VikingRealm/FBX/VikingRealm_Characters_1.nizimesh",
+    "Synty/Models/VikingRealm/FBX/VikingRealm_Characters_2.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Large_01_0.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Small_01.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Veh_Cart_01_0.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Barrel_01.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Barrel_02.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Anvil_01.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Table_01.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Chair_01.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Bench_01.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Wep_Axe_01.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Wep_Sword_01.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Wep_Shield_01.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Wep_Hammer_01.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Wep_Spear_01.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Env_Tree_Pine_01.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Env_Rock_Cliff_01.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Env_Bush_Berries_01.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Torch_01.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Fire_Pit_01.nizimesh",
+    "Synty/Models/VikingRealm/FBX/SM_Prop_Flag_01_0.nizimesh",
+    "Synty/Models/BaseLocomotion/Demo_Models/SM_Prop_Target_01.nizimesh",
+    "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.nizimesh"
+  ],
+  "skeletons": [
+    "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.ozzskel"
+  ],
+  "animations": [
+    "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/Idle/A_Idle_Crouching_Masc.ozzanim",
+    "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/InAir/A_Jump_Sprinting_Masc.ozzanim"
   ]
 }

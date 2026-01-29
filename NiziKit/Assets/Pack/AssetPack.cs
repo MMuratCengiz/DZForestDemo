@@ -14,7 +14,9 @@ public sealed class AssetPack : IDisposable
 
     private readonly ConcurrentDictionary<string, Texture2d> _textures = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, Graphics.GpuShader> _shaders = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, Model> _models = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, Mesh> _meshes = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, Skeleton> _skeletons = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, byte[]> _animationData = new(StringComparer.OrdinalIgnoreCase);
 
     private IAssetPackProvider? _provider;
     private string _basePath = string.Empty;
@@ -22,7 +24,9 @@ public sealed class AssetPack : IDisposable
 
     public IReadOnlyDictionary<string, Texture2d> Textures => _textures;
     public IReadOnlyDictionary<string, Graphics.GpuShader> Shaders => _shaders;
-    public IReadOnlyDictionary<string, Model> Models => _models;
+    public IReadOnlyDictionary<string, Mesh> Meshes => _meshes;
+    public IReadOnlyDictionary<string, Skeleton> Skeletons => _skeletons;
+    public IReadOnlyDictionary<string, byte[]> AnimationData => _animationData;
 
     internal IAssetPackProvider? Provider => _provider;
 
@@ -58,20 +62,42 @@ public sealed class AssetPack : IDisposable
         return shader;
     }
 
-    public Model GetModel(string path)
+    public Mesh GetMesh(string path)
     {
-        if (!_models.TryGetValue(path, out var model))
+        if (!_meshes.TryGetValue(path, out var mesh))
         {
-            throw new KeyNotFoundException($"Model '{path}' not found in asset pack '{Name}'");
+            throw new KeyNotFoundException($"Mesh '{path}' not found in asset pack '{Name}'");
         }
-        return model;
+        return mesh;
+    }
+
+    public Skeleton GetSkeleton(string path)
+    {
+        if (!_skeletons.TryGetValue(path, out var skeleton))
+        {
+            throw new KeyNotFoundException($"Skeleton '{path}' not found in asset pack '{Name}'");
+        }
+        return skeleton;
+    }
+
+    public byte[] GetAnimationData(string path)
+    {
+        if (!_animationData.TryGetValue(path, out var data))
+        {
+            throw new KeyNotFoundException($"Animation '{path}' not found in asset pack '{Name}'");
+        }
+        return data;
     }
 
     public bool TryGetTexture(string path, out Texture2d? texture) => _textures.TryGetValue(path, out texture);
     public bool TryGetShader(string path, out Graphics.GpuShader? shader) => _shaders.TryGetValue(path, out shader);
-    public bool TryGetModel(string path, out Model? model) => _models.TryGetValue(path, out model);
+    public bool TryGetMesh(string path, out Mesh? mesh) => _meshes.TryGetValue(path, out mesh);
+    public bool TryGetSkeleton(string path, out Skeleton? skeleton) => _skeletons.TryGetValue(path, out skeleton);
+    public bool TryGetAnimationData(string path, out byte[]? data) => _animationData.TryGetValue(path, out data);
 
-    public IEnumerable<string> GetModelPaths() => _models.Keys;
+    public IEnumerable<string> GetMeshPaths() => _meshes.Keys;
+    public IEnumerable<string> GetSkeletonPaths() => _skeletons.Keys;
+    public IEnumerable<string> GetAnimationPaths() => _animationData.Keys;
     public IEnumerable<string> GetTexturePaths() => _textures.Keys;
     public IEnumerable<string> GetShaderPaths() => _shaders.Keys;
 
@@ -142,7 +168,9 @@ public sealed class AssetPack : IDisposable
     private static IEnumerable<string> GetAllFilePaths(AssetPackJson definition)
     {
         return definition.Textures
-            .Concat(definition.Models)
+            .Concat(definition.Meshes)
+            .Concat(definition.Skeletons)
+            .Concat(definition.Animations)
             .Concat(definition.Shaders);
     }
 
@@ -188,7 +216,9 @@ public sealed class AssetPack : IDisposable
         Parallel.Invoke(
             () => LoadTextures(definition.Textures),
             () => LoadShaders(definition.Shaders),
-            () => LoadModels(definition.Models)
+            () => LoadMeshes(definition.Meshes),
+            () => LoadSkeletons(definition.Skeletons),
+            () => LoadAnimations(definition.Animations)
         );
     }
 
@@ -197,7 +227,9 @@ public sealed class AssetPack : IDisposable
         await Task.WhenAll(
             LoadTexturesAsync(definition.Textures, ct),
             LoadShadersAsync(definition.Shaders, ct),
-            LoadModelsAsync(definition.Models, ct)
+            LoadMeshesAsync(definition.Meshes, ct),
+            LoadSkeletonsAsync(definition.Skeletons, ct),
+            LoadAnimationsAsync(definition.Animations, ct)
         );
     }
 
@@ -251,38 +283,78 @@ public sealed class AssetPack : IDisposable
         }
     }
 
-    private void LoadModels(List<string> modelPaths)
+    private void LoadMeshes(List<string> meshPaths)
     {
-        Parallel.ForEach(modelPaths, path =>
+        Parallel.ForEach(meshPaths, path =>
         {
             var bytes = _provider!.ReadBytes(path);
-            var model = new Model();
-            model.LoadFromBytes(bytes, path);
-            foreach (var mesh in model.Meshes)
-            {
-                Assets.Register(mesh, $"{path}:{mesh.Name}");
-            }
-            _models[path] = model;
+            var mesh = Mesh.LoadFromNiziMesh(bytes);
+            Assets.Register(mesh, path);
+            _meshes[path] = mesh;
         });
     }
 
-    private async Task LoadModelsAsync(List<string> modelPaths, CancellationToken ct)
+    private async Task LoadMeshesAsync(List<string> meshPaths, CancellationToken ct)
     {
-        var tasks = modelPaths.Select(async path =>
+        var tasks = meshPaths.Select(async path =>
         {
             var bytes = await _provider!.ReadBytesAsync(path, ct);
-            var model = new Model();
-            model.LoadFromBytes(bytes, path);
-            foreach (var mesh in model.Meshes)
-            {
-                Assets.Register(mesh, $"{path}:{mesh.Name}");
-            }
-            return (path, model);
+            var mesh = Mesh.LoadFromNiziMesh(bytes);
+            Assets.Register(mesh, path);
+            return (path, mesh);
         });
 
-        foreach (var (path, model) in await Task.WhenAll(tasks))
+        foreach (var (path, mesh) in await Task.WhenAll(tasks))
         {
-            _models[path] = model;
+            _meshes[path] = mesh;
+        }
+    }
+
+    private void LoadSkeletons(List<string> skeletonPaths)
+    {
+        Parallel.ForEach(skeletonPaths, path =>
+        {
+            var bytes = _provider!.ReadBytes(path);
+            var skeleton = Skeleton.Load(bytes);
+            _skeletons[path] = skeleton;
+        });
+    }
+
+    private async Task LoadSkeletonsAsync(List<string> skeletonPaths, CancellationToken ct)
+    {
+        var tasks = skeletonPaths.Select(async path =>
+        {
+            var bytes = await _provider!.ReadBytesAsync(path, ct);
+            var skeleton = Skeleton.Load(bytes);
+            return (path, skeleton);
+        });
+
+        foreach (var (path, skeleton) in await Task.WhenAll(tasks))
+        {
+            _skeletons[path] = skeleton;
+        }
+    }
+
+    private void LoadAnimations(List<string> animationPaths)
+    {
+        Parallel.ForEach(animationPaths, path =>
+        {
+            var bytes = _provider!.ReadBytes(path);
+            _animationData[path] = bytes;
+        });
+    }
+
+    private async Task LoadAnimationsAsync(List<string> animationPaths, CancellationToken ct)
+    {
+        var tasks = animationPaths.Select(async path =>
+        {
+            var bytes = await _provider!.ReadBytesAsync(path, ct);
+            return (path, bytes);
+        });
+
+        foreach (var (path, bytes) in await Task.WhenAll(tasks))
+        {
+            _animationData[path] = bytes;
         }
     }
 
@@ -297,7 +369,14 @@ public sealed class AssetPack : IDisposable
 
         _textures.Clear();
         _shaders.Clear();
-        _models.Clear();
+        _meshes.Clear();
+
+        foreach (var skeleton in _skeletons.Values)
+        {
+            skeleton.Dispose();
+        }
+        _skeletons.Clear();
+        _animationData.Clear();
 
         _provider?.Dispose();
         AssetPacks.UnregisterProvider(Name);

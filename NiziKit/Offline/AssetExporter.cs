@@ -1,18 +1,19 @@
 using DenOfIz;
+using NiziKit.Assets;
+using NiziKit.Assets.Serde;
+using NiziKit.GLTF;
 
 namespace NiziKit.Offline;
 
 public sealed class AssetExporter : IDisposable
 {
     private readonly GltfExporter _gltfExporter = new();
-    private readonly OzzExporter _ozzExporter = new();
 
     public IReadOnlyList<string> SupportedExtensions => _gltfExporter.SupportedExtensions;
 
     public void Dispose()
     {
         _gltfExporter.Dispose();
-        _ozzExporter.Dispose();
     }
 
     public bool CanProcess(string filePath)
@@ -44,48 +45,77 @@ public sealed class AssetExporter : IDisposable
 
         Directory.CreateDirectory(desc.OutputDirectory);
 
-        var gltfResult = ExportGltf(desc);
-        if (!gltfResult.Success || desc is { ExportSkeleton: false, ExportAnimations: false })
+        var gltfResult = ExportGltfToBytes(desc);
+        if (!gltfResult.Success || gltfResult.GltfBytes == null)
         {
-            return gltfResult;
+            return AssetExportResult.Failed(gltfResult.ErrorMessage ?? "GLTF export failed.");
         }
 
-        var ozzResult = ExportOzz(desc, gltfResult.OutputPath!);
-        if (!ozzResult.Success)
+        var gltfBytes = gltfResult.GltfBytes;
+
+        var meshPaths = ExportMeshes(desc, gltfBytes);
+
+        string? skeletonPath = null;
+        OzzSkeleton? ozzSkeleton = null;
+        List<string> animationPaths = [];
+
+        if (desc.ExportSkeleton || desc.ExportAnimations)
         {
-            return gltfResult;
+            var ozzResult = ExportOzz(desc, gltfBytes, Path.GetDirectoryName(desc.SourcePath) ?? "");
+            if (ozzResult.Success)
+            {
+                skeletonPath = ozzResult.SkeletonPath;
+                ozzSkeleton = ozzResult.OzzSkeleton;
+                animationPaths = ozzResult.AnimationPaths.ToList();
+            }
+            else if (desc.ExternalSkeleton != null)
+            {
+                return ozzResult;
+            }
         }
 
-        return AssetExportResult.Succeeded(
-            gltfResult.OutputPath!,
-            ozzResult.SkeletonPath,
-            ozzResult.AnimationPaths
-        );
+        return AssetExportResult.Succeeded(meshPaths, skeletonPath, animationPaths, ozzSkeleton);
     }
 
-    private AssetExportResult ExportGltf(AssetExportDesc desc)
+    private List<string> ExportMeshes(AssetExportDesc desc, byte[] gltfBytes)
+    {
+        var gltfModel = GltfModel.LoadMeshesOnly(gltfBytes, desc.AssetName, new GltfLoadOptions { SkipFallbackTangents = true });
+        var meshPaths = new List<string>();
+
+        for (var i = 0; i < gltfModel.Meshes.Count; i++)
+        {
+            var mesh = gltfModel.Meshes[i];
+            if (mesh.SourceAttributes == null)
+            {
+                continue;
+            }
+
+            var meshFileName = gltfModel.Meshes.Count == 1
+                ? $"{desc.AssetName}.nizimesh"
+                : $"{desc.AssetName}_{i}.nizimesh";
+
+            var meshPath = Path.Combine(desc.OutputDirectory, meshFileName);
+
+            using var stream = File.Create(meshPath);
+            NiziMeshWriter.Write(stream, mesh);
+
+            meshPaths.Add(meshPath);
+        }
+
+        return meshPaths;
+    }
+
+    private GltfExportResult ExportGltfToBytes(AssetExportDesc desc)
     {
         var gltfExportDesc = desc.ToGltfExportDesc();
-        var result = _gltfExporter.Export(in gltfExportDesc);
-
-        if (result.Success)
-        {
-            return AssetExportResult.Succeeded(result.GltfFilePath!);
-        }
-
-        var error = result.ErrorMessage;
-        return AssetExportResult.Failed(string.IsNullOrEmpty(error) ? "GLTF export failed." : error);
+        return _gltfExporter.ExportToBytes(in gltfExportDesc);
     }
 
-    private AssetExportResult ExportOzz(AssetExportDesc desc, string gltfOutputPath)
+    private AssetExportResult ExportOzz(AssetExportDesc desc, byte[] gltfBytes, string basePath)
     {
-        if (!_ozzExporter.ValidateGltf(StringView.Create(gltfOutputPath)))
-        {
-            return AssetExportResult.Failed("GLTF file is not valid for Ozz export.");
-        }
-
-        var gltfExportDesc = desc.ToOzzExportDesc(gltfOutputPath);
-        var result = _ozzExporter.Export(in gltfExportDesc);
+        using var ozzExporter = new OzzExporter();
+        var ozzExportDesc = desc.ToOzzExportDesc(gltfBytes, basePath);
+        var result = ozzExporter.Export(in ozzExportDesc);
 
         try
         {
@@ -95,22 +125,42 @@ public sealed class AssetExporter : IDisposable
                 return AssetExportResult.Failed(string.IsNullOrEmpty(error) ? "Ozz export failed." : error);
             }
 
-            var skeletonPath = result.SkeletonFilePath.NumChars > 0
-                ? result.SkeletonFilePath.ToString()
-                : null;
+            string? skeletonPath = null;
+            OzzSkeleton? ozzSkeleton = null;
+            if (desc.ExternalSkeleton == null && result.SkeletonFilePath.NumChars > 0)
+            {
+                var ozzSkelPath = result.SkeletonFilePath.ToString();
+                if (!File.Exists(ozzSkelPath))
+                {
+                    var dir = Path.GetDirectoryName(ozzSkelPath) ?? "";
+                    var files = Directory.Exists(dir)
+                        ? string.Join(", ", Directory.GetFiles(dir).Select(Path.GetFileName))
+                        : "directory not found";
+                    return AssetExportResult.Failed(
+                        $"Ozz skeleton file not found: {ozzSkelPath} (files in dir: {files})");
+                }
+
+                skeletonPath = ozzSkelPath;
+                var ozzSkelBytes = File.ReadAllBytes(ozzSkelPath);
+                ozzSkeleton = OzzSkeleton.CreateFromBinaryContainer(
+                    Skeleton.CreateBinaryContainer(ozzSkelBytes));
+            }
 
             var animationPaths = new List<string>();
             var animArray = result.AnimationFilePaths;
+            var animElements = animArray.ToArray();
             for (var i = 0u; i < animArray.NumElements; i++)
             {
-                var path = animArray.ToArray()[i];
-                if (path.NumChars > 0)
+                var ozzAnimPath = animElements[i].ToString();
+                if (string.IsNullOrEmpty(ozzAnimPath) || !File.Exists(ozzAnimPath))
                 {
-                    animationPaths.Add(path.ToString());
+                    continue;
                 }
+
+                animationPaths.Add(ozzAnimPath);
             }
 
-            return AssetExportResult.Succeeded(gltfOutputPath, skeletonPath, animationPaths);
+            return AssetExportResult.Succeeded([], skeletonPath, animationPaths, ozzSkeleton);
         }
         finally
         {

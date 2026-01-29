@@ -47,15 +47,21 @@ public static class AssetPacks
     public static GpuShader GetShader(string packName, string path)
         => Get(packName).GetShader(path);
 
-    public static Model GetModel(string packName, string path)
-        => Get(packName).GetModel(path);
+    public static Mesh GetMesh(string packName, string path)
+        => Get(packName).GetMesh(path);
+
+    public static Skeleton GetSkeleton(string packName, string path)
+        => Get(packName).GetSkeleton(path);
+
+    public static byte[] GetAnimationData(string packName, string path)
+        => Get(packName).GetAnimationData(path);
 
     public static string? GetPackForPath(string path)
     {
         return Content.Manifest?.GetPackForPath(path);
     }
 
-    public static Model? GetModelByPath(string path)
+    public static Mesh? GetMeshByPath(string path)
     {
         var packName = GetPackForPath(path);
         if (packName == null)
@@ -66,7 +72,39 @@ public static class AssetPacks
         EnsurePackLoaded(packName);
         if (TryGet(packName, out var pack) && pack != null)
         {
-            return pack.Models.GetValueOrDefault(path);
+            return pack.Meshes.GetValueOrDefault(path);
+        }
+        return null;
+    }
+
+    public static Skeleton? GetSkeletonByPath(string path)
+    {
+        var packName = GetPackForPath(path);
+        if (packName == null)
+        {
+            return null;
+        }
+
+        EnsurePackLoaded(packName);
+        if (TryGet(packName, out var pack) && pack != null)
+        {
+            return pack.Skeletons.GetValueOrDefault(path);
+        }
+        return null;
+    }
+
+    public static byte[]? GetAnimationDataByPath(string path)
+    {
+        var packName = GetPackForPath(path);
+        if (packName == null)
+        {
+            return null;
+        }
+
+        EnsurePackLoaded(packName);
+        if (TryGet(packName, out var pack) && pack != null)
+        {
+            return pack.AnimationData.GetValueOrDefault(path);
         }
         return null;
     }
@@ -261,7 +299,6 @@ public static class AssetPacks
     internal static void UnregisterProvider(string packName)
     {
         _providers.TryRemove(packName, out _);
-        // Remove all file index entries for this pack
         var keysToRemove = _fileIndex
             .Where(kvp => kvp.Value.packName.Equals(packName, StringComparison.OrdinalIgnoreCase))
             .Select(kvp => kvp.Key)

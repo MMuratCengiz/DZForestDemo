@@ -124,7 +124,6 @@ public static class GeometryMesh
         {
             Name = name,
             Format = format,
-            MeshType = MeshType.Static,
             CpuVertices = vertices,
             CpuIndices = indices,
             Bounds = bounds

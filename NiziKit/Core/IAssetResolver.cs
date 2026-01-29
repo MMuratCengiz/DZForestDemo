@@ -12,5 +12,5 @@ public interface IAssetResolver
 
     Skeleton? ResolveSkeleton(string reference);
 
-    Assets.Animation? ResolveAnimation(string reference);
+    Assets.Animation? ResolveAnimation(string reference, Skeleton? skeleton = null);
 }

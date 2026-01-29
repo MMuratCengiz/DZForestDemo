@@ -294,12 +294,12 @@ public partial class ContentBrowserViewModel : ObservableObject
             IsExpanded = false
         };
 
-        foreach (var modelPath in pack.Models)
+        foreach (var meshPath in pack.Meshes)
         {
             packNode.Children.Add(new FolderTreeNode
             {
-                Name = Path.GetFileNameWithoutExtension(modelPath),
-                FullPath = Path.Combine(_assetsDirectory, modelPath),
+                Name = Path.GetFileNameWithoutExtension(meshPath),
+                FullPath = Path.Combine(_assetsDirectory, meshPath),
                 IsPack = false,
                 PackName = pack.Name,
                 AssetType = AssetFileType.Model
@@ -480,16 +480,10 @@ public partial class ContentBrowserViewModel : ObservableObject
             {
                 foreach (var pack in packs.Values)
                 {
-                    var model = pack.Models.Values.FirstOrDefault(m => m.SourcePath == item.FullPath || item.FullPath.EndsWith(m.Name + ".glb") || item.FullPath.EndsWith(m.Name + ".gltf"));
-                    if (model != null)
+                    var mesh = pack.Meshes.Values.FirstOrDefault(m => item.FullPath.EndsWith(m.Name + ".nizimesh"));
+                    if (mesh != null)
                     {
-                        item.MeshCount = model.Meshes.Count;
-                        item.HasSkeleton = model.Skeleton != null;
-                        if (model.Skeleton != null)
-                        {
-                            item.BoneCount = model.Skeleton.JointCount;
-                            item.AnimationCount = (int)model.Skeleton.AnimationCount;
-                        }
+                        item.MeshCount = 1;
                         item.HasModelInfo = true;
                         return;
                     }
@@ -963,12 +957,12 @@ public partial class ContentBrowserViewModel : ObservableObject
             switch (SelectedItem.Type)
             {
                 case AssetFileType.Model:
-                    if (packData.Models.Contains(relativePath))
+                    if (packData.Meshes.Contains(relativePath))
                     {
                         StatusMessage = $"Model '{assetKey}' already exists in pack";
                         return;
                     }
-                    packData.Models.Add(relativePath);
+                    packData.Meshes.Add(relativePath);
                     break;
 
                 case AssetFileType.Texture:
@@ -1051,7 +1045,7 @@ public partial class ContentBrowserViewModel : ObservableObject
             switch (item.Type)
             {
                 case AssetFileType.Model:
-                    removed = packData.Models.Remove(relativePath);
+                    removed = packData.Meshes.Remove(relativePath);
                     break;
                 case AssetFileType.Texture:
                     removed = packData.Textures.Remove(relativePath);
@@ -1161,7 +1155,7 @@ public partial class ContentBrowserViewModel : ObservableObject
 
     private static void NormalizePackPaths(AssetPackJson pack)
     {
-        NormalizePathList(pack.Models);
+        NormalizePathList(pack.Meshes);
         NormalizePathList(pack.Textures);
         NormalizePathList(pack.Materials);
         NormalizePathList(pack.Shaders);

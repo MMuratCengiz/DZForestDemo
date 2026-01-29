@@ -1,4 +1,3 @@
-using System.Reflection;
 using NiziKit.Assets;
 using NiziKit.Assets.Pack;
 using NiziKit.Components;
@@ -56,38 +55,18 @@ public class AssetBrowserService
 
     private Mesh? ResolveMesh(string reference)
     {
-        var (filePath, meshSelector) = ParsePathWithSelector(reference);
-        var model = AssetPacks.GetModelByPath(filePath);
-        return model != null ? GetMeshFromModel(model, meshSelector) : null;
+        return AssetPacks.GetMeshByPath(reference);
     }
 
     private Skeleton? ResolveSkeleton(string reference)
     {
-        var (filePath, _) = ParsePathWithSelector(reference);
-        var model = AssetPacks.GetModelByPath(filePath);
-        return model?.Skeleton;
+        return AssetPacks.GetSkeletonByPath(reference);
     }
 
     private NiziKit.Assets.Animation? ResolveAnimation(string reference)
     {
-        var (filePath, animSelector) = ParsePathWithSelector(reference);
-        var model = AssetPacks.GetModelByPath(filePath);
-        if (model?.Skeleton == null)
-        {
-            return null;
-        }
-
-        if (string.IsNullOrEmpty(animSelector))
-        {
-            return model.Skeleton.GetAnimation(0);
-        }
-
-        if (uint.TryParse(animSelector, out var index))
-        {
-            return model.Skeleton.GetAnimation(index);
-        }
-
-        return model.Skeleton.GetAnimation(animSelector);
+        var data = AssetPacks.GetAnimationDataByPath(reference);
+        return data != null ? null : null;
     }
 
     private NiziKit.Graphics.GpuShader? ResolveShader(string reference)
@@ -107,59 +86,6 @@ public class AssetBrowserService
         return null;
     }
 
-    private static (string filePath, string? selector) ParsePathWithSelector(string reference)
-    {
-        if (string.IsNullOrEmpty(reference))
-        {
-            return (reference, null);
-        }
-
-        var extensions = new[] { ".glb", ".gltf", ".fbx", ".obj", ".png", ".jpg", ".jpeg", ".tga", ".dds" };
-        foreach (var ext in extensions)
-        {
-            var extIndex = reference.IndexOf(ext, StringComparison.OrdinalIgnoreCase);
-            if (extIndex > 0)
-            {
-                var afterExt = extIndex + ext.Length;
-                if (afterExt < reference.Length && reference[afterExt] == '/')
-                {
-                    return (reference.Substring(0, afterExt), reference.Substring(afterExt + 1));
-                }
-                if (afterExt == reference.Length)
-                {
-                    return (reference, null);
-                }
-            }
-        }
-
-        return (reference, null);
-    }
-
-    private static Mesh? GetMeshFromModel(Model model, string? meshSelector)
-    {
-        if (model.Meshes.Count == 0)
-        {
-            return null;
-        }
-
-        if (string.IsNullOrEmpty(meshSelector))
-        {
-            return model.Meshes[0];
-        }
-
-        if (int.TryParse(meshSelector, out var index))
-        {
-            if (index < 0 || index >= model.Meshes.Count)
-            {
-                return null;
-            }
-
-            return model.Meshes[index];
-        }
-
-        return model.Meshes.FirstOrDefault(m => m.Name == meshSelector);
-    }
-
     public IReadOnlyList<AssetInfo> GetAllMeshes()
     {
         var meshes = new List<AssetInfo>();
@@ -170,25 +96,10 @@ public class AssetBrowserService
                 continue;
             }
 
-            foreach (var modelPath in pack.GetModelPaths())
+            foreach (var meshPath in pack.GetMeshPaths())
             {
-                var model = pack.Models[modelPath];
-                var fileName = System.IO.Path.GetFileName(modelPath);
-
-                if (model.Meshes.Count == 1)
-                {
-                    meshes.Add(new AssetInfo { Name = fileName, Path = modelPath, Pack = packName });
-                }
-                else
-                {
-                    for (var i = 0; i < model.Meshes.Count; i++)
-                    {
-                        var meshName = model.Meshes[i].Name;
-                        var selector = string.IsNullOrEmpty(meshName) ? i.ToString() : meshName;
-                        var reference = $"{modelPath}/{selector}";
-                        meshes.Add(new AssetInfo { Name = $"{fileName}/{selector}", Path = reference, Pack = packName });
-                    }
-                }
+                var fileName = System.IO.Path.GetFileName(meshPath);
+                meshes.Add(new AssetInfo { Name = fileName, Path = meshPath, Pack = packName });
             }
         }
         return meshes;
@@ -223,14 +134,10 @@ public class AssetBrowserService
                 continue;
             }
 
-            foreach (var modelPath in pack.GetModelPaths())
+            foreach (var skelPath in pack.GetSkeletonPaths())
             {
-                var model = pack.Models[modelPath];
-                if (model.Skeleton != null)
-                {
-                    var fileName = System.IO.Path.GetFileName(modelPath);
-                    skeletons.Add(new AssetInfo { Name = fileName, Path = modelPath, Pack = packName });
-                }
+                var fileName = System.IO.Path.GetFileName(skelPath);
+                skeletons.Add(new AssetInfo { Name = fileName, Path = skelPath, Pack = packName });
             }
         }
         return skeletons;
@@ -246,27 +153,10 @@ public class AssetBrowserService
                 continue;
             }
 
-            foreach (var modelPath in pack.GetModelPaths())
+            foreach (var animPath in pack.GetAnimationPaths())
             {
-                var model = pack.Models[modelPath];
-                var fileName = System.IO.Path.GetFileName(modelPath);
-
-                if (model.Skeleton != null)
-                {
-                    var animNames = model.Skeleton.AnimationNames;
-                    for (var i = 0; i < animNames.Count; i++)
-                    {
-                        var animName = string.IsNullOrEmpty(animNames[i]) ? i.ToString() : animNames[i];
-                        var reference = $"{modelPath}/{animName}";
-                        animations.Add(new AssetInfo { Name = $"{fileName}/{animName}", Path = reference, Pack = packName });
-                    }
-                }
-
-                foreach (var animation in model.Animations)
-                {
-                    var reference = $"{modelPath}/{animation.Name}";
-                    animations.Add(new AssetInfo { Name = $"{fileName}/{animation.Name}", Path = reference, Pack = packName });
-                }
+                var fileName = System.IO.Path.GetFileName(animPath);
+                animations.Add(new AssetInfo { Name = fileName, Path = animPath, Pack = packName });
             }
         }
         return animations;

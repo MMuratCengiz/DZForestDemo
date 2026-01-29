@@ -34,6 +34,7 @@ public sealed class AssetExportDesc
     public float SmoothNormalsAngle { get; set; } = 80.0f;
     public bool ExportSkeleton { get; set; } = true;
     public bool ExportAnimations { get; set; } = true;
+    public OzzSkeleton? ExternalSkeleton { get; set; }
 
     internal GltfExportDesc ToGltfExportDesc()
     {
@@ -62,16 +63,18 @@ public sealed class AssetExportDesc
         };
     }
 
-    internal OzzExportDesc ToOzzExportDesc(string gltfOutputPath)
+    internal OzzExportDesc ToOzzExportDesc(byte[] gltfData, string basePath)
     {
         return new OzzExportDesc
         {
-            GltfSourcePath = StringView.Create(gltfOutputPath),
+            GltfSourceData = ByteArrayView.Create(gltfData),
+            GltfSourceBasePath = StringView.Create(basePath),
             OutputDirectory = StringView.Create(OutputDirectory),
             AssetNamePrefix = StringView.Create(AssetName),
             ExportSkeleton = ExportSkeleton,
             ExportAnimations = ExportAnimations,
-            OverwriteExisting = OverwriteExisting
+            OverwriteExisting = OverwriteExisting,
+            ExternalSkeleton = ExternalSkeleton ?? default
         };
     }
 }

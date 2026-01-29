@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using DenOfIz;
 
 namespace NiziKit.Offline;
 
@@ -12,6 +13,8 @@ public sealed class BulkImportDesc
     public float ModelScale { get; set; } = 1.0f;
     public bool GenerateMips { get; set; } = true;
     public int MaxDegreeOfParallelism { get; set; } = Environment.ProcessorCount;
+    public OzzSkeleton? ExternalSkeleton { get; set; }
+    public List<string> ExcludeDirectories { get; set; } = [];
     public Action<string>? OnProgress { get; set; }
 }
 
@@ -30,14 +33,11 @@ public sealed class BulkImportResult
 
 public sealed class BulkAssetImporter : IDisposable
 {
-    private readonly AssetExporter _assetExporter = new();
-
     private static readonly string[] ModelExtensions = [".fbx", ".gltf", ".glb", ".obj", ".dae", ".blend"];
     private static readonly string[] TextureExtensions = [".png", ".jpg", ".jpeg", ".tga", ".bmp"];
 
     public void Dispose()
     {
-        _assetExporter.Dispose();
     }
 
     public BulkImportResult Import(BulkImportDesc desc)
@@ -55,8 +55,18 @@ public sealed class BulkAssetImporter : IDisposable
         var modelFiles = new List<string>();
         var textureFiles = new List<string>();
 
+        var excludeDirs = desc.ExcludeDirectories
+            .Select(d => Path.GetFullPath(Path.Combine(desc.SourceDirectory, d)))
+            .ToList();
+
         foreach (var file in Directory.EnumerateFiles(desc.SourceDirectory, "*.*", SearchOption.AllDirectories))
         {
+            var fullPath = Path.GetFullPath(file);
+            if (excludeDirs.Any(d => fullPath.StartsWith(d, StringComparison.OrdinalIgnoreCase)))
+            {
+                continue;
+            }
+
             var ext = Path.GetExtension(file).ToLowerInvariant();
 
             if (desc.ImportModels && ModelExtensions.Contains(ext))
@@ -82,35 +92,30 @@ public sealed class BulkAssetImporter : IDisposable
 
         if (desc.ImportModels && modelFiles.Count > 0)
         {
-            desc.OnProgress?.Invoke($"Exporting {modelFiles.Count} models...");
-
-            foreach (var file in modelFiles)
+            Parallel.ForEach(modelFiles, parallelOptions, () => new AssetExporter(), (file, _, exporter) =>
             {
-                var result = ExportModel(file, desc);
+                var result = ExportModel(file, desc, exporter);
                 if (result.Success)
                 {
-                    modelsExported++;
-                    desc.OnProgress?.Invoke($"  Model: {Path.GetFileName(file)}");
+                    Interlocked.Increment(ref modelsExported);
                 }
                 else
                 {
-                    modelsFailed++;
+                    Interlocked.Increment(ref modelsFailed);
                     errors.Add($"Model '{Path.GetFileName(file)}': {result.ErrorMessage}");
                 }
-            }
+                return exporter;
+            }, exporter => exporter.Dispose());
         }
 
         if (desc.ImportTextures && textureFiles.Count > 0)
         {
-            desc.OnProgress?.Invoke($"Exporting {textureFiles.Count} textures...");
-
             Parallel.ForEach(textureFiles, parallelOptions, file =>
             {
                 var result = ExportTexture(file, desc);
                 if (result.Success)
                 {
                     Interlocked.Increment(ref texturesExported);
-                    desc.OnProgress?.Invoke($"  Texture: {Path.GetFileName(file)}");
                 }
                 else
                 {
@@ -130,7 +135,7 @@ public sealed class BulkAssetImporter : IDisposable
         };
     }
 
-    private AssetExportResult ExportModel(string sourceFile, BulkImportDesc desc)
+    private AssetExportResult ExportModel(string sourceFile, BulkImportDesc desc, AssetExporter exporter)
     {
         var relativePath = Path.GetRelativePath(desc.SourceDirectory, sourceFile);
         var relativeDir = Path.GetDirectoryName(relativePath) ?? "";
@@ -159,10 +164,10 @@ public sealed class BulkAssetImporter : IDisposable
             SmoothNormals = true,
             SmoothNormalsAngle = 80.0f,
             ExportSkeleton = true,
-            ExportAnimations = true
+            ExportAnimations = true,
+            ExternalSkeleton = desc.ExternalSkeleton
         };
 
-        using var exporter = new AssetExporter();
         return exporter.Export(exportDesc);
     }
 

@@ -1,14 +1,9 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 using DenOfIz;
+using NiziKit.Assets.Serde;
 
 namespace NiziKit.Assets;
-
-public enum MeshType : byte
-{
-    Static = 0,
-    Skinned = 1
-}
 
 [StructLayout(LayoutKind.Sequential)]
 public struct StaticVertex
@@ -33,9 +28,16 @@ public struct SkinnedVertex
 public class Mesh : IDisposable
 {
     public string Name { get; set; } = string.Empty;
-    public VertexFormat Format { get; set; } = VertexFormat.Static;
+    private VertexFormat? _explicitFormat;
+
+    public VertexFormat Format
+    {
+        get => SourceAttributes != null
+            ? VertexFormat.FromGltfAttributes(SourceAttributes.Attributes.Keys)
+            : _explicitFormat ?? VertexFormat.Static;
+        set => _explicitFormat = value;
+    }
     public BoundingBox Bounds { get; set; }
-    public MeshType MeshType { get; set; }
     public int MaterialIndex { get; set; } = -1;
     public Matrix4x4[]? InverseBindMatrices { get; set; }
     public Matrix4x4 NodeTransform { get; set; } = Matrix4x4.Identity;
@@ -89,6 +91,11 @@ public class Mesh : IDisposable
     public void DiscardSourceData()
     {
         SourceAttributes = null;
+    }
+
+    public static Mesh LoadFromNiziMesh(byte[] data)
+    {
+        return NiziMeshReader.ReadFromBytes(data);
     }
 
     public void Dispose()

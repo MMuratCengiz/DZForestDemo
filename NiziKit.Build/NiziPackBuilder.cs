@@ -53,7 +53,17 @@ public static class NiziPackBuilder
             CollectMaterialDependencies(files, path, assetsRoot);
         }
 
-        foreach (var (_, path) in manifest.Models)
+        foreach (var (_, path) in manifest.Meshes)
+        {
+            AddFile(files, path, assetsRoot);
+        }
+
+        foreach (var (_, path) in manifest.Skeletons)
+        {
+            AddFile(files, path, assetsRoot);
+        }
+
+        foreach (var (_, path) in manifest.Animations)
         {
             AddFile(files, path, assetsRoot);
         }
@@ -297,8 +307,14 @@ public static class NiziPackBuilder
         [JsonPropertyName("materials")]
         public Dictionary<string, string> Materials { get; set; } = new();
 
-        [JsonPropertyName("models")]
-        public Dictionary<string, string> Models { get; set; } = new();
+        [JsonPropertyName("meshes")]
+        public Dictionary<string, string> Meshes { get; set; } = new();
+
+        [JsonPropertyName("skeletons")]
+        public Dictionary<string, string> Skeletons { get; set; } = new();
+
+        [JsonPropertyName("animations")]
+        public Dictionary<string, string> Animations { get; set; } = new();
     }
 
     private class ShaderJson

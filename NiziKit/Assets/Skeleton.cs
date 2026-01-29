@@ -9,7 +9,7 @@ public class Skeleton : IDisposable
     public int JointCount { get; set; }
     public List<Joint> Joints { get; set; } = [];
     public int[] RootJointIndices { get; set; } = [];
-    public OzzAnimation OzzSkeleton { get; set; } = null!;
+    public OzzSkeleton OzzSkeleton { get; set; } = null!;
 
     private OzzExporterRuntime? _exporter;
     private BinaryContainer? _skeletonData;
@@ -55,18 +55,18 @@ public class Skeleton : IDisposable
             throw new InvalidOperationException($"Failed to build skeleton from glTF: {name}");
         }
 
-        var ozzSkeleton = OzzAnimation.CreateFromBinaryContainer(skeletonData);
+        var ozzSkeleton = OzzSkeleton.CreateFromBinaryContainer(skeletonData);
 
         if (!ozzSkeleton.IsValid())
         {
             skeletonData.Dispose();
             exporter.Dispose();
             ozzSkeleton.Dispose();
-            throw new InvalidOperationException($"Failed to create OzzAnimation from skeleton data: {name}");
+            throw new InvalidOperationException($"Failed to create OzzSkeleton from skeleton data: {name}");
         }
 
         var jointCount = ozzSkeleton.GetNumJoints();
-        var joints = ExtractJointNames(ozzSkeleton);
+        var joints = ExtractJoints(ozzSkeleton);
 
         return new Skeleton
         {
@@ -79,6 +79,72 @@ public class Skeleton : IDisposable
             _skeletonData = skeletonData,
             _sourceBytes = gltfBytes
         };
+    }
+
+    public static Skeleton Load(byte[] ozzSkelData, string? name = null)
+    {
+        var skeletonContainer = CreateBinaryContainer(ozzSkelData);
+        var ozzSkeleton = OzzSkeleton.CreateFromBinaryContainer(skeletonContainer);
+
+        if (!ozzSkeleton.IsValid())
+        {
+            skeletonContainer.Dispose();
+            ozzSkeleton.Dispose();
+            throw new InvalidOperationException("Failed to create OzzSkeleton from .ozzskel data");
+        }
+
+        var jointCount = ozzSkeleton.GetNumJoints();
+        var joints = ExtractJoints(ozzSkeleton);
+
+        return new Skeleton
+        {
+            Name = name ?? "skeleton",
+            JointCount = jointCount,
+            Joints = joints,
+            RootJointIndices = [0],
+            OzzSkeleton = ozzSkeleton,
+            _skeletonData = skeletonContainer
+        };
+    }
+
+    public Animation LoadAnimation(byte[] ozzAnimData, string? animName = null)
+    {
+        var animContainer = CreateBinaryContainer(ozzAnimData);
+        var context = OzzSkeleton.NewContext();
+
+        if (!OzzSkeleton.LoadAnimationFromBinaryContainer(animContainer, context))
+        {
+            animContainer.Dispose();
+            OzzSkeleton.DestroyContext(context);
+            throw new InvalidOperationException($"Failed to load animation from .ozzanim data");
+        }
+
+        if (string.IsNullOrEmpty(animName))
+        {
+            var nameView = Ozz.GetAnimationName(context);
+            animName = nameView.NumChars > 0 ? nameView.ToString() : "animation";
+        }
+
+        if (_animations.TryGetValue(animName, out var cached))
+        {
+            animContainer.Dispose();
+            OzzSkeleton.DestroyContext(context);
+            return cached;
+        }
+
+        var duration = Ozz.GetAnimationDuration(context);
+        var animation = new Animation(animName, duration, context, animContainer, this);
+        _animations[animName] = animation;
+        return animation;
+    }
+
+    public static BinaryContainer CreateBinaryContainer(byte[] data)
+    {
+        var container = new BinaryContainer();
+        var writer = DenOfIz.BinaryWriter.CreateFromContainer(container);
+        writer.Write(ByteArrayView.Create(data), 0, (uint)data.Length);
+        writer.Dispose();
+        return container;
     }
 
     public Animation GetAnimation(string animationName)
@@ -126,7 +192,7 @@ public class Skeleton : IDisposable
             throw new InvalidOperationException($"Failed to reload glTF for animation: {animationName}");
         }
 
-        var animationData = exporter.BuildAnimation(animationIndex);
+        var animationData = exporter.BuildAnimation(OzzSkeleton, animationIndex);
         if (animationData == null)
         {
             throw new InvalidOperationException($"Animation '{animationName}' (index {animationIndex}) failed to build for skeleton '{Name}'");
@@ -148,7 +214,7 @@ public class Skeleton : IDisposable
             throw new InvalidOperationException($"Failed to load animation '{name}' for skeleton '{Name}'");
         }
 
-        var duration = OzzAnimation.GetAnimationDuration(context);
+        var duration = Ozz.GetAnimationDuration(context);
 
         return new Animation(name, duration, context, animationData, this);
     }
@@ -186,7 +252,7 @@ public class Skeleton : IDisposable
             throw new InvalidOperationException($"Failed to load glTF for animation: {cacheKey}");
         }
 
-        var animationData = exporter.BuildAnimationForSkeleton(OzzSkeleton, animationName);
+        var animationData = exporter.BuildAnimation(OzzSkeleton, animationName);
         if (animationData == null)
         {
             throw new InvalidOperationException($"Animation '{animationName}' not found in file");
@@ -203,19 +269,20 @@ public class Skeleton : IDisposable
         _exporter = null;
     }
 
-    private static List<Joint> ExtractJointNames(OzzAnimation ozzSkeleton)
+    private static List<Joint> ExtractJoints(OzzSkeleton ozzSkeleton)
     {
         var jointCount = ozzSkeleton.GetNumJoints();
         var joints = new List<Joint>(jointCount);
-        var jointNames = ozzSkeleton.GetJointNames().ToArray();
+        var ozzJoints = ozzSkeleton.GetJoints().ToArray();
+        var parents = ozzSkeleton.GetJointParents().ToArray();
 
         for (var i = 0; i < jointCount; i++)
         {
             var joint = new Joint
             {
                 Index = i,
-                ParentIndex = -1,
-                Name = i < jointNames.Length ? jointNames[i].ToString() : $"Joint_{i}"
+                ParentIndex = i < parents.Length ? parents[i] : -1,
+                Name = i < ozzJoints.Length ? ozzJoints[i].ToString() : $"Joint_{i}"
             };
             joints.Add(joint);
         }

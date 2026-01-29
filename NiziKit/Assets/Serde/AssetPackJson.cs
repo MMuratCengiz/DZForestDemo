@@ -20,8 +20,14 @@ public sealed class AssetPackJson
     [JsonPropertyName("materials")]
     public List<string> Materials { get; set; } = [];
 
-    [JsonPropertyName("models")]
-    public List<string> Models { get; set; } = [];
+    [JsonPropertyName("meshes")]
+    public List<string> Meshes { get; set; } = [];
+
+    [JsonPropertyName("skeletons")]
+    public List<string> Skeletons { get; set; } = [];
+
+    [JsonPropertyName("animations")]
+    public List<string> Animations { get; set; } = [];
 
     public static AssetPackJson FromJson(string json)
         => JsonSerializer.Deserialize<AssetPackJson>(json, NiziJsonSerializationOptions.Default)

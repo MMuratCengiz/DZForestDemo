@@ -16,7 +16,6 @@ public sealed class Assets : IDisposable
     private readonly BufferPool _vertexPool;
     private readonly BufferPool _indexPool;
 
-    private readonly ConcurrentDictionary<string, Model> _modelCache = new();
     private readonly ConcurrentDictionary<string, Texture2d> _textureCache = new();
     private readonly ConcurrentDictionary<string, Skeleton> _skeletonCache = new();
     private readonly ConcurrentDictionary<string, Mesh> _meshCache = new();
@@ -43,12 +42,10 @@ public sealed class Assets : IDisposable
         _instance = this;
     }
 
-    public static Model LoadModel(string path) => Instance._LoadModel(path);
-    public static Task<Model> LoadModelAsync(string path, CancellationToken ct = default) => Instance._LoadModelAsync(path, ct);
     public static Texture2d LoadTexture(string path) => Instance._LoadTexture(path);
     public static Task<Texture2d> LoadTextureAsync(string path, CancellationToken ct = default) => Instance._LoadTextureAsync(path, ct);
-    public static Skeleton LoadSkeleton(string modelPath) => Instance._LoadSkeleton(modelPath);
-    public static Task<Skeleton> LoadSkeletonAsync(string modelPath, CancellationToken ct = default) => Instance._LoadSkeletonAsync(modelPath, ct);
+    public static Skeleton LoadSkeleton(string path) => Instance._LoadSkeleton(path);
+    public static Task<Skeleton> LoadSkeletonAsync(string path, CancellationToken ct = default) => Instance._LoadSkeletonAsync(path, ct);
     public static void RegisterShader(string name, GpuShader shader) => Instance._RegisterShader(name, shader);
     internal static VertexBufferView UploadVertices(byte[] data, VertexFormat format) => Instance._UploadVertices(data, format);
     public static GpuShader? GetShader(string name) => Instance._GetShader(name);
@@ -79,16 +76,24 @@ public sealed class Assets : IDisposable
 
     private void _Upload(Mesh mesh)
     {
-        if (mesh.IsUploaded || mesh.CpuVertices == null || mesh.CpuIndices == null)
+        if (mesh.IsUploaded)
         {
             return;
         }
 
-        mesh.VertexBuffer = _UploadVertices(mesh.CpuVertices, mesh.Format);
-        mesh.IndexBuffer = UploadIndices(mesh.CpuIndices);
-
-        mesh.CpuVertices = null;
-        mesh.CpuIndices = null;
+        if (mesh.CpuVertices != null && mesh.CpuIndices != null)
+        {
+            mesh.VertexBuffer = _UploadVertices(mesh.CpuVertices, mesh.Format);
+            mesh.IndexBuffer = UploadIndices(mesh.CpuIndices);
+            mesh.CpuVertices = null;
+            mesh.CpuIndices = null;
+        }
+        else if (mesh.SourceAttributes != null)
+        {
+            var packed = VertexPacker.Pack(mesh.SourceAttributes, mesh.Format);
+            mesh.VertexBuffer = _UploadVertices(packed, mesh.Format);
+            mesh.IndexBuffer = UploadIndices(mesh.SourceAttributes.Indices);
+        }
     }
 
     private Mesh _Register(Mesh mesh, string? cacheKey = null)
@@ -194,44 +199,6 @@ public sealed class Assets : IDisposable
         return new IndexBufferView(gpuView, IndexType.Uint32, (uint)indices.Length);
     }
 
-    private Model _LoadModel(string path)
-    {
-        if (_modelCache.TryGetValue(path, out var cached))
-        {
-            return cached;
-        }
-
-        var model = new Model();
-        model.Load(path);
-
-        foreach (var mesh in model.Meshes)
-        {
-            _Register(mesh, $"{path}:{mesh.Name}");
-        }
-
-        _modelCache.TryAdd(path, model);
-        return model;
-    }
-
-    private async Task<Model> _LoadModelAsync(string path, CancellationToken ct = default)
-    {
-        if (_modelCache.TryGetValue(path, out var cached))
-        {
-            return cached;
-        }
-
-        var model = new Model();
-        await model.LoadAsync(path, ct);
-
-        foreach (var mesh in model.Meshes)
-        {
-            _Register(mesh, $"{path}:{mesh.Name}");
-        }
-
-        _modelCache.TryAdd(path, model);
-        return model;
-    }
-
     private Texture2d _LoadTexture(string path)
     {
         if (_textureCache.TryGetValue(path, out var cached))
@@ -274,27 +241,29 @@ public sealed class Assets : IDisposable
         return _textureCache[path];
     }
 
-    private Skeleton _LoadSkeleton(string modelPath)
+    private Skeleton _LoadSkeleton(string path)
     {
-        if (_skeletonCache.TryGetValue(modelPath, out var cached))
+        if (_skeletonCache.TryGetValue(path, out var cached))
         {
             return cached;
         }
 
-        var skeleton = Skeleton.Load(modelPath);
-        _skeletonCache.TryAdd(modelPath, skeleton);
+        var bytes = ContentPipeline.Content.ReadBytes(path);
+        var skeleton = Skeleton.Load(bytes);
+        _skeletonCache.TryAdd(path, skeleton);
         return skeleton;
     }
 
-    private async Task<Skeleton> _LoadSkeletonAsync(string modelPath, CancellationToken ct = default)
+    private async Task<Skeleton> _LoadSkeletonAsync(string path, CancellationToken ct = default)
     {
-        if (_skeletonCache.TryGetValue(modelPath, out var cached))
+        if (_skeletonCache.TryGetValue(path, out var cached))
         {
             return cached;
         }
 
-        var skeleton = await Skeleton.LoadAsync(modelPath, ct);
-        _skeletonCache.TryAdd(modelPath, skeleton);
+        var bytes = await ContentPipeline.Content.ReadBytesAsync(path, ct);
+        var skeleton = Skeleton.Load(bytes);
+        _skeletonCache.TryAdd(path, skeleton);
         return skeleton;
     }
 
@@ -682,13 +651,6 @@ public sealed class Assets : IDisposable
 
     public void Dispose()
     {
-        foreach (var model in _modelCache.Values)
-        {
-            model.Dispose();
-        }
-
-        _modelCache.Clear();
-
         foreach (var texture in _textureCache.Values)
         {
             texture.Dispose();

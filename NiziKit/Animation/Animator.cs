@@ -228,10 +228,10 @@ public partial class Animator : IDisposable
 
             try
             {
-                var (modelPath, animationName) = ParseAnimationSourceRef(entry.SourceRef!);
-                if (!string.IsNullOrEmpty(modelPath) && !string.IsNullOrEmpty(animationName))
+                var animData = AssetPacks.GetAnimationDataByPath(entry.SourceRef!);
+                if (animData != null)
                 {
-                    Skeleton.LoadAnimationFromFile(modelPath, animationName);
+                    Skeleton.LoadAnimation(animData);
                 }
             }
             catch (Exception ex)
@@ -240,34 +240,6 @@ public partial class Animator : IDisposable
                     entry.Name, entry.SourceRef, ex.Message);
             }
         }
-    }
-
-    private static (string modelPath, string animationName) ParseAnimationSourceRef(string sourceRef)
-    {
-        if (string.IsNullOrEmpty(sourceRef))
-        {
-            return (string.Empty, string.Empty);
-        }
-
-        var extensions = new[] { ".glb", ".gltf", ".fbx", ".obj" };
-        foreach (var ext in extensions)
-        {
-            var extIndex = sourceRef.IndexOf(ext, StringComparison.OrdinalIgnoreCase);
-            if (extIndex > 0)
-            {
-                var afterExt = extIndex + ext.Length;
-                if (afterExt < sourceRef.Length && sourceRef[afterExt] == '/')
-                {
-                    return (sourceRef[..afterExt], sourceRef[(afterExt + 1)..]);
-                }
-                if (afterExt == sourceRef.Length)
-                {
-                    return (sourceRef, string.Empty);
-                }
-            }
-        }
-
-        return (sourceRef, string.Empty);
     }
 
     public int GetJointIndex(string name)
@@ -340,17 +312,17 @@ public partial class Animator : IDisposable
 
         if (entry.IsExternal)
         {
-            var (modelPath, animationName) = ParseAnimationSourceRef(entry.SourceRef!);
-            if (!string.IsNullOrEmpty(modelPath))
+            try
             {
-                try
+                var animData = AssetPacks.GetAnimationDataByPath(entry.SourceRef!);
+                if (animData != null)
                 {
-                    return Skeleton.LoadAnimationFromFile(modelPath, animationName);
+                    return Skeleton.LoadAnimation(animData);
                 }
-                catch
-                {
-                    return null;
-                }
+            }
+            catch
+            {
+                return null;
             }
             return null;
         }

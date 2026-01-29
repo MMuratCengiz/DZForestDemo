@@ -198,7 +198,7 @@ public partial class PackManagerViewModel : ObservableObject
             }
 
             Models.Clear();
-            foreach (var path in packData.Models)
+            foreach (var path in packData.Meshes)
             {
                 var key = Path.GetFileNameWithoutExtension(path);
                 Models.Add(new PackAssetEntry(key, path));
@@ -253,7 +253,7 @@ public partial class PackManagerViewModel : ObservableObject
             {
                 if (!string.IsNullOrWhiteSpace(entry.Path))
                 {
-                    packData.Models.Add(entry.Path);
+                    packData.Meshes.Add(entry.Path);
                 }
             }
 

@@ -30,7 +30,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/VikingRealm_Characters.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/VikingRealm_Characters_0.nizimesh"
         },
         {
           "type": "surface",
@@ -48,7 +48,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/VikingRealm_Characters.glb/1"
+          "mesh": "Synty/Models/VikingRealm/FBX/VikingRealm_Characters_1.nizimesh"
         },
         {
           "type": "surface",
@@ -66,7 +66,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/VikingRealm_Characters.glb/2"
+          "mesh": "Synty/Models/VikingRealm/FBX/VikingRealm_Characters_2.nizimesh"
         },
         {
           "type": "surface",
@@ -84,7 +84,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Large_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Large_01_0.nizimesh"
         },
         {
           "type": "surface",
@@ -102,7 +102,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Small_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Small_01.nizimesh"
         },
         {
           "type": "surface",
@@ -120,7 +120,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Veh_Cart_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Veh_Cart_01_0.nizimesh"
         },
         {
           "type": "surface",
@@ -138,7 +138,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Table_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Table_01.nizimesh"
         },
         {
           "type": "surface",
@@ -156,7 +156,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Chair_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Chair_01.nizimesh"
         },
         {
           "type": "surface",
@@ -174,7 +174,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Chair_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Chair_01.nizimesh"
         },
         {
           "type": "surface",
@@ -192,7 +192,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Bench_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Bench_01.nizimesh"
         },
         {
           "type": "surface",
@@ -210,7 +210,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Anvil_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Anvil_01.nizimesh"
         },
         {
           "type": "surface",
@@ -228,7 +228,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Barrel_02.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Barrel_02.nizimesh"
         },
         {
           "type": "surface",
@@ -246,7 +246,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Barrel_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Barrel_01.nizimesh"
         },
         {
           "type": "surface",
@@ -264,7 +264,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Fire_Pit_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Fire_Pit_01.nizimesh"
         },
         {
           "type": "surface",
@@ -282,7 +282,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Flag_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Flag_01_0.nizimesh"
         },
         {
           "type": "surface",
@@ -300,7 +300,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Wep_Axe_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Wep_Axe_01.nizimesh"
         },
         {
           "type": "surface",
@@ -318,7 +318,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Wep_Sword_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Wep_Sword_01.nizimesh"
         },
         {
           "type": "surface",
@@ -336,7 +336,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Wep_Shield_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Wep_Shield_01.nizimesh"
         },
         {
           "type": "surface",
@@ -354,7 +354,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Wep_Hammer_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Wep_Hammer_01.nizimesh"
         },
         {
           "type": "surface",
@@ -372,7 +372,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Wep_Spear_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Wep_Spear_01.nizimesh"
         },
         {
           "type": "surface",
@@ -390,7 +390,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Tree_Pine_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Tree_Pine_01.nizimesh"
         },
         {
           "type": "surface",
@@ -408,7 +408,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Tree_Pine_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Tree_Pine_01.nizimesh"
         },
         {
           "type": "surface",
@@ -426,25 +426,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Tree_Pine_01.glb/0"
-        },
-        {
-          "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.png"
-        }
-      ],
-      "children": []
-    },
-    {
-      "name": "Rock1",
-      "active": true,
-      "position": [12, 0, -8],
-      "rotation": [0, 0, 0],
-      "scale": [1, 1, 1],
-      "components": [
-        {
-          "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/VikingRealm_Characters.glb/SM_Chr_Warrior_Female_02"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Tree_Pine_01.nizimesh"
         },
         {
           "type": "surface",
@@ -462,7 +444,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Rock_Cliff_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Rock_Cliff_01.nizimesh"
         },
         {
           "type": "surface",
@@ -480,7 +462,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Bush_Berries_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Bush_Berries_01.nizimesh"
         },
         {
           "type": "surface",
@@ -498,40 +480,11 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Bush_Berries_01.glb/0"
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Bush_Berries_01.nizimesh"
         },
         {
           "type": "surface",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.png"
-        }
-      ],
-      "children": []
-    },
-    {
-      "name": "Fox",
-      "active": true,
-      "position": [-2.8303068, 0, -2.5645638],
-      "rotation": [90.125015, 0, 0],
-      "scale": [0.01, 0.01, 0.01],
-      "components": [
-        {
-          "type": "mesh",
-          "mesh": "Models/Fox.glb"
-        },
-        {
-          "type": "surface",
-          "albedo": "Textures/Texture.png"
-        },
-        {
-          "type": "material",
-          "tags": {
-            "variant": "SKINNED"
-          }
-        },
-        {
-          "type": "animator",
-          "skeleton": "Models/Fox.glb",
-          "defaultAnimation": "Survey"
         }
       ],
       "children": []
@@ -545,7 +498,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.glb"
+          "mesh": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.nizimesh"
         },
         {
           "type": "surface",
@@ -559,16 +512,16 @@
         },
         {
           "type": "animator",
-          "skeleton": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.glb",
+          "skeleton": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.ozzskel",
           "defaultAnimation": "A_Idle_Crouching_Masc",
           "animations": [
             {
               "name": "A_Idle_Crouching_Masc",
-              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/Idle/A_Idle_Crouching_Masc.glb/A_Idle_Crouching_Masc"
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/Idle/A_Idle_Crouching_Masc.ozzanim"
             },
             {
               "name": "A_Jump_Sprinting_Masc",
-              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/InAir/A_Jump_Sprinting_Masc.glb/A_Jump_Sprinting_Masc"
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/InAir/A_Jump_Sprinting_Masc.ozzanim"
             }
           ]
         }
@@ -584,7 +537,7 @@
       "components": [
         {
           "type": "mesh",
-          "mesh": "Synty/Models/DarkFantasy/FBX/Vehicles/SM_Veh_Wagon_01.glb/SM_Veh_Wagon_01"
+          "mesh": "Synty/Models/DarkFantasy/FBX/Vehicles/SM_Veh_Wagon_01_0.nizimesh"
         },
         {
           "type": "surface",
