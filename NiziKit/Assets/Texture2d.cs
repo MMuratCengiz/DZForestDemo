@@ -1,4 +1,3 @@
-using System.Runtime.InteropServices;
 using DenOfIz;
 using NiziKit.ContentPipeline;
 using NiziKit.Graphics;
@@ -131,6 +130,9 @@ public class Texture2d
         var arraySize = textureAsset.ArraySize();
         var format = textureAsset.GetFormat();
 
+        var deviceInfo = device.DeviceInfo();
+        var alignedSize = assetReader.AlignedTotalNumBytes(deviceInfo.Constants);
+
         lock (GraphicsContext.GpuLock)
         {
             var gpuTexture = device.CreateTexture(new TextureDesc
@@ -145,34 +147,73 @@ public class Texture2d
                 DebugName = StringView.Create(Path.GetFileNameWithoutExtension(name))
             });
 
-            using var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
+            var stagingBuffer = device.CreateBuffer(new BufferDesc
             {
-                Device = device,
-                IssueBarriers = true
+                HeapType = HeapType.CpuGpu,
+                Usage = (uint)BufferUsageFlagBits.CopySrc,
+                NumBytes = alignedSize,
+                DebugName = StringView.Create("DzTex_StagingBuffer")
             });
-            batchCopy.Begin();
 
-            var mips = textureAsset.Mips().ToArray();
-            for (var i = 0; i < mips.Length; i++)
+            var copyQueueDesc = new CommandQueueDesc { QueueType = QueueType.Copy };
+            var copyQueue = device.CreateCommandQueue(copyQueueDesc);
+            var poolDesc = new CommandListPoolDesc { CommandQueue = copyQueue, NumCommandLists = 1 };
+            var pool = device.CreateCommandListPool(poolDesc);
+            var commandList = pool.GetCommandLists().ToArray()[0];
+            var fence = device.CreateFence();
+
+            commandList.Begin();
+
+            assetReader.LoadIntoGpuTexture(new LoadIntoGpuTextureDesc
             {
-                var mip = mips[i];
-                var mipData = assetReader.ReadRaw(mip.MipIndex, mip.ArrayIndex);
-                var mipBytes = new byte[mipData.NumElements];
-                Marshal.Copy(mipData.Elements, mipBytes, 0, (int)mipData.NumElements);
+                CommandList = commandList,
+                StagingBuffer = stagingBuffer,
+                Texture = gpuTexture
+            });
 
-                batchCopy.CopyDataToTexture(new CopyDataToTextureDesc
+            commandList.End();
+
+            fence.Reset();
+            copyQueue.ExecuteCommandLists(new ExecuteCommandListsDesc
+            {
+                Signal = fence,
+                CommandLists = CommandListArray.Create([commandList])
+            });
+            fence.Wait();
+
+            var syncQueueDesc = new CommandQueueDesc { QueueType = QueueType.Graphics };
+            var syncQueue = device.CreateCommandQueue(syncQueueDesc);
+            var syncPool = device.CreateCommandListPool(new CommandListPoolDesc { CommandQueue = syncQueue, NumCommandLists = 1 });
+            var syncCommandList = syncPool.GetCommandLists().ToArray()[0];
+            var syncFence = device.CreateFence();
+
+            syncCommandList.Begin();
+            syncCommandList.PipelineBarrier(new PipelineBarrierDesc
+            {
+                TextureBarriers = TextureBarrierDescArray.Create([new TextureBarrierDesc
                 {
-                    Data = ByteArrayView.Create(mipBytes),
-                    DstTexture = gpuTexture,
-                    Width = mip.Width,
-                    Height = mip.Height,
-                    MipLevel = mip.MipIndex,
-                    ArrayLayer = mip.ArrayIndex,
-                    AutoAlign = true
-                });
-            }
+                    Resource = gpuTexture,
+                    OldState = (uint)ResourceUsageFlagBits.Common,
+                    NewState = (uint)ResourceUsageFlagBits.ShaderResource
+                }])
+            });
+            syncCommandList.End();
 
-            batchCopy.Submit(null);
+            syncFence.Reset();
+            syncQueue.ExecuteCommandLists(new ExecuteCommandListsDesc
+            {
+                Signal = syncFence,
+                CommandLists = CommandListArray.Create([syncCommandList])
+            });
+            syncFence.Wait();
+
+            stagingBuffer.Dispose();
+            fence.Dispose();
+            pool.Dispose();
+            copyQueue.Dispose();
+            syncFence.Dispose();
+            syncPool.Dispose();
+            syncQueue.Dispose();
 
             GraphicsContext.ResourceTracking.TrackTexture(gpuTexture, QueueType.Graphics);
             Name = Path.GetFileNameWithoutExtension(name);
