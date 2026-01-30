@@ -82,7 +82,8 @@ public class SkyboxPass : IDisposable
                     CompareOp = CompareOp.Always,
                     Write = false
                 },
-                RenderTargets = renderTargets
+                RenderTargets = renderTargets,
+                DepthStencilAttachmentFormat = GraphicsContext.DepthBufferFormat
             }
         };
 

@@ -53,23 +53,14 @@ public class EditorRenderer : IDisposable
         _gizmoPass = new GizmoPass();
     }
 
-    public CycledTexture Render(RenderFrame frame)
-    {
-        // Get scene render from game's renderer
-        return _gameRenderer.Render(frame);
-    }
-
     public void Render(float dt)
     {
         _renderFrame.BeginFrame();
 
-        // Get scene render from game's renderer
         var sceneColor = _gameRenderer.Render(_renderFrame);
 
-        // Add gizmos on top
         RenderGizmos(sceneColor);
 
-        // Render Avalonia UI
         DenOfIzPlatform.TriggerRenderTick(TimeSpan.FromSeconds(dt));
         Dispatcher.UIThread.RunJobs();
         _topLevel.Render();

@@ -138,6 +138,17 @@ public partial class RenderFrame : IDisposable
 
     public void BeginFrame()
     {
+        if (Metal.IsCapturing(GraphicsContext.Device))
+        {
+            Metal.EndGpuCapture(GraphicsContext.Device);
+        }
+
+        if (InputSystem.GetKeyState(KeyCode.F12) == KeyState.Pressed &&
+            InputSystem.GetKeyState(KeyCode.Lgui) == KeyState.Pressed)
+        {
+            Metal.BeginGpuCapture(GraphicsContext.Device);
+        }
+
         GraphicsContext.BeginFrame();
         _currentFrame = GraphicsContext.FrameIndex;
         _frameFences[_currentFrame].Wait();
