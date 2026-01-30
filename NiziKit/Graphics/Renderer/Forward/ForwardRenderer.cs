@@ -6,19 +6,30 @@ using NiziKit.Components;
 using NiziKit.Core;
 using NiziKit.Graphics.Binding;
 using NiziKit.Graphics.Resources;
+using NiziKit.Light;
 
 namespace NiziKit.Graphics.Renderer.Forward;
 
 public class ForwardRenderer : IRenderer
 {
+    private const int ShadowMapSize = 2048;
+    private const int MaxShadowCasters = 4;
+    private const float ShadowOrthoSize = 50f;
+    private const float ShadowNearPlane = 0.1f;
+    private const float ShadowFarPlane = 200f;
+
     private readonly ViewData _viewData;
+    private readonly ViewData _shadowViewData;
     private readonly GpuShader _defaultShader;
     private readonly GpuShader _skinnedShader;
+    private readonly GpuShader _shadowCasterShader;
+    private readonly GpuShader _shadowCasterSkinnedShader;
     private readonly SkyboxPass _skyboxPass;
     private readonly List<(GpuShader shader, SurfaceComponent surface, RenderBatch batch)> _drawList = new(256);
 
     private readonly CycledTexture _sceneColor;
     private readonly CycledTexture _sceneDepth;
+    private readonly CycledTexture _shadowDepth;
 
     public CameraComponent? Camera
     {
@@ -29,12 +40,16 @@ public class ForwardRenderer : IRenderer
     public ForwardRenderer()
     {
         _viewData = new ViewData();
+        _shadowViewData = new ViewData();
         _sceneColor = CycledTexture.ColorAttachment("SceneColor");
         _sceneDepth = CycledTexture.DepthAttachment("SceneDepth");
+        _shadowDepth = CycledTexture.DepthAttachment("ShadowDepth", ShadowMapSize, ShadowMapSize);
 
         var defaultShader = new DefaultShader();
         _defaultShader = defaultShader.StaticVariant;
         _skinnedShader = defaultShader.SkinnedVariant;
+        _shadowCasterShader = defaultShader.ShadowCasterVariant;
+        _shadowCasterSkinnedShader = defaultShader.ShadowCasterSkinnedVariant;
 
         _skyboxPass = new SkyboxPass();
     }
@@ -63,6 +78,15 @@ public class ForwardRenderer : IRenderer
         }
 
         _drawList.Sort((a, b) => a.shader.GetHashCode().CompareTo(b.shader.GetHashCode()));
+
+        var shadowCasters = BuildShadowCasters(scene);
+        _viewData.ShadowAtlas = shadowCasters.Length > 0 ? _shadowDepth : null;
+        _viewData.ShadowCasters = shadowCasters;
+
+        if (shadowCasters.Length > 0)
+        {
+            RenderShadowPass(frame, scene, shadowCasters);
+        }
 
         var pass = frame.BeginGraphicsPass();
         pass.SetRenderTarget(0, _sceneColor, LoadOp.Clear);
@@ -110,6 +134,87 @@ public class ForwardRenderer : IRenderer
         return _sceneColor;
     }
 
+    private void RenderShadowPass(RenderFrame frame, Scene scene, ShadowCasterInfo[] shadowCasters)
+    {
+        for (var i = 0; i < shadowCasters.Length; i++)
+        {
+            _shadowViewData.Scene = scene;
+            _shadowViewData.DeltaTime = Time.DeltaTime;
+            _shadowViewData.TotalTime = Time.TotalTime;
+            _shadowViewData.ViewProjectionOverride = shadowCasters[i].LightViewProjection;
+            _shadowViewData.ShadowCasters = [];
+
+            var shadowPass = frame.BeginGraphicsPass();
+            shadowPass.SetDepthTarget(_shadowDepth, i == 0 ? LoadOp.Clear : LoadOp.Load);
+
+            shadowPass.Begin();
+            shadowPass.Bind<ViewBinding>(_shadowViewData);
+
+            GpuShader? currentShader = null;
+
+            foreach (var (shader, surface, batch) in _drawList)
+            {
+                var shadowShader = SelectShadowShader(batch);
+
+                if (currentShader != shadowShader)
+                {
+                    shadowPass.BindShader(shadowShader);
+                    currentShader = shadowShader;
+                }
+
+                shadowPass.Bind<BatchDrawBinding>(batch);
+                shadowPass.DrawMesh(batch.Mesh, (uint)batch.Count);
+            }
+
+            shadowPass.End();
+        }
+    }
+
+    private ShadowCasterInfo[] BuildShadowCasters(Scene scene)
+    {
+        var casters = new List<ShadowCasterInfo>();
+        var lightIndex = 0;
+
+        foreach (var dl in scene.GetObjectsOfType<DirectionalLight>())
+        {
+            if (!dl.IsActive)
+            {
+                lightIndex++;
+                continue;
+            }
+
+            if (dl.CastsShadows && casters.Count < MaxShadowCasters)
+            {
+                var lightDir = Vector3.Normalize(dl.Direction);
+                var lightView = Matrix4x4.CreateLookAtLeftHanded(
+                    -lightDir * (ShadowFarPlane * 0.5f),
+                    Vector3.Zero,
+                    MathF.Abs(Vector3.Dot(lightDir, Vector3.UnitY)) > 0.99f
+                        ? Vector3.UnitZ
+                        : Vector3.UnitY
+                );
+                var lightProj = Matrix4x4.CreateOrthographicOffCenterLeftHanded(
+                    -ShadowOrthoSize, ShadowOrthoSize,
+                    -ShadowOrthoSize, ShadowOrthoSize,
+                    ShadowNearPlane, ShadowFarPlane
+                );
+
+                casters.Add(new ShadowCasterInfo
+                {
+                    LightViewProjection = lightView * lightProj,
+                    AtlasScaleOffset = new Vector4(1, 1, 0, 0), // Full texture, no atlas subdivision
+                    Bias = 0.002f,
+                    NormalBias = 0.05f,
+                    LightIndex = lightIndex
+                });
+            }
+
+            lightIndex++;
+        }
+
+        return casters.ToArray();
+    }
+
     private GpuShader SelectShader(RenderBatch batch)
     {
         foreach (var obj in batch.Objects)
@@ -123,6 +228,19 @@ public class ForwardRenderer : IRenderer
         return _defaultShader;
     }
 
+    private GpuShader SelectShadowShader(RenderBatch batch)
+    {
+        foreach (var obj in batch.Objects)
+        {
+            if (obj.Tags?.TryGetValue("variant", out var variant) == true
+                && variant.Equals("SKINNED", StringComparison.OrdinalIgnoreCase))
+            {
+                return _shadowCasterSkinnedShader;
+            }
+        }
+        return _shadowCasterShader;
+    }
+
     public void OnResize(uint width, uint height)
     {
     }
@@ -132,5 +250,6 @@ public class ForwardRenderer : IRenderer
         _skyboxPass.Dispose();
         _sceneColor.Dispose();
         _sceneDepth.Dispose();
+        _shadowDepth.Dispose();
     }
 }

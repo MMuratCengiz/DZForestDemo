@@ -29,22 +29,21 @@ public class GpuCameraLayout : ILayout
                 ArraySize = 1,
                 Stages = (uint)ShaderStageFlagBits.Pixel,
                 Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer
+            },
+            new()
+            {
+                Binding = ShadowAtlas.Binding,
+                ArraySize = 1,
+                Stages = (uint)ShaderStageFlagBits.Pixel,
+                Descriptor = (uint)ResourceDescriptorFlagBits.Texture
+            },
+            new()
+            {
+                Binding = ShadowSampler.Binding,
+                ArraySize = 1,
+                Stages = (uint)ShaderStageFlagBits.Pixel,
+                Descriptor = (uint)ResourceDescriptorFlagBits.Sampler
             }
-            // TODO ShadowAtlas and ShadowSampler
-            // new()
-            // {
-            //     Binding = ShadowAtlas.Binding,
-            //     ArraySize = 1,
-            //     Stages = (uint)ShaderStageFlagBits.Pixel,
-            //     Descriptor = (uint)ResourceDescriptorFlagBits.Texture
-            // },
-            // new()
-            // {
-            //     Binding = ShadowSampler.Binding,
-            //     ArraySize = 1,
-            //     Stages = (uint)ShaderStageFlagBits.Pixel,
-            //     Descriptor = (uint)ResourceDescriptorFlagBits.Sampler
-            // }
         };
 
         var desc = new BindGroupLayoutDesc

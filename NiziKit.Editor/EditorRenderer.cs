@@ -113,7 +113,6 @@ public class EditorRenderer : IDisposable
         pass.SetDepthTarget(_sceneDepth, LoadOp.Load);
         pass.Begin();
 
-        pass.Bind<ViewBinding>(_viewData);
         _gizmoPass.Render(pass, _viewData, _sceneDepth);
 
         pass.End();

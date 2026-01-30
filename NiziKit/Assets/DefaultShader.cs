@@ -7,6 +7,8 @@ public class DefaultShader
 {
     public GpuShader StaticVariant { get; } = CreateVariant("DefaultShader");
     public GpuShader SkinnedVariant { get; } = CreateVariant("DefaultShader_SKINNED");
+    public GpuShader ShadowCasterVariant { get; } = CreateShadowCasterVariant("ShadowCasterShader");
+    public GpuShader ShadowCasterSkinnedVariant { get; } = CreateShadowCasterVariant("ShadowCasterShader_SKINNED");
 
     private static GpuShader CreateVariant(string shaderName)
     {
@@ -31,6 +33,31 @@ public class DefaultShader
         {
             PrimitiveTopology = PrimitiveTopology.Triangle,
             CullMode = CullMode.BackFace,
+            FillMode = FillMode.Solid,
+            DepthTest = new DepthTest
+            {
+                Enable = true,
+                CompareOp = CompareOp.Less,
+                Write = true
+            },
+            DepthStencilAttachmentFormat = GraphicsContext.DepthBufferFormat,
+            RenderTargets = renderTargets
+        };
+
+        return GpuShader.Graphics(program, graphicsDesc);
+    }
+
+    private static GpuShader CreateShadowCasterVariant(string shaderName)
+    {
+        var program = BuiltinShaderProgram.Load(shaderName)
+                   ?? throw new InvalidOperationException($"{shaderName} not found");
+
+        using var renderTargets = RenderTargetDescArray.Create([]);
+
+        var graphicsDesc = new GraphicsPipelineDesc
+        {
+            PrimitiveTopology = PrimitiveTopology.Triangle,
+            CullMode = CullMode.FrontFace, // Front-face culling for shadow bias
             FillMode = FillMode.Solid,
             DepthTest = new DepthTest
             {

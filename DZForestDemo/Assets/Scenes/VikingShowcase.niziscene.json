@@ -32,7 +32,16 @@
     "front": "SkyBox/Textures/LearnOpenGL/front.dztex",
     "back": "SkyBox/Textures/LearnOpenGL/back.dztex"
   },
-  "lights": [],
+  "lights": [
+    {
+      "type": "directional",
+      "name": "Sun",
+      "direction": [0.3, -0.8, 0.4],
+      "color": [1.0, 0.95, 0.9],
+      "intensity": 0.7,
+      "castsShadows": true
+    }
+  ],
   "objects": [
     {
       "name": "Character_Viking",
@@ -47,7 +56,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.9
         }
       ],
       "children": []
@@ -65,7 +78,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.9
         }
       ],
       "children": []
@@ -83,7 +100,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.9
         }
       ],
       "children": []
@@ -101,7 +122,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.7
         }
       ],
       "children": []
@@ -119,7 +144,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.7
         }
       ],
       "children": []
@@ -137,7 +166,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.7
         }
       ],
       "children": []
@@ -155,7 +188,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.7
         }
       ],
       "children": []
@@ -173,7 +210,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.7
         }
       ],
       "children": []
@@ -191,7 +232,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.7
         }
       ],
       "children": []
@@ -209,7 +254,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.7
         }
       ],
       "children": []
@@ -227,7 +276,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.3
         }
       ],
       "children": []
@@ -245,7 +298,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.7
         }
       ],
       "children": []
@@ -263,7 +320,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.7
         }
       ],
       "children": []
@@ -281,7 +342,13 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.6,
+          "emissiveColor": [1.0, 0.4, 0.1],
+          "emissiveIntensity": 2.0
         }
       ],
       "children": []
@@ -299,7 +366,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.8
         }
       ],
       "children": []
@@ -317,7 +388,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.3
         }
       ],
       "children": []
@@ -335,7 +410,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.3
         }
       ],
       "children": []
@@ -353,7 +432,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.3
         }
       ],
       "children": []
@@ -371,7 +454,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.3
         }
       ],
       "children": []
@@ -389,7 +476,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.3
         }
       ],
       "children": []
@@ -407,7 +498,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.8
         }
       ],
       "children": []
@@ -425,7 +520,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.8
         }
       ],
       "children": []
@@ -443,7 +542,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.8
         }
       ],
       "children": []
@@ -461,7 +564,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.8
         }
       ],
       "children": []
@@ -479,7 +586,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.8
         }
       ],
       "children": []
@@ -497,7 +608,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.8
         }
       ],
       "children": []
@@ -538,7 +653,11 @@
         },
         {
           "type": "surface",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
+          "metallicValue": 1.0,
+          "roughnessValue": 0.5
         },
         {
           "type": "material",

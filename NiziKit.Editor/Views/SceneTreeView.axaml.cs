@@ -32,6 +32,7 @@ public partial class SceneTreeView : UserControl
         if (DataContext is EditorViewModel vm)
         {
             vm.PropertyChanged += OnViewModelPropertyChanged;
+            UpdateSceneRootSelection(!vm.HasSelection);
         }
     }
 

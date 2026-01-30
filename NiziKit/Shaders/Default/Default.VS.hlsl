@@ -21,6 +21,8 @@ struct VSOutput
     float3 WorldPos : TEXCOORD1;
     float2 TexCoord : TEXCOORD0;
     nointerpolation uint InstanceID : TEXCOORD2;
+    float3 WorldTangent : TEXCOORD3;
+    float3 WorldBitangent : TEXCOORD4;
 };
 
 VSOutput VSMain(VSInput input, uint instanceID : SV_InstanceID)
@@ -40,10 +42,19 @@ VSOutput VSMain(VSInput input, uint instanceID : SV_InstanceID)
 
     float4 worldPos = mul(skinnedPos, inst.Model);
     output.WorldNormal = normalize(mul(skinnedNormal, (float3x3)inst.Model));
+    float3 localTangent = mul(input.Tangent.xyz, (float3x3)skinMatrix);
 #else
     float4 worldPos = mul(float4(input.Position, 1.0), inst.Model);
     output.WorldNormal = normalize(mul(input.Normal, (float3x3)inst.Model));
+    float3 localTangent = input.Tangent.xyz;
 #endif
+
+    float3 T = normalize(mul(localTangent, (float3x3)inst.Model));
+    float3 N = output.WorldNormal;
+    T = normalize(T - dot(T, N) * N);
+    float3 B = cross(N, T) * input.Tangent.w;
+    output.WorldTangent = T;
+    output.WorldBitangent = B;
 
     output.Position = mul(worldPos, ViewProjection);
     output.WorldPos = worldPos.xyz;

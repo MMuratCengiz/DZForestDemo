@@ -59,4 +59,42 @@ cbuffer LightConstants : register(b1, space1)
     uint _Pad2;
 };
 
+Texture2D<float> ShadowAtlas : register(t2, space1);
+SamplerComparisonState ShadowSampler : register(s3, space1);
+
+float SampleShadow(int shadowIndex, float3 worldPos, float3 normal)
+{
+    if (shadowIndex < 0 || (uint)shadowIndex >= NumShadows)
+        return 1.0;
+
+    ShadowData sd = Shadows[shadowIndex];
+
+    float3 biasedPos = worldPos + normal * sd.NormalBias;
+    float4 lightClip = mul(float4(biasedPos, 1.0), sd.LightViewProjection);
+    float3 ndc = lightClip.xyz / lightClip.w;
+
+    float2 uv = ndc.xy * 0.5 + 0.5;
+    uv.y = 1.0 - uv.y;
+
+    uv = uv * sd.AtlasScaleOffset.xy + sd.AtlasScaleOffset.zw;
+
+    float depth = ndc.z - sd.Bias;
+
+    float2 texelSize;
+    ShadowAtlas.GetDimensions(texelSize.x, texelSize.y);
+    texelSize = 1.0 / texelSize;
+
+    float shadow = 0.0;
+    [unroll]
+    for (int y = -1; y <= 1; y++)
+    {
+        [unroll]
+        for (int x = -1; x <= 1; x++)
+        {
+            shadow += ShadowAtlas.SampleCmpLevelZero(ShadowSampler, uv + float2(x, y) * texelSize, depth);
+        }
+    }
+    return shadow / 9.0;
+}
+
 #endif
