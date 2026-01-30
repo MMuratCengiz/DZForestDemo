@@ -3,7 +3,7 @@ using NiziKit.Assets;
 
 namespace NiziKit.Components;
 
-[NiziComponent]
+[NiziComponent(GenerateFactory = false)]
 public partial class SurfaceComponent
 {
     [AssetRef(AssetRefType.Texture, "albedo")]
