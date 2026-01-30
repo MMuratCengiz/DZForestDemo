@@ -750,7 +750,13 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             Up = LoadSkyboxFace(skyboxData.Up),
             Down = LoadSkyboxFace(skyboxData.Down),
             Front = LoadSkyboxFace(skyboxData.Front),
-            Back = LoadSkyboxFace(skyboxData.Back)
+            Back = LoadSkyboxFace(skyboxData.Back),
+            RightRef = skyboxData.Right,
+            LeftRef = skyboxData.Left,
+            UpRef = skyboxData.Up,
+            DownRef = skyboxData.Down,
+            FrontRef = skyboxData.Front,
+            BackRef = skyboxData.Back
         };
     }
 

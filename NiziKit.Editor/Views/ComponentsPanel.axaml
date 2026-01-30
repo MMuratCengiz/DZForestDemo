@@ -9,23 +9,8 @@
     <ScrollViewer VerticalScrollBarVisibility="Auto"
                   Padding="0">
         <StackPanel>
-            <StackPanel IsVisible="{Binding !HasSelection}"
-                        HorizontalAlignment="Center"
-                        Margin="0,60">
-                <Border Background="{StaticResource EditorSurfaceRaised}"
-                        Padding="32"
-                        HorizontalAlignment="Center">
-                    <StackPanel Spacing="16" HorizontalAlignment="Center">
-                        <ui:SymbolIcon Symbol="People"
-                                       FontSize="{StaticResource IconSizeXXL}"
-                                       Foreground="{StaticResource EditorTextMuted}"
-                                       HorizontalAlignment="Center"/>
-                        <TextBlock Text="Select an object to edit"
-                                   Foreground="{StaticResource EditorTextMuted}"
-                                   HorizontalAlignment="Center"/>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
+            <views:SceneSettingsPanel IsVisible="{Binding !HasSelection}"
+                                       DataContext="{Binding}"/>
 
             <StackPanel IsVisible="{Binding DataContext.HasSelection, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         DataContext="{Binding SelectedGameObject}">

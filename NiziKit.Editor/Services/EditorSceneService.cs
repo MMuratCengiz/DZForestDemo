@@ -120,6 +120,19 @@ public class EditorSceneService
             }
         }
 
+        if (scene.Skybox is { IsValid: true })
+        {
+            json.Skybox = new SkyboxJson
+            {
+                Right = scene.Skybox.RightRef,
+                Left = scene.Skybox.LeftRef,
+                Up = scene.Skybox.UpRef,
+                Down = scene.Skybox.DownRef,
+                Front = scene.Skybox.FrontRef,
+                Back = scene.Skybox.BackRef
+            };
+        }
+
         json.Lights = [];
 
         foreach (var obj in scene.RootObjects)

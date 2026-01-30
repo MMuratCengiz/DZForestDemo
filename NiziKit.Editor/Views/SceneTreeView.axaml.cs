@@ -13,6 +13,7 @@ namespace NiziKit.Editor.Views;
 public partial class SceneTreeView : UserControl
 {
     private TreeView? _sceneTree;
+    private Border? _sceneRootNode;
     private Border? _deleteConfirmPanel;
     private TextBlock? _deleteConfirmText;
     private Button? _cancelDeleteButton;
@@ -23,6 +24,26 @@ public partial class SceneTreeView : UserControl
     {
         InitializeComponent();
         PointerPressed += OnViewPointerPressed;
+        DataContextChanged += OnDataContextSet;
+    }
+
+    private void OnDataContextSet(object? sender, EventArgs e)
+    {
+        if (DataContext is EditorViewModel vm)
+        {
+            vm.PropertyChanged += OnViewModelPropertyChanged;
+        }
+    }
+
+    private void OnViewModelPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(EditorViewModel.HasSelection))
+        {
+            if (DataContext is EditorViewModel vm)
+            {
+                UpdateSceneRootSelection(!vm.HasSelection);
+            }
+        }
     }
 
     private void InitializeComponent()
@@ -30,7 +51,13 @@ public partial class SceneTreeView : UserControl
         AvaloniaXamlLoader.Load(this);
 
         _sceneTree = this.FindControl<TreeView>("SceneTree");
+        _sceneRootNode = this.FindControl<Border>("SceneRootNode");
         _deleteConfirmPanel = this.FindControl<Border>("DeleteConfirmPanel");
+
+        if (_sceneRootNode != null)
+        {
+            _sceneRootNode.PointerPressed += OnSceneRootNodePressed;
+        }
         _deleteConfirmText = this.FindControl<TextBlock>("DeleteConfirmText");
         _cancelDeleteButton = this.FindControl<Button>("CancelDeleteButton");
         _confirmDeleteButton = this.FindControl<Button>("ConfirmDeleteButton");
@@ -47,6 +74,29 @@ public partial class SceneTreeView : UserControl
         {
             _confirmDeleteButton.Click += OnConfirmDeleteClick;
         }
+    }
+
+    private void OnSceneRootNodePressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (DataContext is EditorViewModel vm)
+        {
+            vm.SelectObject(null);
+            if (_sceneTree != null)
+            {
+                _sceneTree.UnselectAll();
+            }
+            UpdateSceneRootSelection(true);
+        }
+        e.Handled = true;
+    }
+
+    private void UpdateSceneRootSelection(bool selected)
+    {
+        if (_sceneRootNode == null) return;
+        if (selected)
+            _sceneRootNode.Classes.Add("selected");
+        else
+            _sceneRootNode.Classes.Remove("selected");
     }
 
     private void OnViewPointerPressed(object? sender, PointerPressedEventArgs e)

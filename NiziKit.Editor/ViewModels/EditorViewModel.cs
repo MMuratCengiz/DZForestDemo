@@ -74,6 +74,9 @@ public partial class EditorViewModel : ObservableObject
 
     public bool HasSelection => SelectedGameObject != null;
 
+    [ObservableProperty]
+    private string _sceneDisplayName = "Scene";
+
     public ObservableCollection<GameObjectViewModel> RootObjects { get; } = [];
 
     public AssetBrowserService AssetBrowser => _assetBrowserService;
@@ -151,6 +154,8 @@ public partial class EditorViewModel : ObservableObject
         {
             return;
         }
+
+        SceneDisplayName = scene.Name ?? "Scene";
 
         foreach (var obj in scene.RootObjects)
         {

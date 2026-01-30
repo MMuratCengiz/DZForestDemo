@@ -1,10 +1,15 @@
 {
   "name": "Viking Showcase",
+  "assetPacks": [
+    "newpack_1",
+    "newpack",
+    "viking"
+  ],
   "cameras": [
     {
       "name": "Main Camera",
-      "position": [-4.333521, 0, -424.95712],
-      "rotation": [0, 0, 0],
+      "position": [3.0303328, -1.6397858, -35.62742],
+      "rotation": [-5.500405, -17.532503, 0],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -86,8 +91,8 @@
     {
       "name": "Boat",
       "active": true,
-      "position": [25.431843, 0, 16.022827],
-      "rotation": [28.582253, -9.524768, 74.90681],
+      "position": [26.5, 6, 19.5],
+      "rotation": [-29.771297, -3.8793628, 78.36984],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -212,7 +217,7 @@
     {
       "name": "Anvil",
       "active": true,
-      "position": [-6, 0, 3],
+      "position": [-4.5175524, 0, -2.9857206],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
       "components": [
@@ -502,7 +507,7 @@
       "active": true,
       "position": [0, -0.25, 0],
       "rotation": [0, 0, 0],
-      "scale": [60, 0.5, 60],
+      "scale": [90.67196, 1, 113.75],
       "components": [
         {
           "type": "mesh",
@@ -510,7 +515,12 @@
         },
         {
           "type": "surface",
-          "albedoColor": [0.5, 0.5, 0.5, 1.0]
+          "albedoColor": [
+            0.5,
+            0.5,
+            0.5,
+            1
+          ]
         }
       ],
       "children": []

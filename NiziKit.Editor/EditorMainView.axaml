@@ -63,7 +63,7 @@
                         MinWidth="{StaticResource PanelMinWidth}"
                         MaxWidth="{StaticResource PanelMaxWidth}"
                         Width="380">
-                    <Grid RowDefinitions="Auto,Auto,*">
+                    <Grid RowDefinitions="Auto,*">
                         <Border Grid.Row="0"
                                 Background="{StaticResource EditorAccentGradient}"
                                 Padding="12,8"
@@ -73,26 +73,7 @@
                                        Foreground="#FFFFFF"/>
                         </Border>
 
-                        <Border Grid.Row="1"
-                                Background="{StaticResource EditorSurfaceRaised}"
-                                Padding="10,8"
-                                Margin="0,0,0,12">
-                            <Grid ColumnDefinitions="*,Auto">
-                                <TextBlock Text="{Binding SceneName, FallbackValue='Untitled Scene'}"
-                                           VerticalAlignment="Center"
-                                           Foreground="{StaticResource EditorTextSecondary}"/>
-                                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
-                                    <Button Command="{Binding NewObjectCommand}"
-                                            ToolTip.Tip="Add Object"
-                                            Padding="8"
-                                            Classes="ghost">
-                                        <ui:SymbolIcon Symbol="Add" FontSize="{StaticResource IconSizeSmall}"/>
-                                    </Button>
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <views:SceneTreeView Grid.Row="2" DataContext="{Binding}"/>
+                        <views:SceneTreeView Grid.Row="1" DataContext="{Binding}"/>
                     </Grid>
                 </Border>
 
