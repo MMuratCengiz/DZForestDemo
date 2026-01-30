@@ -10,8 +10,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Avalonia" Version="11.3.9" />
-        <PackageReference Include="Avalonia.Skia" Version="11.3.9" />
+        <PackageReference Include="Avalonia" Version="11.3.11" />
+        <PackageReference Include="Avalonia.Skia" Version="11.3.11" />
         <PackageReference Include="FluentAvaloniaUI" Version="2.3.0" />
         <PackageReference Include="AtomUI.Desktop.Controls" Version="5.1.0" />
         <PackageReference Include="bodong.Avalonia.PropertyGrid" Version="11.1.1.1" />
