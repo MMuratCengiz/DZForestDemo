@@ -19,6 +19,14 @@
       }
     }
   ],
+  "skybox": {
+    "right": "SkyBox/Textures/LearnOpenGL/right.dztex",
+    "left": "SkyBox/Textures/LearnOpenGL/left.dztex",
+    "up": "SkyBox/Textures/LearnOpenGL/top.dztex",
+    "down": "SkyBox/Textures/LearnOpenGL/bottom.dztex",
+    "front": "SkyBox/Textures/LearnOpenGL/front.dztex",
+    "back": "SkyBox/Textures/LearnOpenGL/back.dztex"
+  },
   "lights": [],
   "objects": [
     {
@@ -485,6 +493,24 @@
         {
           "type": "surface",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex"
+        }
+      ],
+      "children": []
+    },
+    {
+      "name": "Platform",
+      "active": true,
+      "position": [0, -0.25, 0],
+      "rotation": [0, 0, 0],
+      "scale": [60, 0.5, 60],
+      "components": [
+        {
+          "type": "mesh",
+          "mesh": "geometry:box"
+        },
+        {
+          "type": "surface",
+          "albedoColor": [0.5, 0.5, 0.5, 1.0]
         }
       ],
       "children": []

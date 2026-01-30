@@ -14,5 +14,5 @@ public struct GpuSurfaceData
     public float _padding1;
     public Vector4 AlbedoColor;
     public Vector3 EmissiveColor;
-    public float _padding2;
+    public float HasAlbedoTexture;
 }

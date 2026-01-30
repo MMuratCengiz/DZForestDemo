@@ -2,7 +2,7 @@ using NiziKit.GLTF;
 
 namespace NiziKit.Assets;
 
-public class Model : IAsset
+public class Model
 {
     public string Name { get; set; } = string.Empty;
     public string SourcePath { get; set; } = string.Empty;

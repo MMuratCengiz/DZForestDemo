@@ -169,6 +169,27 @@ public sealed class GameObjectJson
     public JsonElement? Properties { get; set; }
 }
 
+public sealed class SkyboxJson
+{
+    [JsonPropertyName("right")]
+    public string? Right { get; set; }
+
+    [JsonPropertyName("left")]
+    public string? Left { get; set; }
+
+    [JsonPropertyName("up")]
+    public string? Up { get; set; }
+
+    [JsonPropertyName("down")]
+    public string? Down { get; set; }
+
+    [JsonPropertyName("front")]
+    public string? Front { get; set; }
+
+    [JsonPropertyName("back")]
+    public string? Back { get; set; }
+}
+
 public sealed class SceneJson
 {
     [JsonPropertyName("name")]
@@ -182,6 +203,9 @@ public sealed class SceneJson
 
     [JsonPropertyName("cameras")]
     public List<CameraJson>? Cameras { get; set; }
+
+    [JsonPropertyName("skybox")]
+    public SkyboxJson? Skybox { get; set; }
 
     [JsonPropertyName("lights")]
     public List<LightJson>? Lights { get; set; }

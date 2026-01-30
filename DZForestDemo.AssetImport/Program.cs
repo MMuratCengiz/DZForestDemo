@@ -13,6 +13,10 @@ var syntySourceDir = Path.Combine(projectDir, "Assets_Source", "NiziKit_SyntyAss
 var syntyOutputDir = Path.Combine(assetProject.Output, "Synty");
 ImportSyntyAssets(syntySourceDir, syntyOutputDir);
 
+var skyboxSourceDir = Path.Combine(projectDir, "Assets_Source", "SkyBox");
+var skyboxOutputDir = Path.Combine(assetProject.Output, "SkyBox");
+ImportSkyboxTextures(skyboxSourceDir, skyboxOutputDir);
+
 return 0;
 
 void ImportSyntyAssets(string sourceDirectory, string outputDirectory)
@@ -141,6 +145,36 @@ void ImportBaseLocomotion(string baseLocoDir, string outputDir)
         if (!animResult.Success)
         {
             logger.LogError("  Animation failed: {Name}: {Error}", animName, animResult.ErrorMessage);
+        }
+    }
+}
+
+void ImportSkyboxTextures(string sourceDirectory, string outputDirectory)
+{
+    if (!Directory.Exists(sourceDirectory))
+    {
+        logger.LogWarning("Skybox assets not found at: {SourceDirectory}", sourceDirectory);
+        return;
+    }
+
+    using var importer = new BulkAssetImporter();
+    var result = importer.Import(new BulkImportDesc
+    {
+        SourceDirectory = sourceDirectory,
+        OutputDirectory = outputDirectory,
+        ImportModels = false,
+        ImportTextures = true,
+        PreserveDirectoryStructure = true,
+        GenerateMips = false
+    });
+
+    logger.LogInformation("Skybox: {TexturesExported} textures exported", result.TexturesExported);
+    if (result.TotalFailed > 0)
+    {
+        logger.LogWarning("Skybox: {TotalFailed} failed", result.TotalFailed);
+        foreach (var error in result.Errors.Take(10))
+        {
+            logger.LogError("  {Error}", error);
         }
     }
 }

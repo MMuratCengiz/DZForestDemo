@@ -5,7 +5,7 @@ using BinaryReader = DenOfIz.BinaryReader;
 
 namespace NiziKit.Assets;
 
-public class Texture2d : IAsset
+public class Texture2d
 {
     public string Name { get; set; } = string.Empty;
     public string SourcePath { get; set; } = string.Empty;

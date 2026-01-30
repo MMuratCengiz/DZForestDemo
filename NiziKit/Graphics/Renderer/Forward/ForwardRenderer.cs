@@ -1,3 +1,4 @@
+using System.Numerics;
 using DenOfIz;
 using NiziKit.Application.Timing;
 using NiziKit.Assets;
@@ -13,6 +14,7 @@ public class ForwardRenderer : IRenderer
     private readonly ViewData _viewData;
     private readonly GpuShader _defaultShader;
     private readonly GpuShader _skinnedShader;
+    private readonly SkyboxPass _skyboxPass;
     private readonly List<(GpuShader shader, SurfaceComponent surface, RenderBatch batch)> _drawList = new(256);
 
     private readonly CycledTexture _sceneColor;
@@ -33,6 +35,8 @@ public class ForwardRenderer : IRenderer
         var defaultShader = new DefaultShader();
         _defaultShader = defaultShader.StaticVariant;
         _skinnedShader = defaultShader.SkinnedVariant;
+
+        _skyboxPass = new SkyboxPass();
     }
 
     public CycledTexture Render(RenderFrame frame)
@@ -65,6 +69,17 @@ public class ForwardRenderer : IRenderer
         pass.SetDepthTarget(_sceneDepth, LoadOp.Clear);
 
         pass.Begin();
+
+        var skybox = scene.Skybox;
+        if (skybox is { IsValid: true })
+        {
+            var cam = _viewData.Camera ?? scene.GetActiveCamera();
+            if (cam != null)
+            {
+                Matrix4x4.Invert(cam.ViewProjectionMatrix, out var invVp);
+                _skyboxPass.Execute(pass, invVp, skybox);
+            }
+        }
 
         pass.Bind<ViewBinding>(_viewData);
 
@@ -114,6 +129,7 @@ public class ForwardRenderer : IRenderer
 
     public void Dispose()
     {
+        _skyboxPass.Dispose();
         _sceneColor.Dispose();
         _sceneDepth.Dispose();
     }

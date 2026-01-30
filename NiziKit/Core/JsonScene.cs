@@ -8,6 +8,7 @@ using NiziKit.Components;
 using NiziKit.ContentPipeline;
 using NiziKit.Graphics;
 using NiziKit.Light;
+using NiziKit.Graphics.Renderer.Forward;
 using NiziKit.Physics;
 
 namespace NiziKit.Core;
@@ -24,13 +25,14 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
         Name = sceneData.Name;
 
-        var assetRefs = CollectAssetReferences(sceneData.Objects);
+        var assetRefs = CollectAssetReferences(sceneData.Objects, sceneData.Skybox);
         LoadRequiredAssets(assetRefs);
         PrewarmMeshes(sceneData.Objects);
         LoadCamera(sceneData.Camera);
         LoadCameras(sceneData.Cameras);
         LoadLights(sceneData.Lights);
         LoadObjects(sceneData.Objects);
+        LoadSkybox(sceneData.Skybox);
     }
 
     public override async Task LoadAsync(CancellationToken ct = default)
@@ -41,16 +43,17 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
         Name = sceneData.Name;
 
-        var assetRefs = CollectAssetReferences(sceneData.Objects);
+        var assetRefs = CollectAssetReferences(sceneData.Objects, sceneData.Skybox);
         await LoadRequiredAssetsAsync(assetRefs, ct);
         PrewarmMeshes(sceneData.Objects);
         LoadCamera(sceneData.Camera);
         LoadCameras(sceneData.Cameras);
         LoadLights(sceneData.Lights);
         LoadObjects(sceneData.Objects);
+        LoadSkybox(sceneData.Skybox);
     }
 
-    private HashSet<string> CollectAssetReferences(List<GameObjectJson>? objects)
+    private HashSet<string> CollectAssetReferences(List<GameObjectJson>? objects, SkyboxJson? skybox)
     {
         var refs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         CollectRefsRecursive(objects, refs);
@@ -731,6 +734,36 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
                 }
                 break;
         }
+    }
+
+    private void LoadSkybox(SkyboxJson? skyboxData)
+    {
+        if (skyboxData == null)
+        {
+            return;
+        }
+
+        Skybox = new SkyboxData
+        {
+            Right = LoadSkyboxFace(skyboxData.Right),
+            Left = LoadSkyboxFace(skyboxData.Left),
+            Up = LoadSkyboxFace(skyboxData.Up),
+            Down = LoadSkyboxFace(skyboxData.Down),
+            Front = LoadSkyboxFace(skyboxData.Front),
+            Back = LoadSkyboxFace(skyboxData.Back)
+        };
+    }
+
+    private static Texture2d? LoadSkyboxFace(string? path)
+    {
+        if (string.IsNullOrEmpty(path))
+        {
+            return null;
+        }
+
+        var texture = new Texture2d();
+        texture.Load(path);
+        return texture;
     }
 
     #region IAssetResolver Implementation

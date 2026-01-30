@@ -49,7 +49,8 @@ public class SurfaceBinding : ShaderBinding<SurfaceComponent>
             UVOffset = target.UVOffset,
             AlbedoColor = target.AlbedoColor,
             EmissiveColor = target.EmissiveColor,
-            EmissiveIntensity = target.EmissiveIntensity
+            EmissiveIntensity = target.EmissiveIntensity,
+            HasAlbedoTexture = target.Albedo != null ? 1.0f : 0.0f
         };
         _dataBuffer.Buffer.WriteData(in data, _dataBuffer.Offset);
 
