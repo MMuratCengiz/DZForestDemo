@@ -41,7 +41,7 @@ public static class Editor
             {
                 ApiPreference = new APIPreference
                 {
-                    Windows = APIPreferenceWindows.Directx12,
+                    Windows = APIPreferenceWindows.Vulkan,
                     Linux = APIPreferenceLinux.Vulkan,
                     OSX = APIPreferenceOSX.Metal
                 }

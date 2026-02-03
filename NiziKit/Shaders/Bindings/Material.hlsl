@@ -9,14 +9,14 @@ SamplerState TextureSampler : register(s0, space2);
 
 cbuffer MaterialConstants : register(b4, space2)
 {
-    float MetallicValue;
-    float RoughnessValue;
-    float2 UVScale;
-    float2 UVOffset;
-    float EmissiveIntensity;
-    float _padding1;
     float4 AlbedoColor;
     float3 EmissiveColor;
+    float _pad0;
+    float2 UVScale;
+    float2 UVOffset;
+    float MetallicValue;
+    float RoughnessValue;
+    float EmissiveIntensity;
     float HasAlbedoTexture;
 };
 

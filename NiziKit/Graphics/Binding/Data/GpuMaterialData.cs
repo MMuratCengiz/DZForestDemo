@@ -15,5 +15,4 @@ public struct GpuSurfaceData
     public float RoughnessValue;
     public float EmissiveIntensity;
     public float HasAlbedoTexture;
-    public float _padding1;
 }
