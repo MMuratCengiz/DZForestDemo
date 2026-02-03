@@ -130,7 +130,7 @@ public sealed class GizmoPass : IDisposable
             DebugName = StringView.Create("UnitCubeBuffer")
         });
 
-        lock (GraphicsContext.GpuLock)
+        lock (GraphicsContext.TransferLock)
         {
             var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
             {
@@ -171,7 +171,7 @@ public sealed class GizmoPass : IDisposable
         var modes = new[] { GizmoMode.Translate, GizmoMode.Rotate, GizmoMode.Scale };
         var axes = new[] { GizmoAxis.None, GizmoAxis.X, GizmoAxis.Y, GizmoAxis.Z, GizmoAxis.XY, GizmoAxis.XZ, GizmoAxis.YZ, GizmoAxis.All };
 
-        lock (GraphicsContext.GpuLock)
+        lock (GraphicsContext.TransferLock)
         {
             var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
             {
@@ -303,7 +303,7 @@ public sealed class GizmoPass : IDisposable
             DebugName = StringView.Create("GridBuffer")
         });
 
-        lock (GraphicsContext.GpuLock)
+        lock (GraphicsContext.TransferLock)
         {
             var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
             {

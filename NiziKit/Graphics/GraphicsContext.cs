@@ -44,9 +44,8 @@ public sealed class GraphicsContext : IDisposable
     private readonly CommandQueue _copyQueue;
     private readonly ResourceTracking _resourceTracking = new();
     private readonly Window? _window;
-    private static readonly Lock _gpuLock = new();
 
-    public static Lock GpuLock => _gpuLock;
+    public static Lock TransferLock { get; } = new();
 
     private readonly uint _numFrames;
     private readonly Format _backBufferFormat;

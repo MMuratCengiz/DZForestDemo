@@ -93,7 +93,7 @@ public class Mesh : IDisposable
         SourceAttributes = null;
     }
 
-    public static Mesh LoadFromNiziMesh(byte[] data)
+    public static Mesh Load(byte[] data)
     {
         return NiziMeshReader.ReadFromBytes(data);
     }

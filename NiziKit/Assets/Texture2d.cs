@@ -76,7 +76,7 @@ public class Texture2d
         };
         using var textureData = TextureData.CreateFromData(textureDataDesc);
 
-        lock (GraphicsContext.GpuLock)
+        lock (GraphicsContext.TransferLock)
         {
             var gpuTexture = device.CreateTexture(new TextureDesc
             {
@@ -133,7 +133,7 @@ public class Texture2d
         var deviceInfo = device.DeviceInfo();
         var alignedSize = assetReader.AlignedTotalNumBytes(deviceInfo.Constants);
 
-        lock (GraphicsContext.GpuLock)
+        lock (GraphicsContext.TransferLock)
         {
             var gpuTexture = device.CreateTexture(new TextureDesc
             {
