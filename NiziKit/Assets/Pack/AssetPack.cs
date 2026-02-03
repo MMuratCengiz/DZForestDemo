@@ -288,7 +288,7 @@ public sealed class AssetPack : IDisposable
         Parallel.ForEach(meshPaths, path =>
         {
             var bytes = _provider!.ReadBytes(path);
-            var mesh = Mesh.LoadFromNiziMesh(bytes);
+            var mesh = Mesh.Load(bytes);
             Assets.Register(mesh, path);
             _meshes[path] = mesh;
         });
@@ -299,7 +299,7 @@ public sealed class AssetPack : IDisposable
         var tasks = meshPaths.Select(async path =>
         {
             var bytes = await _provider!.ReadBytesAsync(path, ct);
-            var mesh = Mesh.LoadFromNiziMesh(bytes);
+            var mesh = Mesh.Load(bytes);
             Assets.Register(mesh, path);
             return (path, mesh);
         });

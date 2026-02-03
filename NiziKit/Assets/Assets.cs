@@ -124,7 +124,7 @@ public sealed class Assets : IDisposable
         var numBytes = (uint)data.Length;
         var gpuView = _vertexPool.Allocate(numBytes);
 
-        lock (GraphicsContext.GpuLock)
+        lock (GraphicsContext.TransferLock)
         {
             var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
             {
@@ -164,7 +164,7 @@ public sealed class Assets : IDisposable
         var numBytes = (uint)(sizeof(uint) * indices.Length);
         var gpuView = _indexPool.Allocate(numBytes);
 
-        lock (GraphicsContext.GpuLock)
+        lock (GraphicsContext.TransferLock)
         {
             var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
             {
