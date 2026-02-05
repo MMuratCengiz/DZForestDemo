@@ -6,11 +6,6 @@
     "Synty/Textures/BaseLocomotion/Demo_Textures/T_PolygonApocalypse_01.dztex",
     "Synty/Textures/BaseLocomotion/Demo_Textures/T_Polygon_Dummy_01.dztex"
   ],
-  "shaders": [],
-  "materials": [
-    "Materials/VikingScene.nizimat.json",
-    "Materials/NewMaterial.nizimat.json"
-  ],
   "meshes": [
     "Synty/Models/VikingRealm/FBX/SM_Chr_Attach_Bear_01.nizimesh",
     "Synty/Models/VikingRealm/FBX/SM_Chr_Attach_Fur_01.nizimesh",

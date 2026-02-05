@@ -42,25 +42,6 @@ public partial class PackManagerView : UserControl
         {
             vm.LoadPackCommand.Execute(vm.SelectedPack);
         }
-        else if (args.PropertyName == nameof(PackManagerViewModel.EditingAssetType))
-        {
-            UpdateAssetEditorVisibility(vm.EditingAssetType);
-        }
-    }
-
-    private void UpdateAssetEditorVisibility(AssetFileType type)
-    {
-        var materialPanel = this.FindControl<StackPanel>("MaterialEditorPanel");
-        var shaderPanel = this.FindControl<StackPanel>("ShaderEditorPanel");
-
-        if (materialPanel != null)
-        {
-            materialPanel.IsVisible = type == AssetFileType.Material;
-        }
-        if (shaderPanel != null)
-        {
-            shaderPanel.IsVisible = type == AssetFileType.Shader;
-        }
     }
 
     protected override void OnAttachedToVisualTree(Avalonia.VisualTreeAttachmentEventArgs e)

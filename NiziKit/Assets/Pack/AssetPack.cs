@@ -13,7 +13,6 @@ public sealed class AssetPack : IDisposable
     public string SourcePath { get; private set; } = string.Empty;
 
     private readonly ConcurrentDictionary<string, Texture2d> _textures = new(StringComparer.OrdinalIgnoreCase);
-    private readonly ConcurrentDictionary<string, Graphics.GpuShader> _shaders = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, Mesh> _meshes = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, Skeleton> _skeletons = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, byte[]> _animationData = new(StringComparer.OrdinalIgnoreCase);
@@ -23,7 +22,6 @@ public sealed class AssetPack : IDisposable
     private bool _disposed;
 
     public IReadOnlyDictionary<string, Texture2d> Textures => _textures;
-    public IReadOnlyDictionary<string, Graphics.GpuShader> Shaders => _shaders;
     public IReadOnlyDictionary<string, Mesh> Meshes => _meshes;
     public IReadOnlyDictionary<string, Skeleton> Skeletons => _skeletons;
     public IReadOnlyDictionary<string, byte[]> AnimationData => _animationData;
@@ -51,15 +49,6 @@ public sealed class AssetPack : IDisposable
             throw new KeyNotFoundException($"Texture '{path}' not found in asset pack '{Name}'");
         }
         return texture;
-    }
-
-    public Graphics.GpuShader GetShader(string path)
-    {
-        if (!_shaders.TryGetValue(path, out var shader))
-        {
-            throw new KeyNotFoundException($"Shader '{path}' not found in asset pack '{Name}'");
-        }
-        return shader;
     }
 
     public Mesh GetMesh(string path)
@@ -90,7 +79,6 @@ public sealed class AssetPack : IDisposable
     }
 
     public bool TryGetTexture(string path, out Texture2d? texture) => _textures.TryGetValue(path, out texture);
-    public bool TryGetShader(string path, out Graphics.GpuShader? shader) => _shaders.TryGetValue(path, out shader);
     public bool TryGetMesh(string path, out Mesh? mesh) => _meshes.TryGetValue(path, out mesh);
     public bool TryGetSkeleton(string path, out Skeleton? skeleton) => _skeletons.TryGetValue(path, out skeleton);
     public bool TryGetAnimationData(string path, out byte[]? data) => _animationData.TryGetValue(path, out data);
@@ -99,7 +87,6 @@ public sealed class AssetPack : IDisposable
     public IEnumerable<string> GetSkeletonPaths() => _skeletons.Keys;
     public IEnumerable<string> GetAnimationPaths() => _animationData.Keys;
     public IEnumerable<string> GetTexturePaths() => _textures.Keys;
-    public IEnumerable<string> GetShaderPaths() => _shaders.Keys;
 
     public Texture2d LoadTextureFromPack(string path)
     {
@@ -170,8 +157,7 @@ public sealed class AssetPack : IDisposable
         return definition.Textures
             .Concat(definition.Meshes)
             .Concat(definition.Skeletons)
-            .Concat(definition.Animations)
-            .Concat(definition.Shaders);
+            .Concat(definition.Animations);
     }
 
     private static (IAssetPackProvider provider, string manifestPath) CreateProvider(string path)
@@ -215,7 +201,6 @@ public sealed class AssetPack : IDisposable
     {
         Parallel.Invoke(
             () => LoadTextures(definition.Textures),
-            () => LoadShaders(definition.Shaders),
             () => LoadMeshes(definition.Meshes),
             () => LoadSkeletons(definition.Skeletons),
             () => LoadAnimations(definition.Animations)
@@ -226,7 +211,6 @@ public sealed class AssetPack : IDisposable
     {
         await Task.WhenAll(
             LoadTexturesAsync(definition.Textures, ct),
-            LoadShadersAsync(definition.Shaders, ct),
             LoadMeshesAsync(definition.Meshes, ct),
             LoadSkeletonsAsync(definition.Skeletons, ct),
             LoadAnimationsAsync(definition.Animations, ct)
@@ -257,29 +241,6 @@ public sealed class AssetPack : IDisposable
         foreach (var (path, texture) in await Task.WhenAll(tasks))
         {
             _textures[path] = texture;
-        }
-    }
-
-    private void LoadShaders(List<string> shaderPaths)
-    {
-        Parallel.ForEach(shaderPaths, path =>
-        {
-            var shader = NiziKit.Assets.Assets.LoadShaderFromJson(path);
-            _shaders[path] = shader;
-        });
-    }
-
-    private async Task LoadShadersAsync(List<string> shaderPaths, CancellationToken ct)
-    {
-        var tasks = shaderPaths.Select(async path =>
-        {
-            var shader = await NiziKit.Assets.Assets.LoadShaderFromJsonAsync(path, null, ct);
-            return (path, shader);
-        });
-
-        foreach (var (path, shader) in await Task.WhenAll(tasks))
-        {
-            _shaders[path] = shader;
         }
     }
 
@@ -368,7 +329,6 @@ public sealed class AssetPack : IDisposable
         _disposed = true;
 
         _textures.Clear();
-        _shaders.Clear();
         _meshes.Clear();
 
         foreach (var skeleton in _skeletons.Values)

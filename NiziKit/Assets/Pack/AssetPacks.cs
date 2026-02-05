@@ -44,9 +44,6 @@ public static class AssetPacks
     public static Texture2d GetTexture(string packName, string path)
         => Get(packName).GetTexture(path);
 
-    public static GpuShader GetShader(string packName, string path)
-        => Get(packName).GetShader(path);
-
     public static Mesh GetMesh(string packName, string path)
         => Get(packName).GetMesh(path);
 
@@ -119,18 +116,6 @@ public static class AssetPacks
 
         EnsurePackLoaded(packName);
         return TryGet(packName, out var pack) ? pack?.Textures.GetValueOrDefault(path) : null;
-    }
-
-    public static GpuShader? GetShaderByPath(string path)
-    {
-        var packName = GetPackForPath(path);
-        if (packName == null)
-        {
-            return null;
-        }
-
-        EnsurePackLoaded(packName);
-        return TryGet(packName, out var pack) ? pack?.Shaders.GetValueOrDefault(path) : null;
     }
 
     public static void EnsurePackLoaded(string packName)

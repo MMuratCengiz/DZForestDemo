@@ -77,9 +77,6 @@ public partial class PackManagerViewModel : ObservableObject
     private ObservableCollection<PackAssetEntry> _models = [];
 
     [ObservableProperty]
-    private ObservableCollection<PackAssetEntry> _shaders = [];
-
-    [ObservableProperty]
     private bool _isEditing;
 
     [ObservableProperty]
@@ -111,18 +108,6 @@ public partial class PackManagerViewModel : ObservableObject
 
     [ObservableProperty]
     private string _editingAssetName = "";
-
-    [ObservableProperty]
-    private string _editingShaderName = "";
-
-    [ObservableProperty]
-    private string _editingShaderType = "graphics";
-
-    [ObservableProperty]
-    private string _editingShaderVertexPath = "";
-
-    [ObservableProperty]
-    private string _editingShaderPixelPath = "";
 
     public bool HasSelectedPack => SelectedPack != null;
 
@@ -168,7 +153,6 @@ public partial class PackManagerViewModel : ObservableObject
         PackVersion = "1.0.0";
         Textures.Clear();
         Models.Clear();
-        Shaders.Clear();
         SelectedPack = null;
         IsEditing = true;
         StatusMessage = "Creating new pack...";
@@ -202,13 +186,6 @@ public partial class PackManagerViewModel : ObservableObject
             {
                 var key = Path.GetFileNameWithoutExtension(path);
                 Models.Add(new PackAssetEntry(key, path));
-            }
-
-            Shaders.Clear();
-            foreach (var path in packData.Shaders)
-            {
-                var key = Path.GetFileNameWithoutExtension(path);
-                Shaders.Add(new PackAssetEntry(key, path));
             }
 
             SelectedPack = pack;
@@ -257,14 +234,6 @@ public partial class PackManagerViewModel : ObservableObject
                 }
             }
 
-            foreach (var entry in Shaders)
-            {
-                if (!string.IsNullOrWhiteSpace(entry.Path))
-                {
-                    packData.Shaders.Add(entry.Path);
-                }
-            }
-
             var packFile = Path.Combine(packDir, "pack.nizipack.json");
             var json = packData.ToJson();
             File.WriteAllText(packFile, json);
@@ -292,12 +261,6 @@ public partial class PackManagerViewModel : ObservableObject
     }
 
     [RelayCommand]
-    public void AddShader()
-    {
-        Shaders.Add(new PackAssetEntry());
-    }
-
-    [RelayCommand]
     public void RemoveTexture(PackAssetEntry? entry)
     {
         if (entry != null)
@@ -312,15 +275,6 @@ public partial class PackManagerViewModel : ObservableObject
         if (entry != null)
         {
             Models.Remove(entry);
-        }
-    }
-
-    [RelayCommand]
-    public void RemoveShader(PackAssetEntry? entry)
-    {
-        if (entry != null)
-        {
-            Shaders.Remove(entry);
         }
     }
 
@@ -341,12 +295,6 @@ public partial class PackManagerViewModel : ObservableObject
     public void BrowseModel()
     {
         OpenFileBrowser(AssetFileType.Model, Models, "Select Model");
-    }
-
-    [RelayCommand]
-    public void BrowseShader()
-    {
-        OpenFileBrowser(AssetFileType.Shader, Shaders, "Select Shader");
     }
 
     private void OpenFileBrowser(AssetFileType type, ObservableCollection<PackAssetEntry> collection, string title)
@@ -378,10 +326,6 @@ public partial class PackManagerViewModel : ObservableObject
         var packRelativePath = GetPackRelativePath(relativePath);
 
         var key = Path.GetFileNameWithoutExtension(entry.Name);
-        if (entry.Name.EndsWith(".nizishp.json", StringComparison.OrdinalIgnoreCase))
-        {
-            key = entry.Name[..^".nizishp.json".Length];
-        }
 
         if (!_pendingBrowseCollection.Any(e => e.Path == packRelativePath))
         {
@@ -427,53 +371,7 @@ public partial class PackManagerViewModel : ObservableObject
         }
 
         EditingAsset = entry;
-
-        if (entry.Path.EndsWith(".nizishp.json", StringComparison.OrdinalIgnoreCase))
-        {
-            EditingAssetType = AssetFileType.Shader;
-            AssetEditorTitle = $"Edit Shader: {entry.Key}";
-            LoadShaderForEditing(fullPath);
-            IsAssetEditorOpen = true;
-        }
-        else
-        {
-            StatusMessage = "Only shaders can be edited";
-        }
-    }
-
-    private void LoadShaderForEditing(string path)
-    {
-        try
-        {
-            var json = File.ReadAllText(path);
-            using var doc = JsonDocument.Parse(json);
-            var root = doc.RootElement;
-
-            EditingShaderName = root.TryGetProperty("name", out var name) ? name.GetString() ?? "" : "";
-            EditingShaderType = root.TryGetProperty("type", out var type) ? type.GetString() ?? "graphics" : "graphics";
-
-            if (root.TryGetProperty("stages", out var stages) && stages.ValueKind == JsonValueKind.Array)
-            {
-                foreach (var stage in stages.EnumerateArray())
-                {
-                    var stageType = stage.TryGetProperty("stage", out var st) ? st.GetString() : "";
-                    var stagePath = stage.TryGetProperty("path", out var sp) ? sp.GetString() ?? "" : "";
-
-                    if (stageType == "vertex")
-                    {
-                        EditingShaderVertexPath = stagePath;
-                    }
-                    else if (stageType == "pixel")
-                    {
-                        EditingShaderPixelPath = stagePath;
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            StatusMessage = $"Error loading shader: {ex.Message}";
-        }
+        StatusMessage = "Asset editing not supported for this type";
     }
 
     [RelayCommand]
@@ -496,11 +394,6 @@ public partial class PackManagerViewModel : ObservableObject
 
         try
         {
-            if (EditingAssetType == AssetFileType.Shader)
-            {
-                SaveShader(fullPath);
-            }
-
             StatusMessage = $"Saved: {assetKey}";
             IsAssetEditorOpen = false;
             EditingAsset = null;
@@ -509,38 +402,6 @@ public partial class PackManagerViewModel : ObservableObject
         {
             StatusMessage = $"Error saving: {ex.Message}";
         }
-    }
-
-    private void SaveShader(string path)
-    {
-        var stages = new List<object>();
-
-        if (!string.IsNullOrWhiteSpace(EditingShaderVertexPath))
-        {
-            stages.Add(new { stage = "vertex", path = EditingShaderVertexPath, entryPoint = "VSMain" });
-        }
-        if (!string.IsNullOrWhiteSpace(EditingShaderPixelPath))
-        {
-            stages.Add(new { stage = "pixel", path = EditingShaderPixelPath, entryPoint = "PSMain" });
-        }
-
-        var shader = new
-        {
-            name = EditingShaderName,
-            type = EditingShaderType,
-            stages,
-            pipeline = new
-            {
-                primitiveTopology = "triangle",
-                cullMode = "backFace",
-                fillMode = "solid",
-                depthTest = new { enable = true, compareOp = "less", write = true },
-                blend = new { enable = false, renderTargetWriteMask = 15 }
-            }
-        };
-
-        var json = JsonSerializer.Serialize(shader, NiziJsonSerializationOptions.Default);
-        File.WriteAllText(path, json);
     }
 
     private string? GetRelativePath(string fullPath)
@@ -557,51 +418,6 @@ public partial class PackManagerViewModel : ObservableObject
         return relative.Replace(Path.DirectorySeparatorChar, '/');
     }
 
-    [RelayCommand]
-    public void CreateShader()
-    {
-        if (string.IsNullOrWhiteSpace(PackName))
-        {
-            StatusMessage = "Create a pack first";
-            return;
-        }
-
-        var packDir = Path.Combine(_packsDirectory, PackName);
-        Directory.CreateDirectory(packDir);
-
-        var baseName = $"shader_{Shaders.Count + 1}";
-        var fileName = $"{baseName}.nizishp.json";
-        var filePath = Path.Combine(packDir, fileName);
-
-        var shader = new
-        {
-            name = baseName,
-            type = "graphics",
-            stages = new[]
-            {
-                new { stage = "vertex", path = "", entryPoint = "VSMain" },
-                new { stage = "pixel", path = "", entryPoint = "PSMain" }
-            },
-            pipeline = new
-            {
-                primitiveTopology = "triangle",
-                cullMode = "backFace",
-                fillMode = "solid",
-                depthTest = new { enable = true, compareOp = "less", write = true },
-                blend = new { enable = false, renderTargetWriteMask = 15 }
-            }
-        };
-
-        var json = JsonSerializer.Serialize(shader, NiziJsonSerializationOptions.Default);
-        File.WriteAllText(filePath, json);
-
-        var relativePath = GetRelativePath(filePath) ?? fileName;
-        var entry = new PackAssetEntry(baseName, relativePath);
-        Shaders.Add(entry);
-        StatusMessage = $"Created shader: {baseName}";
-        OpenAssetEditor(entry);
-    }
-
     public void AddAssetEntry(AssetFileType type, string key, string relativePath)
     {
         var entry = new PackAssetEntry(key, relativePath);
@@ -613,9 +429,6 @@ public partial class PackManagerViewModel : ObservableObject
                 break;
             case AssetFileType.Model:
                 Models.Add(entry);
-                break;
-            case AssetFileType.Shader:
-                Shaders.Add(entry);
                 break;
         }
     }

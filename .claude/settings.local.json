@@ -102,7 +102,14 @@
       "Bash(while read f)",
       "Bash(if [ ! -f \"$f\" ])",
       "Bash(then echo \"MISS $f\")",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "WebFetch(domain:docs.monogame.net)",
+      "Bash(del \"C:\\\\Workspace\\\\DZForestDemo\\\\DZForestDemo\\\\Assets\\\\Materials\\\\Fox.nizimat.json\")",
+      "Bash(del \"C:\\\\Workspace\\\\DZForestDemo\\\\DZForestDemo\\\\Assets\\\\Materials\\\\NewMaterial.nizimat.json\")",
+      "Bash(del \"C:\\\\Workspace\\\\DZForestDemo\\\\DZForestDemo\\\\Assets\\\\Materials\\\\NewMaterial_1.nizimat.json\")",
+      "Bash(del \"C:\\\\Workspace\\\\DZForestDemo\\\\DZForestDemo\\\\Assets\\\\Materials\\\\VikingScene.nizimat.json\")",
+      "Bash(del \"C:\\\\Workspace\\\\DZForestDemo\\\\DZForestDemo\\\\Assets\\\\Materials\\\\Snake\\\\Floor.nizimat.json\")",
+      "Bash(del \"C:\\\\Workspace\\\\DZForestDemo\\\\DZForestDemo\\\\Assets\\\\Materials\\\\Snake\\\\Wall.nizimat.json\")"
     ]
   }
 }

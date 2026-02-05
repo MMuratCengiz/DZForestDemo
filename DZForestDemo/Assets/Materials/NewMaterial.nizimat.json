@@ -1,8 +1,0 @@
-{
-  "name": "Dummy",
-  "shader": "Shaders/Default.nizishp.json",
-  "textures": {
-    "albedo": "viking:T_Polygon_Dummy_01"
-  },
-  "variant": "SKINNED"
-}

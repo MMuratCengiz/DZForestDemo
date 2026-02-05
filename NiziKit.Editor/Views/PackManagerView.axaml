@@ -251,62 +251,6 @@
                     </Grid>
                 </TabItem>
 
-                <TabItem Header="Shaders">
-                    <Grid RowDefinitions="*,Auto">
-                        <ScrollViewer Grid.Row="0"
-                                      HorizontalScrollBarVisibility="Disabled"
-                                      VerticalScrollBarVisibility="Auto">
-                            <ItemsControl ItemsSource="{Binding Shaders}">
-                                <ItemsControl.ItemsPanel>
-                                    <ItemsPanelTemplate>
-                                        <WrapPanel Orientation="Horizontal"/>
-                                    </ItemsPanelTemplate>
-                                </ItemsControl.ItemsPanel>
-                                <ItemsControl.ItemTemplate>
-                                    <DataTemplate x:DataType="vm:PackAssetEntry">
-                                        <Border Classes="content-tile"
-                                                DoubleTapped="OnAssetCardDoubleTapped"
-                                                Tag="{Binding}">
-                                            <Grid RowDefinitions="*,Auto,Auto">
-                                                <ui:SymbolIcon Grid.Row="0"
-                                                               Symbol="Code"
-                                                               FontSize="{StaticResource IconSizeXL}"
-                                                               Foreground="{StaticResource EditorTextSecondary}"
-                                                               VerticalAlignment="Center"
-                                                               HorizontalAlignment="Center"/>
-                                                <TextBlock Grid.Row="1"
-                                                           Text="{Binding Key}"
-                                                           TextTrimming="CharacterEllipsis"
-                                                           TextAlignment="Center"
-                                                           ToolTip.Tip="{Binding Key}"
-                                                           Margin="0,8,0,0"/>
-                                                <Button Grid.Row="2"
-                                                        Content="Remove"
-                                                        Padding="10,6"
-                                                        HorizontalAlignment="Center"
-                                                        Margin="0,6,0,0"
-                                                        Command="{Binding $parent[ItemsControl].DataContext.RemoveShaderCommand}"
-                                                        CommandParameter="{Binding}"/>
-                                            </Grid>
-                                        </Border>
-                                    </DataTemplate>
-                                </ItemsControl.ItemTemplate>
-                            </ItemsControl>
-                        </ScrollViewer>
-                        <StackPanel Grid.Row="1"
-                                    Orientation="Horizontal"
-                                    Spacing="10"
-                                    Margin="12">
-                            <Button Content="+ Add Shader"
-                                    Command="{Binding BrowseShaderCommand}"
-                                    Padding="14,8"/>
-                            <Button Content="+ Create New"
-                                    Command="{Binding CreateShaderCommand}"
-                                    Padding="14,8"
-                                    Classes="accent"/>
-                        </StackPanel>
-                    </Grid>
-                </TabItem>
             </TabControl>
 
             <Border Grid.Row="2"
@@ -406,27 +350,6 @@
                     <Grid ColumnDefinitions="110,*">
                         <TextBlock Text="Roughness" VerticalAlignment="Center" Foreground="{StaticResource EditorTextSecondary}"/>
                         <TextBox Grid.Column="1" Text="{Binding EditingAssetRoughness}"/>
-                    </Grid>
-                </StackPanel>
-
-                <StackPanel Grid.Row="1"
-                            x:Name="ShaderEditorPanel"
-                            Spacing="14">
-                    <Grid ColumnDefinitions="110,*">
-                        <TextBlock Text="Name" VerticalAlignment="Center" Foreground="{StaticResource EditorTextSecondary}"/>
-                        <TextBox Grid.Column="1" Text="{Binding EditingShaderName}"/>
-                    </Grid>
-                    <Grid ColumnDefinitions="110,*">
-                        <TextBlock Text="Type" VerticalAlignment="Center" Foreground="{StaticResource EditorTextSecondary}"/>
-                        <TextBox Grid.Column="1" Text="{Binding EditingShaderType}"/>
-                    </Grid>
-                    <Grid ColumnDefinitions="110,*">
-                        <TextBlock Text="Vertex Path" VerticalAlignment="Center" Foreground="{StaticResource EditorTextSecondary}"/>
-                        <TextBox Grid.Column="1" Text="{Binding EditingShaderVertexPath}"/>
-                    </Grid>
-                    <Grid ColumnDefinitions="110,*">
-                        <TextBlock Text="Pixel Path" VerticalAlignment="Center" Foreground="{StaticResource EditorTextSecondary}"/>
-                        <TextBox Grid.Column="1" Text="{Binding EditingShaderPixelPath}"/>
                     </Grid>
                 </StackPanel>
 

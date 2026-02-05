@@ -23,14 +23,6 @@
         "description": "Relative path to the texture file"
       }
     },
-    "materials": {
-      "type": "object",
-      "description": "Named material assets with relative paths to .nizimat.json files",
-      "additionalProperties": {
-        "type": "string",
-        "description": "Relative path to the material JSON file"
-      }
-    },
     "models": {
       "type": "object",
       "description": "Named model assets with relative paths",

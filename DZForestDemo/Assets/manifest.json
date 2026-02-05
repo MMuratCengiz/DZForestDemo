@@ -30,10 +30,6 @@
       "pack": "newpack",
       "type": "mesh"
     },
-    "Materials/NewMaterial_1.nizimat.json": {
-      "pack": "newpack",
-      "type": "material"
-    },
     "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex": {
       "pack": "viking",
       "type": "texture"
@@ -157,14 +153,6 @@
     "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/InAir/A_Jump_Sprinting_Masc.ozzanim": {
       "pack": "viking",
       "type": "animation"
-    },
-    "Materials/VikingScene.nizimat.json": {
-      "pack": "viking",
-      "type": "material"
-    },
-    "Materials/NewMaterial.nizimat.json": {
-      "pack": "viking",
-      "type": "material"
     }
   }
 }

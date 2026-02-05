@@ -40,8 +40,6 @@ public partial class FolderTreeNode : ObservableObject
         {
             AssetFileType.Model => "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
             AssetFileType.Texture => "M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z",
-            AssetFileType.Material => "M12 22C6.49 22 2 17.51 2 12S6.49 2 12 2s10 4.04 10 9c0 3.31-2.69 6-6 6h-1.77c-.28 0-.5.22-.5.5 0 .12.05.23.13.33.41.47.64 1.06.64 1.67A2.5 2.5 0 0 1 12 22z",
-            AssetFileType.Shader => "M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z",
             _ => "M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"
         };
 }
@@ -110,8 +108,6 @@ public partial class ContentItem : ObservableObject
         AssetFileType.Folder => "M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z",
         AssetFileType.Model => "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
         AssetFileType.Texture => "M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z",
-        AssetFileType.Material => "M12 22C6.49 22 2 17.51 2 12S6.49 2 12 2s10 4.04 10 9c0 3.31-2.69 6-6 6h-1.77c-.28 0-.5.22-.5.5 0 .12.05.23.13.33.41.47.64 1.06.64 1.67A2.5 2.5 0 0 1 12 22z",
-        AssetFileType.Shader => "M9.4 16.6L4.8 12l4.6-4.6L8 6l-6 6 6 6 1.4-1.4zm5.2 0l4.6-4.6-4.6-4.6L16 6l6 6-6 6-1.4-1.4z",
         AssetFileType.Scene => "M12 5.69l5 4.5V18h-2v-6H9v6H7v-7.81l5-4.5M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z",
         AssetFileType.Pack => "M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6 10H6v-2h8v2zm4-4H6v-2h12v2z",
         _ => "M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"
@@ -122,8 +118,6 @@ public partial class ContentItem : ObservableObject
         AssetFileType.Model when HasModelInfo => $"Model - {MeshCount} mesh{(MeshCount != 1 ? "es" : "")}{(HasSkeleton ? $", {BoneCount} bones, {AnimationCount} anim{(AnimationCount != 1 ? "s" : "")}" : "")}",
         AssetFileType.Model => "Model",
         AssetFileType.Texture => "Texture",
-        AssetFileType.Material => "Material",
-        AssetFileType.Shader => "Shader",
         AssetFileType.Scene => "Scene",
         AssetFileType.Pack => "Asset Pack",
         AssetFileType.Folder => "Folder",
@@ -327,30 +321,6 @@ public partial class ContentBrowserViewModel : ObservableObject
             });
         }
 
-        foreach (var materialPath in pack.Materials)
-        {
-            packNode.Children.Add(new FolderTreeNode
-            {
-                Name = Path.GetFileNameWithoutExtension(materialPath),
-                FullPath = Path.Combine(_assetsDirectory, materialPath),
-                IsPack = false,
-                PackName = pack.Name,
-                AssetType = AssetFileType.Material
-            });
-        }
-
-        foreach (var shaderPath in pack.Shaders)
-        {
-            packNode.Children.Add(new FolderTreeNode
-            {
-                Name = Path.GetFileNameWithoutExtension(shaderPath),
-                FullPath = Path.Combine(_assetsDirectory, shaderPath),
-                IsPack = false,
-                PackName = pack.Name,
-                AssetType = AssetFileType.Shader
-            });
-        }
-
         return packNode;
     }
 
@@ -544,10 +514,6 @@ public partial class ContentBrowserViewModel : ObservableObject
         {
             NavigateTo(item.FullPath);
         }
-        else if (item.Type == AssetFileType.Shader)
-        {
-            OpenAssetEditor(item);
-        }
     }
 
     public void OpenPack(string packName, string packPath)
@@ -611,58 +577,6 @@ public partial class ContentBrowserViewModel : ObservableObject
         StatusMessage = $"Created folder: {Path.GetFileName(path)}";
         RefreshCurrentTab();
         RefreshFolderTree();
-    }
-
-    [RelayCommand]
-    public void CreateShader()
-    {
-        if (SelectedTab == null)
-        {
-            return;
-        }
-
-        var baseName = "NewShader";
-        var fileName = $"{baseName}.nizishp.json";
-        var path = Path.Combine(SelectedTab.CurrentPath, fileName);
-        var counter = 1;
-
-        while (File.Exists(path))
-        {
-            fileName = $"{baseName}_{counter++}.nizishp.json";
-            path = Path.Combine(SelectedTab.CurrentPath, fileName);
-        }
-
-        var schemaPath = GetRelativeSchemaPath(path, "nizishp.schema.json");
-        var shader = new Dictionary<string, object>
-        {
-            ["$schema"] = schemaPath,
-            ["name"] = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(fileName)),
-            ["type"] = "graphics",
-            ["stages"] = new[]
-            {
-                new Dictionary<string, object> { ["stage"] = "vertex", ["path"] = "", ["entryPoint"] = "VSMain" },
-                new Dictionary<string, object> { ["stage"] = "pixel", ["path"] = "", ["entryPoint"] = "PSMain" }
-            },
-            ["pipeline"] = new Dictionary<string, object>
-            {
-                ["primitiveTopology"] = "triangle",
-                ["cullMode"] = "backFace",
-                ["fillMode"] = "solid",
-                ["depthTest"] = new Dictionary<string, object> { ["enable"] = true, ["compareOp"] = "less", ["write"] = true },
-                ["blend"] = new Dictionary<string, object> { ["enable"] = false, ["renderTargetWriteMask"] = 15 }
-            }
-        };
-
-        var json = JsonSerializer.Serialize(shader, NiziJsonSerializationOptions.Default);
-        File.WriteAllText(path, json);
-        StatusMessage = $"Created shader: {fileName}";
-        RefreshCurrentTab();
-
-        var item = SelectedTab.Items.FirstOrDefault(i => i.FullPath == path);
-        if (item != null)
-        {
-            OpenAssetEditor(item);
-        }
     }
 
     [RelayCommand]
@@ -958,10 +872,6 @@ public partial class ContentBrowserViewModel : ObservableObject
 
             var relativePath = Path.GetRelativePath(_assetsDirectory, SelectedItem.FullPath).Replace('\\', '/');
             var assetKey = Path.GetFileNameWithoutExtension(SelectedItem.Name);
-            if (assetKey.EndsWith(".nizimat") || assetKey.EndsWith(".nizishp"))
-            {
-                assetKey = Path.GetFileNameWithoutExtension(assetKey);
-            }
 
             switch (SelectedItem.Type)
             {
@@ -981,24 +891,6 @@ public partial class ContentBrowserViewModel : ObservableObject
                         return;
                     }
                     packData.Textures.Add(relativePath);
-                    break;
-
-                case AssetFileType.Material:
-                    if (packData.Materials.Contains(relativePath))
-                    {
-                        StatusMessage = $"Material '{assetKey}' already exists in pack";
-                        return;
-                    }
-                    packData.Materials.Add(relativePath);
-                    break;
-
-                case AssetFileType.Shader:
-                    if (packData.Shaders.Contains(relativePath))
-                    {
-                        StatusMessage = $"Shader '{assetKey}' already exists in pack";
-                        return;
-                    }
-                    packData.Shaders.Add(relativePath);
                     break;
 
                 default:
@@ -1046,10 +938,6 @@ public partial class ContentBrowserViewModel : ObservableObject
 
             var relativePath = GetRelativePath(item.FullPath) ?? item.Name;
             var assetKey = Path.GetFileNameWithoutExtension(item.Name);
-            if (assetKey.EndsWith(".nizimat") || assetKey.EndsWith(".nizishp"))
-            {
-                assetKey = Path.GetFileNameWithoutExtension(assetKey);
-            }
 
             var removed = false;
             switch (item.Type)
@@ -1059,12 +947,6 @@ public partial class ContentBrowserViewModel : ObservableObject
                     break;
                 case AssetFileType.Texture:
                     removed = packData.Textures.Remove(relativePath);
-                    break;
-                case AssetFileType.Material:
-                    removed = packData.Materials.Remove(relativePath);
-                    break;
-                case AssetFileType.Shader:
-                    removed = packData.Shaders.Remove(relativePath);
                     break;
             }
 
@@ -1167,8 +1049,6 @@ public partial class ContentBrowserViewModel : ObservableObject
     {
         NormalizePathList(pack.Meshes);
         NormalizePathList(pack.Textures);
-        NormalizePathList(pack.Materials);
-        NormalizePathList(pack.Shaders);
     }
 
     private static void NormalizePathList(List<string> paths)

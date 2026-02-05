@@ -41,18 +41,6 @@ public static class NiziPackBuilder
             AddFile(files, path, assetsRoot);
         }
 
-        foreach (var (_, path) in manifest.Shaders)
-        {
-            AddFile(files, path, assetsRoot);
-            CollectShaderIncludes(files, path, assetsRoot);
-        }
-
-        foreach (var (_, path) in manifest.Materials)
-        {
-            AddFile(files, path, assetsRoot);
-            CollectMaterialDependencies(files, path, assetsRoot);
-        }
-
         foreach (var (_, path) in manifest.Meshes)
         {
             AddFile(files, path, assetsRoot);
@@ -88,84 +76,6 @@ public static class NiziPackBuilder
         }
 
         files.Add((normalizedPath, fullPath));
-    }
-
-    private static void CollectShaderIncludes(List<(string path, string fullPath)> files, string shaderPath, string assetsRoot)
-    {
-        var fullPath = Path.Combine(assetsRoot, shaderPath.Replace('/', Path.DirectorySeparatorChar));
-        if (!File.Exists(fullPath))
-        {
-            return;
-        }
-
-        var shaderDir = Path.GetDirectoryName(shaderPath)?.Replace('\\', '/') ?? "";
-
-        try
-        {
-            var shaderJson = File.ReadAllText(fullPath);
-            var shader = JsonSerializer.Deserialize<ShaderJson>(shaderJson);
-            if (shader?.Base?.Stages != null)
-            {
-                foreach (var stage in shader.Base.Stages)
-                {
-                    if (stage.Path != null)
-                    {
-                        var stagePath = string.IsNullOrEmpty(shaderDir)
-                            ? stage.Path
-                            : $"{shaderDir}/{stage.Path}";
-                        AddFile(files, stagePath, assetsRoot);
-                    }
-                }
-            }
-        }
-        catch
-        {
-        }
-    }
-
-    private static bool IsPackReference(string? path) => path != null && path.Contains(':');
-
-    private static void AddTextureIfFilePath(List<(string path, string fullPath)> files, string? texturePath, string assetsRoot)
-    {
-        if (texturePath != null && !IsPackReference(texturePath))
-        {
-            AddFile(files, texturePath, assetsRoot);
-        }
-    }
-
-    private static void CollectMaterialDependencies(List<(string path, string fullPath)> files, string materialPath, string assetsRoot)
-    {
-        var fullPath = Path.Combine(assetsRoot, materialPath.Replace('/', Path.DirectorySeparatorChar));
-        if (!File.Exists(fullPath))
-        {
-            return;
-        }
-
-        try
-        {
-            var materialJson = File.ReadAllText(fullPath);
-            var material = JsonSerializer.Deserialize<MaterialJson>(materialJson);
-
-            if (material?.Shader != null && !material.Shader.StartsWith("Builtin/", StringComparison.OrdinalIgnoreCase))
-            {
-                AddFile(files, material.Shader, assetsRoot);
-                CollectShaderIncludes(files, material.Shader, assetsRoot);
-            }
-
-            if (material?.Textures != null)
-            {
-                var textures = material.Textures;
-                AddTextureIfFilePath(files, textures.Albedo, assetsRoot);
-                AddTextureIfFilePath(files, textures.Normal, assetsRoot);
-                AddTextureIfFilePath(files, textures.Metallic, assetsRoot);
-                AddTextureIfFilePath(files, textures.Roughness, assetsRoot);
-                AddTextureIfFilePath(files, textures.Ao, assetsRoot);
-                AddTextureIfFilePath(files, textures.Emissive, assetsRoot);
-            }
-        }
-        catch
-        {
-        }
     }
 
     private static void WritePackFile(FileStream output, List<(string path, string fullPath)> files, string assetsRoot)
@@ -301,12 +211,6 @@ public static class NiziPackBuilder
         [JsonPropertyName("textures")]
         public Dictionary<string, string> Textures { get; set; } = new();
 
-        [JsonPropertyName("shaders")]
-        public Dictionary<string, string> Shaders { get; set; } = new();
-
-        [JsonPropertyName("materials")]
-        public Dictionary<string, string> Materials { get; set; } = new();
-
         [JsonPropertyName("meshes")]
         public Dictionary<string, string> Meshes { get; set; } = new();
 
@@ -315,56 +219,5 @@ public static class NiziPackBuilder
 
         [JsonPropertyName("animations")]
         public Dictionary<string, string> Animations { get; set; } = new();
-    }
-
-    private class ShaderJson
-    {
-        [JsonPropertyName("base")]
-        public ShaderBaseJson? Base { get; set; }
-    }
-
-    private class ShaderBaseJson
-    {
-        [JsonPropertyName("stages")]
-        public List<ShaderStageJson>? Stages { get; set; }
-    }
-
-    private class ShaderStageJson
-    {
-        [JsonPropertyName("stage")]
-        public string? Stage { get; set; }
-
-        [JsonPropertyName("path")]
-        public string? Path { get; set; }
-    }
-
-    private class MaterialJson
-    {
-        [JsonPropertyName("shader")]
-        public string? Shader { get; set; }
-
-        [JsonPropertyName("textures")]
-        public MaterialTexturesJson? Textures { get; set; }
-    }
-
-    private class MaterialTexturesJson
-    {
-        [JsonPropertyName("albedo")]
-        public string? Albedo { get; set; }
-
-        [JsonPropertyName("normal")]
-        public string? Normal { get; set; }
-
-        [JsonPropertyName("metallic")]
-        public string? Metallic { get; set; }
-
-        [JsonPropertyName("roughness")]
-        public string? Roughness { get; set; }
-
-        [JsonPropertyName("ao")]
-        public string? Ao { get; set; }
-
-        [JsonPropertyName("emissive")]
-        public string? Emissive { get; set; }
     }
 }

@@ -174,11 +174,6 @@ public static class Content
         CancellationToken ct = default)
         => Assets.Assets.LoadComputeProgramAsync(computePath, defines, ct);
 
-    public static GpuShader LoadShader(string path, string? variant = null)
-        => Assets.Assets.LoadShaderFromJson(path, variant);
-
-    public static Task<GpuShader> LoadShaderAsync(string path, string? variant = null, CancellationToken ct = default)
-        => Assets.Assets.LoadShaderFromJsonAsync(path, variant, ct);
 
     private static void EnsureInitialized()
     {

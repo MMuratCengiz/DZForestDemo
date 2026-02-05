@@ -800,16 +800,6 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         return AssetPacks.GetTextureByPath(reference);
     }
 
-    public GpuShader? ResolveShader(string reference)
-    {
-        if (string.IsNullOrEmpty(reference))
-        {
-            return null;
-        }
-
-        return AssetPacks.GetShaderByPath(reference);
-    }
-
     public Skeleton? ResolveSkeleton(string reference)
     {
         if (string.IsNullOrEmpty(reference))

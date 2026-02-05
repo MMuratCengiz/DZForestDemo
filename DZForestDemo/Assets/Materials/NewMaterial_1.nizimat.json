@@ -1,7 +1,0 @@
-{
-  "name": "DarkFantasyMaterial",
-  "shader": "Shaders/Default.nizishp.json",
-  "textures": {
-    "albedo": "Synty/Textures/DarkFantasy/Textures/Alts/PolygonDarkFantasy_Texture_01_A.png"
-  }
-}

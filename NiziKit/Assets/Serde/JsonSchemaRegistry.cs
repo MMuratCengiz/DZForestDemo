@@ -5,8 +5,6 @@ public static class JsonSchemaRegistry
     private static readonly Dictionary<string, string> ExtensionToSchema = new(StringComparer.OrdinalIgnoreCase)
     {
         { ".niziscene.json", "niziscene" },
-        { ".nizishp.json", "nizishp" },
-        { ".nizimat.json", "nizimat" },
         { ".nizipack.json", "nizipack" }
     };
 

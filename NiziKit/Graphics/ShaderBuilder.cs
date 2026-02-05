@@ -90,63 +90,6 @@ public partial class ShaderBuilder
         return new ShaderProgram(programDesc);
     }
 
-    public ShaderProgram CompileFromJson(ShaderProgramJson shaderJson, string basePath, string? variantName = null)
-    {
-        var includeHandler = new ShaderIncludeHandler();
-        var loadedFiles = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        var stages = new List<ShaderStageDesc>();
-
-        foreach (var stageJson in shaderJson.GetStages(variantName))
-        {
-            var stagePath = Path.IsPathRooted(stageJson.Path)
-                ? stageJson.Path
-                : Path.Combine(basePath, stageJson.Path).Replace('\\', '/');
-
-            var stageData = LoadShaderWithIncludes(stagePath, includeHandler, loadedFiles);
-
-            var stageDesc = new ShaderStageDesc
-            {
-                Stage = (uint)stageJson.Stage,
-                Path = StringView.Create(stagePath),
-                Data = ByteArray.Create(stageData),
-                EntryPoint = StringView.Create(stageJson.EntryPoint)
-            };
-
-            var mergedDefines = shaderJson.GetDefinesForStage(stageJson, variantName);
-            if (mergedDefines is { Count: > 0 })
-            {
-                stageDesc.Defines = CreateDefinesArray(mergedDefines);
-            }
-
-            if (stageJson.RayTracing != null)
-            {
-                stageDesc.RayTracing = ShaderProgramJson.ConvertRayTracingShaderDesc(stageJson.RayTracing);
-            }
-
-            if (stageJson.Bindless != null)
-            {
-                stageDesc.Bindless = ShaderProgramJson.ConvertBindlessDesc(stageJson.Bindless);
-            }
-
-            stages.Add(stageDesc);
-        }
-
-        using var stagesArray = ShaderStageDescArray.Create(stages.ToArray());
-        var programDesc = new ShaderProgramDesc
-        {
-            ShaderStages = stagesArray,
-            IncludeHandler = includeHandler
-        };
-
-        var pipelineType = shaderJson.DetectPipelineType(variantName);
-        if (pipelineType == PipelineType.RayTracing)
-        {
-            programDesc.RayTracing = shaderJson.ToShaderRayTracingDesc(variantName);
-        }
-
-        return new ShaderProgram(programDesc);
-    }
-
     public ShaderProgram CompileTessellation(
         string vertexPath,
         string hullPath,
@@ -419,15 +362,6 @@ public partial class ShaderBuilder
         CancellationToken ct = default)
     {
         return Task.Run(() => CompileCompute(computePath, csEntry, defines), ct);
-    }
-
-    public Task<ShaderProgram> CompileFromJsonAsync(
-        ShaderProgramJson shaderJson,
-        string basePath,
-        string? variantName = null,
-        CancellationToken ct = default)
-    {
-        return Task.Run(() => CompileFromJson(shaderJson, basePath, variantName), ct);
     }
 
     private static byte[] LoadShaderWithIncludes(

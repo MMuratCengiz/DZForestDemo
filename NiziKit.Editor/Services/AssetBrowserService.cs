@@ -29,8 +29,6 @@ public class AssetBrowserService
             AssetRefType.Texture => GetAllTextures(),
             AssetRefType.Skeleton => GetAllSkeletons(),
             AssetRefType.Animation => GetAllAnimations(),
-            AssetRefType.Shader => GetAllShaders(),
-            AssetRefType.Material => GetAllMaterials(),
             _ => []
         };
     }
@@ -48,7 +46,6 @@ public class AssetBrowserService
             AssetRefType.Texture => AssetPacks.GetTextureByPath(reference),
             AssetRefType.Skeleton => ResolveSkeleton(reference),
             AssetRefType.Animation => ResolveAnimationData(reference),
-            AssetRefType.Shader => ResolveShader(reference),
             _ => null
         };
     }
@@ -66,23 +63,6 @@ public class AssetBrowserService
     private byte[]? ResolveAnimationData(string reference)
     {
         return AssetPacks.GetAnimationDataByPath(reference);
-    }
-
-    private NiziKit.Graphics.GpuShader? ResolveShader(string reference)
-    {
-        foreach (var packName in GetLoadedPacks())
-        {
-            if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
-            {
-                continue;
-            }
-
-            if (pack.TryGetShader(reference, out var shader))
-            {
-                return shader;
-            }
-        }
-        return null;
     }
 
     public IReadOnlyList<AssetInfo> GetAllMeshes()
@@ -161,46 +141,4 @@ public class AssetBrowserService
         return animations;
     }
 
-    public IReadOnlyList<AssetInfo> GetAllShaders()
-    {
-        var shaders = new List<AssetInfo>();
-        foreach (var packName in GetLoadedPacks())
-        {
-            if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
-            {
-                continue;
-            }
-
-            foreach (var shaderPath in pack.GetShaderPaths())
-            {
-                var fileName = System.IO.Path.GetFileName(shaderPath);
-                shaders.Add(new AssetInfo { Name = fileName, Path = shaderPath, Pack = packName });
-            }
-        }
-        return shaders;
-    }
-
-    public IReadOnlyList<AssetInfo> GetAllMaterials()
-    {
-        var materials = new List<AssetInfo>();
-        foreach (var packName in GetLoadedPacks())
-        {
-            if (!AssetPacks.TryGet(packName, out var pack) || pack == null)
-            {
-                continue;
-            }
-
-            var packDir = System.IO.Path.GetDirectoryName(pack.Name) ?? "";
-            var materialsDir = System.IO.Path.Combine(packDir, "Materials");
-            if (System.IO.Directory.Exists(materialsDir))
-            {
-                foreach (var materialFile in System.IO.Directory.GetFiles(materialsDir, "*.nizimat.json"))
-                {
-                    var fileName = System.IO.Path.GetFileName(materialFile);
-                    materials.Add(new AssetInfo { Name = fileName, Path = materialFile, Pack = packName });
-                }
-            }
-        }
-        return materials;
-    }
 }

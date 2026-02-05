@@ -14,12 +14,6 @@ public sealed class AssetPackJson
     [JsonPropertyName("textures")]
     public List<string> Textures { get; set; } = [];
 
-    [JsonPropertyName("shaders")]
-    public List<string> Shaders { get; set; } = [];
-
-    [JsonPropertyName("materials")]
-    public List<string> Materials { get; set; } = [];
-
     [JsonPropertyName("meshes")]
     public List<string> Meshes { get; set; } = [];
 

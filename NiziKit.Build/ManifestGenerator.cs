@@ -53,14 +53,6 @@ public class ManifestGenerator
                 {
                     manifest.AssetIndex[animationPath] = new GeneratedAssetMapping { Pack = packName, Type = "animation" };
                 }
-                foreach (var shaderPath in packData.Shaders)
-                {
-                    manifest.AssetIndex[shaderPath] = new GeneratedAssetMapping { Pack = packName, Type = "shader" };
-                }
-                foreach (var materialPath in packData.Materials)
-                {
-                    manifest.AssetIndex[materialPath] = new GeneratedAssetMapping { Pack = packName, Type = "material" };
-                }
             }
             catch (Exception ex)
             {
@@ -139,9 +131,4 @@ internal class PackData
     [JsonPropertyName("animations")]
     public List<string> Animations { get; set; } = [];
 
-    [JsonPropertyName("shaders")]
-    public List<string> Shaders { get; set; } = [];
-
-    [JsonPropertyName("materials")]
-    public List<string> Materials { get; set; } = [];
 }

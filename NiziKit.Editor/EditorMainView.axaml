@@ -48,8 +48,7 @@
                             Padding="16,8"
                             VerticalAlignment="Center">
                         <TextBlock Text="NiziKit Editor"
-                                   FontWeight="Bold"
-                                   Foreground="#FFFFFF"/>
+                                   FontWeight="Bold"/>
                     </Border>
                 </Grid>
             </Border>
@@ -69,8 +68,7 @@
                                 Padding="12,8"
                                 Margin="-16,-16,-16,16">
                             <TextBlock Text="Scene Hierarchy"
-                                       Classes="subtitle"
-                                       Foreground="#FFFFFF"/>
+                                       Classes="subtitle"/>
                         </Border>
 
                         <views:SceneTreeView Grid.Row="1" DataContext="{Binding}"/>
@@ -99,8 +97,7 @@
                                 Padding="12,8"
                                 Margin="-16,-16,-16,16">
                             <TextBlock Text="Inspector"
-                                       Classes="subtitle"
-                                       Foreground="#FFFFFF"/>
+                                       Classes="subtitle"/>
                         </Border>
 
                         <views:ComponentsPanel Grid.Row="1" DataContext="{Binding}"/>
@@ -231,7 +228,6 @@
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBlock Text="Import Assets"
                                        Classes="subtitle"
-                                       Foreground="#FFFFFF"
                                        VerticalAlignment="Center"/>
                             <Button Grid.Column="1"
                                     Command="{Binding CloseImportPanelCommand}"
@@ -273,7 +269,6 @@
                         <Grid ColumnDefinitions="*,Auto">
                             <TextBlock Text="Open Scene"
                                        Classes="subtitle"
-                                       Foreground="#FFFFFF"
                                        VerticalAlignment="Center"/>
                             <Button Grid.Column="1"
                                     Command="{Binding CloseOpenSceneDialogCommand}"

@@ -94,13 +94,6 @@ public partial class ContentBrowserView : UserControl
             InlineMenuItem.Separator(),
             new()
             {
-                Header = "Create Shader",
-                Icon = Symbol.Code,
-                Command = vm.CreateShaderCommand
-            },
-            InlineMenuItem.Separator(),
-            new()
-            {
                 Header = "Create Asset Pack",
                 Icon = Symbol.AllApps,
                 Command = vm.CreatePackCommand
