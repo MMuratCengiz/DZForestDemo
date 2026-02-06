@@ -1,7 +1,6 @@
 using System.Numerics;
 using System.Text.Json;
 using NiziKit.Animation;
-using NiziKit.Assets.Pack;
 using NiziKit.Assets.Serde;
 using NiziKit.Components;
 using NiziKit.ContentPipeline;
@@ -103,7 +102,6 @@ public class EditorSceneService
         var json = new SceneJson
         {
             Name = scene.Name,
-            AssetPacks = GetLoadedPackNames(),
             Objects = []
         };
 
@@ -395,12 +393,6 @@ public class EditorSceneService
         var yaw = MathF.Atan2(siny_cosp, cosy_cosp);
 
         return new Vector3(roll, pitch, yaw) * (180f / MathF.PI);
-    }
-
-    private static List<string>? GetLoadedPackNames()
-    {
-        var packNames = AssetPacks.GetLoadedPackNames().ToList();
-        return packNames.Count > 0 ? packNames : null;
     }
 
     private static string GetScenesDirectory()

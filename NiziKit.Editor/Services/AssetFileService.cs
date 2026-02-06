@@ -8,7 +8,6 @@ public enum AssetFileType
     Model,
     Texture,
     Scene,
-    Pack,
     Folder,
     Other
 }
@@ -27,7 +26,6 @@ public class FileEntry
         AssetFileType.Model => "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
         AssetFileType.Texture => "M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z",
         AssetFileType.Scene => "M12 5.69l5 4.5V18h-2v-6H9v6H7v-7.81l5-4.5M12 3L2 12h3v8h6v-6h2v6h6v-8h3L12 3z",
-        AssetFileType.Pack => "M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6 10H6v-2h8v2zm4-4H6v-2h12v2z",
         _ => "M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zM6 20V4h7v5h5v11H6z"
     };
 }
@@ -125,11 +123,6 @@ public class AssetFileService
         if (path.EndsWith(".niziscene.json", StringComparison.OrdinalIgnoreCase))
         {
             return AssetFileType.Scene;
-        }
-
-        if (path.EndsWith(".nizipack.json", StringComparison.OrdinalIgnoreCase))
-        {
-            return AssetFileType.Pack;
         }
 
         return ExtensionMap.GetValueOrDefault(extension, AssetFileType.Other);

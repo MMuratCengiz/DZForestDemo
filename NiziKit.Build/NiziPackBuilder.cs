@@ -36,22 +36,22 @@ public static class NiziPackBuilder
         var manifestFullPath = Path.Combine(assetsRoot, manifestRelativePath.Replace('/', Path.DirectorySeparatorChar));
         files.Add(("pack.nizipack.json", manifestFullPath));
 
-        foreach (var (_, path) in manifest.Textures)
+        foreach (var path in manifest.Textures)
         {
             AddFile(files, path, assetsRoot);
         }
 
-        foreach (var (_, path) in manifest.Meshes)
+        foreach (var path in manifest.Meshes)
         {
             AddFile(files, path, assetsRoot);
         }
 
-        foreach (var (_, path) in manifest.Skeletons)
+        foreach (var path in manifest.Skeletons)
         {
             AddFile(files, path, assetsRoot);
         }
 
-        foreach (var (_, path) in manifest.Animations)
+        foreach (var path in manifest.Animations)
         {
             AddFile(files, path, assetsRoot);
         }
@@ -209,15 +209,15 @@ public static class NiziPackBuilder
         public string Version { get; set; } = "1.0.0";
 
         [JsonPropertyName("textures")]
-        public Dictionary<string, string> Textures { get; set; } = new();
+        public List<string> Textures { get; set; } = [];
 
         [JsonPropertyName("meshes")]
-        public Dictionary<string, string> Meshes { get; set; } = new();
+        public List<string> Meshes { get; set; } = [];
 
         [JsonPropertyName("skeletons")]
-        public Dictionary<string, string> Skeletons { get; set; } = new();
+        public List<string> Skeletons { get; set; } = [];
 
         [JsonPropertyName("animations")]
-        public Dictionary<string, string> Animations { get; set; } = new();
+        public List<string> Animations { get; set; } = [];
     }
 }

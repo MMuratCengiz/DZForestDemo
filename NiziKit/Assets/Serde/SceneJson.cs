@@ -195,9 +195,6 @@ public sealed class SceneJson
     [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
 
-    [JsonPropertyName("assetPacks")]
-    public List<string>? AssetPacks { get; set; }
-
     [JsonPropertyName("camera")]
     public CameraJson? Camera { get; set; }
 

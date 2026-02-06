@@ -17,7 +17,6 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
     private readonly MouseDevice _mouseDevice = new();
     private DenOfIzSkiaSurface? _surface;
     private readonly DenOfIzTextInputMethod _textInputMethod;
-
     public event Action<bool>? TextInputActiveChanged;
 
     public DenOfIzTopLevelImpl()

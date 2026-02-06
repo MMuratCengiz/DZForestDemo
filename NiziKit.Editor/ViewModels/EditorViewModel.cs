@@ -35,8 +35,6 @@ public partial class EditorViewModel : ObservableObject
         _assetFileService = new AssetFileService();
 
         AssetBrowserViewModel = new AssetBrowserViewModel();
-        PackManagerViewModel = new PackManagerViewModel();
-        ContentBrowserViewModel = new ContentBrowserViewModel { EditorViewModel = this };
         ImportViewModel = new ImportViewModel();
 
         ImportViewModel.ImportCompleted += () =>
@@ -86,12 +84,6 @@ public partial class EditorViewModel : ObservableObject
     private AssetBrowserViewModel _assetBrowserViewModel;
 
     [ObservableProperty]
-    private PackManagerViewModel _packManagerViewModel;
-
-    [ObservableProperty]
-    private ContentBrowserViewModel _contentBrowserViewModel;
-
-    [ObservableProperty]
     private ImportViewModel _importViewModel;
 
     [ObservableProperty]
@@ -127,12 +119,6 @@ public partial class EditorViewModel : ObservableObject
     // Bottom panel states
     [ObservableProperty]
     private bool _isAssetBrowserOpen;
-
-    [ObservableProperty]
-    private bool _isPackManagerOpen;
-
-    [ObservableProperty]
-    private bool _isContentBrowserOpen;
 
     // Asset Picker state
     [ObservableProperty]
@@ -416,14 +402,6 @@ public partial class EditorViewModel : ObservableObject
         {
             await Task.Run(() =>
             {
-                if (IsContentBrowserOpen)
-                {
-                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                    {
-                        ContentBrowserViewModel.RefreshCurrentTab();
-                    });
-                }
-
                 if (IsAssetBrowserOpen)
                 {
                     Avalonia.Threading.Dispatcher.UIThread.Post(() =>
@@ -464,18 +442,6 @@ public partial class EditorViewModel : ObservableObject
     private void CloseAssetBrowser()
     {
         IsAssetBrowserOpen = false;
-    }
-
-    [RelayCommand]
-    private void ClosePackManager()
-    {
-        IsPackManagerOpen = false;
-    }
-
-    [RelayCommand]
-    private void CloseContentBrowser()
-    {
-        IsContentBrowserOpen = false;
     }
 
     public void OpenAssetPicker(AssetRefType assetType, string? currentAssetPath, Action<AssetInfo?> callback)

@@ -5,8 +5,74 @@ namespace NiziKit.Build;
 
 public class ManifestGenerator
 {
+    private static readonly Dictionary<string, string> ExtensionToType = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { ".dztex", "texture" },
+        { ".nizimesh", "mesh" },
+        { ".ozzskel", "skeleton" },
+        { ".ozzanim", "animation" }
+    };
+
     public static void Generate(string assetsDir, string outputDir)
     {
+        var baseDir = Path.GetFullPath(assetsDir);
+        const string packName = "default";
+
+        // Scan all asset files and classify by extension
+        var textures = new List<string>();
+        var meshes = new List<string>();
+        var skeletons = new List<string>();
+        var animations = new List<string>();
+
+        foreach (var file in Directory.EnumerateFiles(baseDir, "*.*", SearchOption.AllDirectories))
+        {
+            var ext = Path.GetExtension(file);
+            if (!ExtensionToType.TryGetValue(ext, out var assetType))
+            {
+                continue;
+            }
+
+            var relativePath = Path.GetRelativePath(baseDir, file).Replace('\\', '/');
+
+            switch (assetType)
+            {
+                case "texture":
+                    textures.Add(relativePath);
+                    break;
+                case "mesh":
+                    meshes.Add(relativePath);
+                    break;
+                case "skeleton":
+                    skeletons.Add(relativePath);
+                    break;
+                case "animation":
+                    animations.Add(relativePath);
+                    break;
+            }
+        }
+
+        // Generate the default pack definition
+        var packData = new PackData
+        {
+            Name = packName,
+            Version = "1.0.0",
+            Textures = textures,
+            Meshes = meshes,
+            Skeletons = skeletons,
+            Animations = animations
+        };
+
+        // Ensure Packs directory exists
+        var packsDir = Path.Combine(baseDir, "Packs");
+        Directory.CreateDirectory(packsDir);
+
+        // Write default.nizipack.json
+        var packJsonPath = Path.Combine(packsDir, "default.nizipack.json");
+        var packJson = JsonSerializer.Serialize(packData, JsonOptions);
+        File.WriteAllText(packJsonPath, packJson);
+        Console.WriteLine($"Generated pack definition at: {packJsonPath}");
+
+        // Build the manifest
         var manifest = new GeneratedManifest
         {
             Version = "2.0.0",
@@ -14,50 +80,29 @@ public class ManifestGenerator
             AssetIndex = new Dictionary<string, GeneratedAssetMapping>()
         };
 
-        var baseDir = Path.GetFullPath(assetsDir);
-        foreach (var packFile in Directory.EnumerateFiles(baseDir, "*.nizipack.json", SearchOption.AllDirectories))
+        manifest.Packs.Add(new GeneratedPackEntry
         {
-            try
-            {
-                var packJson = File.ReadAllText(packFile);
-                var packData = JsonSerializer.Deserialize<PackData>(packJson, JsonOptions);
-                if (packData == null)
-                {
-                    continue;
-                }
+            Name = packName,
+            Path = "Packs/default.nizipack.json",
+            DeploymentName = $"{packName}.nizipack"
+        });
 
-                var relativePath = Path.GetRelativePath(baseDir, packFile).Replace('\\', '/');
-                var packName = packData.Name;
-
-                manifest.Packs.Add(new GeneratedPackEntry
-                {
-                    Name = packName,
-                    Path = relativePath,
-                    DeploymentName = $"{packName}.nizipack"
-                });
-
-                // Build reverse mapping: asset path -> pack info
-                foreach (var texturePath in packData.Textures)
-                {
-                    manifest.AssetIndex[texturePath] = new GeneratedAssetMapping { Pack = packName, Type = "texture" };
-                }
-                foreach (var meshPath in packData.Meshes)
-                {
-                    manifest.AssetIndex[meshPath] = new GeneratedAssetMapping { Pack = packName, Type = "mesh" };
-                }
-                foreach (var skeletonPath in packData.Skeletons)
-                {
-                    manifest.AssetIndex[skeletonPath] = new GeneratedAssetMapping { Pack = packName, Type = "skeleton" };
-                }
-                foreach (var animationPath in packData.Animations)
-                {
-                    manifest.AssetIndex[animationPath] = new GeneratedAssetMapping { Pack = packName, Type = "animation" };
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Warning: Failed to read pack {packFile}: {ex.Message}");
-            }
+        // Build reverse mapping: asset path -> pack info
+        foreach (var path in textures)
+        {
+            manifest.AssetIndex[path] = new GeneratedAssetMapping { Pack = packName, Type = "texture" };
+        }
+        foreach (var path in meshes)
+        {
+            manifest.AssetIndex[path] = new GeneratedAssetMapping { Pack = packName, Type = "mesh" };
+        }
+        foreach (var path in skeletons)
+        {
+            manifest.AssetIndex[path] = new GeneratedAssetMapping { Pack = packName, Type = "skeleton" };
+        }
+        foreach (var path in animations)
+        {
+            manifest.AssetIndex[path] = new GeneratedAssetMapping { Pack = packName, Type = "animation" };
         }
 
         Directory.CreateDirectory(outputDir);
@@ -68,6 +113,10 @@ public class ManifestGenerator
         Console.WriteLine($"Generated manifest at: {outputPath}");
         Console.WriteLine($"  Packs: {manifest.Packs.Count}");
         Console.WriteLine($"  Assets indexed: {manifest.AssetIndex.Count}");
+        Console.WriteLine($"    Textures: {textures.Count}");
+        Console.WriteLine($"    Meshes: {meshes.Count}");
+        Console.WriteLine($"    Skeletons: {skeletons.Count}");
+        Console.WriteLine($"    Animations: {animations.Count}");
     }
 
     private static readonly JsonSerializerOptions JsonOptions = new()

@@ -72,14 +72,6 @@ public partial class EditorMainView : UserControl
         _viewModel?.LoadFromCurrentScene();
     }
 
-    private void OnContentBrowserTabPointerPressed(object? sender, PointerPressedEventArgs e)
-    {
-        if (sender is Border border && border.DataContext is ContentTab tab && _viewModel != null)
-        {
-            _viewModel.ContentBrowserViewModel.SelectedTab = tab;
-        }
-    }
-
     private void OnMainDragOver(object? sender, DragEventArgs e)
     {
         if (e.Data.Contains(DataFormats.Files))

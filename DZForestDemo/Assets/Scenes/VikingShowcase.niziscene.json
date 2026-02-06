@@ -1,10 +1,5 @@
 {
   "name": "Viking Showcase",
-  "assetPacks": [
-    "newpack_1",
-    "newpack",
-    "viking"
-  ],
   "cameras": [
     {
       "name": "Main Camera",
