@@ -291,6 +291,19 @@ public ref struct UiElement
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiElement FloatingRoot(short zIndex = 1000)
+    {
+        _decl.Floating = new ClayFloatingDesc
+        {
+            AttachTo = ClayFloatingAttachTo.Root,
+            ParentAttachPoint = ClayFloatingAttachPoint.CenterCenter,
+            ElementAttachPoint = ClayFloatingAttachPoint.CenterCenter,
+            ZIndex = zIndex
+        };
+        return this;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElement ScrollVertical()
     {
         _decl.Scroll.Vertical = true;

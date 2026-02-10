@@ -15,34 +15,31 @@ public static class MenuBarBuilder
             .Background(t.PanelBackground)
             .Border(UiBorder.Vertical(0, UiColor.Transparent)
                 with { Bottom = 1, Color = t.Border })
-            .Padding(8, 4)
+            .Padding(6, 2)
             .GrowWidth()
             .FitHeight()
             .AlignChildrenY(UiAlignY.Center)
-            .Gap(4)
+            .Gap(2)
             .Open();
 
-        // File menu
         BuildFileMenu(ui, ctx, vm);
-
-        // Edit menu
         BuildEditMenu(ui, ctx, vm);
-
-        // Assets menu
         BuildAssetsMenu(ui, ctx, vm);
-
-        // Spacer to push badge to right
         Ui.FlexSpacer(ctx);
 
-        // NiziKit Editor badge
+        if (vm.IsDirty)
+        {
+            ui.Text("Modified", new UiTextStyle { Color = t.Warning, FontSize = t.FontSizeCaption });
+        }
+
         using (ui.Panel("EditorBadge")
             .Background(t.Accent)
-            .Padding(16, 8)
+            .Padding(10, 4)
             .FitWidth()
             .FitHeight()
             .Open())
         {
-            ui.Text("NiziKit Editor", new UiTextStyle { Color = UiColor.White, FontSize = t.FontSizeBody });
+            ui.Text("NiziKit Editor", new UiTextStyle { Color = UiColor.White, FontSize = t.FontSizeCaption });
         }
     }
 

@@ -26,6 +26,9 @@ public ref struct UiCollapsibleSection
     private float _borderWidth;
     private UiColor _borderColor;
     private string? _badge;
+    private string? _headerActionIcon;
+    private UiColor _headerActionColor;
+    private UiColor _headerActionHoverColor;
 
     internal UiCollapsibleSection(UiContext ctx, string id, UiCollapsibleSectionState state, string title)
     {
@@ -46,6 +49,9 @@ public ref struct UiCollapsibleSection
         _borderWidth = 0;
         _borderColor = UiColor.Transparent;
         _badge = null;
+        _headerActionIcon = null;
+        _headerActionColor = UiColor.Gray;
+        _headerActionHoverColor = UiColor.White;
     }
 
     public uint Id { get; }
@@ -129,6 +135,17 @@ public ref struct UiCollapsibleSection
         return this;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiCollapsibleSection HeaderAction(string icon, UiColor color, UiColor hoverColor)
+    {
+        _headerActionIcon = icon;
+        _headerActionColor = color;
+        _headerActionHoverColor = hoverColor;
+        return this;
+    }
+
+    public bool HeaderActionClicked { get; private set; }
+
     public UiCollapsibleSectionScope Open()
     {
         var headerId = _context.StringCache.GetId("CSHeader", Id);
@@ -179,13 +196,17 @@ public ref struct UiCollapsibleSection
                 FontSize = _fontSize
             });
 
-            if (!string.IsNullOrEmpty(_badge))
+            // Spacer to push badge/action to the right
+            if (!string.IsNullOrEmpty(_badge) || _headerActionIcon != null)
             {
                 var spacerDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("CSSpacer", Id) };
                 spacerDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
                 _context.OpenElement(spacerDecl);
                 _context.Clay.CloseElement();
+            }
 
+            if (!string.IsNullOrEmpty(_badge))
+            {
                 var badgeDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("CSBadge", Id) };
                 badgeDecl.Layout.Padding = new ClayPadding { Left = 6, Right = 6, Top = 2, Bottom = 2 };
                 badgeDecl.BackgroundColor = UiColor.Rgb(60, 60, 65).ToClayColor();
@@ -198,10 +219,32 @@ public ref struct UiCollapsibleSection
                 });
                 _context.Clay.CloseElement();
             }
+
+            if (_headerActionIcon != null)
+            {
+                var actionId = _context.StringCache.GetId("CSAction", Id);
+                var actionInteraction = _context.GetInteraction(actionId);
+                var actionColor = actionInteraction.IsHovered ? _headerActionHoverColor : _headerActionColor;
+
+                var actionDecl = new ClayElementDeclaration { Id = actionId };
+                actionDecl.Layout.Padding = new ClayPadding { Left = 4, Right = 4, Top = 2, Bottom = 2 };
+                actionDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
+                _context.OpenElement(actionDecl);
+                _context.Clay.Text(StringView.Intern(_headerActionIcon), new ClayTextDesc
+                {
+                    TextColor = actionColor.ToClayColor(),
+                    FontSize = (ushort)(_fontSize - 2),
+                    FontId = FontAwesome.FontId,
+                    TextAlignment = ClayTextAlignment.Center
+                });
+                _context.Clay.CloseElement();
+
+                HeaderActionClicked = actionInteraction.WasClicked;
+            }
         }
         _context.Clay.CloseElement();
 
-        if (interaction.WasClicked)
+        if (interaction.WasClicked && !HeaderActionClicked)
         {
             _state.IsExpanded = !_state.IsExpanded;
         }

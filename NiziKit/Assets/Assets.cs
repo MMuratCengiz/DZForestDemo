@@ -436,68 +436,80 @@ public sealed class Assets : IDisposable
 
     private Mesh _CreateBox(float width, float height, float depth)
     {
-        var cacheKey = $"box:{width}:{height}:{depth}";
+        var cacheKey = $"geometry:box:{width}:{height}:{depth}";
         if (_meshCache.TryGetValue(cacheKey, out var cached))
         {
             return cached;
         }
 
-        return _Register(GeometryMesh.Box(width, height, depth), cacheKey);
+        var mesh = GeometryMesh.Box(width, height, depth);
+        mesh.AssetPath = cacheKey;
+        return _Register(mesh, cacheKey);
     }
 
     private Mesh _CreateSphere(float diameter, uint tessellation = 16)
     {
-        var cacheKey = $"sphere:{diameter}:{tessellation}";
+        var cacheKey = $"geometry:sphere:{diameter}:{tessellation}";
         if (_meshCache.TryGetValue(cacheKey, out var cached))
         {
             return cached;
         }
 
-        return _Register(GeometryMesh.Sphere(diameter, tessellation), cacheKey);
+        var mesh = GeometryMesh.Sphere(diameter, tessellation);
+        mesh.AssetPath = cacheKey;
+        return _Register(mesh, cacheKey);
     }
 
     private Mesh _CreateQuad(float width, float height)
     {
-        var cacheKey = $"quad:{width}:{height}";
+        var cacheKey = $"geometry:quad:{width}:{height}";
         if (_meshCache.TryGetValue(cacheKey, out var cached))
         {
             return cached;
         }
 
-        return _Register(GeometryMesh.Quad(width, height), cacheKey);
+        var mesh = GeometryMesh.Quad(width, height);
+        mesh.AssetPath = cacheKey;
+        return _Register(mesh, cacheKey);
     }
 
     private Mesh _CreateCylinder(float diameter, float height, uint tessellation = 16)
     {
-        var cacheKey = $"cylinder:{diameter}:{height}:{tessellation}";
+        var cacheKey = $"geometry:cylinder:{diameter}:{height}:{tessellation}";
         if (_meshCache.TryGetValue(cacheKey, out var cached))
         {
             return cached;
         }
 
-        return _Register(GeometryMesh.Cylinder(diameter, height, tessellation), cacheKey);
+        var mesh = GeometryMesh.Cylinder(diameter, height, tessellation);
+        mesh.AssetPath = cacheKey;
+        return _Register(mesh, cacheKey);
     }
 
     private Mesh _CreateCone(float diameter, float height, uint tessellation = 16)
     {
-        var cacheKey = $"cone:{diameter}:{height}:{tessellation}";
+        var cacheKey = $"geometry:cone:{diameter}:{height}:{tessellation}";
         if (_meshCache.TryGetValue(cacheKey, out var cached))
         {
             return cached;
         }
 
-        return _Register(GeometryMesh.Cone(diameter, height, tessellation), cacheKey);
+        var mesh = GeometryMesh.Cone(diameter, height, tessellation);
+        mesh.AssetPath = cacheKey;
+        return _Register(mesh, cacheKey);
     }
 
     private Mesh _CreateTorus(float diameter, float thickness, uint tessellation = 16)
     {
-        var cacheKey = $"torus:{diameter}:{thickness}:{tessellation}";
+        var cacheKey = $"geometry:torus:{diameter}:{thickness}:{tessellation}";
         if (_meshCache.TryGetValue(cacheKey, out var cached))
         {
             return cached;
         }
 
-        return _Register(GeometryMesh.Torus(diameter, thickness, tessellation), cacheKey);
+        var mesh = GeometryMesh.Torus(diameter, thickness, tessellation);
+        mesh.AssetPath = cacheKey;
+        return _Register(mesh, cacheKey);
     }
 
     private Mesh? _GetMeshByIndex(uint index)

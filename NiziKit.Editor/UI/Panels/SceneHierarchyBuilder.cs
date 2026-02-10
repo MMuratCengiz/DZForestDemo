@@ -12,14 +12,12 @@ public static class SceneHierarchyBuilder
     {
         var t = EditorTheme.Current;
 
-        // Build tree nodes from view models
         var roots = new List<UiTreeNode>();
         foreach (var obj in vm.RootObjects)
         {
             roots.Add(BuildNode(obj));
         }
 
-        // Sync selection from VM to tree
         if (vm.SelectedGameObject != null)
         {
             _selectedNodeId = vm.SelectedGameObject.Name;
@@ -36,10 +34,9 @@ public static class SceneHierarchyBuilder
             .TextColor(t.TextPrimary)
             .IconColor(t.TextSecondary)
             .ChevronColor(t.TextMuted)
-            .BorderColor(t.BorderLight)
-            .FontSize(t.FontSizeBody)
-            .IndentSize(16)
-            .ItemHeight(28)
+            .FontSize(t.FontSizeCaption)
+            .IndentSize(14)
+            .ItemHeight(22)
             .Width(UiSizing.Grow())
             .Height(UiSizing.Grow())
             .Show(ref _selectedNodeId);
@@ -50,7 +47,6 @@ public static class SceneHierarchyBuilder
             vm.SelectObject(selected);
         }
 
-        // Context menu for hierarchy
         BuildContextMenu(ui, ctx, vm);
     }
 

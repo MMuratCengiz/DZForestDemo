@@ -234,6 +234,7 @@ public sealed class AssetPack : IDisposable
 
         var bytes = _provider.ReadBytes(path);
         mesh = Mesh.Load(bytes);
+        mesh.AssetPath = path;
         Assets.Register(mesh, path);
         return _meshes.GetOrAdd(path, mesh);
     }
@@ -252,6 +253,7 @@ public sealed class AssetPack : IDisposable
 
         var bytes = _provider.ReadBytes(path);
         skeleton = Skeleton.Load(bytes);
+        skeleton.AssetPath = path;
         return _skeletons.GetOrAdd(path, skeleton);
     }
 
@@ -324,6 +326,7 @@ public sealed class AssetPack : IDisposable
         {
             var bytes = _provider!.ReadBytes(path);
             var mesh = Mesh.Load(bytes);
+            mesh.AssetPath = path;
             Assets.Register(mesh, path);
             _meshes[path] = mesh;
         });
@@ -335,6 +338,7 @@ public sealed class AssetPack : IDisposable
         {
             var bytes = await _provider!.ReadBytesAsync(path, ct);
             var mesh = Mesh.Load(bytes);
+            mesh.AssetPath = path;
             Assets.Register(mesh, path);
             return (path, mesh);
         });
@@ -351,6 +355,7 @@ public sealed class AssetPack : IDisposable
         {
             var bytes = _provider!.ReadBytes(path);
             var skeleton = Skeleton.Load(bytes);
+            skeleton.AssetPath = path;
             _skeletons[path] = skeleton;
         });
     }
@@ -361,6 +366,7 @@ public sealed class AssetPack : IDisposable
         {
             var bytes = await _provider!.ReadBytesAsync(path, ct);
             var skeleton = Skeleton.Load(bytes);
+            skeleton.AssetPath = path;
             return (path, skeleton);
         });
 

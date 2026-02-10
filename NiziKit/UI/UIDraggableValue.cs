@@ -23,6 +23,9 @@ public ref struct UiDraggableValue
     private UiColor _valueColor;
     private UiColor _valueEditColor;
     private UiColor _valueTextColor;
+    private UiColor? _labelAccent;
+    private string? _prefix;
+    private UiColor _prefixColor;
     private float _sensitivity;
     private string _format;
     private ushort _fontSize;
@@ -77,6 +80,12 @@ public ref struct UiDraggableValue
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiDraggableValue LabelWidth(float w) { _labelWidth = w; return this; }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiDraggableValue LabelAccent(UiColor accentColor) { _labelAccent = accentColor; return this; }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiDraggableValue Prefix(string text, UiColor color) { _prefix = text; _prefixColor = color; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiDraggableValue ValueColor(UiColor bg) { _valueColor = bg; return this; }
@@ -190,22 +199,51 @@ public ref struct UiDraggableValue
 
         _context.OpenElement(containerDecl);
         {
-            var labelDecl = new ClayElementDeclaration { Id = labelId };
-            labelDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(_labelWidth);
-            labelDecl.Layout.Sizing.Height = ClaySizingAxis.Grow(0, float.MaxValue);
-            labelDecl.Layout.ChildAlignment.X = ClayAlignmentX.Center;
-            labelDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
-            labelDecl.BackgroundColor = _labelColor.ToClayColor();
-            labelDecl.BorderRadius = new ClayBorderRadius { TopLeft = 4, BottomLeft = 4 };
+            var hasLabel = _labelWidth > 0;
 
-            _context.OpenElement(labelDecl);
-            _context.Clay.Text(StringView.Intern(_label), new ClayTextDesc
+            if (hasLabel)
             {
-                TextColor = _labelTextColor.ToClayColor(),
-                FontSize = _fontSize,
-                TextAlignment = ClayTextAlignment.Center
-            });
-            _context.Clay.CloseElement();
+                var effectiveLabelBg = _labelColor;
+                var effectiveLabelText = _labelTextColor;
+
+                if (_labelAccent.HasValue)
+                {
+                    // Slightly darker than value bg for visual distinction
+                    effectiveLabelBg = new UiColor(
+                        (byte)Math.Max(0, _valueColor.R - 12),
+                        (byte)Math.Max(0, _valueColor.G - 12),
+                        (byte)Math.Max(0, _valueColor.B - 12),
+                        _valueColor.A
+                    );
+                    effectiveLabelText = _labelAccent.Value;
+                }
+
+                var labelDecl = new ClayElementDeclaration { Id = labelId };
+                labelDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(_labelWidth);
+                labelDecl.Layout.Sizing.Height = ClaySizingAxis.Grow(0, float.MaxValue);
+                labelDecl.Layout.ChildAlignment.X = ClayAlignmentX.Center;
+                labelDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
+                labelDecl.BackgroundColor = effectiveLabelBg.ToClayColor();
+                labelDecl.BorderRadius = new ClayBorderRadius { TopLeft = 4, BottomLeft = 4 };
+
+                if (_labelAccent.HasValue)
+                {
+                    labelDecl.Border = new ClayBorderDesc
+                    {
+                        Width = new ClayBorderWidth { Left = 2 },
+                        Color = _labelAccent.Value.ToClayColor()
+                    };
+                }
+
+                _context.OpenElement(labelDecl);
+                _context.Clay.Text(StringView.Intern(_label), new ClayTextDesc
+                {
+                    TextColor = effectiveLabelText.ToClayColor(),
+                    FontSize = _fontSize,
+                    TextAlignment = ClayTextAlignment.Center
+                });
+                _context.Clay.CloseElement();
+            }
 
             var displayText = _state.IsEditing ? _state.EditText + "|" : value.ToString(_format);
             var valueBg = _state.IsEditing ? _valueEditColor : _valueColor;
@@ -215,10 +253,24 @@ public ref struct UiDraggableValue
             valueDecl.Layout.Sizing.Height = ClaySizingAxis.Grow(0, float.MaxValue);
             valueDecl.Layout.Padding = new ClayPadding { Left = 6, Right = 6, Top = 4, Bottom = 4 };
             valueDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
+            valueDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
+            valueDecl.Layout.ChildGap = 4;
             valueDecl.BackgroundColor = valueBg.ToClayColor();
-            valueDecl.BorderRadius = new ClayBorderRadius { TopRight = 4, BottomRight = 4 };
+            valueDecl.BorderRadius = hasLabel
+                ? new ClayBorderRadius { TopRight = 4, BottomRight = 4 }
+                : ClayBorderRadius.CreateUniform(4);
 
             _context.OpenElement(valueDecl);
+
+            if (_prefix != null)
+            {
+                _context.Clay.Text(StringView.Intern(_prefix), new ClayTextDesc
+                {
+                    TextColor = _prefixColor.ToClayColor(),
+                    FontSize = _fontSize
+                });
+            }
+
             _context.Clay.Text(StringView.Intern(displayText), new ClayTextDesc
             {
                 TextColor = _valueTextColor.ToClayColor(),

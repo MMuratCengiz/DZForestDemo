@@ -313,13 +313,9 @@ public class EditorSceneService
 
         if (component is MeshComponent meshComp)
         {
-            if (!string.IsNullOrEmpty(meshComp.MeshRef))
+            if (meshComp.Mesh != null && !string.IsNullOrEmpty(meshComp.Mesh.AssetPath))
             {
-                json.Properties["mesh"] = JsonSerializer.SerializeToElement(meshComp.MeshRef);
-            }
-            else if (meshComp.Mesh != null)
-            {
-                json.Properties["mesh"] = JsonSerializer.SerializeToElement(meshComp.Mesh.Name ?? "unknown");
+                json.Properties["mesh"] = JsonSerializer.SerializeToElement(meshComp.Mesh.AssetPath);
             }
         }
         else if (component is MaterialComponent matComp)
@@ -331,21 +327,21 @@ public class EditorSceneService
         }
         else if (component is SurfaceComponent surfaceComp)
         {
-            if (!string.IsNullOrEmpty(surfaceComp.AlbedoRef))
+            if (surfaceComp.Albedo != null && !string.IsNullOrEmpty(surfaceComp.Albedo.SourcePath))
             {
-                json.Properties["albedo"] = JsonSerializer.SerializeToElement(surfaceComp.AlbedoRef);
+                json.Properties["albedo"] = JsonSerializer.SerializeToElement(surfaceComp.Albedo.SourcePath);
             }
-            if (!string.IsNullOrEmpty(surfaceComp.NormalRef))
+            if (surfaceComp.Normal != null && !string.IsNullOrEmpty(surfaceComp.Normal.SourcePath))
             {
-                json.Properties["normal"] = JsonSerializer.SerializeToElement(surfaceComp.NormalRef);
+                json.Properties["normal"] = JsonSerializer.SerializeToElement(surfaceComp.Normal.SourcePath);
             }
-            if (!string.IsNullOrEmpty(surfaceComp.MetallicRef))
+            if (surfaceComp.Metallic != null && !string.IsNullOrEmpty(surfaceComp.Metallic.SourcePath))
             {
-                json.Properties["metallic"] = JsonSerializer.SerializeToElement(surfaceComp.MetallicRef);
+                json.Properties["metallic"] = JsonSerializer.SerializeToElement(surfaceComp.Metallic.SourcePath);
             }
-            if (!string.IsNullOrEmpty(surfaceComp.RoughnessRef))
+            if (surfaceComp.Roughness != null && !string.IsNullOrEmpty(surfaceComp.Roughness.SourcePath))
             {
-                json.Properties["roughness"] = JsonSerializer.SerializeToElement(surfaceComp.RoughnessRef);
+                json.Properties["roughness"] = JsonSerializer.SerializeToElement(surfaceComp.Roughness.SourcePath);
             }
             if (surfaceComp.MetallicValue != 0.0f)
             {
@@ -387,13 +383,9 @@ public class EditorSceneService
         }
         else if (component is Animator animComp)
         {
-            if (!string.IsNullOrEmpty(animComp.SkeletonRef))
+            if (animComp.Skeleton != null && !string.IsNullOrEmpty(animComp.Skeleton.AssetPath))
             {
-                json.Properties["skeleton"] = JsonSerializer.SerializeToElement(animComp.SkeletonRef);
-            }
-            else if (animComp.Skeleton != null)
-            {
-                json.Properties["skeleton"] = JsonSerializer.SerializeToElement(animComp.Skeleton.Name ?? "unknown");
+                json.Properties["skeleton"] = JsonSerializer.SerializeToElement(animComp.Skeleton.AssetPath);
             }
             if (!string.IsNullOrEmpty(animComp.DefaultAnimation))
             {

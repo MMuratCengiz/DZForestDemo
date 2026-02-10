@@ -28,54 +28,24 @@ public static partial class Ui
         ctx.OpenElement(containerDecl);
         {
             var dvX = DraggableValue(ctx, id + "_X")
-                .Label("X")
-                .LabelColor(axisX)
+                .LabelWidth(0)
+                .Prefix("X", axisX)
                 .Sensitivity(sensitivity)
                 .Format(format);
-            if (valueBg.HasValue)
-            {
-                dvX = dvX.ValueColor(valueBg.Value);
-            }
-
-            if (valueEditBg.HasValue)
-            {
-                dvX = dvX.ValueEditColor(valueEditBg.Value);
-            }
-
-            if (valueText.HasValue)
-            {
-                dvX = dvX.ValueTextColor(valueText.Value);
-            }
-
-            if (dvX.Show(ref x))
-            {
-                changed = true;
-            }
+            if (valueBg.HasValue) dvX = dvX.ValueColor(valueBg.Value);
+            if (valueEditBg.HasValue) dvX = dvX.ValueEditColor(valueEditBg.Value);
+            if (valueText.HasValue) dvX = dvX.ValueTextColor(valueText.Value);
+            if (dvX.Show(ref x)) changed = true;
 
             var dvY = DraggableValue(ctx, id + "_Y")
-                .Label("Y")
-                .LabelColor(axisY)
+                .LabelWidth(0)
+                .Prefix("Y", axisY)
                 .Sensitivity(sensitivity)
                 .Format(format);
-            if (valueBg.HasValue)
-            {
-                dvY = dvY.ValueColor(valueBg.Value);
-            }
-
-            if (valueEditBg.HasValue)
-            {
-                dvY = dvY.ValueEditColor(valueEditBg.Value);
-            }
-
-            if (valueText.HasValue)
-            {
-                dvY = dvY.ValueTextColor(valueText.Value);
-            }
-
-            if (dvY.Show(ref y))
-            {
-                changed = true;
-            }
+            if (valueBg.HasValue) dvY = dvY.ValueColor(valueBg.Value);
+            if (valueEditBg.HasValue) dvY = dvY.ValueEditColor(valueEditBg.Value);
+            if (valueText.HasValue) dvY = dvY.ValueTextColor(valueText.Value);
+            if (dvY.Show(ref y)) changed = true;
         }
         ctx.Clay.CloseElement();
 
@@ -107,79 +77,34 @@ public static partial class Ui
         ctx.OpenElement(containerDecl);
         {
             var dvX = DraggableValue(ctx, id + "_X")
-                .Label("X")
-                .LabelColor(axisX)
+                .LabelWidth(0)
+                .Prefix("X", axisX)
                 .Sensitivity(sensitivity)
                 .Format(format);
-            if (valueBg.HasValue)
-            {
-                dvX = dvX.ValueColor(valueBg.Value);
-            }
-
-            if (valueEditBg.HasValue)
-            {
-                dvX = dvX.ValueEditColor(valueEditBg.Value);
-            }
-
-            if (valueText.HasValue)
-            {
-                dvX = dvX.ValueTextColor(valueText.Value);
-            }
-
-            if (dvX.Show(ref x))
-            {
-                changed = true;
-            }
+            if (valueBg.HasValue) dvX = dvX.ValueColor(valueBg.Value);
+            if (valueEditBg.HasValue) dvX = dvX.ValueEditColor(valueEditBg.Value);
+            if (valueText.HasValue) dvX = dvX.ValueTextColor(valueText.Value);
+            if (dvX.Show(ref x)) changed = true;
 
             var dvY = DraggableValue(ctx, id + "_Y")
-                .Label("Y")
-                .LabelColor(axisY)
+                .LabelWidth(0)
+                .Prefix("Y", axisY)
                 .Sensitivity(sensitivity)
                 .Format(format);
-            if (valueBg.HasValue)
-            {
-                dvY = dvY.ValueColor(valueBg.Value);
-            }
-
-            if (valueEditBg.HasValue)
-            {
-                dvY = dvY.ValueEditColor(valueEditBg.Value);
-            }
-
-            if (valueText.HasValue)
-            {
-                dvY = dvY.ValueTextColor(valueText.Value);
-            }
-
-            if (dvY.Show(ref y))
-            {
-                changed = true;
-            }
+            if (valueBg.HasValue) dvY = dvY.ValueColor(valueBg.Value);
+            if (valueEditBg.HasValue) dvY = dvY.ValueEditColor(valueEditBg.Value);
+            if (valueText.HasValue) dvY = dvY.ValueTextColor(valueText.Value);
+            if (dvY.Show(ref y)) changed = true;
 
             var dvZ = DraggableValue(ctx, id + "_Z")
-                .Label("Z")
-                .LabelColor(axisZ)
+                .LabelWidth(0)
+                .Prefix("Z", axisZ)
                 .Sensitivity(sensitivity)
                 .Format(format);
-            if (valueBg.HasValue)
-            {
-                dvZ = dvZ.ValueColor(valueBg.Value);
-            }
-
-            if (valueEditBg.HasValue)
-            {
-                dvZ = dvZ.ValueEditColor(valueEditBg.Value);
-            }
-
-            if (valueText.HasValue)
-            {
-                dvZ = dvZ.ValueTextColor(valueText.Value);
-            }
-
-            if (dvZ.Show(ref z))
-            {
-                changed = true;
-            }
+            if (valueBg.HasValue) dvZ = dvZ.ValueColor(valueBg.Value);
+            if (valueEditBg.HasValue) dvZ = dvZ.ValueEditColor(valueEditBg.Value);
+            if (valueText.HasValue) dvZ = dvZ.ValueTextColor(valueText.Value);
+            if (dvZ.Show(ref z)) changed = true;
         }
         ctx.Clay.CloseElement();
 
@@ -211,104 +136,44 @@ public static partial class Ui
         ctx.OpenElement(containerDecl);
         {
             var dvX = DraggableValue(ctx, id + "_X")
-                .Label("X")
-                .LabelColor(axisX)
+                .LabelWidth(0)
+                .Prefix("X", axisX)
                 .Sensitivity(sensitivity)
                 .Format(format);
-            if (valueBg.HasValue)
-            {
-                dvX = dvX.ValueColor(valueBg.Value);
-            }
-
-            if (valueEditBg.HasValue)
-            {
-                dvX = dvX.ValueEditColor(valueEditBg.Value);
-            }
-
-            if (valueText.HasValue)
-            {
-                dvX = dvX.ValueTextColor(valueText.Value);
-            }
-
-            if (dvX.Show(ref x))
-            {
-                changed = true;
-            }
+            if (valueBg.HasValue) dvX = dvX.ValueColor(valueBg.Value);
+            if (valueEditBg.HasValue) dvX = dvX.ValueEditColor(valueEditBg.Value);
+            if (valueText.HasValue) dvX = dvX.ValueTextColor(valueText.Value);
+            if (dvX.Show(ref x)) changed = true;
 
             var dvY = DraggableValue(ctx, id + "_Y")
-                .Label("Y")
-                .LabelColor(axisY)
+                .LabelWidth(0)
+                .Prefix("Y", axisY)
                 .Sensitivity(sensitivity)
                 .Format(format);
-            if (valueBg.HasValue)
-            {
-                dvY = dvY.ValueColor(valueBg.Value);
-            }
-
-            if (valueEditBg.HasValue)
-            {
-                dvY = dvY.ValueEditColor(valueEditBg.Value);
-            }
-
-            if (valueText.HasValue)
-            {
-                dvY = dvY.ValueTextColor(valueText.Value);
-            }
-
-            if (dvY.Show(ref y))
-            {
-                changed = true;
-            }
+            if (valueBg.HasValue) dvY = dvY.ValueColor(valueBg.Value);
+            if (valueEditBg.HasValue) dvY = dvY.ValueEditColor(valueEditBg.Value);
+            if (valueText.HasValue) dvY = dvY.ValueTextColor(valueText.Value);
+            if (dvY.Show(ref y)) changed = true;
 
             var dvZ = DraggableValue(ctx, id + "_Z")
-                .Label("Z")
-                .LabelColor(axisZ)
+                .LabelWidth(0)
+                .Prefix("Z", axisZ)
                 .Sensitivity(sensitivity)
                 .Format(format);
-            if (valueBg.HasValue)
-            {
-                dvZ = dvZ.ValueColor(valueBg.Value);
-            }
-
-            if (valueEditBg.HasValue)
-            {
-                dvZ = dvZ.ValueEditColor(valueEditBg.Value);
-            }
-
-            if (valueText.HasValue)
-            {
-                dvZ = dvZ.ValueTextColor(valueText.Value);
-            }
-
-            if (dvZ.Show(ref z))
-            {
-                changed = true;
-            }
+            if (valueBg.HasValue) dvZ = dvZ.ValueColor(valueBg.Value);
+            if (valueEditBg.HasValue) dvZ = dvZ.ValueEditColor(valueEditBg.Value);
+            if (valueText.HasValue) dvZ = dvZ.ValueTextColor(valueText.Value);
+            if (dvZ.Show(ref z)) changed = true;
 
             var dvW = DraggableValue(ctx, id + "_W")
-                .Label("W")
-                .LabelColor(axisW)
+                .LabelWidth(0)
+                .Prefix("W", axisW)
                 .Sensitivity(sensitivity)
                 .Format(format);
-            if (valueBg.HasValue)
-            {
-                dvW = dvW.ValueColor(valueBg.Value);
-            }
-
-            if (valueEditBg.HasValue)
-            {
-                dvW = dvW.ValueEditColor(valueEditBg.Value);
-            }
-
-            if (valueText.HasValue)
-            {
-                dvW = dvW.ValueTextColor(valueText.Value);
-            }
-
-            if (dvW.Show(ref w))
-            {
-                changed = true;
-            }
+            if (valueBg.HasValue) dvW = dvW.ValueColor(valueBg.Value);
+            if (valueEditBg.HasValue) dvW = dvW.ValueEditColor(valueEditBg.Value);
+            if (valueText.HasValue) dvW = dvW.ValueTextColor(valueText.Value);
+            if (dvW.Show(ref w)) changed = true;
         }
         ctx.Clay.CloseElement();
 

@@ -31,8 +31,6 @@ public partial class Animator : IDisposable
     [AssetRef(AssetRefType.Skeleton, "skeleton")]
     public partial Skeleton? Skeleton { get; set; }
 
-    [HideInInspector] public string? SkeletonRef { get; set; }
-
     [AnimationSelector("Skeleton")]
     [JsonProperty("defaultAnimation")]
     public partial string? DefaultAnimation { get; set; }

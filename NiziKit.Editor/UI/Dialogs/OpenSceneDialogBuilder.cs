@@ -18,7 +18,6 @@ public static class OpenSceneDialogBuilder
         using var overlay = EditorUi.DialogOverlay(ui, "OpenSceneOverlay");
         using var dialog = EditorUi.DialogContainer(ui, ctx, "OpenSceneDialog", "Open Scene", 600, 500);
 
-        // Breadcrumb navigation
         using (ui.Panel("SceneBreadcrumb")
             .Horizontal()
             .Background(t.PanelElevated)
@@ -60,7 +59,6 @@ public static class OpenSceneDialogBuilder
             }
         }
 
-        // File list
         using (ui.Panel("SceneFileList")
             .Vertical()
             .Grow()
@@ -78,11 +76,11 @@ public static class OpenSceneDialogBuilder
 
                 var btn = Ui.Button(ctx, "SceneEntry_" + i, "")
                     .Color(bg, t.Hover, t.Active)
-                    .Padding(12, 8)
+                    .Padding(8, 6)
                     .CornerRadius(0)
                     .Border(0, UiColor.Transparent)
                     .Horizontal()
-                    .Gap(10);
+                    .Gap(8);
 
                 using var scope = btn.Open();
                 scope.Icon(icon, iconColor, t.IconSizeSmall);
@@ -102,10 +100,9 @@ public static class OpenSceneDialogBuilder
             }
         }
 
-        // Footer buttons
         using (ui.Panel("SceneDialogFooter")
             .Horizontal()
-            .Padding(16, 12)
+            .Padding(12, 8)
             .Gap(8)
             .GrowWidth()
             .FitHeight()

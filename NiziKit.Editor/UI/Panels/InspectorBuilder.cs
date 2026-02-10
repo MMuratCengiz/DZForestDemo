@@ -22,30 +22,26 @@ public static class InspectorBuilder
             .GrowWidth()
             .GrowHeight()
             .ScrollVertical()
-            .Gap(6)
-            .Padding(6, 0)
+            .Gap(4)
+            .Padding(4, 0)
             .Open();
 
-        // Object header
         BuildObjectHeader(ui, ctx, selected);
 
-        // Transform section
         TransformSectionBuilder.Build(ui, ctx, selected);
 
-        // Component sections
         for (var i = 0; i < selected.Components.Count; i++)
         {
             ComponentEditorBuilder.Build(ui, ctx, selected.Components[i], vm, i);
         }
 
-        // Add Component button
         if (!selected.IsAddingComponent)
         {
             using (ui.Panel("AddCompBtnRow")
                 .Horizontal()
                 .GrowWidth()
                 .FitHeight()
-                .Padding(12, 8)
+                .Padding(8, 6)
                 .AlignChildrenX(UiAlignX.Center)
                 .Open())
             {
@@ -68,25 +64,23 @@ public static class InspectorBuilder
         using var header = ui.Panel("ObjHeader")
             .Horizontal()
             .Background(t.PanelElevated)
-            .Padding(14, 10)
-            .Gap(10)
+            .Padding(8, 6)
+            .Gap(8)
             .GrowWidth()
             .FitHeight()
             .AlignChildrenY(UiAlignY.Center)
             .Open();
 
-        // Type icon
-        ui.Icon(obj.TypeIcon, obj.TypeIconColor, t.IconSizeBase);
+        ui.Icon(obj.TypeIcon, obj.TypeIconColor, t.IconSizeSmall);
 
-        // Name text field
         var name = obj.Name;
         if (Ui.TextField(ctx, "ObjName", ref name)
-            .BackgroundColor(t.SurfaceInset, t.PanelBackground)
+            .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
             .TextColor(t.TextPrimary)
             .BorderColor(t.Border, t.Accent)
             .FontSize(t.FontSizeBody)
             .CornerRadius(t.RadiusSmall)
-            .Padding(8, 6)
+            .Padding(6, 4)
             .GrowWidth()
             .Show(ref name))
         {
@@ -94,13 +88,12 @@ public static class InspectorBuilder
             obj.Editor.MarkDirty();
         }
 
-        // Active checkbox
         var isActive = obj.IsActive;
         var newActive = Ui.Checkbox(ctx, "ObjActive", "", isActive)
             .BoxColor(t.SurfaceInset, t.Hover)
             .CheckColor(t.Accent)
             .BorderColor(t.Border)
-            .BoxSize(16)
+            .BoxSize(14)
             .CornerRadius(t.RadiusSmall)
             .Show();
 
@@ -123,30 +116,28 @@ public static class InspectorBuilder
             .Gap(0)
             .Open();
 
-        // Scene header
         using (ui.Panel("SceneHeader")
             .Horizontal()
             .Background(t.PanelElevated)
-            .Padding(14, 10)
-            .Gap(10)
+            .Padding(8, 6)
+            .Gap(8)
             .GrowWidth()
             .FitHeight()
             .AlignChildrenY(UiAlignY.Center)
             .Open())
         {
-            ui.Icon(FontAwesome.Film, t.Accent, t.IconSizeBase);
-            ui.Text(vm.SceneDisplayName, new UiTextStyle { Color = t.TextPrimary, FontSize = t.FontSizeSubtitle });
+            ui.Icon(FontAwesome.Film, t.Accent, t.IconSizeSmall);
+            ui.Text(vm.SceneDisplayName, new UiTextStyle { Color = t.TextPrimary, FontSize = t.FontSizeBody });
         }
 
-        // Grid settings section
         using var section = Ui.CollapsibleSection(ctx, "GridSettings", "Grid Settings", true)
             .HeaderBackground(t.SectionHeaderBg, t.Hover)
             .HeaderTextColor(t.TextPrimary)
             .BodyBackground(t.PanelBackground)
             .ChevronColor(t.TextMuted)
             .FontSize(t.FontSizeBody)
-            .Padding(12)
-            .Gap(8)
+            .Padding(8)
+            .Gap(4)
             .Open();
 
         if (!section.IsExpanded)
@@ -155,14 +146,13 @@ public static class InspectorBuilder
         }
 
         using var grid = Ui.PropertyGrid(ctx, "GridSettingsGrid")
-            .LabelWidth(75)
+            .LabelWidth(65)
             .FontSize(t.FontSizeCaption)
-            .RowHeight(28)
-            .Gap(4)
+            .RowHeight(24)
+            .Gap(2)
             .LabelColor(t.TextSecondary)
             .Open();
 
-        // Show Grid
         {
             using var row = grid.Row("Show Grid");
             var showGrid = vm.ShowGrid;
@@ -181,11 +171,11 @@ public static class InspectorBuilder
             }
         }
 
-        // Grid Size
         {
             using var row = grid.Row("Grid Size");
             var gridSize = vm.GridSize;
             if (Ui.DraggableValue(ctx, "GridSizeVal")
+                .LabelWidth(0)
                 .Sensitivity(1f)
                 .Format("F0")
                 .FontSize(t.FontSizeCaption)
@@ -199,11 +189,11 @@ public static class InspectorBuilder
             }
         }
 
-        // Grid Spacing
         {
             using var row = grid.Row("Spacing");
             var spacing = vm.GridSpacing;
             if (Ui.DraggableValue(ctx, "GridSpacingVal")
+                .LabelWidth(0)
                 .Sensitivity(0.1f)
                 .Format("F1")
                 .FontSize(t.FontSizeCaption)
@@ -217,7 +207,6 @@ public static class InspectorBuilder
             }
         }
 
-        // Snap settings
         {
             using var row = grid.Row("Snap");
             var snapEnabled = vm.SnapEnabled;
@@ -236,11 +225,11 @@ public static class InspectorBuilder
             }
         }
 
-        // Position Snap Increment
         {
             using var row = grid.Row("Pos Snap");
             var posSnap = vm.PositionSnapIncrement;
             if (Ui.DraggableValue(ctx, "PosSnapVal")
+                .LabelWidth(0)
                 .Sensitivity(0.1f)
                 .Format("F1")
                 .FontSize(t.FontSizeCaption)
@@ -254,11 +243,11 @@ public static class InspectorBuilder
             }
         }
 
-        // Rotation Snap Increment
         {
             using var row = grid.Row("Rot Snap");
             var rotSnap = vm.RotationSnapIncrement;
             if (Ui.DraggableValue(ctx, "RotSnapVal")
+                .LabelWidth(0)
                 .Sensitivity(1f)
                 .Format("F0")
                 .FontSize(t.FontSizeCaption)
@@ -272,14 +261,13 @@ public static class InspectorBuilder
             }
         }
 
-        // Auto-save status
         if (!string.IsNullOrEmpty(vm.AutoSaveStatus))
         {
             using (ui.Panel("AutoSaveRow")
                 .Horizontal()
                 .GrowWidth()
                 .FitHeight()
-                .Padding(12, 8)
+                .Padding(8, 4)
                 .Open())
             {
                 ui.Text(vm.AutoSaveStatus, new UiTextStyle { Color = t.TextMuted, FontSize = t.FontSizeCaption });

@@ -662,9 +662,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         {
             case "mesh":
                 var meshComp = obj.AddComponent<MeshComponent>();
-                var meshRef = data.Properties?.GetStringOrDefault("mesh");
                 meshComp.Mesh = ResolveMeshFromProperties(data.Properties);
-                meshComp.MeshRef = meshRef;
                 break;
 
             case "rigidbody":
@@ -689,28 +687,24 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
                     var albedoRef = data.Properties.GetStringOrDefault("albedo");
                     if (!string.IsNullOrEmpty(albedoRef))
                     {
-                        surfaceComp.AlbedoRef = albedoRef;
                         surfaceComp.Albedo = ResolveTexture(albedoRef);
                     }
 
                     var normalRef = data.Properties.GetStringOrDefault("normal");
                     if (!string.IsNullOrEmpty(normalRef))
                     {
-                        surfaceComp.NormalRef = normalRef;
                         surfaceComp.Normal = ResolveTexture(normalRef);
                     }
 
                     var metallicRef = data.Properties.GetStringOrDefault("metallic");
                     if (!string.IsNullOrEmpty(metallicRef))
                     {
-                        surfaceComp.MetallicRef = metallicRef;
                         surfaceComp.Metallic = ResolveTexture(metallicRef);
                     }
 
                     var roughnessRef = data.Properties.GetStringOrDefault("roughness");
                     if (!string.IsNullOrEmpty(roughnessRef))
                     {
-                        surfaceComp.RoughnessRef = roughnessRef;
                         surfaceComp.Roughness = ResolveTexture(roughnessRef);
                     }
 

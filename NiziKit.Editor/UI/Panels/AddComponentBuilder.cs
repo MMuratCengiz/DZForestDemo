@@ -21,19 +21,18 @@ public static class AddComponentBuilder
             .Background(t.PanelElevated)
             .Border(1, t.Border)
             .CornerRadius(t.RadiusMedium)
-            .Padding(12)
-            .Gap(8)
+            .Padding(8)
+            .Gap(6)
             .GrowWidth()
-            .Height(UiSizing.Fit(0, 300))
+            .Height(UiSizing.Fit(0, 260))
             .Open();
 
-        // Header
         using (ui.Panel("AddCompHeader")
             .Horizontal()
             .GrowWidth()
             .FitHeight()
             .AlignChildrenY(UiAlignY.Center)
-            .Gap(8)
+            .Gap(6)
             .Open())
         {
             ui.Icon(FontAwesome.Plus, t.Accent, t.IconSizeSmall);
@@ -48,7 +47,6 @@ public static class AddComponentBuilder
             }
         }
 
-        // Search field
         var searchText = state.SearchText;
         Ui.TextField(ctx, "CompSearch", ref searchText)
             .BackgroundColor(t.SurfaceInset, t.PanelBackground)
@@ -57,22 +55,19 @@ public static class AddComponentBuilder
             .BorderColor(t.Border, t.Accent)
             .FontSize(t.FontSizeCaption)
             .CornerRadius(t.RadiusSmall)
-            .Padding(8, 6)
+            .Padding(6, 4)
             .GrowWidth()
             .Placeholder("Search components...")
             .Show(ref searchText);
         state.SearchText = searchText;
 
-        // Divider
         using (ui.Panel("AddCompDiv").GrowWidth().Height(1).Background(t.Border).Open()) { }
-
-        // Component list (scrollable)
         using var list = ui.Panel("CompList")
             .Vertical()
             .GrowWidth()
             .Height(UiSizing.Grow())
             .ScrollVertical()
-            .Gap(2)
+            .Gap(1)
             .Open();
 
         var availableTypes = obj.GetAvailableComponentTypes();
@@ -93,7 +88,7 @@ public static class AddComponentBuilder
                 .Color(UiColor.Transparent, t.Hover, t.Active)
                 .TextColor(t.TextPrimary)
                 .FontSize(t.FontSizeCaption)
-                .Padding(8, 6)
+                .Padding(6, 4)
                 .CornerRadius(t.RadiusSmall)
                 .Border(0, UiColor.Transparent)
                 .Show())

@@ -8,19 +8,15 @@ public partial class SurfaceComponent
 {
     [AssetRef(AssetRefType.Texture, "albedo")]
     public partial Texture2d? Albedo { get; set; }
-    public string? AlbedoRef { get; set; }
 
     [AssetRef(AssetRefType.Texture, "normal")]
     public partial Texture2d? Normal { get; set; }
-    public string? NormalRef { get; set; }
 
     [AssetRef(AssetRefType.Texture, "metallic")]
     public partial Texture2d? Metallic { get; set; }
-    public string? MetallicRef { get; set; }
 
     [AssetRef(AssetRefType.Texture, "roughness")]
     public partial Texture2d? Roughness { get; set; }
-    public string? RoughnessRef { get; set; }
 
     public float MetallicValue { get; set; } = 0.0f;
     public float RoughnessValue { get; set; } = 0.5f;

@@ -17,53 +17,47 @@ public static class EditorUiBuilder
             .Background(UiColor.Transparent)
             .Open();
 
-        // Menu bar
         MenuBarBuilder.Build(ui, ctx, vm);
 
-        // Main 3-column layout
         using (ui.Panel("MainRow").Horizontal().Grow().Open())
         {
-            // Left panel - Scene Hierarchy
             using (ui.Panel("LeftPanel")
                 .Vertical()
                 .Background(t.PanelBackground)
                 .Border(UiBorder.Horizontal(0, UiColor.Transparent)
                     with { Right = 1, Color = t.Border })
-                .Width(UiSizing.Fit(200, 320))
+                .Width(UiSizing.Percent(0.15f))
                 .GrowHeight()
                 .Open())
             {
-                EditorUi.SectionHeader(ui, ctx, "HierarchyHeader", FontAwesome.LayerGroup, "Scene Hierarchy");
+                EditorUi.SectionHeader(ui, ctx, "HierarchyHeader", FontAwesome.LayerGroup, "Hierarchy");
                 SceneHierarchyBuilder.Build(ui, ctx, vm);
             }
 
-            // Center - Viewport (transparent, scene shows through)
-            using (ui.Panel("Viewport")
+            using (ui.Panel("CenterColumn")
                 .Vertical()
                 .Background(UiColor.Transparent)
                 .Grow()
                 .Open())
             {
-                // Toolbar wrapper with padding to float it
                 using (ui.Panel("ToolbarWrap")
-                    .Padding(8, 8, 6, 0)
+                    .Padding(6, 6, 4, 0)
                     .GrowWidth()
                     .FitHeight()
                     .Open())
                 {
                     ViewportToolbarBuilder.Build(ui, ctx, vm);
                 }
-                // Viewport fills remaining space
+
                 using (ui.Panel("ViewportFill").Grow().Open()) { }
             }
 
-            // Right panel - Inspector
             using (ui.Panel("RightPanel")
                 .Vertical()
                 .Background(t.PanelBackground)
                 .Border(UiBorder.Horizontal(0, UiColor.Transparent)
                     with { Left = 1, Color = t.Border })
-                .Width(UiSizing.Fit(280, 420))
+                .Width(t.PanelPreferredWidth)
                 .GrowHeight()
                 .Open())
             {
@@ -72,7 +66,6 @@ public static class EditorUiBuilder
             }
         }
 
-        // Dialog overlays (rendered last = on top)
         if (vm.IsSavePromptOpen)
         {
             SavePromptDialogBuilder.Build(ui, ctx, vm);

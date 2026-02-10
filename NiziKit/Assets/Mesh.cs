@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Numerics;
 using System.Runtime.InteropServices;
 using DenOfIz;
@@ -28,6 +29,7 @@ public struct SkinnedVertex
 public class Mesh : IDisposable
 {
     public string Name { get; set; } = string.Empty;
+    public string AssetPath { get; set; } = string.Empty;
     private VertexFormat? _explicitFormat;
 
     public VertexFormat Format
@@ -50,7 +52,7 @@ public class Mesh : IDisposable
 
     public MeshAttributeSet? SourceAttributes { get; set; }
 
-    private readonly Dictionary<string, VertexBufferView> _formatVariants = new();
+    private readonly ConcurrentDictionary<string, VertexBufferView> _formatVariants = new();
 
     public int NumVertices => SourceAttributes?.VertexCount ??
                               (CpuVertices != null ? CpuVertices.Length / Format.Stride : (int)VertexBuffer.Count);
@@ -63,11 +65,6 @@ public class Mesh : IDisposable
 
     public VertexBufferView GetVertexBuffer(VertexFormat format)
     {
-        if (_formatVariants.TryGetValue(format.Name, out var cached))
-        {
-            return cached;
-        }
-
         if (format.Name == Format.Name && VertexBuffer.IsValid)
         {
             return VertexBuffer;
@@ -82,10 +79,11 @@ public class Mesh : IDisposable
             throw new InvalidOperationException($"Cannot create vertex buffer variant for format '{format.Name}': source data has been discarded");
         }
 
-        var packed = VertexPacker.Pack(SourceAttributes, format);
-        var view = Assets.UploadVertices(packed, format);
-        _formatVariants[format.Name] = view;
-        return view;
+        return _formatVariants.GetOrAdd(format.Name, _ =>
+        {
+            var packed = VertexPacker.Pack(SourceAttributes, format);
+            return Assets.UploadVertices(packed, format);
+        });
     }
 
     public void DiscardSourceData()

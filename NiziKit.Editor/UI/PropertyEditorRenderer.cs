@@ -1,5 +1,7 @@
 using System.Numerics;
 using System.Reflection;
+using DenOfIz;
+using NiziKit.Assets;
 using NiziKit.Components;
 using NiziKit.Editor.Services;
 using NiziKit.Editor.Theme;
@@ -26,10 +28,10 @@ public static class PropertyEditorRenderer
             .OrderBy(p => p.MetadataToken);
 
         using var grid = Ui.PropertyGrid(ctx, prefix + "_PropGrid")
-            .LabelWidth(90)
+            .LabelWidth(75)
             .FontSize(t.FontSizeCaption)
-            .RowHeight(26)
-            .Gap(2)
+            .RowHeight(22)
+            .Gap(1)
             .LabelColor(t.TextSecondary)
             .Open();
 
@@ -95,7 +97,6 @@ public static class PropertyEditorRenderer
         }
         else
         {
-            // Read-only fallback
             var value = prop.GetValue(instance);
             ui.Text(value?.ToString() ?? "(null)", new UiTextStyle { Color = t.TextMuted, FontSize = t.FontSizeCaption });
         }
@@ -108,12 +109,12 @@ public static class PropertyEditorRenderer
         var value = prop.GetValue(instance)?.ToString() ?? "";
 
         var changed = Ui.TextField(ctx, id, ref value)
-            .BackgroundColor(t.SurfaceInset, t.PanelElevated)
+            .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
             .TextColor(t.TextPrimary)
             .BorderColor(t.Border, t.Accent)
             .FontSize(t.FontSizeCaption)
             .CornerRadius(t.RadiusSmall)
-            .Padding(6, 4)
+            .Padding(4, 3)
             .GrowWidth()
             .ReadOnly(!canWrite)
             .Show(ref value);
@@ -149,6 +150,7 @@ public static class PropertyEditorRenderer
         else
         {
             changed = Ui.DraggableValue(ctx, id)
+                .LabelWidth(0)
                 .Sensitivity(0.01f)
                 .Format("F3")
                 .FontSize(t.FontSizeCaption)
@@ -173,6 +175,7 @@ public static class PropertyEditorRenderer
         var floatValue = (float)doubleValue;
 
         var changed = Ui.DraggableValue(ctx, id)
+            .LabelWidth(0)
             .Sensitivity(0.01f)
             .Format("F3")
             .FontSize(t.FontSizeCaption)
@@ -196,6 +199,7 @@ public static class PropertyEditorRenderer
         var floatValue = (float)intValue;
 
         var changed = Ui.DraggableValue(ctx, id)
+            .LabelWidth(0)
             .Sensitivity(1f)
             .Format("F0")
             .FontSize(t.FontSizeCaption)
@@ -219,6 +223,7 @@ public static class PropertyEditorRenderer
         var floatValue = (float)uintValue;
 
         var changed = Ui.DraggableValue(ctx, id)
+            .LabelWidth(0)
             .Sensitivity(1f)
             .Format("F0")
             .FontSize(t.FontSizeCaption)
@@ -321,7 +326,7 @@ public static class PropertyEditorRenderer
             .TextColor(t.TextPrimary)
             .FontSize(t.FontSizeCaption)
             .CornerRadius(t.RadiusSmall)
-            .Padding(6, 4)
+            .Padding(4, 3)
             .GrowWidth()
             .ItemHoverColor(t.Hover)
             .DropdownBackground(t.PanelBackground)
@@ -339,17 +344,24 @@ public static class PropertyEditorRenderer
         var t = EditorTheme.Current;
         var assetRefAttr = prop.GetCustomAttribute<AssetRefAttribute>()!;
         var currentValue = prop.GetValue(instance);
-        var displayText = currentValue?.ToString() ?? "(none)";
+        var assetPath = GetAssetPath(currentValue);
+        var rawText = string.IsNullOrEmpty(assetPath) ? "(none)" : assetPath;
+
+        var buttonId = ctx.GetElementId(id);
+        var bbox = ctx.Clay.GetElementBoundingBox(buttonId);
+        var availWidth = bbox.Width > 12 ? bbox.Width - 12 : 120;
+        var displayText = TruncateToFit(ctx.Clay, rawText, t.FontSizeCaption, availWidth);
 
         if (Ui.Button(ctx, id, displayText)
             .Color(t.SurfaceInset, t.Hover, t.Active)
             .TextColor(t.TextPrimary)
             .FontSize(t.FontSizeCaption)
             .CornerRadius(t.RadiusSmall)
-            .Padding(6, 4)
+            .Padding(4, 3)
+            .GrowWidth()
             .Show())
         {
-            editorVm.OpenAssetPicker(assetRefAttr.AssetType, currentValue?.ToString(), asset =>
+            editorVm.OpenAssetPicker(assetRefAttr.AssetType, assetPath, asset =>
             {
                 if (asset != null && prop.CanWrite)
                 {
@@ -362,6 +374,18 @@ public static class PropertyEditorRenderer
                 }
             });
         }
+    }
+
+    private static string? GetAssetPath(object? asset)
+    {
+        var path = asset switch
+        {
+            Mesh mesh => mesh.AssetPath,
+            Skeleton skeleton => skeleton.AssetPath,
+            Texture2d texture => texture.SourcePath,
+            _ => null
+        };
+        return string.IsNullOrEmpty(path) ? null : path;
     }
 
     private static string FormatPropertyName(string name)
@@ -384,5 +408,31 @@ public static class PropertyEditorRenderer
         }
 
         return result.ToString();
+    }
+
+    private static string TruncateToFit(Clay clay, string text, ushort fontSize, float maxWidth)
+    {
+        var measured = clay.MeasureText(StringView.Intern(text), 0, fontSize);
+        if (measured.Width <= maxWidth) return text;
+
+        var lastSlash = text.LastIndexOfAny(['/', '\\']);
+        if (lastSlash >= 0)
+        {
+            var filename = text[(lastSlash + 1)..];
+            var fileDims = clay.MeasureText(StringView.Intern(filename), 0, fontSize);
+            if (fileDims.Width <= maxWidth) return filename;
+            text = filename;
+        }
+
+        var ellipsis = "...";
+        var ellipsisDims = clay.MeasureText(StringView.Intern(ellipsis), 0, fontSize);
+        var remaining = maxWidth - ellipsisDims.Width;
+        if (remaining <= 0) return ellipsis;
+
+        var fitChars = clay.GetCharIndexAtOffset(StringView.Intern(text), remaining, 0, fontSize);
+        if (fitChars > 0 && fitChars < text.Length)
+            return text[..(int)fitChars] + ellipsis;
+
+        return ellipsis;
     }
 }

@@ -839,7 +839,7 @@ public ref struct UiCheckbox
         }
         _context.Clay.CloseElement();
 
-        return interaction.WasClicked;
+        return interaction.WasClicked ? !_isChecked : _isChecked;
     }
 
     public UiTextStyle LabelStyle => new()

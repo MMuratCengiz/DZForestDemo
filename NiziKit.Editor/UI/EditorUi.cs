@@ -12,8 +12,8 @@ public static class EditorUi
         using var header = ui.Panel(id)
             .Horizontal()
             .Background(T.SectionHeaderBg)
-            .Padding(14, 8)
-            .Gap(8)
+            .Padding(10, 4)
+            .Gap(6)
             .AlignChildrenY(UiAlignY.Center)
             .GrowWidth()
             .FitHeight()
@@ -30,7 +30,7 @@ public static class EditorUi
             .TextColor(UiColor.White)
             .FontSize(T.FontSizeBody)
             .CornerRadius(T.RadiusMedium)
-            .Padding(16, 8)
+            .Padding(12, 5)
             .Show();
     }
 
@@ -41,7 +41,7 @@ public static class EditorUi
             .TextColor(T.TextPrimary)
             .FontSize(T.FontSizeBody)
             .CornerRadius(T.RadiusMedium)
-            .Padding(16, 8)
+            .Padding(12, 5)
             .Border(0, UiColor.Transparent)
             .Show();
     }
@@ -53,7 +53,7 @@ public static class EditorUi
             .TextColor(UiColor.Rgb(0x11, 0x11, 0x1B))
             .FontSize(T.FontSizeBody)
             .CornerRadius(T.RadiusMedium)
-            .Padding(16, 8)
+            .Padding(12, 5)
             .Border(0, UiColor.Transparent)
             .Show();
     }
@@ -63,7 +63,7 @@ public static class EditorUi
         var btn = Ui.Button(ctx, id, "")
             .Color(UiColor.Transparent, T.Hover, T.Active)
             .CornerRadius(T.RadiusMedium)
-            .Padding(6, 6)
+            .Padding(4, 4)
             .Border(0, UiColor.Transparent);
 
         using var scope = btn.Open();
@@ -80,8 +80,8 @@ public static class EditorUi
         var btn = Ui.Button(ctx, id, "")
             .Color(bg, hoverBg, T.Active)
             .CornerRadius(T.RadiusMedium)
-            .Padding(8, 6)
-            .Gap(6)
+            .Padding(6, 4)
+            .Gap(4)
             .Horizontal()
             .Border(0, UiColor.Transparent);
 
@@ -100,6 +100,7 @@ public static class EditorUi
     {
         return ui.Panel(id)
             .Background(T.DialogOverlay)
+            .FloatingRoot(900)
             .Grow()
             .AlignChildren(UiAlignX.Center, UiAlignY.Center)
             .Open();
@@ -116,10 +117,9 @@ public static class EditorUi
             .Vertical()
             .Open();
 
-        // Header
         using (ui.Panel(id + "_header")
             .Background(T.Accent)
-            .Padding(24, 14)
+            .Padding(20, 10)
             .GrowWidth()
             .FitHeight()
             .Horizontal()
@@ -129,9 +129,7 @@ public static class EditorUi
             ui.Text(title, new UiTextStyle { Color = UiColor.White, FontSize = T.FontSizeSubtitle });
         }
 
-        // Divider
         using (ui.Panel(id + "_div").GrowWidth().Height(1).Background(T.Border).Open()) { }
-
         return container;
     }
 
@@ -141,7 +139,7 @@ public static class EditorUi
             .Color(UiColor.Transparent, T.Hover, T.Active)
             .TextColor(T.TextPrimary)
             .FontSize(T.FontSizeBody)
-            .Padding(12, 6)
+            .Padding(8, 4)
             .CornerRadius(T.RadiusSmall)
             .Border(0, UiColor.Transparent);
 
@@ -154,7 +152,7 @@ public static class EditorUi
         using (ui.Panel("badge_" + text)
             .Background(T.PanelElevated)
             .CornerRadius(T.RadiusSmall)
-            .Padding(8, 4)
+            .Padding(6, 3)
             .FitWidth()
             .FitHeight()
             .Open())

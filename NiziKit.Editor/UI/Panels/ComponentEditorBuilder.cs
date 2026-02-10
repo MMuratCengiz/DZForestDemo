@@ -17,11 +17,19 @@ public static class ComponentEditorBuilder
             .BodyBackground(t.PanelBackground)
             .ChevronColor(t.TextMuted)
             .FontSize(t.FontSizeBody)
-            .Padding(12)
-            .Gap(4)
-            .Border(1, t.ComponentBorder);
+            .Padding(8)
+            .Gap(2)
+            .Border(1, t.ComponentBorder)
+            .HeaderAction(FontAwesome.Trash, t.TextMuted, t.Error);
 
         componentVm.IsExpanded = section.IsExpanded;
+
+        if (section.HeaderActionClicked)
+        {
+            using var _ = section.Open();
+            componentVm.Remove();
+            return;
+        }
 
         using var scope = section.Open();
 
@@ -30,22 +38,6 @@ public static class ComponentEditorBuilder
             return;
         }
 
-        // Remove button
-        using (scope.Panel(sectionId + "_actions")
-            .Horizontal()
-            .GrowWidth()
-            .FitHeight()
-            .AlignChildrenX(UiAlignX.Right)
-            .Open())
-        {
-            if (EditorUi.IconButton(ctx, sectionId + "_remove", FontAwesome.Trash))
-            {
-                componentVm.Remove();
-                return;
-            }
-        }
-
-        // Render component properties
         PropertyEditorRenderer.RenderProperties(ui, ctx, sectionId, componentVm.Component, editorVm, () =>
         {
             componentVm.NotifyChanged();

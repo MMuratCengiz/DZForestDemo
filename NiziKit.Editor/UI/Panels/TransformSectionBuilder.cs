@@ -16,8 +16,8 @@ public static class TransformSectionBuilder
             .BodyBackground(t.PanelBackground)
             .ChevronColor(t.TextMuted)
             .FontSize(t.FontSizeBody)
-            .Padding(12)
-            .Gap(8)
+            .Padding(8)
+            .Gap(4)
             .Open();
 
         if (!section.IsExpanded)
@@ -26,14 +26,13 @@ public static class TransformSectionBuilder
         }
 
         using var grid = Ui.PropertyGrid(ctx, "TransformGrid")
-            .LabelWidth(55)
+            .LabelWidth(45)
             .FontSize(t.FontSizeCaption)
-            .RowHeight(28)
-            .Gap(4)
+            .RowHeight(24)
+            .Gap(2)
             .LabelColor(t.TextSecondary)
             .Open();
 
-        // Position
         {
             using var row = grid.Row("Position");
             var px = obj.PositionX;
@@ -50,7 +49,6 @@ public static class TransformSectionBuilder
             }
         }
 
-        // Rotation
         {
             using var row = grid.Row("Rotation");
             var rx = obj.RotationX;
@@ -67,7 +65,6 @@ public static class TransformSectionBuilder
             }
         }
 
-        // Scale
         {
             using var row = grid.Row("Scale");
             var sx = obj.ScaleX;

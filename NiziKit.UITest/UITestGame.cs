@@ -253,23 +253,17 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
         using (ui.Row("CheckboxRow").Gap(16).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
         {
-            if (Ui.Checkbox(ctx, "ChkA", "Enable feature A", _checkboxA)
-                    .FontSize(14)
-                    .BoxSize(18)
-                    .CheckColor(UiColor.Rgb(64, 128, 96))
-                    .Show())
-            {
-                _checkboxA = !_checkboxA;
-            }
+            _checkboxA = Ui.Checkbox(ctx, "ChkA", "Enable feature A", _checkboxA)
+                .FontSize(14)
+                .BoxSize(18)
+                .CheckColor(UiColor.Rgb(64, 128, 96))
+                .Show();
 
-            if (Ui.Checkbox(ctx, "ChkB", "Enable feature B", _checkboxB)
+            _checkboxB = Ui.Checkbox(ctx, "ChkB", "Enable feature B", _checkboxB)
                 .FontSize(14)
                 .BoxSize(18)
                 .CheckColor(UiColor.Rgb(60, 130, 200))
-                .Show())
-            {
-                _checkboxB = !_checkboxB;
-            }
+                .Show();
 
             ui.Text($"A={_checkboxA}, B={_checkboxB}", UiTextStyle.Default.WithColor(UiColor.Gray).WithSize(12));
         }

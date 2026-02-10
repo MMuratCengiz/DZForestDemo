@@ -13,11 +13,10 @@ public static class SavePromptDialogBuilder
         using var overlay = EditorUi.DialogOverlay(ui, "SavePromptOverlay");
         using var dialog = EditorUi.DialogContainer(ui, ctx, "SavePromptDialog", "Unsaved Changes", 450, 200);
 
-        // Body
         using (ui.Panel("SavePromptBody")
             .Vertical()
-            .Padding(24, 16)
-            .Gap(12)
+            .Padding(20, 12)
+            .Gap(10)
             .Grow()
             .Open())
         {
@@ -26,10 +25,9 @@ public static class SavePromptDialogBuilder
                 new UiTextStyle { Color = t.TextPrimary, FontSize = t.FontSizeBody });
         }
 
-        // Buttons
         using (ui.Panel("SavePromptButtons")
             .Horizontal()
-            .Padding(24, 14)
+            .Padding(16, 10)
             .Gap(8)
             .GrowWidth()
             .FitHeight()

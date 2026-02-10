@@ -24,8 +24,8 @@ public ref struct UiPropertyGrid
         _fontSize = 13;
         _rowHeight = 28;
         _gap = 2;
-        _bgColor = UiColor.Rgb(35, 35, 40);
-        _altBgColor = UiColor.Rgb(40, 40, 45);
+        _bgColor = UiColor.Transparent;
+        _altBgColor = UiColor.Transparent;
         _labelColor = UiColor.Rgb(180, 180, 180);
     }
 
@@ -106,7 +106,7 @@ public ref struct UiPropertyGridScope
         rowDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
         rowDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(_rowHeight, float.MaxValue);
         rowDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
-        rowDecl.Layout.Padding = new ClayPadding { Left = 8, Right = 8 };
+        rowDecl.Layout.Padding = new ClayPadding { Left = 8, Right = 8, Top = 4, Bottom = 4 };
         rowDecl.Layout.ChildGap = 8;
         rowDecl.BackgroundColor = bg.ToClayColor();
 

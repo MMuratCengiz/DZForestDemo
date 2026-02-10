@@ -346,7 +346,6 @@ public class NiziComponentGenerator : IIncrementalGenerator
                     sb.AppendLine("            {");
                     sb.AppendLine($"                var {prop.Name.ToLower()}RefStr = {prop.Name.ToLower()}Ref.GetString()!;");
                     sb.AppendLine($"                component.{prop.Name} = resolver.{resolverMethod}({prop.Name.ToLower()}RefStr);");
-                    sb.AppendLine($"                component.{prop.Name}Ref = {prop.Name.ToLower()}RefStr;");
                     sb.AppendLine("            }");
                 }
             }

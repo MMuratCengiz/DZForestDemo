@@ -892,7 +892,7 @@ public ref struct UiTextField
         var contentId = _context.StringCache.GetId("TFContent", Id);
         var wrapperDecl = new ClayElementDeclaration { Id = contentId };
         wrapperDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
-        wrapperDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(0, float.MaxValue);
+        wrapperDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(lineHeight, float.MaxValue);
         wrapperDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
         _context.OpenElement(wrapperDecl);
         {
@@ -916,7 +916,7 @@ public ref struct UiTextField
         contentDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
         contentDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
         contentDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
-        contentDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(0, float.MaxValue);
+        contentDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(lineHeight, float.MaxValue);
 
         if (_overflow == UiTextOverflow.Scroll)
         {

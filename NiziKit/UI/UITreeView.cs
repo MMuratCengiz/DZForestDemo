@@ -116,11 +116,6 @@ public ref struct UiTreeView
         containerDecl.Layout.Sizing.Height = _height.ToClayAxis();
         containerDecl.BackgroundColor = _bgColor.ToClayColor();
         containerDecl.BorderRadius = ClayBorderRadius.CreateUniform(4);
-        containerDecl.Border = new ClayBorderDesc
-        {
-            Width = ClayBorderWidth.CreateUniform(1),
-            Color = _borderColor.ToClayColor()
-        };
         containerDecl.Scroll.Vertical = true;
 
         _context.OpenElement(containerDecl);
