@@ -20,7 +20,6 @@ public static class MenuBarBuilder
             .FitHeight()
             .AlignChildrenY(UiAlignY.Center)
             .Gap(2)
-            .BlocksInput()
             .Open();
 
         BuildFileMenu(ui, ctx, vm);

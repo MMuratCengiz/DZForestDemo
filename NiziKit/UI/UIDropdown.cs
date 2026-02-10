@@ -234,31 +234,18 @@ public ref struct UiDropdown
         }
         _context.Clay.CloseElement();
 
-        if (interaction.WasClicked)
+        if (_state.IsOpen && _context.MouseJustReleased)
         {
-            _state.Toggle();
-        }
-
-        if (_state.IsOpen && _context.MouseJustReleased && !interaction.IsHovered)
-        {
-            var anyItemHovered = false;
-            for (var i = 0; i < _items.Length; i++)
-            {
-                var itemId = _context.StringCache.GetId("DDItem", Id, (uint)i);
-                if (_context.Clay.PointerOver(itemId))
-                {
-                    anyItemHovered = true;
-                    break;
-                }
-            }
-
             var listId = _context.StringCache.GetId("DDList", Id);
-            var listHovered = _context.Clay.PointerOver(listId);
-
-            if (!anyItemHovered && !listHovered)
+            if (!_context.Clay.PointerOver(listId))
             {
                 _state.Close();
             }
+        }
+
+        if (!_state.IsOpen && interaction.WasClicked)
+        {
+            _state.Open();
         }
 
         if (changed)
@@ -377,6 +364,7 @@ public ref struct UiDropdown
         listDecl.Scroll.Vertical = true;
 
         _context.OpenElement(listDecl);
+        _context.BeginPopupScope(listDecl.Id);
         {
             for (var i = 0; i < _items.Length; i++)
             {
@@ -388,6 +376,7 @@ public ref struct UiDropdown
                 }
             }
         }
+        _context.EndPopupScope();
         _context.Clay.CloseElement();
 
         return changed;

@@ -205,6 +205,12 @@ public partial class FreeFlyController
                 if (ev.MouseButton.Button == MouseButton.Right)
                 {
                     _isLooking = false;
+                    _moveForward = false;
+                    _moveBackward = false;
+                    _moveLeft = false;
+                    _moveRight = false;
+                    _moveUp = false;
+                    _moveDown = false;
                     return true;
                 }
                 break;
@@ -241,28 +247,33 @@ public partial class FreeFlyController
 
     private bool HandleKeyDown(KeyCode key)
     {
+        if (_isLooking)
+        {
+            switch (key)
+            {
+                case KeyCode.W:
+                    _moveForward = true;
+                    return true;
+                case KeyCode.S:
+                    _moveBackward = true;
+                    return true;
+                case KeyCode.A:
+                    _moveLeft = true;
+                    return true;
+                case KeyCode.D:
+                    _moveRight = true;
+                    return true;
+                case KeyCode.E:
+                    _moveUp = true;
+                    return true;
+                case KeyCode.Q:
+                    _moveDown = true;
+                    return true;
+            }
+        }
+
         switch (key)
         {
-            case KeyCode.W:
-                _moveForward = true;
-                return true;
-            case KeyCode.S:
-                _moveBackward = true;
-                return true;
-            case KeyCode.A:
-                _moveLeft = true;
-                return true;
-            case KeyCode.D:
-                _moveRight = true;
-                return true;
-            case KeyCode.E:
-                _moveUp = true;
-                return true;
-            case KeyCode.Q:
-            case KeyCode.Lctrl:
-            case KeyCode.Rctrl:
-                _moveDown = true;
-                return true;
             case KeyCode.Lshift:
             case KeyCode.Rshift:
                 _speedBoost = true;
@@ -295,8 +306,6 @@ public partial class FreeFlyController
                 _moveUp = false;
                 return true;
             case KeyCode.Q:
-            case KeyCode.Lctrl:
-            case KeyCode.Rctrl:
                 _moveDown = false;
                 return true;
             case KeyCode.Lshift:

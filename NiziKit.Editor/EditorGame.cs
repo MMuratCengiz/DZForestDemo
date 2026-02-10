@@ -32,6 +32,7 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
     private bool _gizmoDragging;
     private bool _shiftHeld;
     private bool _ctrlHeld;
+    private bool _keyConsumed;
 
     private Vector3 _gizmoDragStartPosition;
     private Quaternion _gizmoDragStartRotation;
@@ -122,6 +123,20 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         gizmoPass.Gizmo.UpdateHover(ray, _editorCamera);
     }
 
+    private void UpdateMouseOverUi()
+    {
+        var ctx = _renderer.RenderFrame.UiContext;
+        var viewportId = ctx.GetElementId("ViewportFill");
+        var overViewport = ctx.Clay.PointerOver(viewportId);
+
+        var hasDialog = _viewModel.IsSavePromptOpen
+                        || _viewModel.IsOpenSceneDialogOpen
+                        || _viewModel.IsImportPanelOpen
+                        || _viewModel.IsAssetPickerOpen;
+
+        _mouseOverUi = !overViewport || hasDialog || ctx.IsPointerOverUi;
+    }
+
     protected override void OnEvent(ref Event ev)
     {
         var renderFrame = _renderer.RenderFrame;
@@ -134,8 +149,7 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
             renderFrame.HandleUiEvent(ev);
             renderFrame.UiContext.RecordEvent(ev);
 
-            // Check if mouse is over UI elements
-            _mouseOverUi = renderFrame.UiContext.IsPointerOverUi;
+            UpdateMouseOverUi();
 
             if (_gizmoDragging)
             {
@@ -146,6 +160,7 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         {
             renderFrame.HandleUiEvent(ev);
             renderFrame.UiContext.RecordEvent(ev);
+            UpdateMouseOverUi();
 
             if (!_mouseOverUi && ev.MouseButton.Button == MouseButton.Left)
             {
@@ -161,16 +176,11 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         {
             renderFrame.HandleUiEvent(ev);
             renderFrame.UiContext.RecordEvent(ev);
+            UpdateMouseOverUi();
 
             if (ev.MouseButton.Button == MouseButton.Left && _gizmoDragging)
             {
                 EndGizmoDrag();
-            }
-
-            // Update mouse-over-ui on right-click release so context menu state is fresh
-            if (ev.MouseButton.Button == MouseButton.Right)
-            {
-                _mouseOverUi = renderFrame.UiContext.IsPointerOverUi;
             }
         }
         else if (ev.Type == EventType.MouseWheel)
@@ -195,7 +205,11 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
 
             if (!_textInputActive)
             {
-                HandleKeyboardShortcuts(ev.Key.KeyCode);
+                if (HandleKeyboardShortcuts(ev.Key.KeyCode))
+                {
+                    _keyConsumed = true;
+                }
+
                 HandleGizmoModeKey(ev.Key.KeyCode);
 
                 if (ev.Key.KeyCode == KeyCode.F)
@@ -223,6 +237,8 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
             {
                 _ctrlHeld = false;
             }
+
+            _keyConsumed = false;
         }
         else if (ev.Type == EventType.TextInput)
         {
@@ -239,7 +255,7 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         // Determine if UI wants input (text field focused or mouse over UI)
         _textInputActive = renderFrame.UiContext.FocusedTextFieldId != 0;
 
-        if (!UiWantsInput && !_gizmoDragging)
+        if (!UiWantsInput && !_gizmoDragging && !_keyConsumed)
         {
             _editorController.HandleEvent(in ev);
         }
@@ -297,7 +313,8 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
             var newRot = selected.LocalRotation;
             var newScl = selected.LocalScale;
 
-            if (newPos != _gizmoDragStartPosition || newRot != _gizmoDragStartRotation || newScl != _gizmoDragStartScale)
+            if (newPos != _gizmoDragStartPosition || newRot != _gizmoDragStartRotation ||
+                newScl != _gizmoDragStartScale)
             {
                 _viewModel.UndoSystem.Execute(new GizmoTransformAction(selected,
                     _gizmoDragStartPosition, _gizmoDragStartRotation, _gizmoDragStartScale,
@@ -314,7 +331,7 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         _gizmoDragging = false;
     }
 
-    private void HandleKeyboardShortcuts(KeyCode keyCode)
+    private bool HandleKeyboardShortcuts(KeyCode keyCode)
     {
         if (_ctrlHeld)
         {
@@ -322,26 +339,29 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
             {
                 case KeyCode.Z when _shiftHeld:
                     _viewModel.Redo();
-                    return;
+                    return true;
                 case KeyCode.Z:
                     _viewModel.Undo();
-                    return;
+                    return true;
                 case KeyCode.Y:
                     _viewModel.Redo();
-                    return;
+                    return true;
                 case KeyCode.S:
                     _viewModel.SaveScene();
-                    return;
+                    return true;
                 case KeyCode.D:
                     _viewModel.DuplicateObject();
-                    return;
+                    return true;
             }
         }
 
         if (keyCode == KeyCode.Delete)
         {
             _viewModel.DeleteObject();
+            return true;
         }
+
+        return false;
     }
 
     private void HandleGizmoModeKey(KeyCode keyCode)
@@ -394,7 +414,8 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
                 continue;
             }
 
-            if (TransformGizmo.RayBoundsIntersection(ray, meshComponent.Mesh.Bounds, gameObject.WorldMatrix, out var distance))
+            if (TransformGizmo.RayBoundsIntersection(ray, meshComponent.Mesh.Bounds, gameObject.WorldMatrix,
+                    out var distance))
             {
                 if (distance < closestDistance)
                 {
@@ -457,7 +478,8 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         return true;
     }
 
-    private static GameObjectViewModel? FindGameObjectViewModel(IEnumerable<GameObjectViewModel> viewModels, GameObject target)
+    private static GameObjectViewModel? FindGameObjectViewModel(IEnumerable<GameObjectViewModel> viewModels,
+        GameObject target)
     {
         foreach (var vm in viewModels)
         {
@@ -472,6 +494,7 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
                 return found;
             }
         }
+
         return null;
     }
 

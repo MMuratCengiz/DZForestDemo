@@ -28,7 +28,6 @@ public static class EditorUiBuilder
                     with { Right = 1, Color = t.Border })
                 .Width(UiSizing.Percent(0.15f))
                 .GrowHeight()
-                .BlocksInput()
                 .Open())
             {
                 EditorUi.SectionHeader(ui, ctx, "HierarchyHeader", FontAwesome.LayerGroup, "Hierarchy");
@@ -45,7 +44,6 @@ public static class EditorUiBuilder
                     .Padding(6, 6, 4, 0)
                     .GrowWidth()
                     .FitHeight()
-                    .BlocksInput()
                     .Open())
                 {
                     ViewportToolbarBuilder.Build(ui, ctx, vm);
@@ -61,7 +59,6 @@ public static class EditorUiBuilder
                     with { Left = 1, Color = t.Border })
                 .Width(t.PanelPreferredWidth)
                 .GrowHeight()
-                .BlocksInput()
                 .Open())
             {
                 EditorUi.SectionHeader(ui, ctx, "InspectorHeader", FontAwesome.Gear, "Inspector");

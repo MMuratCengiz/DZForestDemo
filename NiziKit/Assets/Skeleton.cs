@@ -294,7 +294,7 @@ public class Skeleton : IDisposable
             {
                 Index = i,
                 ParentIndex = i < parents.Length ? parents[i] : -1,
-                Name = i < ozzJoints.Length ? ozzJoints[i].ToString() : $"Joint_{i}"
+                Name = i < ozzJoints.Length ? ozzJoints[i].Name.ToString() : $"Joint_{i}"
             };
             joints.Add(joint);
         }

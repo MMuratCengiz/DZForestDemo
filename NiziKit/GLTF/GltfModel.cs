@@ -212,6 +212,14 @@ public sealed class GltfModel : IDisposable
             }
 
             Meshes[meshIndex].InverseBindMatrices = matrices;
+
+            var jointNames = new string[skin.Joints.Count];
+            for (var i = 0; i < skin.Joints.Count; i++)
+            {
+                var jointNode = Document.Root.Nodes![skin.Joints[i]];
+                jointNames[i] = jointNode.Name ?? $"Joint_{i}";
+            }
+            Meshes[meshIndex].JointNames = jointNames;
         }
     }
 

@@ -158,11 +158,6 @@ public ref struct UiColorPicker
         }
         _context.Clay.CloseElement();
 
-        if (swatchInteraction.WasClicked)
-        {
-            _state.IsOpen = !_state.IsOpen;
-        }
-
         var justEndedDrag = false;
         if (!_context.MousePressed && (_state.IsDraggingHue || _state.IsDraggingSv))
         {
@@ -171,14 +166,18 @@ public ref struct UiColorPicker
             justEndedDrag = true;
         }
 
-        if (_state.IsOpen && _context.MouseJustReleased && !swatchInteraction.IsHovered
-            && !IsAnyDragging() && !justEndedDrag)
+        if (_state.IsOpen && _context.MouseJustReleased && !IsAnyDragging() && !justEndedDrag)
         {
             var popupId = _context.StringCache.GetId("CPPopup", Id);
             if (!_context.Clay.PointerOver(popupId))
             {
                 _state.IsOpen = false;
             }
+        }
+
+        if (!_state.IsOpen && swatchInteraction.WasClicked)
+        {
+            _state.IsOpen = true;
         }
 
         if (changed)
@@ -247,6 +246,7 @@ public ref struct UiColorPicker
         };
 
         _context.OpenElement(popupDecl);
+        _context.BeginPopupScope(popupId);
         {
             var wheelId = _context.StringCache.GetId("CPWheel", Id);
             var wheelDecl = new ClayElementDeclaration { Id = wheelId };
@@ -277,6 +277,7 @@ public ref struct UiColorPicker
             HsvToRgb(_state.Hue, _state.Saturation, _state.Value, out var hexR, out var hexG, out var hexB);
             RenderHexDisplay(hexR, hexG, hexB, a, showAlpha);
         }
+        _context.EndPopupScope();
         _context.Clay.CloseElement();
 
         return changed;

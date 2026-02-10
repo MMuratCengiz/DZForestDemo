@@ -55,16 +55,46 @@ public sealed class BulkAssetImporter : IDisposable
         var modelFiles = new List<string>();
         var textureFiles = new List<string>();
 
-        var excludeDirs = desc.ExcludeDirectories
-            .Select(d => Path.GetFullPath(Path.Combine(desc.SourceDirectory, d)))
-            .ToList();
+     var rootRelativeExcludes = new List<string>();
+        var nameExcludes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var d in desc.ExcludeDirectories)
+        {
+            if (d.Contains('/') || d.Contains('\\'))
+            {
+                rootRelativeExcludes.Add(Path.GetFullPath(Path.Combine(desc.SourceDirectory, d)));
+            }
+            else
+            {
+                nameExcludes.Add(d);
+            }
+        }
 
         foreach (var file in Directory.EnumerateFiles(desc.SourceDirectory, "*.*", SearchOption.AllDirectories))
         {
             var fullPath = Path.GetFullPath(file);
-            if (excludeDirs.Any(d => fullPath.StartsWith(d, StringComparison.OrdinalIgnoreCase)))
+            if (rootRelativeExcludes.Any(d => fullPath.StartsWith(d, StringComparison.OrdinalIgnoreCase)))
             {
                 continue;
+            }
+
+            if (nameExcludes.Count > 0)
+            {
+                var dir = Path.GetDirectoryName(fullPath);
+                var excluded = false;
+                while (dir != null && dir.Length > desc.SourceDirectory.Length)
+                {
+                    if (nameExcludes.Contains(Path.GetFileName(dir)))
+                    {
+                        excluded = true;
+                        break;
+                    }
+                    dir = Path.GetDirectoryName(dir);
+                }
+                if (excluded)
+                {
+                    continue;
+                }
             }
 
             var ext = Path.GetExtension(file).ToLowerInvariant();

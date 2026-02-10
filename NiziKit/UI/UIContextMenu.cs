@@ -209,6 +209,7 @@ public ref struct UiContextMenu
         }
 
         _context.OpenElement(menuDecl);
+        _context.BeginPopupScope(Id);
         {
             for (var i = 0; i < _items.Length; i++)
             {
@@ -302,6 +303,7 @@ public ref struct UiContextMenu
                 }
             }
         }
+        _context.EndPopupScope();
         _context.Clay.CloseElement();
 
         if (_state.SkipCloseFrames > 0)

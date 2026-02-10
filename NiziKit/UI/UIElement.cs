@@ -7,7 +7,6 @@ public ref struct UiElement
 {
     private readonly UiContext _context;
     private ClayElementDeclaration _decl;
-    private bool _blocksInput;
 
     internal UiElement(UiContext context, string name)
     {
@@ -304,17 +303,6 @@ public ref struct UiElement
         return this;
     }
 
-    /// <summary>
-    /// Marks this element as blocking scene input. When the pointer is over this element,
-    /// IsPointerOverUi will be set to true, preventing input from reaching the scene.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement BlocksInput()
-    {
-        _blocksInput = true;
-        return this;
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElement ScrollVertical()
     {
@@ -359,10 +347,6 @@ public ref struct UiElement
     public UiElementScope Open()
     {
         _context.OpenElement(_decl);
-        if (_blocksInput)
-        {
-            _context.IsHovered(Id);
-        }
         return new UiElementScope(_context);
     }
 
@@ -370,20 +354,12 @@ public ref struct UiElement
     public void Begin()
     {
         _context.OpenElement(_decl);
-        if (_blocksInput)
-        {
-            _context.IsHovered(Id);
-        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Content(Action content)
     {
         _context.OpenElement(_decl);
-        if (_blocksInput)
-        {
-            _context.IsHovered(Id);
-        }
         content();
         _context.Clay.CloseElement();
     }

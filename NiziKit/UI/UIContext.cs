@@ -13,6 +13,9 @@ public sealed class UiContext : IDisposable
     private bool _mouseRightJustPressed;
     private float _prevMouseX;
     private float _prevMouseY;
+    private bool _popupOpenThisFrame;
+    private bool _popupOpenPrevFrame;
+    private int _popupDepth;
 
     public UiContext(UiContextDesc desc)
     {
@@ -46,21 +49,11 @@ public sealed class UiContext : IDisposable
     internal float MouseDeltaY { get; private set; }
     internal uint ActiveDragWidgetId { get; set; }
 
-    /// <summary>
-    /// Returns true if the pointer is currently over any UI element rendered in the previous frame.
-    /// Set by the UI system during layout; defaults to checking the root element.
-    /// </summary>
     public bool IsPointerOverUi { get; internal set; }
 
-    /// <summary>
-    /// Hashes a string ID into a uint element ID, suitable for state lookups.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public uint GetElementId(string id) => StringCache.GetId(id);
 
-    /// <summary>
-    /// Gets or creates a persistent state object associated with the given element ID.
-    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public T GetOrCreateState<T>(string id) where T : new()
     {
@@ -133,6 +126,9 @@ public sealed class UiContext : IDisposable
     {
         _frameElementIndex = 0;
         IsPointerOverUi = false;
+        _popupOpenPrevFrame = _popupOpenThisFrame;
+        _popupOpenThisFrame = false;
+        _popupDepth = 0;
         Clay.BeginLayout();
         return new UiFrame(this);
     }
@@ -175,9 +171,23 @@ public sealed class UiContext : IDisposable
         return hovered;
     }
 
-    /// <summary>
-    /// Returns true if the element was right-clicked (right mouse button released over element).
-    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void BeginPopupScope(uint popupId)
+    {
+        _popupOpenThisFrame = true;
+        _popupDepth++;
+        if (Clay.PointerOver(popupId))
+        {
+            IsPointerOverUi = true;
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void EndPopupScope()
+    {
+        _popupDepth--;
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool WasRightClicked(uint id)
     {
@@ -191,6 +201,11 @@ public sealed class UiContext : IDisposable
         if (hovered)
         {
             IsPointerOverUi = true;
+        }
+
+        if (_popupOpenPrevFrame && _popupDepth == 0)
+        {
+            return new UiInteraction(hovered, false, false, false);
         }
 
         var pressed = hovered && MousePressed;

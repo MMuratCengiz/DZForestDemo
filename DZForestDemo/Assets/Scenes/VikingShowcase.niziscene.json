@@ -3,15 +3,15 @@
   "cameras": [
     {
       "name": "Main Camera",
-      "position": [1.7775733, 9.141837, -34.880928],
-      "rotation": [-23.664911, -8.762254, 10.487939],
+      "position": [-0.23162663, 4.550002, -23.32802],
+      "rotation": [9.937334, -21.352577, 4.910667],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
       "projectionType": "perspective",
       "orthographicSize": 5,
       "priority": 0,
-      "isActive": false,
+      "isActive": true,
       "controller": {
         "type": "freefly",
         "moveSpeed": 10,
@@ -41,7 +41,7 @@
     {
       "name": "Character_Viking",
       "active": true,
-      "position": [-1.2923927E-05, -1609552.9, 0.00051649613],
+      "position": [-1.2923927E-05, -4875103, 0.00051649613],
       "rotation": [4.0916016E-06, 5.809548E-07, 1.0138471E-07],
       "scale": [1, 1, 1],
       "components": [
@@ -118,7 +118,7 @@
       "name": "Boat",
       "active": false,
       "position": [26.5, 10, 19.5],
-      "rotation": [26.555614, 14.495725, 80.77632],
+      "rotation": [18.372257, 24.141415, 81.29955],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -277,7 +277,7 @@
     {
       "name": "Barrel2",
       "active": true,
-      "position": [5, -1638068.5, 5],
+      "position": [5, -4903619, 5],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
       "components": [
@@ -313,8 +313,8 @@
     {
       "name": "Barrel",
       "active": true,
-      "position": [35.217293, 0.7497239, -52.186188],
-      "rotation": [-6.719248E-10, -2.5163483E-06, -6.224643E-10],
+      "position": [24.423542, -2830611.2, -105.879845],
+      "rotation": [-1.5908763, 0.0011459101, 0.004859527],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -332,7 +332,7 @@
           "moveSpeed": 5,
           "jumpForce": 5,
           "groundCheckDistance": 0.3,
-          "isGrounded": true
+          "isGrounded": false
         },
         {
           "type": "NiziKit.Components.BoxCollider",
@@ -619,13 +619,7 @@
           "mesh": "geometry:box:1:1:1"
         },
         {
-          "type": "NiziKit.Components.SurfaceComponent",
-          "albedoColor": [
-            0.40940267,
-            0.6903656,
-            0.40137535,
-            1
-          ]
+          "type": "NiziKit.Components.SurfaceComponent"
         },
         {
           "type": "NiziKit.Components.BoxCollider",
@@ -702,6 +696,40 @@
           "type": "NiziKit.Animation.Animator",
           "skeleton": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.ozzskel",
           "defaultAnimation": "A_Idle_Crouching_Masc",
+          "animations": [
+            {
+              "name": "A_Idle_Crouching_Masc",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/Idle/A_Idle_Crouching_Masc.ozzanim"
+            }
+          ]
+        }
+      ],
+      "children": []
+    },
+    {
+      "name": "Werewolf",
+      "active": true,
+      "position": [-11.234381, 0.41829205, 0],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "components": [
+        {
+          "type": "NiziKit.Components.MaterialComponent",
+          "tags": {
+            "SKINNED": "TRUE"
+          }
+        },
+        {
+          "type": "NiziKit.Components.MeshComponent",
+          "mesh": "Synty/Models/DarkFantasy/FBX/Characters/Unreal_Characters/SK_Chr_Gravedigger_Male_01.nizimesh"
+        },
+        {
+          "type": "NiziKit.Components.SurfaceComponent",
+          "albedo": "Synty/Textures/DarkFantasy/Textures/Alts/PolygonDarkFantasy_Texture_01_A.dztex"
+        },
+        {
+          "type": "NiziKit.Animation.Animator",
+          "skeleton": "Synty/Models/DarkFantasy/FBX/Characters/Unreal_Characters/SK_Chr_Gravedigger_Male_01.ozzskel",
           "animations": [
             {
               "name": "A_Idle_Crouching_Masc",

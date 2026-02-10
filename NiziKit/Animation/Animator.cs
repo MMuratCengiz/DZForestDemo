@@ -56,9 +56,6 @@ public partial class Animator : IDisposable
     [HideInInspector] public ReadOnlySpan<Matrix4x4> BoneMatrices => _boneMatrices.AsSpan(0, BoneCount);
     [HideInInspector] public bool IsInitialized => _initialized;
 
-    private string[]? _cachedAnimationNames;
-    private int _cachedAnimationCount = -1;
-
     [HideInInspector]
     public IReadOnlyList<string> AnimationNames
     {
@@ -66,16 +63,12 @@ public partial class Animator : IDisposable
         {
             if (Animations.Count > 0)
             {
-                if (_cachedAnimationNames == null || _cachedAnimationCount != Animations.Count)
+                var names = new string[Animations.Count];
+                for (var i = 0; i < Animations.Count; i++)
                 {
-                    _cachedAnimationNames = new string[Animations.Count];
-                    for (var i = 0; i < Animations.Count; i++)
-                    {
-                        _cachedAnimationNames[i] = Animations[i].Name;
-                    }
-                    _cachedAnimationCount = Animations.Count;
+                    names[i] = Animations[i].Name;
                 }
-                return _cachedAnimationNames;
+                return names;
             }
             return Skeleton?.AnimationNames ?? Array.Empty<string>();
         }
@@ -91,6 +84,7 @@ public partial class Animator : IDisposable
     private readonly Matrix4x4[] _layerTransforms = new Matrix4x4[MaxBones];
     private Matrix4x4[]? _inverseBindMatrices;
     private Matrix4x4 _nodeTransform = Matrix4x4.Identity;
+    private int[]? _jointRemapTable;
     private Float4x4Array.Pinned? _ozzTransforms;
     private Float4x4Array.Pinned? _ozzBlendTransforms;
     private bool _initialized;
@@ -131,8 +125,6 @@ public partial class Animator : IDisposable
         }
 
         Animations.Clear();
-        _cachedAnimationNames = null;
-        _cachedAnimationCount = -1;
 
         foreach (var animName in Skeleton.AnimationNames)
         {
@@ -156,8 +148,6 @@ public partial class Animator : IDisposable
             }
         }
         Animations.Add(AnimationEntry.External(name, sourceRef));
-        _cachedAnimationNames = null;
-        _cachedAnimationCount = -1;
     }
 
     public bool RemoveAnimation(string name)
@@ -167,8 +157,6 @@ public partial class Animator : IDisposable
             if (Animations[i].Name == name)
             {
                 Animations.RemoveAt(i);
-                _cachedAnimationNames = null;
-                _cachedAnimationCount = -1;
                 return true;
             }
         }
@@ -201,6 +189,8 @@ public partial class Animator : IDisposable
         var meshComponent = Owner?.GetComponent<MeshComponent>();
         _inverseBindMatrices = meshComponent?.Mesh?.InverseBindMatrices;
         _nodeTransform = meshComponent?.Mesh?.NodeTransform ?? Matrix4x4.Identity;
+
+        BuildJointRemapTable(meshComponent?.Mesh?.JointNames);
 
         LoadExternalAnimations();
 
@@ -463,6 +453,14 @@ public partial class Animator : IDisposable
             return;
         }
 
+        if (Skeleton.JointCount != BoneCount)
+        {
+            Stop();
+            _initialized = false;
+            Initialize();
+            return;
+        }
+
         var effectiveDelta = deltaTime * Speed;
         var anyPlaying = false;
 
@@ -586,6 +584,41 @@ public partial class Animator : IDisposable
         }
     }
 
+    private void BuildJointRemapTable(string[]? meshJointNames)
+    {
+        if (Skeleton == null || meshJointNames == null || meshJointNames.Length == 0)
+        {
+            _jointRemapTable = null;
+            return;
+        }
+
+        var skeletonJointLookup = new Dictionary<string, int>(Skeleton.Joints.Count, StringComparer.OrdinalIgnoreCase);
+        for (var i = 0; i < Skeleton.Joints.Count; i++)
+        {
+            skeletonJointLookup[Skeleton.Joints[i].Name] = i;
+        }
+
+        var needsRemap = false;
+        var remap = new int[meshJointNames.Length];
+        for (var i = 0; i < meshJointNames.Length; i++)
+        {
+            if (skeletonJointLookup.TryGetValue(meshJointNames[i], out var skeletonIndex))
+            {
+                remap[i] = skeletonIndex;
+                if (skeletonIndex != i)
+                {
+                    needsRemap = true;
+                }
+            }
+            else
+            {
+                remap[i] = -1;
+            }
+        }
+
+        _jointRemapTable = needsRemap ? remap : null;
+    }
+
     private void ComputeFinalBoneMatrices()
     {
         if (Skeleton == null)
@@ -599,7 +632,18 @@ public partial class Animator : IDisposable
                 ? _inverseBindMatrices[i]
                 : Matrix4x4.Identity;
 
-            _boneMatrices[i] = inverseBindMatrix * _layerTransforms[i] * _nodeTransform;
+            var skeletonIndex = _jointRemapTable != null && i < _jointRemapTable.Length
+                ? _jointRemapTable[i]
+                : i;
+
+            if (skeletonIndex < 0)
+            {
+                // Unmatched bone — keep in bind pose (identity transform)
+                _boneMatrices[i] = Matrix4x4.Identity;
+                continue;
+            }
+
+            _boneMatrices[i] = inverseBindMatrix * _layerTransforms[skeletonIndex] * _nodeTransform;
         }
     }
 

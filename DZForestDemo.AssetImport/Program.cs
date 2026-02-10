@@ -45,7 +45,7 @@ void ImportSyntyAssets(string sourceDirectory, string outputDirectory)
         PreserveDirectoryStructure = true,
         ModelScale = 0.01f,
         GenerateMips = true,
-        ExcludeDirectories = ["BaseLocomotion/Character", "BaseLocomotion/Animations"]
+        ExcludeDirectories = ["BaseLocomotion/Character", "BaseLocomotion/Animations", "Unreal_Characters"]
     });
 
     logger.LogInformation("Synty: {ModelsExported} models, {TexturesExported} textures exported", result.ModelsExported, result.TexturesExported);

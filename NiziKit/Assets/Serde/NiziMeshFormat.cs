@@ -6,7 +6,7 @@ namespace NiziKit.Assets.Serde;
 public static class NiziMeshWriter
 {
     private static readonly byte[] Magic = "NZMS"u8.ToArray();
-    private const uint FormatVersion = 1;
+    private const uint FormatVersion = 2;
 
     public static void Write(Stream stream, Mesh mesh)
     {
@@ -35,6 +35,17 @@ public static class NiziMeshWriter
             foreach (var mat in mesh.InverseBindMatrices)
             {
                 WriteMatrix(writer, mat);
+            }
+
+            var hasJointNames = mesh.JointNames is { Length: > 0 };
+            writer.Write(hasJointNames);
+            if (hasJointNames)
+            {
+                writer.Write((uint)mesh.JointNames!.Length);
+                foreach (var name in mesh.JointNames)
+                {
+                    WriteString(writer, name);
+                }
             }
         }
 
@@ -99,9 +110,9 @@ public static class NiziMeshReader
         }
 
         var version = reader.ReadUInt32();
-        if (version != 1)
+        if (version != 2)
         {
-            throw new InvalidDataException($"Unsupported .nizimesh version: {version}");
+            throw new InvalidDataException($"Unsupported .nizimesh version: {version} (expected 2, re-import required)");
         }
 
         var name = ReadString(reader);
@@ -115,6 +126,7 @@ public static class NiziMeshReader
         var nodeTransform = ReadMatrix(reader);
 
         Matrix4x4[]? inverseBindMatrices = null;
+        string[]? jointNames = null;
         var hasIbm = reader.ReadBoolean();
         if (hasIbm)
         {
@@ -123,6 +135,17 @@ public static class NiziMeshReader
             for (var i = 0; i < ibmCount; i++)
             {
                 inverseBindMatrices[i] = ReadMatrix(reader);
+            }
+
+            var hasJointNames = reader.ReadBoolean();
+            if (hasJointNames)
+            {
+                var jointCount = reader.ReadUInt32();
+                jointNames = new string[jointCount];
+                for (var i = 0; i < jointCount; i++)
+                {
+                    jointNames[i] = ReadString(reader);
+                }
             }
         }
 
@@ -163,6 +186,7 @@ public static class NiziMeshReader
             Bounds = bounds,
             NodeTransform = nodeTransform,
             InverseBindMatrices = inverseBindMatrices,
+            JointNames = jointNames,
             SourceAttributes = sourceAttributes
         };
     }
