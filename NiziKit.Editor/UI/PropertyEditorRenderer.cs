@@ -108,6 +108,14 @@ public static class PropertyEditorRenderer
         {
             RenderVector2Editor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
         }
+        else if (propType == typeof(Vector3) && prop.GetCustomAttribute<ColorAttribute>() != null)
+        {
+            RenderColor3Editor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
+        }
+        else if (propType == typeof(Vector4) && prop.GetCustomAttribute<ColorAttribute>() != null)
+        {
+            RenderColor4Editor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
+        }
         else if (propType == typeof(Vector3))
         {
             RenderVector3Editor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
@@ -445,6 +453,70 @@ public static class PropertyEditorRenderer
             editorVm.UndoSystem.Execute(
                 new PropertyChangeAction(instance, prop, oldValue, newValue),
                 $"Prop_Vec4_{prop.Name}");
+            onChanged?.Invoke();
+        }
+    }
+
+    private static void RenderColor3Editor(UiContext ctx, string id, PropertyInfo prop,
+        object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
+    {
+        var t = EditorTheme.Current;
+        var oldValue = prop.GetValue(instance) ?? Vector3.Zero;
+        var value = (Vector3)oldValue;
+        var r = value.X;
+        var g = value.Y;
+        var b = value.Z;
+
+        var changed = Ui.ColorPicker(ctx, id)
+            .FontSize(t.FontSizeCaption)
+            .CornerRadius(t.RadiusSmall)
+            .BorderColor(t.Border)
+            .PanelBackground(t.PanelBackground)
+            .LabelColor(t.TextSecondary)
+            .ValueTextColor(t.TextMuted)
+            .GrowWidth()
+            .Show(ref r, ref g, ref b);
+
+        if (changed && canWrite)
+        {
+            var newValue = new Vector3(r, g, b);
+            prop.SetValue(instance, newValue);
+            editorVm.UndoSystem.Execute(
+                new PropertyChangeAction(instance, prop, oldValue, newValue),
+                $"Prop_Color3_{prop.Name}");
+            onChanged?.Invoke();
+        }
+    }
+
+    private static void RenderColor4Editor(UiContext ctx, string id, PropertyInfo prop,
+        object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
+    {
+        var t = EditorTheme.Current;
+        var oldValue = prop.GetValue(instance) ?? Vector4.Zero;
+        var value = (Vector4)oldValue;
+        var r = value.X;
+        var g = value.Y;
+        var b = value.Z;
+        var a = value.W;
+
+        var changed = Ui.ColorPicker(ctx, id)
+            .HasAlpha(true)
+            .FontSize(t.FontSizeCaption)
+            .CornerRadius(t.RadiusSmall)
+            .BorderColor(t.Border)
+            .PanelBackground(t.PanelBackground)
+            .LabelColor(t.TextSecondary)
+            .ValueTextColor(t.TextMuted)
+            .GrowWidth()
+            .Show(ref r, ref g, ref b, ref a);
+
+        if (changed && canWrite)
+        {
+            var newValue = new Vector4(r, g, b, a);
+            prop.SetValue(instance, newValue);
+            editorVm.UndoSystem.Execute(
+                new PropertyChangeAction(instance, prop, oldValue, newValue),
+                $"Prop_Color4_{prop.Name}");
             onChanged?.Invoke();
         }
     }

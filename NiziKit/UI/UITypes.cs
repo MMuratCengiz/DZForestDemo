@@ -280,12 +280,14 @@ public readonly struct UiInteraction
     public readonly bool IsHovered;
     public readonly bool IsPressed;
     public readonly bool WasClicked;
+    public readonly bool WasRightClicked;
 
-    internal UiInteraction(bool hovered, bool pressed, bool clicked)
+    internal UiInteraction(bool hovered, bool pressed, bool clicked, bool rightClicked)
     {
         IsHovered = hovered;
         IsPressed = pressed;
         WasClicked = clicked;
+        WasRightClicked = rightClicked;
     }
 
     public static UiInteraction None => default;

@@ -27,7 +27,7 @@ public static class SceneHierarchyBuilder
             _selectedNodeId = "";
         }
 
-        var changed = Ui.TreeView(ctx, "SceneTree", roots)
+        var treeView = Ui.TreeView(ctx, "SceneTree", roots)
             .Background(UiColor.Transparent)
             .SelectedColor(t.Selected)
             .HoverColor(t.Hover)
@@ -38,8 +38,9 @@ public static class SceneHierarchyBuilder
             .IndentSize(14)
             .ItemHeight(22)
             .Width(UiSizing.Grow())
-            .Height(UiSizing.Grow())
-            .Show(ref _selectedNodeId);
+            .Height(UiSizing.Grow());
+
+        var changed = treeView.Show(ref _selectedNodeId);
 
         if (changed)
         {
@@ -47,7 +48,12 @@ public static class SceneHierarchyBuilder
             vm.SelectObject(selected);
         }
 
-        BuildContextMenu(ui, ctx, vm);
+        // Detect right-click on tree view to open context menu
+        if (ctx.WasRightClicked(treeView.Id))
+        {
+            var menuState = Ui.GetContextMenuState(ctx, "HierarchyCtx_menu");
+            menuState.OpenAt(ctx.MouseX, ctx.MouseY);
+        }
     }
 
     private static UiTreeNode BuildNode(GameObjectViewModel obj)
@@ -69,7 +75,7 @@ public static class SceneHierarchyBuilder
         return node;
     }
 
-    private static void BuildContextMenu(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    public static void BuildContextMenu(UiFrame ui, UiContext ctx, EditorViewModel vm)
     {
         var t = EditorTheme.Current;
 

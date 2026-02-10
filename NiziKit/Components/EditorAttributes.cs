@@ -41,6 +41,9 @@ public sealed class SpaceAttribute(float height = 8) : Attribute
 }
 
 [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
+public sealed class ColorAttribute : Attribute;
+
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
 public sealed class AnimationSelectorAttribute(string skeletonPropertyName) : Attribute
 {
     public string SkeletonPropertyName { get; } = skeletonPropertyName;

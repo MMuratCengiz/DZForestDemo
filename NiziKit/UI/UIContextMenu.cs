@@ -201,6 +201,8 @@ public ref struct UiContextMenu
             menuDecl.Floating = new ClayFloatingDesc
             {
                 AttachTo = ClayFloatingAttachTo.Root,
+                ParentAttachPoint = ClayFloatingAttachPoint.LeftTop,
+                ElementAttachPoint = ClayFloatingAttachPoint.LeftTop,
                 Offset = new Vector2(_state.PositionX, _state.PositionY),
                 ZIndex = 2000
             };

@@ -20,8 +20,8 @@ public partial class SurfaceComponent
 
     public float MetallicValue { get; set; } = 0.0f;
     public float RoughnessValue { get; set; } = 0.5f;
-    public Vector4 AlbedoColor { get; set; } = Vector4.One;
-    public Vector3 EmissiveColor { get; set; } = Vector3.Zero;
+    [Color] public Vector4 AlbedoColor { get; set; } = Vector4.One;
+    [Color] public Vector3 EmissiveColor { get; set; } = Vector3.Zero;
     public float EmissiveIntensity { get; set; } = 0.0f;
     public Vector2 UVScale { get; set; } = Vector2.One;
     public Vector2 UVOffset { get; set; } = Vector2.Zero;

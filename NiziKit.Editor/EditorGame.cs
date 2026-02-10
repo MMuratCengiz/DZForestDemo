@@ -166,6 +166,12 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
             {
                 EndGizmoDrag();
             }
+
+            // Update mouse-over-ui on right-click release so context menu state is fresh
+            if (ev.MouseButton.Button == MouseButton.Right)
+            {
+                _mouseOverUi = renderFrame.UiContext.IsPointerOverUi;
+            }
         }
         else if (ev.Type == EventType.MouseWheel)
         {

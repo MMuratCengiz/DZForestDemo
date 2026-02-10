@@ -10,6 +10,7 @@ public sealed class UiContext : IDisposable
     private readonly Dictionary<uint, object> _widgetStates = new();
     private uint _frameElementIndex;
     private bool _mouseJustPressed;
+    private bool _mouseRightJustPressed;
     private float _prevMouseX;
     private float _prevMouseY;
 
@@ -35,10 +36,12 @@ public sealed class UiContext : IDisposable
     internal StringCache StringCache { get; }
     internal bool MouseJustReleased { get; private set; }
     internal bool MousePressed { get; private set; }
+    internal bool MouseRightJustReleased { get; private set; }
+    internal bool MouseRightPressed { get; private set; }
     public uint FocusedTextFieldId { get; internal set; }
     internal List<Event> FrameEvents { get; } = [];
-    internal float MouseX { get; private set; }
-    internal float MouseY { get; private set; }
+    public float MouseX { get; private set; }
+    public float MouseY { get; private set; }
     internal float MouseDeltaX { get; private set; }
     internal float MouseDeltaY { get; private set; }
     internal uint ActiveDragWidgetId { get; set; }
@@ -92,12 +95,25 @@ public sealed class UiContext : IDisposable
             ActiveDragWidgetId = 0;
         }
 
+        if (ev is { Type: EventType.MouseButtonDown, MouseButton.Button: MouseButton.Right })
+        {
+            MouseRightPressed = true;
+            _mouseRightJustPressed = true;
+            MouseRightJustReleased = false;
+        }
+        else if (ev is { Type: EventType.MouseButtonUp, MouseButton.Button: MouseButton.Right })
+        {
+            MouseRightPressed = false;
+            MouseRightJustReleased = true;
+            _mouseRightJustPressed = false;
+        }
+
         if (ev.Type == EventType.MouseMotion)
         {
             MouseX = ev.MouseMotion.X;
             MouseY = ev.MouseMotion.Y;
         }
-        else if (ev.Type == EventType.MouseButtonDown)
+        else if (ev.Type is EventType.MouseButtonDown or EventType.MouseButtonUp)
         {
             MouseX = ev.MouseButton.X;
             MouseY = ev.MouseButton.Y;
@@ -139,6 +155,8 @@ public sealed class UiContext : IDisposable
         Clay.EndLayout(frameIndex, deltaTime, commandList);
         MouseJustReleased = false;
         _mouseJustPressed = false;
+        MouseRightJustReleased = false;
+        _mouseRightJustPressed = false;
         MouseDeltaX = MouseX - _prevMouseX;
         MouseDeltaY = MouseY - _prevMouseY;
         _prevMouseX = MouseX;
@@ -157,6 +175,15 @@ public sealed class UiContext : IDisposable
         return hovered;
     }
 
+    /// <summary>
+    /// Returns true if the element was right-clicked (right mouse button released over element).
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool WasRightClicked(uint id)
+    {
+        return Clay.PointerOver(id) && MouseRightJustReleased;
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal UiInteraction GetInteraction(uint id)
     {
@@ -168,7 +195,8 @@ public sealed class UiContext : IDisposable
 
         var pressed = hovered && MousePressed;
         var clicked = hovered && MouseJustReleased;
-        return new UiInteraction(hovered, pressed, clicked);
+        var rightClicked = hovered && MouseRightJustReleased;
+        return new UiInteraction(hovered, pressed, clicked, rightClicked);
     }
 
     internal T GetOrCreateState<T>(uint id) where T : new()
