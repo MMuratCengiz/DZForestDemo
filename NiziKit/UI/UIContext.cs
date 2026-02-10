@@ -219,8 +219,8 @@ public struct UiContextDesc
 
     public static UiContextDesc Default => new()
     {
-        MaxNumElements = 8192,
-        MaxNumTextMeasureCacheElements = 16384,
+        MaxNumElements = 32768,
+        MaxNumTextMeasureCacheElements = 262144,
         MaxNumFonts = 16
     };
 }
