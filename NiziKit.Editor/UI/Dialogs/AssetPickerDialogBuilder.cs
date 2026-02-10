@@ -23,12 +23,15 @@ public class AssetPickerState
     public string? SelectedFolder { get; set; }
     public int CurrentPage { get; set; }
     public int FolderNodeIndex { get; set; }
+    public string? HoveredAssetPath { get; set; }
 }
 
 public static class AssetPickerDialogBuilder
 {
-    private const int GridColumns = 5;
+    private const int GridColumns = 4;
     private const int ItemsPerPage = 20;
+    private const float DialogWidth = 850;
+    private const float FolderPanelWidth = 200;
 
     public static void Build(UiFrame ui, UiContext ctx, EditorViewModel vm)
     {
@@ -163,6 +166,12 @@ public static class AssetPickerDialogBuilder
         var startIdx = state.CurrentPage * ItemsPerPage;
         var endIdx = Math.Min(startIdx + ItemsPerPage, filteredAssets.Count);
 
+        var gridInnerWidth = DialogWidth - FolderPanelWidth - 2 * t.SpacingMD;
+        var tileWidth = (gridInnerWidth - (GridColumns - 1) * t.SpacingSM) / GridColumns;
+        var labelMaxWidth = tileWidth - 2 * t.SpacingSM;
+
+        state.HoveredAssetPath = null;
+
         using (ui.Panel("AssetGridPanel")
             .Vertical()
             .Grow()
@@ -170,31 +179,26 @@ public static class AssetPickerDialogBuilder
         {
             {
                 var noneSelected = vm.AssetPickerCurrentAssetPath == null;
-                var noneEl = ui.Panel("AssetPick_None")
+                var noneBg = noneSelected ? t.Selected : t.SurfaceInset;
+                var noneBtn = Ui.Button(ctx, "AssetPick_None", "")
+                    .Color(noneBg, t.Hover, t.Active)
+                    .CornerRadius(t.RadiusSmall)
                     .Horizontal()
                     .GrowWidth()
-                    .FitHeight()
                     .Padding(t.SpacingMD, t.SpacingXS)
                     .Gap(t.SpacingXS)
-                    .AlignChildrenY(UiAlignY.Center)
-                    .AlignChildrenX(UiAlignX.Left)
-                    .CornerRadius(t.RadiusSmall);
+                    .Border(0, UiColor.Transparent);
 
-                var noneHovered = noneEl.IsHovered();
-                noneEl = noneEl.Background(noneSelected ? t.Selected : noneHovered ? t.Hover : UiColor.Transparent);
-
-                using (noneEl.Open())
+                using var noneScope = noneBtn.Open();
+                noneScope.Icon(FontAwesome.Times,
+                    noneSelected ? UiColor.White : t.TextMuted, t.IconSizeSmall);
+                noneScope.Text("None (Clear)", new UiTextStyle
                 {
-                    ui.Icon(FontAwesome.Times,
-                        noneSelected ? UiColor.White : t.TextMuted, t.IconSizeSmall);
-                    ui.Text("None (Clear)", new UiTextStyle
-                    {
-                        Color = noneSelected ? UiColor.White : t.TextMuted,
-                        FontSize = t.FontSizeCaption
-                    });
-                }
+                    Color = noneSelected ? UiColor.White : t.TextMuted,
+                    FontSize = t.FontSizeCaption
+                });
 
-                if (noneEl.WasClicked())
+                if (noneBtn.WasClicked())
                 {
                     vm.OnAssetPickerSelected(null);
                 }
@@ -246,7 +250,7 @@ public static class AssetPickerDialogBuilder
                                 var itemIdx = startIdx + row * GridColumns + col;
                                 if (itemIdx < endIdx)
                                 {
-                                    RenderGridItem(ui, ctx, vm, filteredAssets[itemIdx], itemIdx, t);
+                                    RenderGridItem(ui, ctx, vm, state, filteredAssets[itemIdx], itemIdx, t, labelMaxWidth);
                                 }
                                 else
                                 {
@@ -268,10 +272,10 @@ public static class AssetPickerDialogBuilder
         }
     }
 
-    private const float ItemHeight = 105;
+    private const float ItemHeight = 100;
 
     private static void RenderGridItem(UiFrame ui, UiContext ctx, EditorViewModel vm,
-        AssetInfo asset, int index, IEditorTheme t)
+        AssetPickerState state, AssetInfo asset, int index, IEditorTheme t, float labelMaxWidth)
     {
         var isSelected = vm.AssetPickerCurrentAssetPath == asset.Path;
         var bg = isSelected ? t.Selected : t.SurfaceInset;
@@ -295,16 +299,18 @@ public static class AssetPickerDialogBuilder
             .Open())
         {
             ui.Icon(GetAssetIcon(vm.AssetPickerAssetType),
-                isSelected ? UiColor.White : t.Accent, 36);
+                isSelected ? UiColor.White : t.Accent, t.IconSizeLarge);
         }
+
+        var displayName = TruncateTileLabel(ctx, asset.Name, t.FontSizeCaption, labelMaxWidth);
 
         using (ui.Panel("ALabel_" + index)
             .GrowWidth()
-            .FitHeight(0, 28)
+            .FitHeight()
             .AlignChildrenX(UiAlignX.Center)
             .Open())
         {
-            ui.Text(asset.Name, new UiTextStyle
+            ui.Text(displayName, new UiTextStyle
             {
                 Color = isSelected ? UiColor.White : t.TextSecondary,
                 FontSize = t.FontSizeCaption,
@@ -316,6 +322,31 @@ public static class AssetPickerDialogBuilder
         {
             vm.OnAssetPickerSelected(asset);
         }
+        else if (ctx.Clay.PointerOver(btn.Id))
+        {
+            state.HoveredAssetPath = asset.Path;
+        }
+    }
+
+    private static string TruncateTileLabel(UiContext ctx, string text, ushort fontSize, float maxWidth)
+    {
+        if (maxWidth <= 0) return text;
+
+        var measured = ctx.Clay.MeasureText(text, 0, fontSize);
+        if (measured.Width <= maxWidth)
+            return text;
+
+        var ellipsis = "...";
+        var ellipsisWidth = ctx.Clay.MeasureText(ellipsis, 0, fontSize).Width;
+        var remaining = maxWidth - ellipsisWidth;
+        if (remaining <= 0)
+            return ellipsis;
+
+        var fitChars = ctx.Clay.GetCharIndexAtOffset(text, remaining, 0, fontSize);
+        if (fitChars > 0 && fitChars < text.Length)
+            return text[..(int)fitChars] + ellipsis;
+
+        return ellipsis;
     }
 
     private static void RenderPagination(UiFrame ui, UiContext ctx, AssetPickerState state,
@@ -391,11 +422,22 @@ public static class AssetPickerDialogBuilder
             .Gap(t.SpacingSM)
             .GrowWidth()
             .FitHeight()
-            .AlignChildrenX(UiAlignX.Right)
             .AlignChildrenY(UiAlignY.Center)
             .Background(t.PanelElevated)
             .Open())
         {
+            var infoPath = state.HoveredAssetPath ?? vm.AssetPickerCurrentAssetPath;
+            if (!string.IsNullOrEmpty(infoPath))
+            {
+                ui.Text(infoPath, new UiTextStyle
+                {
+                    Color = t.TextMuted,
+                    FontSize = t.FontSizeCaption
+                });
+            }
+
+            Ui.FlexSpacer(ctx);
+
             if (EditorUi.GhostButton(ctx, "AssetPickerCancel", "Cancel"))
             {
                 vm.CloseAssetPicker();
