@@ -67,6 +67,37 @@ public readonly ref struct UiFrame
     {
         _context.Clay.Texture(texture, width, height);
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Icon(string icon, UiColor color, ushort size = 14)
+    {
+        var desc = new ClayTextDesc
+        {
+            TextColor = color.ToClayColor(),
+            FontSize = size,
+            FontId = FontAwesome.FontId,
+            TextAlignment = ClayTextAlignment.Center
+        };
+        _context.Clay.Text(StringView.Intern(icon), desc);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Icon(string icon, UiTextStyle style)
+    {
+        var desc = new ClayTextDesc
+        {
+            TextColor = style.Color.ToClayColor(),
+            FontSize = style.FontSize > 0 ? style.FontSize : (ushort)14,
+            FontId = FontAwesome.FontId,
+            TextAlignment = style.Alignment switch
+            {
+                UiTextAlign.Center => ClayTextAlignment.Center,
+                UiTextAlign.Right => ClayTextAlignment.Right,
+                _ => ClayTextAlignment.Left
+            }
+        };
+        _context.Clay.Text(StringView.Intern(icon), desc);
+    }
 }
 
 public struct UiTextStyle

@@ -31,9 +31,15 @@ public partial class CharacterController : IComponent
         _rigidbody = Owner?.GetComponent<Rigidbody>();
     }
 
+    private Rigidbody? GetRigidbody()
+    {
+        _rigidbody ??= Owner?.GetComponent<Rigidbody>();
+        return _rigidbody;
+    }
+
     public void Move(Vector3 direction)
     {
-        if (_rigidbody == null)
+        if (GetRigidbody() == null)
         {
             return;
         }
@@ -46,7 +52,7 @@ public partial class CharacterController : IComponent
 
     public void Jump()
     {
-        if (_rigidbody == null || !IsGrounded)
+        if (GetRigidbody() == null || !IsGrounded)
         {
             return;
         }
@@ -59,9 +65,9 @@ public partial class CharacterController : IComponent
     public void Update()
     {
         CheckGrounded();
-        if (_rigidbody != null)
+        if (GetRigidbody() != null)
         {
-            _rigidbody.AngularVelocity = Vector3.Zero;
+            _rigidbody!.AngularVelocity = Vector3.Zero;
         }
     }
 

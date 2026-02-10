@@ -33,6 +33,9 @@
       <EmbeddedResource Include="Assets\Serde\Schemas\*.schema.json">
         <LogicalName>NiziKit.Schemas.%(Filename)%(Extension)</LogicalName>
       </EmbeddedResource>
+      <EmbeddedResource Include="UI\Fonts\*.dzfont">
+        <LogicalName>NiziKit.UI.Fonts.%(Filename)%(Extension)</LogicalName>
+      </EmbeddedResource>
     </ItemGroup>
 
     <ItemGroup>

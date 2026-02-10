@@ -17,6 +17,7 @@ public partial class JumpController : IComponent
 
     public void Update()
     {
+        _controller ??= Owner?.GetComponent<CharacterController>();
         if (_controller == null)
         {
             return;

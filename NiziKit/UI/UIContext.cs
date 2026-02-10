@@ -11,6 +11,8 @@ public sealed class UiContext : IDisposable
     private readonly Dictionary<uint, object> _widgetStates = new();
     private uint _frameElementIndex;
     private bool _mouseJustPressed;
+    private float _prevMouseX;
+    private float _prevMouseY;
 
     public UiContext(UiContextDesc desc)
     {
@@ -36,6 +38,11 @@ public sealed class UiContext : IDisposable
     internal bool MousePressed { get; private set; }
     public uint FocusedTextFieldId { get; internal set; }
     internal List<Event> FrameEvents { get; } = [];
+    internal float MouseX { get; private set; }
+    internal float MouseY { get; private set; }
+    internal float MouseDeltaX { get; private set; }
+    internal float MouseDeltaY { get; private set; }
+    internal uint ActiveDragWidgetId { get; set; }
 
     public void Dispose()
     {
@@ -62,6 +69,18 @@ public sealed class UiContext : IDisposable
             MousePressed = false;
             MouseJustReleased = true;
             _mouseJustPressed = false;
+            ActiveDragWidgetId = 0;
+        }
+
+        if (ev.Type == EventType.MouseMotion)
+        {
+            MouseX = ev.MouseMotion.X;
+            MouseY = ev.MouseMotion.Y;
+        }
+        else if (ev.Type == EventType.MouseButtonDown)
+        {
+            MouseX = ev.MouseButton.X;
+            MouseY = ev.MouseButton.Y;
         }
 
         Clay.HandleEvent(ev);
@@ -93,6 +112,10 @@ public sealed class UiContext : IDisposable
         var result = Clay.EndLayout(frameIndex, deltaTime);
         MouseJustReleased = false;
         _mouseJustPressed = false;
+        MouseDeltaX = MouseX - _prevMouseX;
+        MouseDeltaY = MouseY - _prevMouseY;
+        _prevMouseX = MouseX;
+        _prevMouseY = MouseY;
         return result;
     }
 

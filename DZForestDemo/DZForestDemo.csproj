@@ -25,6 +25,10 @@
       </EmbeddedResource>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Assets\Fonts\" />
+    </ItemGroup>
+
     <Import Project="..\NiziKit\build\NiziKit.targets" />
 
 </Project>

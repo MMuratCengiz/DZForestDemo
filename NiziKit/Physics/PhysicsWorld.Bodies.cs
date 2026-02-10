@@ -66,8 +66,8 @@ public sealed partial class PhysicsWorld
     {
         if (_bodyHandles.TryGetValue(id, out var handle))
         {
-            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
-            bodyRef.ApplyLinearImpulse(impulse);
+            _simulation.Awakener.AwakenBody(handle);
+            _simulation.Bodies.GetBodyReference(handle).ApplyLinearImpulse(impulse);
         }
     }
 
@@ -75,6 +75,7 @@ public sealed partial class PhysicsWorld
     {
         if (_bodyHandles.TryGetValue(id, out var handle))
         {
+            _simulation.Awakener.AwakenBody(handle);
             var bodyRef = _simulation.Bodies.GetBodyReference(handle);
             var offset = worldPoint - bodyRef.Pose.Position;
             bodyRef.ApplyImpulse(impulse, offset);
@@ -85,8 +86,8 @@ public sealed partial class PhysicsWorld
     {
         if (_bodyHandles.TryGetValue(id, out var handle))
         {
-            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
-            bodyRef.ApplyAngularImpulse(angularImpulse);
+            _simulation.Awakener.AwakenBody(handle);
+            _simulation.Bodies.GetBodyReference(handle).ApplyAngularImpulse(angularImpulse);
         }
     }
 
@@ -94,8 +95,7 @@ public sealed partial class PhysicsWorld
     {
         if (_bodyHandles.TryGetValue(id, out var handle))
         {
-            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
-            return bodyRef.Velocity.Linear;
+            return _simulation.Bodies.GetBodyReference(handle).Velocity.Linear;
         }
         return Vector3.Zero;
     }
@@ -104,8 +104,8 @@ public sealed partial class PhysicsWorld
     {
         if (_bodyHandles.TryGetValue(id, out var handle))
         {
-            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
-            bodyRef.Velocity.Linear = velocity;
+            _simulation.Awakener.AwakenBody(handle);
+            _simulation.Bodies.GetBodyReference(handle).Velocity.Linear = velocity;
         }
     }
 
@@ -113,8 +113,7 @@ public sealed partial class PhysicsWorld
     {
         if (_bodyHandles.TryGetValue(id, out var handle))
         {
-            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
-            return bodyRef.Velocity.Angular;
+            return _simulation.Bodies.GetBodyReference(handle).Velocity.Angular;
         }
         return Vector3.Zero;
     }
@@ -123,8 +122,8 @@ public sealed partial class PhysicsWorld
     {
         if (_bodyHandles.TryGetValue(id, out var handle))
         {
-            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
-            bodyRef.Velocity.Angular = angularVelocity;
+            _simulation.Awakener.AwakenBody(handle);
+            _simulation.Bodies.GetBodyReference(handle).Velocity.Angular = angularVelocity;
         }
     }
 
