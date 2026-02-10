@@ -245,7 +245,7 @@ public sealed class Assets : IDisposable
             return cached;
         }
 
-        var bytes = ContentPipeline.Content.ReadBytes(path);
+        var bytes = Content.ReadBytes(path);
         var skeleton = Skeleton.Load(bytes);
         _skeletonCache.TryAdd(path, skeleton);
         return skeleton;
@@ -258,7 +258,7 @@ public sealed class Assets : IDisposable
             return cached;
         }
 
-        var bytes = await ContentPipeline.Content.ReadBytesAsync(path, ct);
+        var bytes = await Content.ReadBytesAsync(path, ct);
         var skeleton = Skeleton.Load(bytes);
         _skeletonCache.TryAdd(path, skeleton);
         return skeleton;

@@ -100,13 +100,13 @@ public static class NiziPackBuilder
         header.Clear();
 
         BinaryPrimitives.WriteUInt32LittleEndian(header, MagicNumber);
-        BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(4), Version);
-        BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(8), 0);
-        BinaryPrimitives.WriteUInt32LittleEndian(header.Slice(12), entryCount);
-        BinaryPrimitives.WriteUInt64LittleEndian(header.Slice(16), (ulong)indexOffset);
-        BinaryPrimitives.WriteUInt64LittleEndian(header.Slice(24), (ulong)indexSize);
-        BinaryPrimitives.WriteUInt64LittleEndian(header.Slice(32), (ulong)dataOffset);
-        BinaryPrimitives.WriteUInt64LittleEndian(header.Slice(40), (ulong)dataSize);
+        BinaryPrimitives.WriteUInt32LittleEndian(header[4..], Version);
+        BinaryPrimitives.WriteUInt32LittleEndian(header[8..], 0);
+        BinaryPrimitives.WriteUInt32LittleEndian(header[12..], entryCount);
+        BinaryPrimitives.WriteUInt64LittleEndian(header[16..], (ulong)indexOffset);
+        BinaryPrimitives.WriteUInt64LittleEndian(header[24..], (ulong)indexSize);
+        BinaryPrimitives.WriteUInt64LittleEndian(header[32..], (ulong)dataOffset);
+        BinaryPrimitives.WriteUInt64LittleEndian(header[40..], (ulong)dataSize);
 
         output.Write(header);
     }
@@ -116,9 +116,9 @@ public static class NiziPackBuilder
         Span<byte> entry = stackalloc byte[2 + pathBytes.Length + 16];
 
         BinaryPrimitives.WriteUInt16LittleEndian(entry, (ushort)pathBytes.Length);
-        pathBytes.CopyTo(entry.Slice(2));
-        BinaryPrimitives.WriteUInt64LittleEndian(entry.Slice(2 + pathBytes.Length), (ulong)dataOffset);
-        BinaryPrimitives.WriteUInt64LittleEndian(entry.Slice(2 + pathBytes.Length + 8), (ulong)size);
+        pathBytes.CopyTo(entry[2..]);
+        BinaryPrimitives.WriteUInt64LittleEndian(entry[(2 + pathBytes.Length)..], (ulong)dataOffset);
+        BinaryPrimitives.WriteUInt64LittleEndian(entry[(2 + pathBytes.Length + 8)..], (ulong)size);
 
         output.Write(entry);
     }

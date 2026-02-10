@@ -413,25 +413,37 @@ public static class PropertyEditorRenderer
     private static string TruncateToFit(Clay clay, string text, ushort fontSize, float maxWidth)
     {
         var measured = clay.MeasureText(StringView.Intern(text), 0, fontSize);
-        if (measured.Width <= maxWidth) return text;
+        if (measured.Width <= maxWidth)
+        {
+            return text;
+        }
 
         var lastSlash = text.LastIndexOfAny(['/', '\\']);
         if (lastSlash >= 0)
         {
             var filename = text[(lastSlash + 1)..];
             var fileDims = clay.MeasureText(StringView.Intern(filename), 0, fontSize);
-            if (fileDims.Width <= maxWidth) return filename;
+            if (fileDims.Width <= maxWidth)
+            {
+                return filename;
+            }
+
             text = filename;
         }
 
         var ellipsis = "...";
         var ellipsisDims = clay.MeasureText(StringView.Intern(ellipsis), 0, fontSize);
         var remaining = maxWidth - ellipsisDims.Width;
-        if (remaining <= 0) return ellipsis;
+        if (remaining <= 0)
+        {
+            return ellipsis;
+        }
 
         var fitChars = clay.GetCharIndexAtOffset(StringView.Intern(text), remaining, 0, fontSize);
         if (fitChars > 0 && fitChars < text.Length)
+        {
             return text[..(int)fitChars] + ellipsis;
+        }
 
         return ellipsis;
     }

@@ -651,7 +651,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         var typeNameLower = data.Type.ToLowerInvariant();
         if (typeNameLower.Contains('.'))
         {
-            typeNameLower = typeNameLower.Substring(typeNameLower.LastIndexOf('.') + 1);
+            typeNameLower = typeNameLower[(typeNameLower.LastIndexOf('.') + 1)..];
         }
         if (typeNameLower.EndsWith("component"))
         {
@@ -788,7 +788,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
         if (reference.StartsWith("geometry:"))
         {
-            var geoType = reference.Substring(9).ToLowerInvariant();
+            var geoType = reference[9..].ToLowerInvariant();
             return CreateGeometry(geoType, parameters);
         }
 
@@ -843,7 +843,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
         if (meshRef.StartsWith("geometry:"))
         {
-            var geoType = meshRef.Substring(9).ToLowerInvariant();
+            var geoType = meshRef[9..].ToLowerInvariant();
             return geoType switch
             {
                 "box" => Assets.Assets.CreateBox(
@@ -977,7 +977,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         var result = typeName;
         if (result.Contains('.'))
         {
-            result = result.Substring(result.LastIndexOf('.') + 1);
+            result = result[(result.LastIndexOf('.') + 1)..];
         }
         if (result.EndsWith("Component", StringComparison.OrdinalIgnoreCase))
         {

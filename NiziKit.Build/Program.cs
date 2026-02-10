@@ -81,7 +81,7 @@ if (args.Length > 0 && args[0] == "import-font")
     return 0;
 }
 
-DenOfIz.DenOfIzRuntime.Initialize();
+DenOfIzRuntime.Initialize();
 
 var projectDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
 var shaderSourceDir = Path.Combine(projectDir, "..", "NiziKit", "Shaders");

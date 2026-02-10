@@ -351,14 +351,14 @@ public class EditorSceneService
             {
                 json.Properties["roughnessValue"] = JsonSerializer.SerializeToElement(surfaceComp.RoughnessValue);
             }
-            if (surfaceComp.AlbedoColor != System.Numerics.Vector4.One)
+            if (surfaceComp.AlbedoColor != Vector4.One)
             {
                 json.Properties["albedoColor"] = JsonSerializer.SerializeToElement(new[] {
                     surfaceComp.AlbedoColor.X, surfaceComp.AlbedoColor.Y,
                     surfaceComp.AlbedoColor.Z, surfaceComp.AlbedoColor.W
                 });
             }
-            if (surfaceComp.EmissiveColor != System.Numerics.Vector3.Zero)
+            if (surfaceComp.EmissiveColor != Vector3.Zero)
             {
                 json.Properties["emissiveColor"] = JsonSerializer.SerializeToElement(new[] {
                     surfaceComp.EmissiveColor.X, surfaceComp.EmissiveColor.Y, surfaceComp.EmissiveColor.Z
@@ -368,13 +368,13 @@ public class EditorSceneService
             {
                 json.Properties["emissiveIntensity"] = JsonSerializer.SerializeToElement(surfaceComp.EmissiveIntensity);
             }
-            if (surfaceComp.UVScale != System.Numerics.Vector2.One)
+            if (surfaceComp.UVScale != Vector2.One)
             {
                 json.Properties["uvScale"] = JsonSerializer.SerializeToElement(new[] {
                     surfaceComp.UVScale.X, surfaceComp.UVScale.Y
                 });
             }
-            if (surfaceComp.UVOffset != System.Numerics.Vector2.Zero)
+            if (surfaceComp.UVOffset != Vector2.Zero)
             {
                 json.Properties["uvOffset"] = JsonSerializer.SerializeToElement(new[] {
                     surfaceComp.UVOffset.X, surfaceComp.UVOffset.Y

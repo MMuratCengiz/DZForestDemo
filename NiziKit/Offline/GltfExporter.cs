@@ -226,7 +226,7 @@ public sealed class GltfExporter : IDisposable
             return GltfExportResult.Failed("Source file path is required.");
         }
 
-        if (!System.IO.File.Exists(desc.SourceFilePath))
+        if (!File.Exists(desc.SourceFilePath))
         {
             return GltfExportResult.Failed($"Source file not found: {desc.SourceFilePath}");
         }

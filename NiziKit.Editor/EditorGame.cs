@@ -60,7 +60,7 @@ public sealed class EditorGame : Game
         _editorCamera.SetAspectRatio(_width, _height);
         _renderer.Camera = _editorCamera;
 
-        NiziKit.Assets.Pack.AssetPacks.LoadFromManifest();
+        Assets.Pack.AssetPacks.LoadFromManifest();
 
         if (!string.IsNullOrEmpty(Editor.Desc.InitialScene))
         {
@@ -144,7 +144,7 @@ public sealed class EditorGame : Game
             renderFrame.HandleUiEvent(ev);
             renderFrame.UiContext.RecordEvent(ev);
 
-            if (!_mouseOverUi && ev.MouseButton.Button == DenOfIz.MouseButton.Left)
+            if (!_mouseOverUi && ev.MouseButton.Button == MouseButton.Left)
             {
                 if (TryBeginGizmoDrag())
                 {
@@ -159,7 +159,7 @@ public sealed class EditorGame : Game
             renderFrame.HandleUiEvent(ev);
             renderFrame.UiContext.RecordEvent(ev);
 
-            if (ev.MouseButton.Button == DenOfIz.MouseButton.Left && _gizmoDragging)
+            if (ev.MouseButton.Button == MouseButton.Left && _gizmoDragging)
             {
                 EndGizmoDrag();
             }

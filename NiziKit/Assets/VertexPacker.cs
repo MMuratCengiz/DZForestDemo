@@ -83,7 +83,7 @@ public static class VertexPacker
             return;
         }
 
-        source.Slice(0, Math.Min(source.Length, destAttr.SizeInBytes)).CopyTo(dest.Slice(destOffset, destAttr.SizeInBytes));
+        source[..Math.Min(source.Length, destAttr.SizeInBytes)].CopyTo(dest.Slice(destOffset, destAttr.SizeInBytes));
     }
 
     private static void WriteDefaultValues(

@@ -77,7 +77,7 @@ public class AssetBrowserService
 
             foreach (var meshPath in pack.GetMeshPaths())
             {
-                var fileName = System.IO.Path.GetFileName(meshPath);
+                var fileName = Path.GetFileName(meshPath);
                 meshes.Add(new AssetInfo { Name = fileName, Path = meshPath, Pack = packName });
             }
         }
@@ -96,7 +96,7 @@ public class AssetBrowserService
 
             foreach (var texturePath in pack.GetTexturePaths())
             {
-                var fileName = System.IO.Path.GetFileName(texturePath);
+                var fileName = Path.GetFileName(texturePath);
                 textures.Add(new AssetInfo { Name = fileName, Path = texturePath, Pack = packName });
             }
         }
@@ -115,7 +115,7 @@ public class AssetBrowserService
 
             foreach (var skelPath in pack.GetSkeletonPaths())
             {
-                var fileName = System.IO.Path.GetFileName(skelPath);
+                var fileName = Path.GetFileName(skelPath);
                 skeletons.Add(new AssetInfo { Name = fileName, Path = skelPath, Pack = packName });
             }
         }
@@ -134,11 +134,10 @@ public class AssetBrowserService
 
             foreach (var animPath in pack.GetAnimationPaths())
             {
-                var fileName = System.IO.Path.GetFileName(animPath);
+                var fileName = Path.GetFileName(animPath);
                 animations.Add(new AssetInfo { Name = fileName, Path = animPath, Pack = packName });
             }
         }
         return animations;
     }
-
 }

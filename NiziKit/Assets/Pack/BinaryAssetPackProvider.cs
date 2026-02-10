@@ -46,16 +46,16 @@ internal sealed class BinaryAssetPackProvider : IAssetPackProvider
             throw new InvalidDataException($"Invalid NiziPack magic number: 0x{magic:X8}");
         }
 
-        var version = BinaryPrimitives.ReadUInt32LittleEndian(header.Slice(4));
+        var version = BinaryPrimitives.ReadUInt32LittleEndian(header[4..]);
         if (version != CurrentVersion)
         {
             throw new InvalidDataException($"Unsupported NiziPack version: {version}");
         }
 
-        entryCount = BinaryPrimitives.ReadUInt32LittleEndian(header.Slice(12));
-        indexOffset = (long)BinaryPrimitives.ReadUInt64LittleEndian(header.Slice(16));
-        indexSize = (long)BinaryPrimitives.ReadUInt64LittleEndian(header.Slice(24));
-        dataOffset = (long)BinaryPrimitives.ReadUInt64LittleEndian(header.Slice(32));
+        entryCount = BinaryPrimitives.ReadUInt32LittleEndian(header[12..]);
+        indexOffset = (long)BinaryPrimitives.ReadUInt64LittleEndian(header[16..]);
+        indexSize = (long)BinaryPrimitives.ReadUInt64LittleEndian(header[24..]);
+        dataOffset = (long)BinaryPrimitives.ReadUInt64LittleEndian(header[32..]);
     }
 
     private void ReadIndex(long indexOffset, long indexSize, uint entryCount)

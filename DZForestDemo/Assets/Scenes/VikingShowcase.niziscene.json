@@ -4,7 +4,7 @@
     {
       "name": "Main Camera",
       "position": [1.7775733, 9.141837, -34.880928],
-      "rotation": [24.284986, -6.736028, 7.197902],
+      "rotation": [23.335878, -9.645209, 6.6524887],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -41,7 +41,7 @@
     {
       "name": "Character_Viking",
       "active": true,
-      "position": [-1.2923927E-05, -171004.36, 0.00051649613],
+      "position": [-1.2923927E-05, -209155.7, 0.00051649613],
       "rotation": [4.0916016E-06, 5.809548E-07, 1.0138471E-07],
       "scale": [1, 1, 1],
       "components": [
@@ -117,7 +117,7 @@
       "name": "Boat",
       "active": false,
       "position": [26.5, 10, 19.5],
-      "rotation": [28.21042, -10.654419, 74.65382],
+      "rotation": [-3.6567042, -29.796911, 78.31148],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -276,7 +276,7 @@
     {
       "name": "Barrel2",
       "active": true,
-      "position": [5, -199409.73, 5],
+      "position": [5, -237575.5, 5],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
       "components": [
@@ -311,8 +311,8 @@
     {
       "name": "Barrel",
       "active": true,
-      "position": [26.404987, 0.7497239, 15.55616],
-      "rotation": [7.576085E-09, -4.825505E-06, -5.6628897E-09],
+      "position": [26.404987, 0.7497239, 15.556159],
+      "rotation": [3.790236E-09, -4.827932E-06, -2.028418E-08],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -693,7 +693,7 @@
         },
         {
           "type": "NiziKit.Components.SurfaceComponent",
-          "albedo": "Synty/Textures/DarkFantasy/Textures/Alts/PolygonDarkFantasy_Texture_01_A.dztex"
+          "albedo": "Synty/Textures/StreetRacer/Textures/Vehicles/PolygonStreetRacer_Veh_Tex_26_Rust_Painted_Red.dztex"
         }
       ],
       "children": []
