@@ -716,8 +716,7 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
             if (ctxBtn.Show())
             {
                 var state = Ui.GetContextMenuState(ctx, "CtxMenu");
-                var btnBox = ctx.Clay.GetElementBoundingBox(ctxBtn.Id);
-                state.OpenAt(btnBox.X, btnBox.Y + btnBox.Height + 2);
+                state.OpenBelow(ctxBtn.Id);
             }
 
             var clicked = Ui.ContextMenu(ctx, "CtxMenu", _contextMenuItems).Show();

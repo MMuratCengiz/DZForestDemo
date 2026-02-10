@@ -1,3 +1,4 @@
+using System.Numerics;
 using System.Runtime.CompilerServices;
 using DenOfIz;
 
@@ -26,6 +27,7 @@ public sealed class UiContextMenuState
     public bool IsOpen { get; set; }
     public float PositionX { get; set; }
     public float PositionY { get; set; }
+    public uint AnchorElementId { get; set; }
     public int HoveredIndex { get; set; } = -1;
     public int SkipCloseFrames { get; set; }
 
@@ -34,6 +36,17 @@ public sealed class UiContextMenuState
         IsOpen = true;
         PositionX = x;
         PositionY = y;
+        AnchorElementId = 0;
+        HoveredIndex = -1;
+        SkipCloseFrames = 3;
+    }
+
+    public void OpenBelow(uint elementId)
+    {
+        IsOpen = true;
+        AnchorElementId = elementId;
+        PositionX = 0;
+        PositionY = 0;
         HoveredIndex = -1;
         SkipCloseFrames = 3;
     }
@@ -41,6 +54,7 @@ public sealed class UiContextMenuState
     public void Close()
     {
         IsOpen = false;
+        AnchorElementId = 0;
         HoveredIndex = -1;
         SkipCloseFrames = 0;
     }
@@ -169,12 +183,27 @@ public ref struct UiContextMenu
             Width = ClayBorderWidth.CreateUniform(1),
             Color = UiColor.Rgb(60, 60, 65).ToClayColor()
         };
-        menuDecl.Floating = new ClayFloatingDesc
+        if (_state.AnchorElementId != 0)
         {
-            AttachTo = ClayFloatingAttachTo.Root,
-            Offset = new System.Numerics.Vector2(_state.PositionX, _state.PositionY),
-            ZIndex = 2000
-        };
+            menuDecl.Floating = new ClayFloatingDesc
+            {
+                AttachTo = ClayFloatingAttachTo.ElementWithId,
+                ParentId = _state.AnchorElementId,
+                ParentAttachPoint = ClayFloatingAttachPoint.LeftBottom,
+                ElementAttachPoint = ClayFloatingAttachPoint.LeftTop,
+                Offset = new Vector2(0, 2),
+                ZIndex = 2000
+            };
+        }
+        else
+        {
+            menuDecl.Floating = new ClayFloatingDesc
+            {
+                AttachTo = ClayFloatingAttachTo.Root,
+                Offset = new Vector2(_state.PositionX, _state.PositionY),
+                ZIndex = 2000
+            };
+        }
 
         _context.Clay.OpenElement(menuDecl);
         {
