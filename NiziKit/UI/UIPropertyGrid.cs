@@ -57,7 +57,7 @@ public ref struct UiPropertyGrid
         containerDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(0, float.MaxValue);
         containerDecl.Layout.ChildGap = (ushort)_gap;
 
-        _context.Clay.OpenElement(containerDecl);
+        _context.OpenElement(containerDecl);
 
         return new UiPropertyGridScope(_context, Id, _labelWidth, _fontSize, _rowHeight, _bgColor, _altBgColor, _labelColor);
     }
@@ -73,7 +73,12 @@ public ref struct UiPropertyGridScope
     private readonly UiColor _bgColor;
     private readonly UiColor _altBgColor;
     private readonly UiColor _labelColor;
-    private uint _rowIndex;
+    // NOTE: _rowCounter is a uint[] (reference type) instead of a plain uint because
+    // UiPropertyGridScope is a ref struct typically used with 'using var', which makes
+    // the variable readonly. C# creates defensive copies when calling methods on readonly
+    // structs, so a value-type counter would never actually increment. The array reference
+    // survives defensive copies, ensuring Row() correctly increments across calls.
+    private readonly uint[] _rowCounter;
 
     internal UiPropertyGridScope(UiContext context, uint parentId, float labelWidth, ushort fontSize,
         float rowHeight, UiColor bgColor, UiColor altBgColor, UiColor labelColor)
@@ -86,16 +91,16 @@ public ref struct UiPropertyGridScope
         _bgColor = bgColor;
         _altBgColor = altBgColor;
         _labelColor = labelColor;
-        _rowIndex = 0;
+        _rowCounter = new uint[1];
     }
 
     public UiPropertyRowScope Row(string label)
     {
-        var isAlt = _rowIndex % 2 == 1;
+        var isAlt = _rowCounter[0] % 2 == 1;
         var bg = isAlt ? _altBgColor : _bgColor;
-        var rowIdx = _rowIndex++;
+        var rowIdx = _rowCounter[0]++;
 
-        var rowId = _context.StringCache.GetId("PGRow", _parentId + rowIdx);
+        var rowId = _context.StringCache.GetId("PGRow", _parentId, rowIdx);
         var rowDecl = new ClayElementDeclaration { Id = rowId };
         rowDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
         rowDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
@@ -105,14 +110,14 @@ public ref struct UiPropertyGridScope
         rowDecl.Layout.ChildGap = 8;
         rowDecl.BackgroundColor = bg.ToClayColor();
 
-        _context.Clay.OpenElement(rowDecl);
+        _context.OpenElement(rowDecl);
 
-        var labelId = _context.StringCache.GetId("PGLbl", _parentId + rowIdx);
+        var labelId = _context.StringCache.GetId("PGLbl", _parentId, rowIdx);
         var labelDecl = new ClayElementDeclaration { Id = labelId };
         labelDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(_labelWidth);
         labelDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
 
-        _context.Clay.OpenElement(labelDecl);
+        _context.OpenElement(labelDecl);
         _context.Clay.Text(StringView.Intern(label), new ClayTextDesc
         {
             TextColor = _labelColor.ToClayColor(),
@@ -120,13 +125,13 @@ public ref struct UiPropertyGridScope
         });
         _context.Clay.CloseElement();
 
-        var editorId = _context.StringCache.GetId("PGEd", _parentId + rowIdx);
+        var editorId = _context.StringCache.GetId("PGEd", _parentId, rowIdx);
         var editorDecl = new ClayElementDeclaration { Id = editorId };
         editorDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
         editorDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
         editorDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
 
-        _context.Clay.OpenElement(editorDecl);
+        _context.OpenElement(editorDecl);
 
         return new UiPropertyRowScope(_context);
     }

@@ -20,10 +20,14 @@ public ref struct UiDraggableValue
     private string _label;
     private UiColor _labelColor;
     private UiColor _labelTextColor;
+    private UiColor _valueColor;
+    private UiColor _valueEditColor;
+    private UiColor _valueTextColor;
     private float _sensitivity;
     private string _format;
     private ushort _fontSize;
     private float _width;
+    private UiSizing? _widthSizing;
     private float _labelWidth;
 
     internal UiDraggableValue(UiContext ctx, string id, UiDraggableValueState state)
@@ -35,6 +39,9 @@ public ref struct UiDraggableValue
         _label = "V";
         _labelColor = UiColor.Rgb(60, 130, 200);
         _labelTextColor = UiColor.White;
+        _valueColor = UiColor.Rgb(40, 40, 45);
+        _valueEditColor = UiColor.Rgb(30, 30, 35);
+        _valueTextColor = UiColor.Rgb(200, 200, 200);
         _sensitivity = 0.5f;
         _format = "F2";
         _fontSize = 13;
@@ -63,10 +70,22 @@ public ref struct UiDraggableValue
     public UiDraggableValue FontSize(ushort size) { _fontSize = size; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiDraggableValue Width(float w) { _width = w; return this; }
+    public UiDraggableValue Width(float w) { _width = w; _widthSizing = null; return this; }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiDraggableValue Width(UiSizing sizing) { _widthSizing = sizing; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiDraggableValue LabelWidth(float w) { _labelWidth = w; return this; }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiDraggableValue ValueColor(UiColor bg) { _valueColor = bg; return this; }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiDraggableValue ValueEditColor(UiColor bg) { _valueEditColor = bg; return this; }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiDraggableValue ValueTextColor(UiColor color) { _valueTextColor = color; return this; }
 
     public bool Show(ref float value)
     {
@@ -164,10 +183,12 @@ public ref struct UiDraggableValue
 
         var containerDecl = new ClayElementDeclaration { Id = Id };
         containerDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
-        containerDecl.Layout.Sizing.Width = _width > 0 ? ClaySizingAxis.Fixed(_width) : ClaySizingAxis.Grow(0, float.MaxValue);
+        containerDecl.Layout.Sizing.Width = _widthSizing.HasValue
+            ? _widthSizing.Value.ToClayAxis()
+            : _width > 0 ? ClaySizingAxis.Fixed(_width) : ClaySizingAxis.Grow(0, float.MaxValue);
         containerDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(0, float.MaxValue);
 
-        _context.Clay.OpenElement(containerDecl);
+        _context.OpenElement(containerDecl);
         {
             var labelDecl = new ClayElementDeclaration { Id = labelId };
             labelDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(_labelWidth);
@@ -177,7 +198,7 @@ public ref struct UiDraggableValue
             labelDecl.BackgroundColor = _labelColor.ToClayColor();
             labelDecl.BorderRadius = new ClayBorderRadius { TopLeft = 4, BottomLeft = 4 };
 
-            _context.Clay.OpenElement(labelDecl);
+            _context.OpenElement(labelDecl);
             _context.Clay.Text(StringView.Intern(_label), new ClayTextDesc
             {
                 TextColor = _labelTextColor.ToClayColor(),
@@ -187,7 +208,7 @@ public ref struct UiDraggableValue
             _context.Clay.CloseElement();
 
             var displayText = _state.IsEditing ? _state.EditText + "|" : value.ToString(_format);
-            var valueBg = _state.IsEditing ? UiColor.Rgb(30, 30, 35) : UiColor.Rgb(40, 40, 45);
+            var valueBg = _state.IsEditing ? _valueEditColor : _valueColor;
 
             var valueDecl = new ClayElementDeclaration { Id = valueId };
             valueDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
@@ -197,10 +218,10 @@ public ref struct UiDraggableValue
             valueDecl.BackgroundColor = valueBg.ToClayColor();
             valueDecl.BorderRadius = new ClayBorderRadius { TopRight = 4, BottomRight = 4 };
 
-            _context.Clay.OpenElement(valueDecl);
+            _context.OpenElement(valueDecl);
             _context.Clay.Text(StringView.Intern(displayText), new ClayTextDesc
             {
-                TextColor = UiColor.Rgb(200, 200, 200).ToClayColor(),
+                TextColor = _valueTextColor.ToClayColor(),
                 FontSize = _fontSize
             });
             _context.Clay.CloseElement();

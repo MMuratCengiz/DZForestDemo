@@ -1,12 +1,8 @@
-using System.Collections.ObjectModel;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using NiziKit.Application.Timing;
 using NiziKit.Components;
 using NiziKit.Core;
 using NiziKit.Editor.Gizmos;
 using NiziKit.Editor.Services;
-using NiziKit.Editor.Views.Editors;
 using NiziKit.Light;
 
 namespace NiziKit.Editor.ViewModels;
@@ -22,12 +18,11 @@ public enum ViewPreset
     Left
 }
 
-public partial class EditorViewModel : ObservableObject
+public class EditorViewModel
 {
     private readonly EditorSceneService _sceneService;
     private readonly AssetBrowserService _assetBrowserService;
     private readonly AssetFileService _assetFileService;
-    private readonly List<AnimationPreviewEditor> _animationPreviewEditors = [];
 
     public EditorViewModel()
     {
@@ -46,61 +41,26 @@ public partial class EditorViewModel : ObservableObject
         ImportViewModel.ImportCancelled += () => IsImportPanelOpen = false;
     }
 
-    public void RegisterAnimationPreview(AnimationPreviewEditor editor)
-    {
-        if (!_animationPreviewEditors.Contains(editor))
-        {
-            _animationPreviewEditors.Add(editor);
-        }
-    }
-
-    public void UnregisterAnimationPreview(AnimationPreviewEditor editor)
-    {
-        _animationPreviewEditors.Remove(editor);
-    }
-
-    public void UpdateAnimationPreviews(float deltaTime)
-    {
-        foreach (var editor in _animationPreviewEditors)
-        {
-            editor.Update(deltaTime);
-        }
-    }
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSelection))]
-    private GameObjectViewModel? _selectedGameObject;
-
+    public GameObjectViewModel? SelectedGameObject { get; set; }
     public bool HasSelection => SelectedGameObject != null;
 
-    [ObservableProperty]
-    private string _sceneDisplayName = "Scene";
+    public string SceneDisplayName { get; set; } = "Scene";
 
-    public ObservableCollection<GameObjectViewModel> RootObjects { get; } = [];
+    public List<GameObjectViewModel> RootObjects { get; } = [];
 
     public AssetBrowserService AssetBrowser => _assetBrowserService;
 
     // Asset Management ViewModels
-    [ObservableProperty]
-    private AssetBrowserViewModel _assetBrowserViewModel;
+    public AssetBrowserViewModel AssetBrowserViewModel { get; set; }
+    public ImportViewModel ImportViewModel { get; set; }
 
-    [ObservableProperty]
-    private ImportViewModel _importViewModel;
+    public bool IsImportPanelOpen { get; set; }
+    public bool IsOpenSceneDialogOpen { get; set; }
+    public bool IsSavePromptOpen { get; set; }
 
-    [ObservableProperty]
-    private bool _isImportPanelOpen;
+    public FileBrowserViewModel? SceneBrowserViewModel { get; set; }
 
-    [ObservableProperty]
-    private bool _isOpenSceneDialogOpen;
-
-    [ObservableProperty]
-    private bool _isSavePromptOpen;
-
-    [ObservableProperty]
-    private FileBrowserViewModel? _sceneBrowserViewModel;
-
-    [ObservableProperty]
-    private bool _isDirty;
+    public bool IsDirty { get; set; }
 
     private string? _pendingScenePath;
 
@@ -111,26 +71,16 @@ public partial class EditorViewModel : ObservableObject
     private const float AutoSaveInterval = 60f;
     private const float ContentRefreshInterval = 5f;
 
-    [ObservableProperty]
-    private bool _autoSaveEnabled = true;
-
-    [ObservableProperty]
-    private string _autoSaveStatus = "";
+    public bool AutoSaveEnabled { get; set; } = true;
+    public string AutoSaveStatus { get; set; } = "";
 
     // Bottom panel states
-    [ObservableProperty]
-    private bool _isAssetBrowserOpen;
+    public bool IsAssetBrowserOpen { get; set; }
 
     // Asset Picker state
-    [ObservableProperty]
-    private bool _isAssetPickerOpen;
-
-    [ObservableProperty]
-    private AssetRefType _assetPickerAssetType;
-
-    [ObservableProperty]
-    private string? _assetPickerCurrentAssetPath;
-
+    public bool IsAssetPickerOpen { get; set; }
+    public AssetRefType AssetPickerAssetType { get; set; }
+    public string? AssetPickerCurrentAssetPath { get; set; }
     private Action<AssetInfo?>? _assetPickerCallback;
 
     public void LoadFromCurrentScene()
@@ -144,29 +94,34 @@ public partial class EditorViewModel : ObservableObject
 
         SceneDisplayName = scene.Name ?? "Scene";
 
-        foreach (var cam in scene.GetAllCameras())
-        {
-            var freeFly = cam.Owner?.GetComponent<FreeFlyController>();
-            if (freeFly != null)
-            {
-                freeFly.IsEnabled = false;
-            }
-
-            var orbit = cam.Owner?.GetComponent<OrbitController>();
-            if (orbit != null)
-            {
-                orbit.IsEnabled = false;
-            }
-        }
-
         foreach (var obj in scene.RootObjects)
         {
+            DisableCameraControllersRecursive(obj);
             RootObjects.Add(new GameObjectViewModel(obj, this));
         }
     }
 
-    [RelayCommand]
-    private void NewObject()
+    private static void DisableCameraControllersRecursive(GameObject obj)
+    {
+        var freeFly = obj.GetComponent<FreeFlyController>();
+        if (freeFly != null)
+        {
+            freeFly.IsEnabled = false;
+        }
+
+        var orbit = obj.GetComponent<OrbitController>();
+        if (orbit != null)
+        {
+            orbit.IsEnabled = false;
+        }
+
+        foreach (var child in obj.Children)
+        {
+            DisableCameraControllersRecursive(child);
+        }
+    }
+
+    public void NewObject()
     {
         var scene = World.CurrentScene;
         if (scene == null)
@@ -180,8 +135,7 @@ public partial class EditorViewModel : ObservableObject
         SelectedGameObject = vm;
     }
 
-    [RelayCommand]
-    private void NewChildObject()
+    public void NewChildObject()
     {
         if (SelectedGameObject == null)
         {
@@ -193,8 +147,7 @@ public partial class EditorViewModel : ObservableObject
         SelectedGameObject.Children.Add(vm);
     }
 
-    [RelayCommand]
-    private void NewDirectionalLight()
+    public void NewDirectionalLight()
     {
         var scene = World.CurrentScene;
         if (scene == null)
@@ -209,8 +162,7 @@ public partial class EditorViewModel : ObservableObject
         SelectedGameObject = vm;
     }
 
-    [RelayCommand]
-    private void NewPointLight()
+    public void NewPointLight()
     {
         var scene = World.CurrentScene;
         if (scene == null)
@@ -225,8 +177,7 @@ public partial class EditorViewModel : ObservableObject
         SelectedGameObject = vm;
     }
 
-    [RelayCommand]
-    private void NewSpotLight()
+    public void NewSpotLight()
     {
         var scene = World.CurrentScene;
         if (scene == null)
@@ -242,8 +193,7 @@ public partial class EditorViewModel : ObservableObject
         SelectedGameObject = vm;
     }
 
-    [RelayCommand]
-    private void DeleteObject()
+    public void DeleteObject()
     {
         if (SelectedGameObject == null)
         {
@@ -270,8 +220,7 @@ public partial class EditorViewModel : ObservableObject
         SelectedGameObject = null;
     }
 
-    [RelayCommand]
-    private void DuplicateObject()
+    public void DuplicateObject()
     {
         if (SelectedGameObject == null)
         {
@@ -304,8 +253,7 @@ public partial class EditorViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
-    private void SaveScene()
+    public void SaveScene()
     {
         var scene = World.CurrentScene;
         if (scene == null)
@@ -317,16 +265,14 @@ public partial class EditorViewModel : ObservableObject
         IsDirty = false;
     }
 
-    [RelayCommand]
-    private void LoadScene(string path)
+    public void LoadScene(string path)
     {
         World.LoadScene(path);
         LoadFromCurrentScene();
         IsDirty = false;
     }
 
-    [RelayCommand]
-    private void OpenScene()
+    public void OpenScene()
     {
         SceneBrowserViewModel = new FileBrowserViewModel(_assetFileService)
         {
@@ -335,8 +281,7 @@ public partial class EditorViewModel : ObservableObject
         IsOpenSceneDialogOpen = true;
     }
 
-    [RelayCommand]
-    private void CloseOpenSceneDialog()
+    public void CloseOpenSceneDialog()
     {
         IsOpenSceneDialogOpen = false;
         SceneBrowserViewModel = null;
@@ -357,8 +302,7 @@ public partial class EditorViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
-    private void SavePromptSave()
+    public void SavePromptSave()
     {
         SaveScene();
         IsSavePromptOpen = false;
@@ -369,8 +313,7 @@ public partial class EditorViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
-    private void SavePromptDiscard()
+    public void SavePromptDiscard()
     {
         IsSavePromptOpen = false;
         if (_pendingScenePath != null)
@@ -380,8 +323,7 @@ public partial class EditorViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
-    private void SavePromptCancel()
+    public void SavePromptCancel()
     {
         IsSavePromptOpen = false;
         _pendingScenePath = null;
@@ -469,10 +411,7 @@ public partial class EditorViewModel : ObservableObject
             {
                 if (IsAssetBrowserOpen)
                 {
-                    Avalonia.Threading.Dispatcher.UIThread.Post(() =>
-                    {
-                        AssetBrowserViewModel.Refresh();
-                    });
+                    AssetBrowserViewModel.Refresh();
                 }
             });
         }
@@ -485,8 +424,7 @@ public partial class EditorViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
-    private void OpenImportPanel()
+    public void OpenImportPanel()
     {
         IsImportPanelOpen = true;
     }
@@ -497,24 +435,14 @@ public partial class EditorViewModel : ObservableObject
         ImportViewModel.AddFilesToQueue(paths);
     }
 
-    [RelayCommand]
-    private void CloseImportPanel()
+    public void CloseImportPanel()
     {
         IsImportPanelOpen = false;
     }
 
-    [RelayCommand]
-    private void CloseAssetBrowser()
+    public void CloseAssetBrowser()
     {
         IsAssetBrowserOpen = false;
-    }
-
-    partial void OnIsAssetBrowserOpenChanged(bool value)
-    {
-        if (value)
-        {
-            AssetBrowserViewModel.Refresh();
-        }
     }
 
     public void OpenAssetPicker(AssetRefType assetType, string? currentAssetPath, Action<AssetInfo?> callback)
@@ -525,8 +453,7 @@ public partial class EditorViewModel : ObservableObject
         IsAssetPickerOpen = true;
     }
 
-    [RelayCommand]
-    private void CloseAssetPicker()
+    public void CloseAssetPicker()
     {
         IsAssetPickerOpen = false;
         _assetPickerCallback = null;
@@ -539,24 +466,16 @@ public partial class EditorViewModel : ObservableObject
         _assetPickerCallback = null;
     }
 
-    [RelayCommand]
-    private void RefreshAssets()
+    public void RefreshAssets()
     {
         AssetBrowserViewModel.Refresh();
     }
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(Is3DMode))]
-    [NotifyPropertyChangedFor(nameof(ProjectionModeText))]
-    private bool _is2DMode;
-
+    public bool Is2DMode { get; set; }
     public bool Is3DMode => !Is2DMode;
-
     public string ProjectionModeText => Is2DMode ? "2D" : "3D";
 
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ViewPresetText))]
-    private ViewPreset _currentViewPreset = ViewPreset.Free;
+    public ViewPreset CurrentViewPreset { get; set; } = ViewPreset.Free;
 
     public string ViewPresetText => CurrentViewPreset switch
     {
@@ -570,45 +489,25 @@ public partial class EditorViewModel : ObservableObject
         _ => "Free"
     };
 
-    [ObservableProperty]
-    private bool _showStatistics = true;
+    public bool ShowStatistics { get; set; } = true;
+    public float Fps { get; set; }
+    public float FrameTime { get; set; }
+    public string GizmoModeText { get; set; } = "Move (W)";
 
-    [ObservableProperty]
-    private float _fps;
-
-    [ObservableProperty]
-    private float _frameTime;
-
-    [ObservableProperty]
-    private string _gizmoModeText = "Move (W)";
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SnapStatusText))]
-    private bool _snapEnabled;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(GridStatusText))]
-    private bool _showGrid = true;
-
-    [ObservableProperty]
-    private float _positionSnapIncrement = 1f;
-
-    [ObservableProperty]
-    private float _rotationSnapIncrement = 15f;
-
-    [ObservableProperty]
-    private float _scaleSnapIncrement = 0.1f;
-
-    [ObservableProperty]
-    private float _gridSize = 50f;
-
-    [ObservableProperty]
-    private float _gridSpacing = 1f;
+    public bool SnapEnabled { get; set; }
+    public bool ShowGrid { get; set; } = true;
+    public float PositionSnapIncrement { get; set; } = 1f;
+    public float RotationSnapIncrement { get; set; } = 15f;
+    public float ScaleSnapIncrement { get; set; } = 0.1f;
+    public float GridSize { get; set; } = 50f;
+    public float GridSpacing { get; set; } = 1f;
 
     public string SnapStatusText => SnapEnabled ? "Snap: On" : "Snap: Off";
     public string GridStatusText => ShowGrid ? "Grid: On" : "Grid: Off";
 
     public event Action? GridSettingsChanged;
+    public event Action? ViewPresetChanged;
+    public event Action? ProjectionModeChanged;
 
     private GridDesc? _gridDesc;
 
@@ -622,72 +521,38 @@ public partial class EditorViewModel : ObservableObject
         ScaleSnapIncrement = desc.ScaleSnapIncrement;
     }
 
-    partial void OnSnapEnabledChanged(bool value)
+    public void SyncSnapToGrid()
     {
         if (_gridDesc != null)
         {
-            _gridDesc.SnapEnabled = value;
+            _gridDesc.SnapEnabled = SnapEnabled;
+            _gridDesc.PositionSnapIncrement = PositionSnapIncrement;
+            _gridDesc.RotationSnapIncrement = RotationSnapIncrement;
+            _gridDesc.ScaleSnapIncrement = ScaleSnapIncrement;
         }
     }
 
-    partial void OnPositionSnapIncrementChanged(float value)
+    public void NotifyGridSettingsChanged()
     {
-        if (_gridDesc != null)
-        {
-            _gridDesc.PositionSnapIncrement = value;
-        }
+        PositionSnapIncrement = GridSpacing;
+        GridSettingsChanged?.Invoke();
     }
 
-    partial void OnRotationSnapIncrementChanged(float value)
-    {
-        if (_gridDesc != null)
-        {
-            _gridDesc.RotationSnapIncrement = value;
-        }
-    }
-
-    partial void OnScaleSnapIncrementChanged(float value)
-    {
-        if (_gridDesc != null)
-        {
-            _gridDesc.ScaleSnapIncrement = value;
-        }
-    }
-
-    [RelayCommand]
-    private void ToggleSnap()
+    public void ToggleSnap()
     {
         SnapEnabled = !SnapEnabled;
+        SyncSnapToGrid();
     }
 
-    [RelayCommand]
-    private void ToggleGrid()
+    public void ToggleGrid()
     {
         ShowGrid = !ShowGrid;
-    }
-
-    partial void OnShowGridChanged(bool value)
-    {
-        GridSettingsChanged?.Invoke();
-    }
-
-    partial void OnGridSizeChanged(float value)
-    {
-        GridSettingsChanged?.Invoke();
-    }
-
-    partial void OnGridSpacingChanged(float value)
-    {
-        PositionSnapIncrement = value;
         GridSettingsChanged?.Invoke();
     }
 
     private float _statsUpdateTimer;
     private int _frameCountSinceLastUpdate;
     private const float StatsUpdateInterval = 0.5f;
-
-    public event Action? ViewPresetChanged;
-    public event Action? ProjectionModeChanged;
 
     public void UpdateStatistics()
     {
@@ -714,8 +579,7 @@ public partial class EditorViewModel : ObservableObject
         };
     }
 
-    [RelayCommand]
-    private void Toggle2DMode()
+    public void Toggle2DMode()
     {
         Is2DMode = !Is2DMode;
         if (Is2DMode && CurrentViewPreset == ViewPreset.Free)
@@ -725,8 +589,7 @@ public partial class EditorViewModel : ObservableObject
         ProjectionModeChanged?.Invoke();
     }
 
-    [RelayCommand]
-    private void SetViewPreset(string preset)
+    public void SetViewPreset(string preset)
     {
         CurrentViewPreset = preset switch
         {
@@ -742,8 +605,7 @@ public partial class EditorViewModel : ObservableObject
         ViewPresetChanged?.Invoke();
     }
 
-    [RelayCommand]
-    private void ToggleStatistics()
+    public void ToggleStatistics()
     {
         ShowStatistics = !ShowStatistics;
     }

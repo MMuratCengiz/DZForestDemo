@@ -30,6 +30,7 @@ public ref struct UiTreeView
     private UiColor _textColor;
     private UiColor _iconColor;
     private UiColor _chevronColor;
+    private UiColor _borderColor;
     private ushort _fontSize;
     private float _indentSize;
     private float _itemHeight;
@@ -49,6 +50,7 @@ public ref struct UiTreeView
         _textColor = UiColor.Rgb(210, 210, 210);
         _iconColor = UiColor.Rgb(160, 160, 160);
         _chevronColor = UiColor.Rgb(140, 140, 140);
+        _borderColor = UiColor.Rgb(55, 55, 60);
         _fontSize = 13;
         _indentSize = 18;
         _itemHeight = 26;
@@ -75,6 +77,9 @@ public ref struct UiTreeView
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiTreeView ChevronColor(UiColor color) { _chevronColor = color; return this; }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiTreeView BorderColor(UiColor color) { _borderColor = color; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiTreeView FontSize(ushort size) { _fontSize = size; return this; }
@@ -114,11 +119,11 @@ public ref struct UiTreeView
         containerDecl.Border = new ClayBorderDesc
         {
             Width = ClayBorderWidth.CreateUniform(1),
-            Color = UiColor.Rgb(55, 55, 60).ToClayColor()
+            Color = _borderColor.ToClayColor()
         };
         containerDecl.Scroll.Vertical = true;
 
-        _context.Clay.OpenElement(containerDecl);
+        _context.OpenElement(containerDecl);
         {
             foreach (var node in _roots)
             {
@@ -141,7 +146,7 @@ public ref struct UiTreeView
         var isSelected = _state.SelectedNodeId == node.Id;
 
         var nodeIdx = _nodeIndex++;
-        var rowId = _context.StringCache.GetId("TVRow", Id + nodeIdx);
+        var rowId = _context.StringCache.GetId("TVRow", Id, nodeIdx);
         var interaction = _context.GetInteraction(rowId);
 
         var bgColor = isSelected ? _selectedColor
@@ -157,11 +162,11 @@ public ref struct UiTreeView
         rowDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
         rowDecl.BackgroundColor = bgColor.ToClayColor();
 
-        _context.Clay.OpenElement(rowDecl);
+        _context.OpenElement(rowDecl);
         {
             if (hasChildren)
             {
-                var chevronId = _context.StringCache.GetId("TVChev", Id + nodeIdx);
+                var chevronId = _context.StringCache.GetId("TVChev", Id, nodeIdx);
                 var chevronInteraction = _context.GetInteraction(chevronId);
                 var chevronIcon = isExpanded ? FontAwesome.ChevronDown : FontAwesome.ChevronRight;
 
@@ -171,7 +176,7 @@ public ref struct UiTreeView
                 chevronDecl.Layout.ChildAlignment.X = ClayAlignmentX.Center;
                 chevronDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
 
-                _context.Clay.OpenElement(chevronDecl);
+                _context.OpenElement(chevronDecl);
                 _context.Clay.Text(StringView.Intern(chevronIcon), new ClayTextDesc
                 {
                     TextColor = _chevronColor.ToClayColor(),
@@ -195,10 +200,10 @@ public ref struct UiTreeView
             }
             else
             {
-                var spacerId = _context.StringCache.GetId("TVSpc", Id + nodeIdx);
+                var spacerId = _context.StringCache.GetId("TVSpc", Id, nodeIdx);
                 var spacerDecl = new ClayElementDeclaration { Id = spacerId };
                 spacerDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(14);
-                _context.Clay.OpenElement(spacerDecl);
+                _context.OpenElement(spacerDecl);
                 _context.Clay.CloseElement();
             }
 

@@ -205,7 +205,7 @@ public ref struct UiContextMenu
             };
         }
 
-        _context.Clay.OpenElement(menuDecl);
+        _context.OpenElement(menuDecl);
         {
             for (var i = 0; i < _items.Length; i++)
             {
@@ -213,24 +213,24 @@ public ref struct UiContextMenu
 
                 if (item.IsSeparator)
                 {
-                    var sepId = _context.StringCache.GetId("CMSep", Id + (uint)i);
+                    var sepId = _context.StringCache.GetId("CMSep", Id, (uint)i);
                     var sepDecl = new ClayElementDeclaration { Id = sepId };
                     sepDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
                     sepDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(1);
                     sepDecl.Layout.Padding = new ClayPadding { Left = 8, Right = 8 };
                     sepDecl.BackgroundColor = _separatorColor.ToClayColor();
-                    _context.Clay.OpenElement(sepDecl);
+                    _context.OpenElement(sepDecl);
                     _context.Clay.CloseElement();
 
-                    var gapId = _context.StringCache.GetId("CMGap", Id + (uint)i);
+                    var gapId = _context.StringCache.GetId("CMGap", Id, (uint)i);
                     var gapDecl = new ClayElementDeclaration { Id = gapId };
                     gapDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(4);
-                    _context.Clay.OpenElement(gapDecl);
+                    _context.OpenElement(gapDecl);
                     _context.Clay.CloseElement();
                     continue;
                 }
 
-                var itemId = _context.StringCache.GetId("CMItem", Id + (uint)i);
+                var itemId = _context.StringCache.GetId("CMItem", Id, (uint)i);
                 var interaction = item.IsDisabled ? UiInteraction.None : _context.GetInteraction(itemId);
                 var isHovered = interaction.IsHovered;
                 if (isHovered)
@@ -248,7 +248,7 @@ public ref struct UiContextMenu
                 itemDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
                 itemDecl.BackgroundColor = itemBg.ToClayColor();
 
-                _context.Clay.OpenElement(itemDecl);
+                _context.OpenElement(itemDecl);
                 {
                     if (!string.IsNullOrEmpty(item.Icon))
                     {
@@ -262,10 +262,10 @@ public ref struct UiContextMenu
                     }
                     else
                     {
-                        var iconSpacerId = _context.StringCache.GetId("CMIco", Id + (uint)i);
+                        var iconSpacerId = _context.StringCache.GetId("CMIco", Id, (uint)i);
                         var iconSpacerDecl = new ClayElementDeclaration { Id = iconSpacerId };
                         iconSpacerDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(_fontSize);
-                        _context.Clay.OpenElement(iconSpacerDecl);
+                        _context.OpenElement(iconSpacerDecl);
                         _context.Clay.CloseElement();
                     }
 

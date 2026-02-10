@@ -13,9 +13,9 @@ public readonly ref struct UiFrame
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public (Texture Texture, DenOfIz.Semaphore Semaphore) End(uint frameIndex, float deltaTime)
+    public void End(uint frameIndex, float deltaTime, CommandList commandList)
     {
-        return _context.EndFrame(frameIndex, deltaTime);
+        _context.EndFrame(frameIndex, deltaTime, commandList);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

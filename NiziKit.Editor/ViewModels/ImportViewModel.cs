@@ -1,7 +1,3 @@
-using System.Collections.ObjectModel;
-using Avalonia.Threading;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using NiziKit.ContentPipeline;
 using NiziKit.Editor.Services;
 using NiziKit.Offline;
@@ -15,7 +11,7 @@ public enum ImportType
     Both
 }
 
-public partial class ImportViewModel : ObservableObject
+public class ImportViewModel
 {
     private static string? _lastBrowsedPath;
 
@@ -40,56 +36,25 @@ public partial class ImportViewModel : ObservableObject
 
         FileBrowser = new FileBrowserViewModel(startPath);
         FileBrowser.SelectionChanged += OnSelectionChanged;
-        FileBrowser.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName == nameof(FileBrowserViewModel.CurrentPath))
-            {
-                _lastBrowsedPath = FileBrowser.CurrentPath;
-            }
-        };
     }
 
     public FileBrowserViewModel FileBrowser { get; }
 
-    [ObservableProperty]
-    private ImportType _importType = ImportType.Both;
+    public ImportType ImportType { get; set; } = ImportType.Both;
+    public float ModelScale { get; set; } = 1.0f;
+    public bool GenerateMips { get; set; } = true;
+    public string OutputDirectory { get; set; } = "";
+    public string ProgressText { get; set; } = "";
+    public bool IsImporting { get; set; }
+    public double Progress { get; set; }
+    public bool ImportSucceeded { get; set; }
+    public int ImportedCount { get; set; }
+    public int FailedCount { get; set; }
 
-    [ObservableProperty]
-    private float _modelScale = 1.0f;
+    public List<FileEntry> SelectedFiles { get; set; } = [];
+    public List<ImportAssetItemViewModel> ImportItems { get; } = [];
 
-    [ObservableProperty]
-    private bool _generateMips = true;
-
-    [ObservableProperty]
-    private string _outputDirectory = "";
-
-    [ObservableProperty]
-    private string _progressText = "";
-
-    [ObservableProperty]
-    private bool _isImporting;
-
-    [ObservableProperty]
-    private double _progress;
-
-    [ObservableProperty]
-    private bool _importSucceeded;
-
-    [ObservableProperty]
-    private int _importedCount;
-
-    [ObservableProperty]
-    private int _failedCount;
-
-    [ObservableProperty]
-    private ObservableCollection<FileEntry> _selectedFiles = [];
-
-    public ObservableCollection<ImportAssetItemViewModel> ImportItems { get; } = [];
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSelectedItem))]
-    private ImportAssetItemViewModel? _selectedImportItem;
-
+    public ImportAssetItemViewModel? SelectedImportItem { get; set; }
     public bool HasSelectedItem => SelectedImportItem != null;
 
     public event Action? ImportCompleted;
@@ -123,7 +88,6 @@ public partial class ImportViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
     public void AddToQueue()
     {
         var filesToAdd = SelectedFiles.ToList();
@@ -159,7 +123,6 @@ public partial class ImportViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
     public void RemoveFromQueue(ImportAssetItemViewModel? item)
     {
         if (item == null)
@@ -224,19 +187,15 @@ public partial class ImportViewModel : ObservableObject
                 return introspector.Introspect(item.FilePath);
             });
 
-            Dispatcher.UIThread.Post(() => item.ApplyIntrospection(result));
+            item.ApplyIntrospection(result);
         }
         catch
         {
-            Dispatcher.UIThread.Post(() =>
-            {
-                item.ScanComplete = true;
-                item.IsScanning = false;
-            });
+            item.ScanComplete = true;
+            item.IsScanning = false;
         }
     }
 
-    [RelayCommand]
     public void Import()
     {
         if (IsImporting)
@@ -299,74 +258,55 @@ public partial class ImportViewModel : ObservableObject
                     }
 
                     var item = items[i];
-                    Dispatcher.UIThread.Post(() =>
-                    {
-                        item.IsImporting = true;
-                        ProgressText = $"Importing: {item.FileName}";
-                    });
+                    item.IsImporting = true;
+                    ProgressText = $"Importing: {item.FileName}";
 
                     try
                     {
                         ImportQueueItem(item, outputPath);
-                        Dispatcher.UIThread.Post(() =>
-                        {
-                            item.IsImporting = false;
-                            item.ImportComplete = true;
-                        });
+                        item.IsImporting = false;
+                        item.ImportComplete = true;
                     }
                     catch (Exception ex)
                     {
-                        var msg = ex.Message;
-                        Dispatcher.UIThread.Post(() =>
-                        {
-                            item.IsImporting = false;
-                            item.ImportComplete = true;
-                            item.ImportError = msg;
-                        });
+                        item.IsImporting = false;
+                        item.ImportComplete = true;
+                        item.ImportError = ex.Message;
                     }
 
-                    Dispatcher.UIThread.Post(() => Progress = (i + 1) * 100.0 / total);
+                    Progress = (i + 1) * 100.0 / total;
                 }
 
                 var succeeded = items.Count(i => i is { ImportComplete: true, ImportError: null });
                 var failed = items.Count(i => i.ImportError != null);
 
-                Dispatcher.UIThread.Post(() =>
+                ImportedCount = succeeded;
+                FailedCount = failed;
+                ProgressText = failed > 0
+                    ? $"Imported {succeeded} of {items.Count} ({failed} failed)"
+                    : $"Successfully imported {succeeded} asset(s)";
+                Progress = 100;
+                IsImporting = false;
+                ImportSucceeded = true;
+
+                var done = ImportItems.Where(i => i is { ImportComplete: true, ImportError: null }).ToList();
+                foreach (var d in done)
                 {
-                    ImportedCount = succeeded;
-                    FailedCount = failed;
-                    ProgressText = failed > 0
-                        ? $"Imported {succeeded} of {items.Count} ({failed} failed)"
-                        : $"Successfully imported {succeeded} asset(s)";
-                    Progress = 100;
-                    IsImporting = false;
-                    ImportSucceeded = true;
+                    ImportItems.Remove(d);
+                }
+                SelectedImportItem = ImportItems.FirstOrDefault();
 
-                    var done = ImportItems.Where(i => i is { ImportComplete: true, ImportError: null }).ToList();
-                    foreach (var d in done)
-                    {
-                        ImportItems.Remove(d);
-                    }
-                    SelectedImportItem = ImportItems.FirstOrDefault();
-
-                    ImportCompleted?.Invoke();
-                });
+                ImportCompleted?.Invoke();
             }
             catch (OperationCanceledException)
             {
-                Dispatcher.UIThread.Post(() =>
-                {
-                    ProgressText = "Import cancelled";
-                    IsImporting = false;
-                });
+                ProgressText = "Import cancelled";
+                IsImporting = false;
             }
             catch (Exception ex)
             {
-                Dispatcher.UIThread.Post(() =>
-                {
-                    ProgressText = $"Error: {ex.Message}";
-                    IsImporting = false;
-                });
+                ProgressText = $"Error: {ex.Message}";
+                IsImporting = false;
             }
             finally
             {
@@ -479,7 +419,7 @@ public partial class ImportViewModel : ObservableObject
 
                 if (file.IsDirectory)
                 {
-                    Dispatcher.UIThread.Post(() => ProgressText = $"Importing directory: {file.Name}");
+                    ProgressText = $"Importing directory: {file.Name}";
                     var settings = new BulkImportDesc
                     {
                         SourceDirectory = file.FullPath,
@@ -488,44 +428,35 @@ public partial class ImportViewModel : ObservableObject
                         ImportTextures = ImportType is ImportType.Textures or ImportType.Both,
                         ModelScale = ModelScale,
                         GenerateMips = GenerateMips,
-                        OnProgress = msg => Dispatcher.UIThread.Post(() => ProgressText = msg)
+                        OnProgress = msg => ProgressText = msg
                     };
 
                     importer.Import(settings);
                 }
                 else
                 {
-                    Dispatcher.UIThread.Post(() => ProgressText = $"Importing: {file.Name}");
+                    ProgressText = $"Importing: {file.Name}";
                     ImportSingleFile(file, outputPath);
                 }
 
                 var progressIncrement = 100.0 / filesToImport.Count;
-                Dispatcher.UIThread.Post(() => Progress += progressIncrement);
+                Progress += progressIncrement;
             }
 
-            Dispatcher.UIThread.Post(() =>
-            {
-                ProgressText = "Import completed";
-                Progress = 100;
-                IsImporting = false;
-                ImportCompleted?.Invoke();
-            });
+            ProgressText = "Import completed";
+            Progress = 100;
+            IsImporting = false;
+            ImportCompleted?.Invoke();
         }
         catch (OperationCanceledException)
         {
-            Dispatcher.UIThread.Post(() =>
-            {
-                ProgressText = "Import cancelled";
-                IsImporting = false;
-            });
+            ProgressText = "Import cancelled";
+            IsImporting = false;
         }
         catch (Exception ex)
         {
-            Dispatcher.UIThread.Post(() =>
-            {
-                ProgressText = $"Error: {ex.Message}";
-                IsImporting = false;
-            });
+            ProgressText = $"Error: {ex.Message}";
+            IsImporting = false;
         }
         finally
         {
@@ -576,7 +507,6 @@ public partial class ImportViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
     public void Cancel()
     {
         if (IsImporting)

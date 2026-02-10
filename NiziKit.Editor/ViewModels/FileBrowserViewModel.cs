@@ -1,11 +1,8 @@
-using System.Collections.ObjectModel;
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using NiziKit.Editor.Services;
 
 namespace NiziKit.Editor.ViewModels;
 
-public partial class FileBrowserViewModel : ObservableObject
+public class FileBrowserViewModel
 {
     private readonly AssetFileService _fileService;
 
@@ -16,51 +13,25 @@ public partial class FileBrowserViewModel : ObservableObject
     public FileBrowserViewModel(AssetFileService fileService)
     {
         _fileService = fileService;
-        _rootPath = _fileService.AssetsPath;
-        _currentPath = _rootPath;
+        RootPath = _fileService.AssetsPath;
+        CurrentPath = RootPath;
         Refresh();
     }
 
     public FileBrowserViewModel(string rootPath)
     {
         _fileService = new AssetFileService(rootPath);
-        _rootPath = rootPath;
-        _currentPath = rootPath;
+        RootPath = rootPath;
+        CurrentPath = rootPath;
         Refresh();
     }
 
-    [ObservableProperty]
-    private string _rootPath;
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(BreadcrumbParts))]
-    [NotifyPropertyChangedFor(nameof(CanNavigateUp))]
-    private string _currentPath;
-
-    [ObservableProperty]
-    private ObservableCollection<FileEntry> _entries = [];
-
-    [ObservableProperty]
-    private FileEntry? _selectedEntry;
-
-    [ObservableProperty]
-    private ObservableCollection<FileEntry> _selectedEntries = [];
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(FilterIndex))]
-    private AssetFileType _filter = AssetFileType.All;
-
-    public int FilterIndex
-    {
-        get => (int)Filter;
-        set
-        {
-            if (value is >= 0 and <= 5)
-            {
-                Filter = (AssetFileType)value;
-            }
-        }
-    }
+    public string RootPath { get; set; }
+    public string CurrentPath { get; set; }
+    public List<FileEntry> Entries { get; set; } = [];
+    public FileEntry? SelectedEntry { get; set; }
+    public List<FileEntry> SelectedEntries { get; set; } = [];
+    public AssetFileType Filter { get; set; } = AssetFileType.All;
 
     public bool CanNavigateUp
     {
@@ -118,12 +89,6 @@ public partial class FileBrowserViewModel : ObservableObject
     public event Action<FileEntry>? FileSelected;
     public event Action<IReadOnlyList<FileEntry>>? SelectionChanged;
 
-    partial void OnFilterChanged(AssetFileType value)
-    {
-        Refresh();
-    }
-
-    [RelayCommand]
     public void NavigateUp()
     {
         if (!CanNavigateUp)
@@ -138,7 +103,6 @@ public partial class FileBrowserViewModel : ObservableObject
         }
     }
 
-    [RelayCommand]
     public void NavigateTo(string path)
     {
         if (!Directory.Exists(path))
@@ -150,7 +114,6 @@ public partial class FileBrowserViewModel : ObservableObject
         Refresh();
     }
 
-    [RelayCommand]
     public void Refresh()
     {
         Entries.Clear();

@@ -382,4 +382,260 @@ public static class GizmoGeometry
         }
         return Vector3.Normalize(Vector3.Cross(v, Vector3.UnitY));
     }
+
+    // Camera/Light icon colors
+    public static readonly Vector4 CameraIconColor = new(0.3f, 0.5f, 0.9f, 1f);
+    public static readonly Vector4 DirectionalLightIconColor = new(1.0f, 0.95f, 0.4f, 1f);
+    public static readonly Vector4 PointLightIconColor = new(1.0f, 0.7f, 0.2f, 1f);
+    public static readonly Vector4 SpotLightIconColor = new(0.9f, 0.6f, 0.2f, 1f);
+
+    public static void BuildCameraIcon(List<GizmoVertex> vertices, Vector3 position, Quaternion rotation, float scale, Vector4 color)
+    {
+        var forward = Vector3.Transform(Vector3.UnitZ, rotation);
+        var up = Vector3.Transform(Vector3.UnitY, rotation);
+        var right = Vector3.Transform(Vector3.UnitX, rotation);
+
+        var size = 0.3f * scale;
+        var depth = 0.4f * scale;
+        var aspect = 1.4f;
+
+        // Camera body (box)
+        var bodySize = size * 0.35f;
+        var bodyDepth = size * 0.5f;
+        var bodyCenter = position - forward * bodyDepth * 0.5f;
+
+        // Body corners
+        var b0 = bodyCenter + (-right * bodySize * aspect) + (up * bodySize) + (-forward * bodyDepth * 0.5f);
+        var b1 = bodyCenter + (right * bodySize * aspect) + (up * bodySize) + (-forward * bodyDepth * 0.5f);
+        var b2 = bodyCenter + (right * bodySize * aspect) + (-up * bodySize) + (-forward * bodyDepth * 0.5f);
+        var b3 = bodyCenter + (-right * bodySize * aspect) + (-up * bodySize) + (-forward * bodyDepth * 0.5f);
+        var b4 = bodyCenter + (-right * bodySize * aspect) + (up * bodySize) + (forward * bodyDepth * 0.5f);
+        var b5 = bodyCenter + (right * bodySize * aspect) + (up * bodySize) + (forward * bodyDepth * 0.5f);
+        var b6 = bodyCenter + (right * bodySize * aspect) + (-up * bodySize) + (forward * bodyDepth * 0.5f);
+        var b7 = bodyCenter + (-right * bodySize * aspect) + (-up * bodySize) + (forward * bodyDepth * 0.5f);
+
+        // Body faces
+        AddQuad(vertices, b0, b1, b2, b3, color); // Back
+        AddQuad(vertices, b5, b4, b7, b6, color); // Front
+        AddQuad(vertices, b4, b0, b3, b7, color); // Left
+        AddQuad(vertices, b1, b5, b6, b2, color); // Right
+        AddQuad(vertices, b4, b5, b1, b0, color); // Top
+        AddQuad(vertices, b3, b2, b6, b7, color); // Bottom
+
+        // Lens (frustum extending forward)
+        var lensStart = position + forward * size * 0.1f;
+        var lensEnd = position + forward * depth;
+        var lensStartSize = size * 0.25f;
+        var lensEndSize = size * 0.6f;
+
+        // Lens corners at start
+        var l0 = lensStart + (-right * lensStartSize * aspect) + (up * lensStartSize);
+        var l1 = lensStart + (right * lensStartSize * aspect) + (up * lensStartSize);
+        var l2 = lensStart + (right * lensStartSize * aspect) + (-up * lensStartSize);
+        var l3 = lensStart + (-right * lensStartSize * aspect) + (-up * lensStartSize);
+
+        // Lens corners at end
+        var f0 = lensEnd + (-right * lensEndSize * aspect) + (up * lensEndSize);
+        var f1 = lensEnd + (right * lensEndSize * aspect) + (up * lensEndSize);
+        var f2 = lensEnd + (right * lensEndSize * aspect) + (-up * lensEndSize);
+        var f3 = lensEnd + (-right * lensEndSize * aspect) + (-up * lensEndSize);
+
+        // Lens faces (frustum sides)
+        AddQuad(vertices, l0, l1, f1, f0, color); // Top
+        AddQuad(vertices, l2, l3, f3, f2, color); // Bottom
+        AddQuad(vertices, l3, l0, f0, f3, color); // Left
+        AddQuad(vertices, l1, l2, f2, f1, color); // Right
+        AddQuad(vertices, f0, f1, f2, f3, color); // Far cap
+    }
+
+    public static void BuildDirectionalLightIcon(List<GizmoVertex> vertices, Vector3 position, Vector3 direction, float scale, Vector4 color)
+    {
+        var size = 0.25f * scale;
+        var arrowLength = 0.5f * scale;
+
+        var normal = Vector3.Normalize(direction);
+        var tangent = GetPerpendicular(normal);
+        var bitangent = Vector3.Cross(normal, tangent);
+
+        // Filled disc (sun)
+        const int segments = 16;
+        for (var i = 0; i < segments; i++)
+        {
+            var angle1 = (float)i / segments * MathF.PI * 2;
+            var angle2 = (float)(i + 1) / segments * MathF.PI * 2;
+
+            var p1 = position + (MathF.Cos(angle1) * tangent + MathF.Sin(angle1) * bitangent) * size;
+            var p2 = position + (MathF.Cos(angle2) * tangent + MathF.Sin(angle2) * bitangent) * size;
+
+            // Triangle fan for disc
+            vertices.Add(new GizmoVertex(position, color));
+            vertices.Add(new GizmoVertex(p1, color));
+            vertices.Add(new GizmoVertex(p2, color));
+        }
+
+        // Arrow shaft (cylinder)
+        var arrowStart = position + normal * size * 0.5f;
+        var arrowEnd = position + normal * arrowLength;
+        var shaftRadius = size * 0.15f;
+
+        for (var i = 0; i < 8; i++)
+        {
+            var angle1 = (float)i / 8 * MathF.PI * 2;
+            var angle2 = (float)(i + 1) / 8 * MathF.PI * 2;
+
+            var offset1 = (MathF.Cos(angle1) * tangent + MathF.Sin(angle1) * bitangent) * shaftRadius;
+            var offset2 = (MathF.Cos(angle2) * tangent + MathF.Sin(angle2) * bitangent) * shaftRadius;
+
+            var s1 = arrowStart + offset1;
+            var s2 = arrowStart + offset2;
+            var e1 = arrowEnd + offset1;
+            var e2 = arrowEnd + offset2;
+
+            vertices.Add(new GizmoVertex(s1, color));
+            vertices.Add(new GizmoVertex(s2, color));
+            vertices.Add(new GizmoVertex(e1, color));
+
+            vertices.Add(new GizmoVertex(s2, color));
+            vertices.Add(new GizmoVertex(e2, color));
+            vertices.Add(new GizmoVertex(e1, color));
+        }
+
+        // Arrow head (cone)
+        var coneBase = arrowEnd;
+        var coneTip = arrowEnd + normal * size * 0.6f;
+        var coneRadius = size * 0.35f;
+
+        for (var i = 0; i < 8; i++)
+        {
+            var angle1 = (float)i / 8 * MathF.PI * 2;
+            var angle2 = (float)(i + 1) / 8 * MathF.PI * 2;
+
+            var offset1 = (MathF.Cos(angle1) * tangent + MathF.Sin(angle1) * bitangent) * coneRadius;
+            var offset2 = (MathF.Cos(angle2) * tangent + MathF.Sin(angle2) * bitangent) * coneRadius;
+
+            var b1 = coneBase + offset1;
+            var b2 = coneBase + offset2;
+
+            // Cone side
+            vertices.Add(new GizmoVertex(coneTip, color));
+            vertices.Add(new GizmoVertex(b1, color));
+            vertices.Add(new GizmoVertex(b2, color));
+
+            // Base cap
+            vertices.Add(new GizmoVertex(coneBase, color));
+            vertices.Add(new GizmoVertex(b2, color));
+            vertices.Add(new GizmoVertex(b1, color));
+        }
+    }
+
+    public static void BuildPointLightIcon(List<GizmoVertex> vertices, Vector3 position, float scale, Vector4 color)
+    {
+        var size = 0.2f * scale;
+
+        // Build an octahedron (diamond shape) for point light
+        var top = position + Vector3.UnitY * size;
+        var bottom = position - Vector3.UnitY * size;
+        var front = position + Vector3.UnitZ * size;
+        var back = position - Vector3.UnitZ * size;
+        var left = position - Vector3.UnitX * size;
+        var right = position + Vector3.UnitX * size;
+
+        // Top pyramid (4 faces)
+        vertices.Add(new GizmoVertex(top, color));
+        vertices.Add(new GizmoVertex(front, color));
+        vertices.Add(new GizmoVertex(right, color));
+
+        vertices.Add(new GizmoVertex(top, color));
+        vertices.Add(new GizmoVertex(right, color));
+        vertices.Add(new GizmoVertex(back, color));
+
+        vertices.Add(new GizmoVertex(top, color));
+        vertices.Add(new GizmoVertex(back, color));
+        vertices.Add(new GizmoVertex(left, color));
+
+        vertices.Add(new GizmoVertex(top, color));
+        vertices.Add(new GizmoVertex(left, color));
+        vertices.Add(new GizmoVertex(front, color));
+
+        // Bottom pyramid (4 faces)
+        vertices.Add(new GizmoVertex(bottom, color));
+        vertices.Add(new GizmoVertex(right, color));
+        vertices.Add(new GizmoVertex(front, color));
+
+        vertices.Add(new GizmoVertex(bottom, color));
+        vertices.Add(new GizmoVertex(back, color));
+        vertices.Add(new GizmoVertex(right, color));
+
+        vertices.Add(new GizmoVertex(bottom, color));
+        vertices.Add(new GizmoVertex(left, color));
+        vertices.Add(new GizmoVertex(back, color));
+
+        vertices.Add(new GizmoVertex(bottom, color));
+        vertices.Add(new GizmoVertex(front, color));
+        vertices.Add(new GizmoVertex(left, color));
+    }
+
+    public static void BuildSpotLightIcon(List<GizmoVertex> vertices, Vector3 position, Vector3 direction, float coneAngle, float scale, Vector4 color)
+    {
+        var depth = 0.5f * scale;
+        var normal = Vector3.Normalize(direction);
+        var tangent = GetPerpendicular(normal);
+        var bitangent = Vector3.Cross(normal, tangent);
+
+        // Cone radius at the far end based on angle (clamp to reasonable range)
+        var effectiveAngle = Math.Clamp(coneAngle, 0.1f, 0.8f);
+        var coneRadius = MathF.Tan(effectiveAngle) * depth;
+
+        // Cone tip at position
+        var coneEnd = position + normal * depth;
+
+        // Build filled cone
+        const int segments = 12;
+        for (var i = 0; i < segments; i++)
+        {
+            var angle1 = (float)i / segments * MathF.PI * 2;
+            var angle2 = (float)(i + 1) / segments * MathF.PI * 2;
+
+            var offset1 = (MathF.Cos(angle1) * tangent + MathF.Sin(angle1) * bitangent) * coneRadius;
+            var offset2 = (MathF.Cos(angle2) * tangent + MathF.Sin(angle2) * bitangent) * coneRadius;
+
+            var b1 = coneEnd + offset1;
+            var b2 = coneEnd + offset2;
+
+            // Cone side triangle
+            vertices.Add(new GizmoVertex(position, color));
+            vertices.Add(new GizmoVertex(b1, color));
+            vertices.Add(new GizmoVertex(b2, color));
+
+            // Base cap triangle (pointing inward)
+            vertices.Add(new GizmoVertex(coneEnd, color));
+            vertices.Add(new GizmoVertex(b2, color));
+            vertices.Add(new GizmoVertex(b1, color));
+        }
+
+        // Small sphere at the tip
+        var tipSize = 0.08f * scale;
+        var tipTop = position - normal * tipSize;
+        var tipFront = position + tangent * tipSize;
+        var tipBack = position - tangent * tipSize;
+        var tipLeft = position + bitangent * tipSize;
+        var tipRight = position - bitangent * tipSize;
+
+        // Mini octahedron at tip
+        vertices.Add(new GizmoVertex(tipTop, color));
+        vertices.Add(new GizmoVertex(tipFront, color));
+        vertices.Add(new GizmoVertex(tipLeft, color));
+
+        vertices.Add(new GizmoVertex(tipTop, color));
+        vertices.Add(new GizmoVertex(tipLeft, color));
+        vertices.Add(new GizmoVertex(tipBack, color));
+
+        vertices.Add(new GizmoVertex(tipTop, color));
+        vertices.Add(new GizmoVertex(tipBack, color));
+        vertices.Add(new GizmoVertex(tipRight, color));
+
+        vertices.Add(new GizmoVertex(tipTop, color));
+        vertices.Add(new GizmoVertex(tipRight, color));
+        vertices.Add(new GizmoVertex(tipFront, color));
+    }
 }

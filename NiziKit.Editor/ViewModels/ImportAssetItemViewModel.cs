@@ -1,77 +1,73 @@
-using System.Collections.ObjectModel;
-using CommunityToolkit.Mvvm.ComponentModel;
 using NiziKit.Editor.Services;
 using NiziKit.Offline;
 
 namespace NiziKit.Editor.ViewModels;
 
-public partial class MeshItemViewModel : ObservableObject
+public class MeshItemViewModel
 {
-    [ObservableProperty] private bool _isEnabled = true;
-    [ObservableProperty] private string _exportName = string.Empty;
-    [ObservableProperty] private string _originalName = string.Empty;
-    [ObservableProperty] private uint _vertexCount;
-    [ObservableProperty] private uint _indexCount;
-    [ObservableProperty] private bool _hasSkin;
+    public bool IsEnabled { get; set; } = true;
+    public string ExportName { get; set; } = string.Empty;
+    public string OriginalName { get; set; } = string.Empty;
+    public uint VertexCount { get; set; }
+    public uint IndexCount { get; set; }
+    public bool HasSkin { get; set; }
 
     public string DisplayInfo => $"{VertexCount:N0} verts, {IndexCount:N0} idx{(HasSkin ? ", skinned" : "")}";
 }
 
-public partial class AnimationItemViewModel : ObservableObject
+public class AnimationItemViewModel
 {
-    [ObservableProperty] private bool _isEnabled = true;
-    [ObservableProperty] private string _exportName = string.Empty;
-    [ObservableProperty] private string _originalName = string.Empty;
-    [ObservableProperty] private double _duration;
-    [ObservableProperty] private uint _channelCount;
+    public bool IsEnabled { get; set; } = true;
+    public string ExportName { get; set; } = string.Empty;
+    public string OriginalName { get; set; } = string.Empty;
+    public double Duration { get; set; }
+    public uint ChannelCount { get; set; }
 
     public string DisplayInfo => $"{Duration:F1}s, {ChannelCount} channels";
 }
 
-public partial class ImportAssetItemViewModel : ObservableObject
+public class ImportAssetItemViewModel
 {
-    [ObservableProperty] private string _fileName = string.Empty;
-    [ObservableProperty] private string _filePath = string.Empty;
-    [ObservableProperty] private string _assetName = string.Empty;
-    [ObservableProperty] private string _outputSubdirectory = string.Empty;
-    [ObservableProperty] private AssetFileType _fileType = AssetFileType.Other;
+    public string FileName { get; set; } = string.Empty;
+    public string FilePath { get; set; } = string.Empty;
+    public string AssetName { get; set; } = string.Empty;
+    public string OutputSubdirectory { get; set; } = string.Empty;
+    public AssetFileType FileType { get; set; } = AssetFileType.Other;
 
     public bool IsModel => FileType == AssetFileType.Model;
     public bool IsTexture => FileType == AssetFileType.Texture;
 
-    [ObservableProperty] private bool _generateMips = true;
+    public bool GenerateMips { get; set; } = true;
+    public int EmbeddedTextureCount { get; set; }
+    public bool IsScanning { get; set; }
+    public bool ScanComplete { get; set; }
+    public string? ScanError { get; set; }
 
-    [ObservableProperty] private int _embeddedTextureCount;
+    public List<MeshItemViewModel> Meshes { get; } = [];
+    public List<AnimationItemViewModel> Animations { get; } = [];
 
-    [ObservableProperty] private bool _isScanning;
-    [ObservableProperty] private bool _scanComplete;
-    [ObservableProperty] private string? _scanError;
+    public bool HasSkeleton { get; set; }
+    public int JointCount { get; set; }
+    public string RootJointName { get; set; } = string.Empty;
 
-    public ObservableCollection<MeshItemViewModel> Meshes { get; } = [];
-    public ObservableCollection<AnimationItemViewModel> Animations { get; } = [];
+    public bool ExportSkeleton { get; set; } = true;
+    public bool ExportAnimations { get; set; } = true;
 
-    [ObservableProperty] private bool _hasSkeleton;
-    [ObservableProperty] private int _jointCount;
-    [ObservableProperty] private string _rootJointName = string.Empty;
+    public float Scale { get; set; } = 1.0f;
+    public ExportFormat Format { get; set; } = ExportFormat.Glb;
+    public bool OptimizeMeshes { get; set; } = true;
+    public bool GenerateNormals { get; set; } = true;
+    public bool CalculateTangents { get; set; } = true;
+    public bool TriangulateMeshes { get; set; } = true;
+    public bool JoinIdenticalVertices { get; set; } = true;
+    public bool SmoothNormals { get; set; } = true;
+    public float SmoothNormalsAngle { get; set; } = 80.0f;
+    public bool LimitBoneWeights { get; set; } = true;
+    public uint MaxBoneWeightsPerVertex { get; set; } = 4;
 
-    [ObservableProperty] private bool _exportSkeleton = true;
-    [ObservableProperty] private bool _exportAnimations = true;
-
-    [ObservableProperty] private float _scale = 1.0f;
-    [ObservableProperty] private ExportFormat _format = ExportFormat.Glb;
-    [ObservableProperty] private bool _optimizeMeshes = true;
-    [ObservableProperty] private bool _generateNormals = true;
-    [ObservableProperty] private bool _calculateTangents = true;
-    [ObservableProperty] private bool _triangulateMeshes = true;
-    [ObservableProperty] private bool _joinIdenticalVertices = true;
-    [ObservableProperty] private bool _smoothNormals = true;
-    [ObservableProperty] private float _smoothNormalsAngle = 80.0f;
-    [ObservableProperty] private bool _limitBoneWeights = true;
-    [ObservableProperty] private uint _maxBoneWeightsPerVertex = 4;
-
-    [ObservableProperty] private bool _isImporting;
-    [ObservableProperty] private bool _importComplete;
-    [ObservableProperty] private string? _importError;
+    public bool IsImporting { get; set; }
+    public bool ImportComplete { get; set; }
+    public string? ImportError { get; set; }
 
     public string StatusText
     {
@@ -110,20 +106,6 @@ public partial class ImportAssetItemViewModel : ObservableObject
             return "Pending";
         }
     }
-
-    partial void OnFileTypeChanged(AssetFileType value)
-    {
-        OnPropertyChanged(nameof(IsModel));
-        OnPropertyChanged(nameof(IsTexture));
-        OnPropertyChanged(nameof(StatusText));
-    }
-
-    partial void OnIsScanningChanged(bool value) => OnPropertyChanged(nameof(StatusText));
-    partial void OnScanCompleteChanged(bool value) => OnPropertyChanged(nameof(StatusText));
-    partial void OnScanErrorChanged(string? value) => OnPropertyChanged(nameof(StatusText));
-    partial void OnIsImportingChanged(bool value) => OnPropertyChanged(nameof(StatusText));
-    partial void OnImportCompleteChanged(bool value) => OnPropertyChanged(nameof(StatusText));
-    partial void OnImportErrorChanged(string? value) => OnPropertyChanged(nameof(StatusText));
 
     public void ApplyIntrospection(AssetIntrospectionResult result)
     {

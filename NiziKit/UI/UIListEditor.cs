@@ -111,7 +111,7 @@ public ref struct UiListEditor
             Color = UiColor.Rgb(55, 55, 60).ToClayColor()
         };
 
-        _context.Clay.OpenElement(containerDecl);
+        _context.OpenElement(containerDecl);
         {
             var headerId = _context.StringCache.GetId("LEHead", Id);
             var headerDecl = new ClayElementDeclaration { Id = headerId };
@@ -124,7 +124,7 @@ public ref struct UiListEditor
             headerDecl.BackgroundColor = _headerBgColor.ToClayColor();
             headerDecl.BorderRadius = new ClayBorderRadius { TopLeft = 4, TopRight = 4 };
 
-            _context.Clay.OpenElement(headerDecl);
+            _context.OpenElement(headerDecl);
             {
                 _context.Clay.Text(StringView.Intern(_title), new ClayTextDesc
                 {
@@ -135,7 +135,7 @@ public ref struct UiListEditor
                 var spacerId = _context.StringCache.GetId("LESpc", Id);
                 var spacerDecl = new ClayElementDeclaration { Id = spacerId };
                 spacerDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
-                _context.Clay.OpenElement(spacerDecl);
+                _context.OpenElement(spacerDecl);
                 _context.Clay.CloseElement();
 
                 if (_showAdd)
@@ -152,7 +152,7 @@ public ref struct UiListEditor
                     addDecl.BackgroundColor = addBg.ToClayColor();
                     addDecl.BorderRadius = ClayBorderRadius.CreateUniform(3);
 
-                    _context.Clay.OpenElement(addDecl);
+                    _context.OpenElement(addDecl);
                     _context.Clay.Text(StringView.Intern(FontAwesome.Plus), new ClayTextDesc
                     {
                         TextColor = UiColor.Rgb(100, 200, 100).ToClayColor(),
@@ -182,7 +182,7 @@ public ref struct UiListEditor
                     removeDecl.BackgroundColor = removeBg.ToClayColor();
                     removeDecl.BorderRadius = ClayBorderRadius.CreateUniform(3);
 
-                    _context.Clay.OpenElement(removeDecl);
+                    _context.OpenElement(removeDecl);
                     _context.Clay.Text(StringView.Intern(FontAwesome.Minus), new ClayTextDesc
                     {
                         TextColor = UiColor.Rgb(200, 100, 100).ToClayColor(),
@@ -208,11 +208,11 @@ public ref struct UiListEditor
             listDecl.Layout.Sizing.Height = ClaySizingAxis.Grow(0, float.MaxValue);
             listDecl.Scroll.Vertical = true;
 
-            _context.Clay.OpenElement(listDecl);
+            _context.OpenElement(listDecl);
             {
                 for (var i = 0; i < items.Length; i++)
                 {
-                    var itemId = _context.StringCache.GetId("LEItem", Id + (uint)i);
+                    var itemId = _context.StringCache.GetId("LEItem", Id, (uint)i);
                     var interaction = _context.GetInteraction(itemId);
                     var isSelected = i == _state.SelectedIndex;
 
@@ -228,7 +228,7 @@ public ref struct UiListEditor
                     itemDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
                     itemDecl.BackgroundColor = itemBg.ToClayColor();
 
-                    _context.Clay.OpenElement(itemDecl);
+                    _context.OpenElement(itemDecl);
                     _context.Clay.Text(StringView.Intern(items[i]), new ClayTextDesc
                     {
                         TextColor = _textColor.ToClayColor(),

@@ -23,6 +23,8 @@ public ref struct UiCollapsibleSection
     private float _padding;
     private float _gap;
     private float _cornerRadius;
+    private float _borderWidth;
+    private UiColor _borderColor;
     private string? _badge;
 
     internal UiCollapsibleSection(UiContext ctx, string id, UiCollapsibleSectionState state, string title)
@@ -41,6 +43,8 @@ public ref struct UiCollapsibleSection
         _padding = 10;
         _gap = 0;
         _cornerRadius = 4;
+        _borderWidth = 0;
+        _borderColor = UiColor.Transparent;
         _badge = null;
     }
 
@@ -111,6 +115,14 @@ public ref struct UiCollapsibleSection
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiCollapsibleSection Border(float width, UiColor color)
+    {
+        _borderWidth = width;
+        _borderColor = color;
+        return this;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiCollapsibleSection Badge(string text)
     {
         _badge = text;
@@ -126,7 +138,16 @@ public ref struct UiCollapsibleSection
         containerDecl.Layout.LayoutDirection = ClayLayoutDirection.TopToBottom;
         containerDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
         containerDecl.Layout.ChildGap = (ushort)_gap;
-        _context.Clay.OpenElement(containerDecl);
+        containerDecl.BorderRadius = ClayBorderRadius.CreateUniform(_cornerRadius);
+        if (_borderWidth > 0)
+        {
+            containerDecl.Border = new ClayBorderDesc
+            {
+                Width = ClayBorderWidth.CreateUniform((int)_borderWidth),
+                Color = _borderColor.ToClayColor()
+            };
+        }
+        _context.OpenElement(containerDecl);
 
         var headerBg = interaction.IsHovered ? _headerHoverColor : _headerBgColor;
         var headerDecl = new ClayElementDeclaration { Id = headerId };
@@ -141,7 +162,7 @@ public ref struct UiCollapsibleSection
             ? new ClayBorderRadius { TopLeft = _cornerRadius, TopRight = _cornerRadius }
             : ClayBorderRadius.CreateUniform(_cornerRadius);
 
-        _context.Clay.OpenElement(headerDecl);
+        _context.OpenElement(headerDecl);
         {
             var chevronIcon = _state.IsExpanded ? FontAwesome.ChevronDown : FontAwesome.ChevronRight;
             _context.Clay.Text(StringView.Intern(chevronIcon), new ClayTextDesc
@@ -162,14 +183,14 @@ public ref struct UiCollapsibleSection
             {
                 var spacerDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("CSSpacer", Id) };
                 spacerDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
-                _context.Clay.OpenElement(spacerDecl);
+                _context.OpenElement(spacerDecl);
                 _context.Clay.CloseElement();
 
                 var badgeDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("CSBadge", Id) };
                 badgeDecl.Layout.Padding = new ClayPadding { Left = 6, Right = 6, Top = 2, Bottom = 2 };
                 badgeDecl.BackgroundColor = UiColor.Rgb(60, 60, 65).ToClayColor();
                 badgeDecl.BorderRadius = ClayBorderRadius.CreateUniform(3);
-                _context.Clay.OpenElement(badgeDecl);
+                _context.OpenElement(badgeDecl);
                 _context.Clay.Text(StringView.Intern(_badge), new ClayTextDesc
                 {
                     TextColor = UiColor.Gray.ToClayColor(),
@@ -181,7 +202,9 @@ public ref struct UiCollapsibleSection
         _context.Clay.CloseElement();
 
         if (interaction.WasClicked)
+        {
             _state.IsExpanded = !_state.IsExpanded;
+        }
 
         if (_state.IsExpanded)
         {
@@ -196,7 +219,7 @@ public ref struct UiCollapsibleSection
                 BottomLeft = _cornerRadius,
                 BottomRight = _cornerRadius
             };
-            _context.Clay.OpenElement(bodyDecl);
+            _context.OpenElement(bodyDecl);
             return new UiCollapsibleSectionScope(_context, true);
         }
 

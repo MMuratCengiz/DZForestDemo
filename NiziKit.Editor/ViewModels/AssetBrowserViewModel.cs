@@ -1,11 +1,9 @@
-using CommunityToolkit.Mvvm.ComponentModel;
-using CommunityToolkit.Mvvm.Input;
 using NiziKit.ContentPipeline;
 using NiziKit.Editor.Services;
 
 namespace NiziKit.Editor.ViewModels;
 
-public partial class AssetBrowserViewModel : ObservableObject
+public class AssetBrowserViewModel
 {
     public AssetBrowserViewModel()
     {
@@ -17,8 +15,7 @@ public partial class AssetBrowserViewModel : ObservableObject
 
     public FileBrowserViewModel FileBrowser { get; }
 
-    [ObservableProperty]
-    private FileEntry? _selectedAsset;
+    public FileEntry? SelectedAsset { get; set; }
 
     public event Action<FileEntry>? AssetDoubleClicked;
 
@@ -32,7 +29,6 @@ public partial class AssetBrowserViewModel : ObservableObject
         SelectedAsset = entry;
     }
 
-    [RelayCommand]
     public void Refresh()
     {
         FileBrowser.Refresh();

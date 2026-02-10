@@ -348,7 +348,7 @@ public ref struct WidgetBuilder(UiContext ctx, uint id)
     public UiElementScope Open(bool isFocused = false)
     {
         var decl = Build(isFocused);
-        ctx.Clay.OpenElement(decl);
+        ctx.OpenElement(decl);
         return new UiElementScope(ctx);
     }
 
@@ -428,7 +428,7 @@ public static class WidgetBuilderExtensions
     public static void RenderBox(this UiContext ctx, uint id, float width, float height, UiColor color)
     {
         var decl = ctx.SimpleBox(id, width, height, color);
-        ctx.Clay.OpenElement(decl);
+        ctx.OpenElement(decl);
         ctx.Clay.CloseElement();
     }
 }

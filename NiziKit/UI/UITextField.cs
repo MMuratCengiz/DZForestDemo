@@ -853,7 +853,7 @@ public ref struct UiTextField
             };
         }
 
-        _context.Clay.OpenElement(decl);
+        _context.OpenElement(decl);
         {
             var text = _state.Text;
             var isEmpty = string.IsNullOrEmpty(text);
@@ -894,7 +894,7 @@ public ref struct UiTextField
         wrapperDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
         wrapperDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(0, float.MaxValue);
         wrapperDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
-        _context.Clay.OpenElement(wrapperDecl);
+        _context.OpenElement(wrapperDecl);
         {
             if (!string.IsNullOrEmpty(_placeholder))
             {
@@ -923,7 +923,7 @@ public ref struct UiTextField
             contentDecl.Scroll.Horizontal = true;
         }
 
-        _context.Clay.OpenElement(contentDecl);
+        _context.OpenElement(contentDecl);
 
         if (hasSelection)
         {
@@ -966,7 +966,7 @@ public ref struct UiTextField
             var selDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("TFSelBox", Id) };
             selDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
             selDecl.BackgroundColor = _selectionColor.ToClayColor();
-            _context.Clay.OpenElement(selDecl);
+            _context.OpenElement(selDecl);
             _context.Clay.Text(StringView.Intern(selected),
                 new ClayTextDesc { TextColor = _selectionTextColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
             _context.Clay.CloseElement();
@@ -1000,7 +1000,7 @@ public ref struct UiTextField
             ZIndex = 100
         };
 
-        _context.Clay.OpenElement(cursorDecl);
+        _context.OpenElement(cursorDecl);
         _context.Clay.CloseElement();
     }
 
@@ -1018,7 +1018,7 @@ public ref struct UiTextField
         contentDecl.Layout.LayoutDirection = ClayLayoutDirection.TopToBottom;
         contentDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
         contentDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(0, float.MaxValue);
-        _context.Clay.OpenElement(contentDecl);
+        _context.OpenElement(contentDecl);
 
         for (var lineIdx = 0; lineIdx < lineCount; lineIdx++)
         {
@@ -1029,13 +1029,13 @@ public ref struct UiTextField
             var cursorOnThisLine = cursorLine == lineIdx && isFocused;
             var selectionOnThisLine = hasSelection && selStart <= lineEnd && selEnd >= lineStart;
 
-            var lineId = _context.StringCache.GetId("TFLine", Id + (uint)lineIdx);
+            var lineId = _context.StringCache.GetId("TFLine", Id, (uint)lineIdx);
             var lineDecl = new ClayElementDeclaration { Id = lineId };
             lineDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
             lineDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
             lineDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(lineHeight, float.MaxValue);
             lineDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
-            _context.Clay.OpenElement(lineDecl);
+            _context.OpenElement(lineDecl);
 
             if (selectionOnThisLine)
             {
@@ -1067,7 +1067,7 @@ public ref struct UiTextField
         var cursorOffsetX = _context.Clay.PixelsToPoints(cursorPixelX);
         var cursorColor = _state.CursorVisible ? _cursorColor : UiColor.Transparent;
 
-        var cursorDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("TFLineCur", Id + (uint)lineIdx) };
+        var cursorDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("TFLineCur", Id, (uint)lineIdx) };
         cursorDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(_cursorWidth);
         cursorDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(lineHeight);
         cursorDecl.BackgroundColor = cursorColor.ToClayColor();
@@ -1081,7 +1081,7 @@ public ref struct UiTextField
             ZIndex = 100
         };
 
-        _context.Clay.OpenElement(cursorDecl);
+        _context.OpenElement(cursorDecl);
         _context.Clay.CloseElement();
     }
 
@@ -1097,10 +1097,10 @@ public ref struct UiTextField
 
         if (!string.IsNullOrEmpty(selected))
         {
-            var selDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("TFLineSelBox", Id + (uint)lineIdx) };
+            var selDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("TFLineSelBox", Id, (uint)lineIdx) };
             selDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
             selDecl.BackgroundColor = _selectionColor.ToClayColor();
-            _context.Clay.OpenElement(selDecl);
+            _context.OpenElement(selDecl);
             _context.Clay.Text(StringView.Intern(selected),
                 new ClayTextDesc { TextColor = _selectionTextColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
             _context.Clay.CloseElement();

@@ -3,15 +3,15 @@
   "cameras": [
     {
       "name": "Main Camera",
-      "position": [-10.674002, -72.245804, -198.67415],
-      "rotation": [-19.767044, 1.7188736, 0],
+      "position": [1.7775733, 9.141837, -34.880928],
+      "rotation": [24.92494, -3.4480493, 7.886539],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
       "projectionType": "perspective",
       "orthographicSize": 5,
       "priority": 0,
-      "isActive": true,
+      "isActive": false,
       "controller": {
         "type": "freefly",
         "moveSpeed": 10,
@@ -31,7 +31,7 @@
     {
       "type": "directional",
       "name": "Directional Light",
-      "direction": [0.3930465, -0.84710366, 0.3576728],
+      "direction": [-0.6498308, -0.60697824, -0.45749032],
       "color": [1, 1, 1],
       "intensity": 1,
       "castsShadows": true
@@ -41,7 +41,7 @@
     {
       "name": "Character_Viking",
       "active": true,
-      "position": [-1.2923927E-05, -84697.93, 0.00051649613],
+      "position": [-1.2923927E-05, -149718.53, 0.00051649613],
       "rotation": [4.0916016E-06, 5.809548E-07, 1.0138471E-07],
       "scale": [1, 1, 1],
       "components": [
@@ -95,7 +95,7 @@
     },
     {
       "name": "Character_Viking3",
-      "active": true,
+      "active": false,
       "position": [-3, 0, 0],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
@@ -115,9 +115,9 @@
     },
     {
       "name": "Boat",
-      "active": true,
+      "active": false,
       "position": [26.5, 10, 19.5],
-      "rotation": [10.298912, -28.33266, 74.732124],
+      "rotation": [16.39262, 25.48196, 81.06902],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -155,7 +155,7 @@
     },
     {
       "name": "Cart",
-      "active": true,
+      "active": false,
       "position": [-8, 0, -5],
       "rotation": [0, 20, 0],
       "scale": [1, 1, 1],
@@ -276,7 +276,7 @@
     {
       "name": "Barrel2",
       "active": true,
-      "position": [5, -113092.516, 5],
+      "position": [5, -178113.14, 5],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
       "components": [
@@ -311,8 +311,8 @@
     {
       "name": "Barrel",
       "active": true,
-      "position": [5.9999948, 0.71945626, 6.0000253],
-      "rotation": [-1.092128E-08, 2.0584757E-06, -4.913297E-09],
+      "position": [26.404987, 0.7497239, 15.55616],
+      "rotation": [-3.3585483E-09, -4.823078E-06, 2.2250035E-09],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -339,9 +339,9 @@
           "shape": {
             "type": "box",
             "size": [
-              0.8459735,
-              0.93941665,
-              0.8263009
+              1,
+              1,
+              1
             ]
           },
           "speculativeMargin": 0.1,
@@ -355,7 +355,7 @@
     },
     {
       "name": "Firepit",
-      "active": true,
+      "active": false,
       "position": [-0.1732735, 0, 8],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
@@ -615,7 +615,7 @@
     },
     {
       "name": "Platform",
-      "active": true,
+      "active": false,
       "position": [0, -0.25, 0],
       "rotation": [0, 0, 0],
       "scale": [90.67, 1, 113.75],
@@ -682,7 +682,7 @@
     },
     {
       "name": "New Object",
-      "active": true,
+      "active": false,
       "position": [0, 0, -9.997309],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],

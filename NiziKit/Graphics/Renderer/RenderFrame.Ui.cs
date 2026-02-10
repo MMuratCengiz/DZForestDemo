@@ -1,11 +1,8 @@
-using System.Numerics;
 using System.Runtime.CompilerServices;
 using DenOfIz;
 using NiziKit.Application.Timing;
-using NiziKit.Graphics.Renderer.Common;
 using NiziKit.Graphics.Resources;
 using NiziKit.UI;
-using Semaphore = DenOfIz.Semaphore;
 
 namespace NiziKit.Graphics.Renderer;
 
@@ -15,10 +12,6 @@ public partial class RenderFrame
 {
     private UiContext? _uiContext;
     private CycledTexture? _uiRenderTarget;
-    private BlitPass? _uiBlitPass;
-    private PinnedArray<RenderingAttachmentDesc>? _uiRtAttachment;
-    private readonly Semaphore[] _externalSemaphores = new Semaphore[4];
-    private int _externalSemaphoreCount;
 
     public UiContext UiContext => _uiContext ?? throw new InvalidOperationException("UI not enabled. Call EnableUi first.");
 
@@ -26,9 +19,7 @@ public partial class RenderFrame
     {
         _uiContext?.Dispose();
         _uiContext = new UiContext(desc);
-        _uiBlitPass ??= new BlitPass();
         _uiRenderTarget = CycledTexture.ColorAttachment("UIRT");
-        _uiRtAttachment ??= new PinnedArray<RenderingAttachmentDesc>(1);
         GraphicsContext.OnResize += OnUiResize;
     }
 
@@ -51,61 +42,29 @@ public partial class RenderFrame
         }
 
         _uiContext.UpdateScroll(Time.DeltaTime);
-        var frame = _uiContext.BeginFrame();
-        using (frame.Root("__UiRoot").Vertical().Gap(0).Open())
+        var uiFrame = _uiContext.BeginFrame();
+        using (uiFrame.Root("__UiRoot").Vertical().Gap(0).Open())
         {
-            buildCallback(frame);
-        }
-        var (texture, semaphore) = frame.End((uint)_currentFrame, Time.DeltaTime);
-
-        if (_externalSemaphoreCount < _externalSemaphores.Length)
-        {
-            _externalSemaphores[_externalSemaphoreCount++] = semaphore;
+            buildCallback(uiFrame);
         }
 
-        var pass = AllocateBlitPass();
-        var uiTexture = _uiRenderTarget[_currentFrame];
+        var pass = BeginGraphicsPass();
+        pass.SetRenderTarget(0, _uiRenderTarget, LoadOp.Clear);
 
-        pass.CommandList.Begin();
+        pass.Begin();
+        uiFrame.End((uint)_currentFrame, Time.DeltaTime, pass.CommandList);
+        pass.End();
 
-        GraphicsContext.ResourceTracking.TransitionTexture(
-            pass.CommandList,
-            uiTexture,
-            (uint)ResourceUsageFlagBits.RenderTarget,
-            QueueType.Graphics);
-
-        _uiRtAttachment[0] = new RenderingAttachmentDesc
-        {
-            Resource = uiTexture,
-            LoadOp = LoadOp.Clear,
-            StoreOp = StoreOp.Store,
-            ClearColor = new Vector4(0, 0, 0, 0)
-        };
-
-        var renderingDesc = new RenderingDesc
-        {
-            RTAttachments = RenderingAttachmentDescArray.FromPinned(_uiRtAttachment.Handle, 1),
-            NumLayers = 1
-        };
-
-        pass.CommandList.BeginRendering(renderingDesc);
-        pass.CommandList.EndRendering();
-
-        _uiBlitPass!.Execute(pass.CommandList, texture, _uiRenderTarget);
-        pass.CommandList.End();
         return _uiRenderTarget;
     }
 
     private void ResetUi()
     {
-        _externalSemaphoreCount = 0;
     }
 
     private void DisposeUi()
     {
         GraphicsContext.OnResize -= OnUiResize;
-        _uiBlitPass?.Dispose();
-        _uiBlitPass = null;
         _uiRenderTarget?.Dispose();
         _uiRenderTarget = null;
         _uiContext?.Dispose();

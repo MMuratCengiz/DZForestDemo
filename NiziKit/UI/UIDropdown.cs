@@ -223,7 +223,7 @@ public ref struct UiDropdown
         containerDecl.Layout.LayoutDirection = ClayLayoutDirection.TopToBottom;
         containerDecl.Layout.Sizing.Width = _width.ToClayAxis();
 
-        _context.Clay.OpenElement(containerDecl);
+        _context.OpenElement(containerDecl);
         {
             RenderHeader(interaction);
 
@@ -244,7 +244,7 @@ public ref struct UiDropdown
             var anyItemHovered = false;
             for (var i = 0; i < _items.Length; i++)
             {
-                var itemId = _context.StringCache.GetId("DDItem", Id + (uint)i);
+                var itemId = _context.StringCache.GetId("DDItem", Id, (uint)i);
                 if (_context.Clay.PointerOver(itemId))
                 {
                     anyItemHovered = true;
@@ -294,11 +294,11 @@ public ref struct UiDropdown
             };
         }
 
-        _context.Clay.OpenElement(headerDecl);
+        _context.OpenElement(headerDecl);
         {
             var textDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("DDText", Id) };
             textDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
-            _context.Clay.OpenElement(textDecl);
+            _context.OpenElement(textDecl);
             {
                 var displayText = SelectedItem ?? _placeholder;
                 var textColor = SelectedItem != null ? _style.TextColor : UiColor.Gray;
@@ -323,7 +323,7 @@ public ref struct UiDropdown
         arrowDecl.Layout.ChildAlignment.X = ClayAlignmentX.Center;
         arrowDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
 
-        _context.Clay.OpenElement(arrowDecl);
+        _context.OpenElement(arrowDecl);
         {
             var arrowText = _state.IsOpen ? "^" : "v";
             _context.Clay.Text(StringView.Intern(arrowText), new ClayTextDesc
@@ -376,7 +376,7 @@ public ref struct UiDropdown
 
         listDecl.Scroll.Vertical = true;
 
-        _context.Clay.OpenElement(listDecl);
+        _context.OpenElement(listDecl);
         {
             for (var i = 0; i < _items.Length; i++)
             {
@@ -395,7 +395,7 @@ public ref struct UiDropdown
 
     private bool RenderItem(int index)
     {
-        var itemId = _context.StringCache.GetId("DDItem", Id + (uint)index);
+        var itemId = _context.StringCache.GetId("DDItem", Id, (uint)index);
         var interaction = _context.GetInteraction(itemId);
         var isSelected = index == _state.SelectedIndex;
 
@@ -411,7 +411,7 @@ public ref struct UiDropdown
         itemDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
         itemDecl.BackgroundColor = bgColor.ToClayColor();
 
-        _context.Clay.OpenElement(itemDecl);
+        _context.OpenElement(itemDecl);
         {
             _context.Clay.Text(StringView.Intern(_items[index]), new ClayTextDesc
             {

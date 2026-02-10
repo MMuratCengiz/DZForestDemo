@@ -1,4 +1,3 @@
-using Avalonia.Threading;
 using DenOfIz;
 using NiziKit.Application.Timing;
 using NiziKit.Components;
@@ -9,21 +8,20 @@ using NiziKit.Graphics;
 using NiziKit.Graphics.Binding;
 using NiziKit.Graphics.Renderer;
 using NiziKit.Graphics.Resources;
-using NiziKit.Skia.Avalonia;
 
 namespace NiziKit.Editor;
 
-public class EditorRenderer : IDisposable
+public class EditorRenderer(IRenderer gameRenderer) : IDisposable
 {
-    private readonly RenderFrame _renderFrame;
-    private readonly ViewData _viewData;
-    private readonly DenOfIzTopLevel _topLevel;
-    private readonly IRenderer _gameRenderer;
+    private readonly RenderFrame _renderFrame = new();
+    private readonly ViewData _viewData = new();
 
-    private readonly CycledTexture _sceneDepth;
+    private readonly CycledTexture _sceneDepth = CycledTexture.DepthAttachment("EditorSceneDepth");
 
-    private readonly GizmoPass _gizmoPass;
+    private readonly GizmoPass _gizmoPass = new();
     private EditorViewModel? _editorViewModel;
+
+    public RenderFrame RenderFrame => _renderFrame;
 
     public EditorViewModel? EditorViewModel
     {
@@ -39,39 +37,15 @@ public class EditorRenderer : IDisposable
         set
         {
             _viewData.Camera = value;
-            _gameRenderer.Camera = value;
+            gameRenderer.Camera = value;
         }
     }
 
-    public EditorRenderer(DenOfIzTopLevel topLevel, IRenderer gameRenderer)
+    public CycledTexture RenderScene()
     {
-        _topLevel = topLevel;
-        _gameRenderer = gameRenderer;
-        _renderFrame = new RenderFrame();
-        _viewData = new ViewData();
-        _sceneDepth = CycledTexture.DepthAttachment("EditorSceneDepth");
-        _gizmoPass = new GizmoPass();
-    }
-
-    public void Render(float dt)
-    {
-        _renderFrame.BeginFrame();
-
-        var sceneColor = _gameRenderer.Render(_renderFrame);
-
+        var sceneColor = gameRenderer.Render(_renderFrame);
         RenderGizmos(sceneColor);
-
-        DenOfIzPlatform.TriggerRenderTick(TimeSpan.FromSeconds(dt));
-        Dispatcher.UIThread.RunJobs();
-        _topLevel.Render();
-
-        if (_topLevel.Texture != null)
-        {
-            _renderFrame.AlphaBlit(_topLevel.Texture, sceneColor);
-        }
-
-        _renderFrame.Submit();
-        _renderFrame.Present(sceneColor);
+        return sceneColor;
     }
 
     private void RenderGizmos(CycledTexture sceneColor)
@@ -99,6 +73,11 @@ public class EditorRenderer : IDisposable
             }
         }
 
+        if (scene != null && _viewData.Camera != null)
+        {
+            _gizmoPass.BuildSceneIcons(scene, _viewData.Camera, selected);
+        }
+
         var pass = _renderFrame.BeginGraphicsPass();
         pass.SetRenderTarget(0, sceneColor, LoadOp.Load);
         pass.SetDepthTarget(_sceneDepth, LoadOp.Load);
@@ -111,7 +90,7 @@ public class EditorRenderer : IDisposable
 
     public void OnResize(uint width, uint height)
     {
-        _gameRenderer.OnResize(width, height);
+        gameRenderer.OnResize(width, height);
     }
 
     public void Dispose()
@@ -119,6 +98,6 @@ public class EditorRenderer : IDisposable
         _gizmoPass.Dispose();
         _sceneDepth.Dispose();
         _renderFrame.Dispose();
-        _gameRenderer.Dispose();
+        gameRenderer.Dispose();
     }
 }

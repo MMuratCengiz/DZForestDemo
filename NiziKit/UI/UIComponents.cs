@@ -32,7 +32,7 @@ public static partial class Ui
         };
         decl.Layout.Sizing.Width = ClaySizingAxis.Fixed(size);
         decl.Layout.Sizing.Height = ClaySizingAxis.Fixed(size);
-        ctx.Clay.OpenElement(decl);
+        ctx.OpenElement(decl);
         ctx.Clay.CloseElement();
     }
 
@@ -44,7 +44,7 @@ public static partial class Ui
             Id = ctx.StringCache.GetId("HSpacer", ctx.NextElementIndex())
         };
         decl.Layout.Sizing.Width = ClaySizingAxis.Fixed(width);
-        ctx.Clay.OpenElement(decl);
+        ctx.OpenElement(decl);
         ctx.Clay.CloseElement();
     }
 
@@ -56,7 +56,7 @@ public static partial class Ui
             Id = ctx.StringCache.GetId("VSpacer", ctx.NextElementIndex())
         };
         decl.Layout.Sizing.Height = ClaySizingAxis.Fixed(height);
-        ctx.Clay.OpenElement(decl);
+        ctx.OpenElement(decl);
         ctx.Clay.CloseElement();
     }
 
@@ -69,7 +69,7 @@ public static partial class Ui
         };
         decl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
         decl.Layout.Sizing.Height = ClaySizingAxis.Grow(0, float.MaxValue);
-        ctx.Clay.OpenElement(decl);
+        ctx.OpenElement(decl);
         ctx.Clay.CloseElement();
     }
 
@@ -83,7 +83,7 @@ public static partial class Ui
         decl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
         decl.Layout.Sizing.Height = ClaySizingAxis.Fixed(thickness);
         decl.BackgroundColor = color.ToClayColor();
-        ctx.Clay.OpenElement(decl);
+        ctx.OpenElement(decl);
         ctx.Clay.CloseElement();
     }
 
@@ -97,7 +97,7 @@ public static partial class Ui
         decl.Layout.Sizing.Width = ClaySizingAxis.Fixed(thickness);
         decl.Layout.Sizing.Height = ClaySizingAxis.Grow(0, float.MaxValue);
         decl.BackgroundColor = color.ToClayColor();
-        ctx.Clay.OpenElement(decl);
+        ctx.OpenElement(decl);
         ctx.Clay.CloseElement();
     }
 }
@@ -341,7 +341,7 @@ public ref struct UiButton
     public UiElementScope Open()
     {
         var decl = CreateDeclaration();
-        _context.Clay.OpenElement(decl);
+        _context.OpenElement(decl);
         return new UiElementScope(_context);
     }
 
@@ -358,7 +358,7 @@ public ref struct UiButton
         var interaction = _context.GetInteraction(Id);
         var decl = CreateDeclaration();
 
-        _context.Clay.OpenElement(decl);
+        _context.OpenElement(decl);
         {
             var textDesc = new ClayTextDesc
             {
@@ -614,7 +614,7 @@ public ref struct UiCard
     public UiElementScope Open()
     {
         var decl = CreateDeclaration();
-        _context.Clay.OpenElement(decl);
+        _context.OpenElement(decl);
         return new UiElementScope(_context);
     }
 
@@ -796,7 +796,7 @@ public ref struct UiCheckbox
         containerDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
         containerDecl.Layout.ChildGap = (ushort)_gap;
 
-        _context.Clay.OpenElement(containerDecl);
+        _context.OpenElement(containerDecl);
         {
             var boxColor = isHovered ? _boxHoverColor : _boxColor;
             var boxDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("ChkBox", Id) };
@@ -812,7 +812,7 @@ public ref struct UiCheckbox
                 Color = _borderColor.ToClayColor()
             };
 
-            _context.Clay.OpenElement(boxDecl);
+            _context.OpenElement(boxDecl);
             {
                 if (_isChecked)
                 {
@@ -822,7 +822,7 @@ public ref struct UiCheckbox
                     checkDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(checkSize);
                     checkDecl.BackgroundColor = _checkColor.ToClayColor();
                     checkDecl.BorderRadius = ClayBorderRadius.CreateUniform(_cornerRadius * 0.5f);
-                    _context.Clay.OpenElement(checkDecl);
+                    _context.OpenElement(checkDecl);
                     _context.Clay.CloseElement();
                 }
             }

@@ -2,7 +2,6 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using DenOfIz;
 using NiziKit.Graphics;
-using Semaphore = DenOfIz.Semaphore;
 
 namespace NiziKit.UI;
 
@@ -43,6 +42,27 @@ public sealed class UiContext : IDisposable
     internal float MouseDeltaX { get; private set; }
     internal float MouseDeltaY { get; private set; }
     internal uint ActiveDragWidgetId { get; set; }
+
+    /// <summary>
+    /// Returns true if the pointer is currently over any UI element rendered in the previous frame.
+    /// Set by the UI system during layout; defaults to checking the root element.
+    /// </summary>
+    public bool IsPointerOverUi { get; internal set; }
+
+    /// <summary>
+    /// Hashes a string ID into a uint element ID, suitable for state lookups.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public uint GetElementId(string id) => StringCache.GetId(id);
+
+    /// <summary>
+    /// Gets or creates a persistent state object associated with the given element ID.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public T GetOrCreateState<T>(string id) where T : new()
+    {
+        return GetOrCreateState<T>(StringCache.GetId(id));
+    }
 
     public void Dispose()
     {
@@ -96,8 +116,15 @@ public sealed class UiContext : IDisposable
     public UiFrame BeginFrame()
     {
         _frameElementIndex = 0;
+        IsPointerOverUi = false;
         Clay.BeginLayout();
         return new UiFrame(this);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void OpenElement(ClayElementDeclaration decl)
+    {
+        Clay.OpenElement(decl);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -107,28 +134,38 @@ public sealed class UiContext : IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal (Texture Texture, Semaphore Semaphore) EndFrame(uint frameIndex, float deltaTime)
+    internal void EndFrame(uint frameIndex, float deltaTime, CommandList commandList)
     {
-        var result = Clay.EndLayout(frameIndex, deltaTime);
+        Clay.EndLayout(frameIndex, deltaTime, commandList);
         MouseJustReleased = false;
         _mouseJustPressed = false;
         MouseDeltaX = MouseX - _prevMouseX;
         MouseDeltaY = MouseY - _prevMouseY;
         _prevMouseX = MouseX;
         _prevMouseY = MouseY;
-        return result;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal bool IsHovered(uint id)
     {
-        return Clay.PointerOver(id);
+        var hovered = Clay.PointerOver(id);
+        if (hovered)
+        {
+            IsPointerOverUi = true;
+        }
+
+        return hovered;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal UiInteraction GetInteraction(uint id)
     {
         var hovered = Clay.PointerOver(id);
+        if (hovered)
+        {
+            IsPointerOverUi = true;
+        }
+
         var pressed = hovered && MousePressed;
         var clicked = hovered && MouseJustReleased;
         return new UiInteraction(hovered, pressed, clicked);
@@ -217,6 +254,22 @@ internal sealed class StringCache(Clay clay)
 
         id = clay.HashString(StringView.Intern(name), index, 0);
         _indexedCache[key] = id;
+        return id;
+    }
+
+    private readonly Dictionary<(string, uint, uint), uint> _compositeCache = new();
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public uint GetId(string name, uint parentId, uint subIndex)
+    {
+        var key = (name, parentId, subIndex);
+        if (_compositeCache.TryGetValue(key, out var id))
+        {
+            return id;
+        }
+
+        id = clay.HashString(StringView.Intern(name), parentId, subIndex);
+        _compositeCache[key] = id;
         return id;
     }
 }

@@ -7,6 +7,14 @@ public static partial class Ui
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Vec2Editor(UiContext ctx, string id, ref float x, ref float y,
         float sensitivity = 0.5f, string format = "F2")
+        => Vec2Editor(ctx, id, ref x, ref y, sensitivity, format,
+            UiColor.Rgb(200, 70, 70), UiColor.Rgb(70, 180, 70), null, null, null);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool Vec2Editor(UiContext ctx, string id, ref float x, ref float y,
+        float sensitivity, string format,
+        UiColor axisX, UiColor axisY,
+        UiColor? valueBg, UiColor? valueEditBg, UiColor? valueText)
     {
         var changed = false;
 
@@ -17,24 +25,54 @@ public static partial class Ui
         containerDecl.Layout.Sizing.Height = DenOfIz.ClaySizingAxis.Fit(0, float.MaxValue);
         containerDecl.Layout.ChildGap = 4;
 
-        ctx.Clay.OpenElement(containerDecl);
+        ctx.OpenElement(containerDecl);
         {
-            if (DraggableValue(ctx, id + "_X")
-                    .Label("X")
-                    .LabelColor(UiColor.Rgb(200, 70, 70))
-                    .Sensitivity(sensitivity)
-                    .Format(format)
-                    .Show(ref x))
+            var dvX = DraggableValue(ctx, id + "_X")
+                .Label("X")
+                .LabelColor(axisX)
+                .Sensitivity(sensitivity)
+                .Format(format);
+            if (valueBg.HasValue)
+            {
+                dvX = dvX.ValueColor(valueBg.Value);
+            }
+
+            if (valueEditBg.HasValue)
+            {
+                dvX = dvX.ValueEditColor(valueEditBg.Value);
+            }
+
+            if (valueText.HasValue)
+            {
+                dvX = dvX.ValueTextColor(valueText.Value);
+            }
+
+            if (dvX.Show(ref x))
             {
                 changed = true;
             }
 
-            if (DraggableValue(ctx, id + "_Y")
+            var dvY = DraggableValue(ctx, id + "_Y")
                 .Label("Y")
-                .LabelColor(UiColor.Rgb(70, 180, 70))
+                .LabelColor(axisY)
                 .Sensitivity(sensitivity)
-                .Format(format)
-                .Show(ref y))
+                .Format(format);
+            if (valueBg.HasValue)
+            {
+                dvY = dvY.ValueColor(valueBg.Value);
+            }
+
+            if (valueEditBg.HasValue)
+            {
+                dvY = dvY.ValueEditColor(valueEditBg.Value);
+            }
+
+            if (valueText.HasValue)
+            {
+                dvY = dvY.ValueTextColor(valueText.Value);
+            }
+
+            if (dvY.Show(ref y))
             {
                 changed = true;
             }
@@ -47,6 +85,15 @@ public static partial class Ui
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Vec3Editor(UiContext ctx, string id, ref float x, ref float y, ref float z,
         float sensitivity = 0.5f, string format = "F2")
+        => Vec3Editor(ctx, id, ref x, ref y, ref z, sensitivity, format,
+            UiColor.Rgb(200, 70, 70), UiColor.Rgb(70, 180, 70), UiColor.Rgb(70, 120, 220),
+            null, null, null);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool Vec3Editor(UiContext ctx, string id, ref float x, ref float y, ref float z,
+        float sensitivity, string format,
+        UiColor axisX, UiColor axisY, UiColor axisZ,
+        UiColor? valueBg, UiColor? valueEditBg, UiColor? valueText)
     {
         var changed = false;
 
@@ -57,34 +104,79 @@ public static partial class Ui
         containerDecl.Layout.Sizing.Height = DenOfIz.ClaySizingAxis.Fit(0, float.MaxValue);
         containerDecl.Layout.ChildGap = 4;
 
-        ctx.Clay.OpenElement(containerDecl);
+        ctx.OpenElement(containerDecl);
         {
-            if (DraggableValue(ctx, id + "_X")
-                    .Label("X")
-                    .LabelColor(UiColor.Rgb(200, 70, 70))
-                    .Sensitivity(sensitivity)
-                    .Format(format)
-                    .Show(ref x))
+            var dvX = DraggableValue(ctx, id + "_X")
+                .Label("X")
+                .LabelColor(axisX)
+                .Sensitivity(sensitivity)
+                .Format(format);
+            if (valueBg.HasValue)
+            {
+                dvX = dvX.ValueColor(valueBg.Value);
+            }
+
+            if (valueEditBg.HasValue)
+            {
+                dvX = dvX.ValueEditColor(valueEditBg.Value);
+            }
+
+            if (valueText.HasValue)
+            {
+                dvX = dvX.ValueTextColor(valueText.Value);
+            }
+
+            if (dvX.Show(ref x))
             {
                 changed = true;
             }
 
-            if (DraggableValue(ctx, id + "_Y")
+            var dvY = DraggableValue(ctx, id + "_Y")
                 .Label("Y")
-                .LabelColor(UiColor.Rgb(70, 180, 70))
+                .LabelColor(axisY)
                 .Sensitivity(sensitivity)
-                .Format(format)
-                .Show(ref y))
+                .Format(format);
+            if (valueBg.HasValue)
+            {
+                dvY = dvY.ValueColor(valueBg.Value);
+            }
+
+            if (valueEditBg.HasValue)
+            {
+                dvY = dvY.ValueEditColor(valueEditBg.Value);
+            }
+
+            if (valueText.HasValue)
+            {
+                dvY = dvY.ValueTextColor(valueText.Value);
+            }
+
+            if (dvY.Show(ref y))
             {
                 changed = true;
             }
 
-            if (DraggableValue(ctx, id + "_Z")
+            var dvZ = DraggableValue(ctx, id + "_Z")
                 .Label("Z")
-                .LabelColor(UiColor.Rgb(70, 120, 220))
+                .LabelColor(axisZ)
                 .Sensitivity(sensitivity)
-                .Format(format)
-                .Show(ref z))
+                .Format(format);
+            if (valueBg.HasValue)
+            {
+                dvZ = dvZ.ValueColor(valueBg.Value);
+            }
+
+            if (valueEditBg.HasValue)
+            {
+                dvZ = dvZ.ValueEditColor(valueEditBg.Value);
+            }
+
+            if (valueText.HasValue)
+            {
+                dvZ = dvZ.ValueTextColor(valueText.Value);
+            }
+
+            if (dvZ.Show(ref z))
             {
                 changed = true;
             }
@@ -97,6 +189,15 @@ public static partial class Ui
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Vec4Editor(UiContext ctx, string id, ref float x, ref float y, ref float z, ref float w,
         float sensitivity = 0.5f, string format = "F2")
+        => Vec4Editor(ctx, id, ref x, ref y, ref z, ref w, sensitivity, format,
+            UiColor.Rgb(200, 70, 70), UiColor.Rgb(70, 180, 70), UiColor.Rgb(70, 120, 220), UiColor.Rgb(200, 180, 50),
+            null, null, null);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool Vec4Editor(UiContext ctx, string id, ref float x, ref float y, ref float z, ref float w,
+        float sensitivity, string format,
+        UiColor axisX, UiColor axisY, UiColor axisZ, UiColor axisW,
+        UiColor? valueBg, UiColor? valueEditBg, UiColor? valueText)
     {
         var changed = false;
 
@@ -107,44 +208,104 @@ public static partial class Ui
         containerDecl.Layout.Sizing.Height = DenOfIz.ClaySizingAxis.Fit(0, float.MaxValue);
         containerDecl.Layout.ChildGap = 4;
 
-        ctx.Clay.OpenElement(containerDecl);
+        ctx.OpenElement(containerDecl);
         {
-            if (DraggableValue(ctx, id + "_X")
-                    .Label("X")
-                    .LabelColor(UiColor.Rgb(200, 70, 70))
-                    .Sensitivity(sensitivity)
-                    .Format(format)
-                    .Show(ref x))
+            var dvX = DraggableValue(ctx, id + "_X")
+                .Label("X")
+                .LabelColor(axisX)
+                .Sensitivity(sensitivity)
+                .Format(format);
+            if (valueBg.HasValue)
+            {
+                dvX = dvX.ValueColor(valueBg.Value);
+            }
+
+            if (valueEditBg.HasValue)
+            {
+                dvX = dvX.ValueEditColor(valueEditBg.Value);
+            }
+
+            if (valueText.HasValue)
+            {
+                dvX = dvX.ValueTextColor(valueText.Value);
+            }
+
+            if (dvX.Show(ref x))
             {
                 changed = true;
             }
 
-            if (DraggableValue(ctx, id + "_Y")
+            var dvY = DraggableValue(ctx, id + "_Y")
                 .Label("Y")
-                .LabelColor(UiColor.Rgb(70, 180, 70))
+                .LabelColor(axisY)
                 .Sensitivity(sensitivity)
-                .Format(format)
-                .Show(ref y))
+                .Format(format);
+            if (valueBg.HasValue)
+            {
+                dvY = dvY.ValueColor(valueBg.Value);
+            }
+
+            if (valueEditBg.HasValue)
+            {
+                dvY = dvY.ValueEditColor(valueEditBg.Value);
+            }
+
+            if (valueText.HasValue)
+            {
+                dvY = dvY.ValueTextColor(valueText.Value);
+            }
+
+            if (dvY.Show(ref y))
             {
                 changed = true;
             }
 
-            if (DraggableValue(ctx, id + "_Z")
+            var dvZ = DraggableValue(ctx, id + "_Z")
                 .Label("Z")
-                .LabelColor(UiColor.Rgb(70, 120, 220))
+                .LabelColor(axisZ)
                 .Sensitivity(sensitivity)
-                .Format(format)
-                .Show(ref z))
+                .Format(format);
+            if (valueBg.HasValue)
+            {
+                dvZ = dvZ.ValueColor(valueBg.Value);
+            }
+
+            if (valueEditBg.HasValue)
+            {
+                dvZ = dvZ.ValueEditColor(valueEditBg.Value);
+            }
+
+            if (valueText.HasValue)
+            {
+                dvZ = dvZ.ValueTextColor(valueText.Value);
+            }
+
+            if (dvZ.Show(ref z))
             {
                 changed = true;
             }
 
-            if (DraggableValue(ctx, id + "_W")
+            var dvW = DraggableValue(ctx, id + "_W")
                 .Label("W")
-                .LabelColor(UiColor.Rgb(200, 180, 50))
+                .LabelColor(axisW)
                 .Sensitivity(sensitivity)
-                .Format(format)
-                .Show(ref w))
+                .Format(format);
+            if (valueBg.HasValue)
+            {
+                dvW = dvW.ValueColor(valueBg.Value);
+            }
+
+            if (valueEditBg.HasValue)
+            {
+                dvW = dvW.ValueEditColor(valueEditBg.Value);
+            }
+
+            if (valueText.HasValue)
+            {
+                dvW = dvW.ValueTextColor(valueText.Value);
+            }
+
+            if (dvW.Show(ref w))
             {
                 changed = true;
             }

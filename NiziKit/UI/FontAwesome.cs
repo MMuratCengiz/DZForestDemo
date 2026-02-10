@@ -187,6 +187,14 @@ public static class FontAwesome
     public const string UpDownLeftRight = "\uf0b2";
     public const string Magnet = "\uf076";
     public const string Grid = "\ue011";
+    public const string BorderAll = "\uf84c";
+    public const string TableCells = "\uf00a";
+    public const string ChartBar = "\uf080";
+    public const string ChartLine = "\uf201";
+    public const string Film = "\uf008";
+    public const string MagnifyingGlass = "\uf002";
+    public const string Bone = "\uf5d7";
+    public const string ListCheck = "\uf0ae";
 
     public const string Info = "\uf129";
     public const string Question = "\uf128";

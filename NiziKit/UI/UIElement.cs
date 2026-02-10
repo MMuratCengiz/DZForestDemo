@@ -333,20 +333,20 @@ public ref struct UiElement
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElementScope Open()
     {
-        _context.Clay.OpenElement(_decl);
+        _context.OpenElement(_decl);
         return new UiElementScope(_context);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Begin()
     {
-        _context.Clay.OpenElement(_decl);
+        _context.OpenElement(_decl);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Content(Action content)
     {
-        _context.Clay.OpenElement(_decl);
+        _context.OpenElement(_decl);
         content();
         _context.Clay.CloseElement();
     }

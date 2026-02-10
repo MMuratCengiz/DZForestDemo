@@ -155,14 +155,8 @@ public readonly struct UiCornerRadius(float topLeft, float topRight, float botto
     }
 }
 
-[method: MethodImpl(MethodImplOptions.AggressiveInlining)]
-public readonly struct UiBorder(float left, float right, float top, float bottom, UiColor color)
+public record struct UiBorder(float Left, float Right, float Top, float Bottom, UiColor Color)
 {
-    public readonly float Left = left;
-    public readonly float Right = right;
-    public readonly float Top = top;
-    public readonly float Bottom = bottom;
-    public readonly UiColor Color = color;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static UiBorder All(float width, UiColor color)

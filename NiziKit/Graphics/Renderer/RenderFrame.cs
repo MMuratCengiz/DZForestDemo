@@ -351,11 +351,6 @@ public partial class RenderFrame : IDisposable
             _submitWaitSemaphores[waitCount++] = _passes[i].SignalSemaphore;
         }
 
-        for (var i = 0; i < _externalSemaphoreCount && waitCount < MaxDependenciesPerPass; i++)
-        {
-            _submitWaitSemaphores[waitCount++] = _externalSemaphores[i];
-        }
-
         GraphicsContext.GraphicsCommandQueue.ExecuteCommandLists(
             new ReadOnlySpan<CommandList>(_submitCommandLists, 0, 1),
             _frameFences[_currentFrame],

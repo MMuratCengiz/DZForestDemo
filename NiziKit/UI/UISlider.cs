@@ -171,7 +171,7 @@ public ref struct UiSlider
         containerDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
         containerDecl.Layout.ChildGap = 8;
 
-        _context.Clay.OpenElement(containerDecl);
+        _context.OpenElement(containerDecl);
         {
             var trackDecl = new ClayElementDeclaration { Id = trackId };
             trackDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
@@ -179,7 +179,7 @@ public ref struct UiSlider
             trackDecl.BackgroundColor = _trackColor.ToClayColor();
             trackDecl.BorderRadius = ClayBorderRadius.CreateUniform(_trackHeight / 2);
 
-            _context.Clay.OpenElement(trackDecl);
+            _context.OpenElement(trackDecl);
             {
                 var fillId = _context.StringCache.GetId("SlFill", Id);
                 var fillDecl = new ClayElementDeclaration { Id = fillId };
@@ -187,7 +187,7 @@ public ref struct UiSlider
                 fillDecl.Layout.Sizing.Height = ClaySizingAxis.Grow(0, float.MaxValue);
                 fillDecl.BackgroundColor = _fillColor.ToClayColor();
                 fillDecl.BorderRadius = ClayBorderRadius.CreateUniform(_trackHeight / 2);
-                _context.Clay.OpenElement(fillDecl);
+                _context.OpenElement(fillDecl);
                 _context.Clay.CloseElement();
 
                 var thumbSize = _thumbRadius * 2;
@@ -205,7 +205,7 @@ public ref struct UiSlider
                     ElementAttachPoint = ClayFloatingAttachPoint.CenterCenter,
                     ZIndex = 100
                 };
-                _context.Clay.OpenElement(thumbDecl);
+                _context.OpenElement(thumbDecl);
                 _context.Clay.CloseElement();
             }
             _context.Clay.CloseElement();
