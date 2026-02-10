@@ -4,7 +4,7 @@
     {
       "name": "Main Camera",
       "position": [1.7775733, 9.141837, -34.880928],
-      "rotation": [-15.060339, -20.377853, 11.370759],
+      "rotation": [-18.759384, -17.058773, 11.487072],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -41,7 +41,7 @@
     {
       "name": "Character_Viking",
       "active": true,
-      "position": [-1.2923927E-05, -1457230.4, 0.00051649613],
+      "position": [-1.2923927E-05, -1554093.4, 0.00051649613],
       "rotation": [4.0916016E-06, 5.809548E-07, 1.0138471E-07],
       "scale": [1, 1, 1],
       "components": [
@@ -118,7 +118,7 @@
       "name": "Boat",
       "active": false,
       "position": [26.5, 10, 19.5],
-      "rotation": [-4.8678136, -29.638763, 78.62688],
+      "rotation": [-29.968403, -1.4447961, 77.72499],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -137,7 +137,7 @@
     {
       "name": "SmallBoat",
       "active": true,
-      "position": [-15, 0, 8],
+      "position": [-15, 1.2825382, 8],
       "rotation": [0, 45.000004, 0],
       "scale": [1, 1, 1],
       "components": [
@@ -277,7 +277,7 @@
     {
       "name": "Barrel2",
       "active": true,
-      "position": [5, -1485709.1, 5],
+      "position": [5, -1582595.1, 5],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
       "components": [
@@ -313,8 +313,8 @@
     {
       "name": "Barrel",
       "active": true,
-      "position": [35.795795, 0.74972385, -32.26731],
-      "rotation": [2.8224699E-08, -2.5166469E-06, 5.5291014E-08],
+      "position": [35.217293, 0.7497239, -52.186188],
+      "rotation": [9.6597566E-09, -2.5114948E-06, -2.3348998E-09],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -619,7 +619,13 @@
           "mesh": "geometry:box:1:1:1"
         },
         {
-          "type": "NiziKit.Components.SurfaceComponent"
+          "type": "NiziKit.Components.SurfaceComponent",
+          "albedoColor": [
+            0.5,
+            1,
+            1,
+            1
+          ]
         },
         {
           "type": "NiziKit.Components.BoxCollider",

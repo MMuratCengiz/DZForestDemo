@@ -10,6 +10,9 @@ public sealed class UiDraggableValueState
     public float DragStartMouseX { get; set; }
     public bool IsEditing { get; set; }
     public string EditText { get; set; } = "";
+    public bool ValueMouseDown { get; set; }
+    public bool SelectAllOnNextRender { get; set; }
+    public string? TextFieldId { get; set; }
 }
 
 public ref struct UiDraggableValue
@@ -32,6 +35,7 @@ public ref struct UiDraggableValue
     private float _width;
     private UiSizing? _widthSizing;
     private float _labelWidth;
+    private float _dragThreshold;
 
     internal UiDraggableValue(UiContext ctx, string id, UiDraggableValueState state)
     {
@@ -50,6 +54,7 @@ public ref struct UiDraggableValue
         _fontSize = 13;
         _width = 0;
         _labelWidth = 20;
+        _dragThreshold = 3;
     }
 
     public uint Id { get; }
@@ -96,6 +101,9 @@ public ref struct UiDraggableValue
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiDraggableValue ValueTextColor(UiColor color) { _valueTextColor = color; return this; }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiDraggableValue DragThreshold(float pixels) { _dragThreshold = pixels; return this; }
+
     public bool Show(ref float value)
     {
         var changed = false;
@@ -103,6 +111,21 @@ public ref struct UiDraggableValue
         var valueId = _context.StringCache.GetId("DVValue", Id);
         var labelInteraction = _context.GetInteraction(labelId);
         var valueInteraction = _context.GetInteraction(valueId);
+        var textFieldIdStr = _state.TextFieldId!;
+        var textFieldId = _context.StringCache.GetId(textFieldIdStr);
+
+        if (_state.IsEditing && _context.FocusedTextFieldId != textFieldId)
+        {
+            if (float.TryParse(_state.EditText, out var parsed))
+            {
+                if (Math.Abs(parsed - value) > float.Epsilon)
+                {
+                    value = parsed;
+                    changed = true;
+                }
+            }
+            _state.IsEditing = false;
+        }
 
         if (labelInteraction.IsPressed && !_state.IsDragging && !_state.IsEditing && _context.ActiveDragWidgetId == 0)
         {
@@ -112,11 +135,50 @@ public ref struct UiDraggableValue
             _context.ActiveDragWidgetId = Id;
         }
 
+        if (valueInteraction.IsPressed && !_state.IsDragging && !_state.IsEditing
+            && !_state.ValueMouseDown && _context.ActiveDragWidgetId == 0)
+        {
+            _state.ValueMouseDown = true;
+            _state.DragStartValue = value;
+            _state.DragStartMouseX = _context.MouseX;
+        }
+
+        if (_state.ValueMouseDown && !_state.IsDragging)
+        {
+            if (!_context.MousePressed)
+            {
+                _state.ValueMouseDown = false;
+                var delta = Math.Abs(_context.MouseX - _state.DragStartMouseX);
+                if (delta < _dragThreshold)
+                {
+                    _state.IsEditing = true;
+                    _state.EditText = value.ToString(_format);
+                    _state.SelectAllOnNextRender = true;
+                    _context.FocusedTextFieldId = textFieldId;
+                    InputSystem.StartTextInput();
+                }
+            }
+            else
+            {
+                var delta = Math.Abs(_context.MouseX - _state.DragStartMouseX);
+                if (delta >= _dragThreshold)
+                {
+                    _state.IsDragging = true;
+                    _state.ValueMouseDown = false;
+                    _context.ActiveDragWidgetId = Id;
+                }
+            }
+        }
+
         if (_state.IsDragging)
         {
             if (!_context.MousePressed)
             {
                 _state.IsDragging = false;
+                if (_context.ActiveDragWidgetId == Id)
+                {
+                    _context.ActiveDragWidgetId = 0;
+                }
             }
             else
             {
@@ -127,66 +189,6 @@ public ref struct UiDraggableValue
                     value = newVal;
                     changed = true;
                 }
-            }
-        }
-
-        if (valueInteraction.WasClicked && !_state.IsDragging)
-        {
-            _state.IsEditing = true;
-            _state.EditText = value.ToString(_format);
-            InputSystem.StartTextInput();
-        }
-
-        if (_state.IsEditing)
-        {
-            foreach (var ev in _context.FrameEvents)
-            {
-                if (ev.Type == EventType.KeyDown)
-                {
-                    if (ev.Key.KeyCode == KeyCode.Return || ev.Key.KeyCode == KeyCode.KeypadEnter)
-                    {
-                        if (float.TryParse(_state.EditText, out var parsed))
-                        {
-                            if (Math.Abs(parsed - value) > float.Epsilon)
-                            {
-                                value = parsed;
-                                changed = true;
-                            }
-                        }
-                        _state.IsEditing = false;
-                        InputSystem.StopTextInput();
-                    }
-                    else if (ev.Key.KeyCode == KeyCode.Escape)
-                    {
-                        _state.IsEditing = false;
-                        InputSystem.StopTextInput();
-                    }
-                    else if (ev.Key.KeyCode == KeyCode.Backspace)
-                    {
-                        if (_state.EditText.Length > 0)
-                        {
-                            _state.EditText = _state.EditText[..^1];
-                        }
-                    }
-                }
-                else if (ev.Type == EventType.TextInput)
-                {
-                    _state.EditText += ev.Text.Text;
-                }
-            }
-
-            if (_context.MouseJustReleased && !valueInteraction.IsHovered && !labelInteraction.IsHovered)
-            {
-                if (float.TryParse(_state.EditText, out var parsed))
-                {
-                    if (Math.Abs(parsed - value) > float.Epsilon)
-                    {
-                        value = parsed;
-                        changed = true;
-                    }
-                }
-                _state.IsEditing = false;
-                InputSystem.StopTextInput();
             }
         }
 
@@ -208,7 +210,6 @@ public ref struct UiDraggableValue
 
                 if (_labelAccent.HasValue)
                 {
-                    // Slightly darker than value bg for visual distinction
                     effectiveLabelBg = new UiColor(
                         (byte)Math.Max(0, _valueColor.R - 12),
                         (byte)Math.Max(0, _valueColor.G - 12),
@@ -245,13 +246,11 @@ public ref struct UiDraggableValue
                 _context.Clay.CloseElement();
             }
 
-            var displayText = _state.IsEditing ? _state.EditText + "|" : value.ToString(_format);
             var valueBg = _state.IsEditing ? _valueEditColor : _valueColor;
 
             var valueDecl = new ClayElementDeclaration { Id = valueId };
             valueDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
             valueDecl.Layout.Sizing.Height = ClaySizingAxis.Grow(0, float.MaxValue);
-            valueDecl.Layout.Padding = new ClayPadding { Left = 6, Right = 6, Top = 4, Bottom = 4 };
             valueDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
             valueDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
             valueDecl.Layout.ChildGap = 4;
@@ -259,6 +258,11 @@ public ref struct UiDraggableValue
             valueDecl.BorderRadius = hasLabel
                 ? new ClayBorderRadius { TopRight = 4, BottomRight = 4 }
                 : ClayBorderRadius.CreateUniform(4);
+
+            if (!_state.IsEditing)
+            {
+                valueDecl.Layout.Padding = new ClayPadding { Left = 6, Right = 6, Top = 4, Bottom = 4 };
+            }
 
             _context.OpenElement(valueDecl);
 
@@ -271,11 +275,38 @@ public ref struct UiDraggableValue
                 });
             }
 
-            _context.Clay.Text(displayText, new ClayTextDesc
+            if (_state.IsEditing)
             {
-                TextColor = _valueTextColor.ToClayColor(),
-                FontSize = _fontSize
-            });
+                var editText = _state.EditText;
+                var tf = Ui.TextField(_context, textFieldIdStr, ref editText)
+                    .BackgroundColor(UiColor.Transparent, UiColor.Transparent)
+                    .TextColor(_valueTextColor)
+                    .BorderColor(UiColor.Transparent, UiColor.Transparent)
+                    .CursorColor(_valueTextColor)
+                    .FontSize(_fontSize)
+                    .Padding(4, 2)
+                    .GrowWidth()
+                    .CornerRadius(0);
+
+                if (_state.SelectAllOnNextRender)
+                {
+                    var tfState = _context.GetOrCreateState<UiTextFieldState>(textFieldIdStr);
+                    tfState.SelectAll();
+                    _state.SelectAllOnNextRender = false;
+                }
+
+                tf.Show(ref editText);
+                _state.EditText = editText;
+            }
+            else
+            {
+                _context.Clay.Text(value.ToString(_format), new ClayTextDesc
+                {
+                    TextColor = _valueTextColor.ToClayColor(),
+                    FontSize = _fontSize
+                });
+            }
+
             _context.Clay.CloseElement();
         }
         _context.Clay.CloseElement();
@@ -291,6 +322,10 @@ public static partial class Ui
     {
         var elementId = ctx.StringCache.GetId(id);
         var state = ctx.GetOrCreateState<UiDraggableValueState>(elementId);
+        if (state.TextFieldId == null)
+        {
+            state.TextFieldId = id + "_EditTF";
+        }
         return new UiDraggableValue(ctx, id, state);
     }
 }

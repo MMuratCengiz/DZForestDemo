@@ -526,6 +526,11 @@ public static class PropertyEditorRenderer
             return true;
         }
 
+        if (IsDictionary(type))
+        {
+            return true;
+        }
+
         if (!type.IsGenericType)
         {
             return false;
@@ -534,13 +539,32 @@ public static class PropertyEditorRenderer
         var genericDef = type.GetGenericTypeDefinition();
         return genericDef == typeof(List<>)
                || genericDef == typeof(IReadOnlyList<>)
-               || genericDef == typeof(IList<>)
-               || genericDef == typeof(Dictionary<,>);
+               || genericDef == typeof(IList<>);
     }
 
     private static bool IsDictionary(Type type)
     {
-        return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>);
+        return typeof(IDictionary).IsAssignableFrom(type);
+    }
+
+    private static (Type keyType, Type valueType) GetDictionaryKeyValueTypes(Type type)
+    {
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+        {
+            var args = type.GetGenericArguments();
+            return (args[0], args[1]);
+        }
+
+        foreach (var iface in type.GetInterfaces())
+        {
+            if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IDictionary<,>))
+            {
+                var args = iface.GetGenericArguments();
+                return (args[0], args[1]);
+            }
+        }
+
+        return (typeof(object), typeof(object));
     }
 
     private static Type? GetCollectionElementType(Type type)
@@ -826,9 +850,7 @@ public static class PropertyEditorRenderer
                 if (addBtn.WasClicked())
                 {
                     var oldSnapshot = SnapshotDictionary(dict);
-                    var keyArgs = prop.PropertyType.GetGenericArguments();
-                    var keyType = keyArgs[0];
-                    var valueType = keyArgs[1];
+                    var (keyType, valueType) = GetDictionaryKeyValueTypes(prop.PropertyType);
 
                     object newKey;
                     if (keyType == typeof(string))

@@ -219,8 +219,7 @@ public class ForwardRenderer : IRenderer
     {
         foreach (var obj in batch.Objects)
         {
-            if (obj.Tags?.TryGetValue("variant", out var variant) == true
-                && variant.Equals("SKINNED", StringComparison.OrdinalIgnoreCase))
+            if (obj.Tags?.GetBool("SKINNED") == true)
             {
                 return _skinnedShader;
             }
@@ -232,10 +231,9 @@ public class ForwardRenderer : IRenderer
     {
         foreach (var obj in batch.Objects)
         {
-            if (obj.Tags?.TryGetValue("variant", out var variant) == true
-                && variant.Equals("SKINNED", StringComparison.OrdinalIgnoreCase))
+            if (obj.Tags?.GetBool("SKINNED") == true)
             {
-                return _shadowCasterSkinnedShader;
+                return _skinnedShader;
             }
         }
         return _shadowCasterShader;

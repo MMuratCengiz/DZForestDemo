@@ -10,7 +10,7 @@ public struct Renderable
     public GameObject Owner;
     public MeshComponent MeshComp;
     public SurfaceComponent Surface;
-    public IReadOnlyDictionary<string, string>? Tags;
+    public MaterialTags? Tags;
 }
 
 public class RenderBatch(SurfaceComponent surface, Mesh mesh)

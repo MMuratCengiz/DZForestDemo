@@ -110,7 +110,8 @@
       "Bash(del \"C:\\\\Workspace\\\\DZForestDemo\\\\DZForestDemo\\\\Assets\\\\Materials\\\\VikingScene.nizimat.json\")",
       "Bash(del \"C:\\\\Workspace\\\\DZForestDemo\\\\DZForestDemo\\\\Assets\\\\Materials\\\\Snake\\\\Floor.nizimat.json\")",
       "Bash(del \"C:\\\\Workspace\\\\DZForestDemo\\\\DZForestDemo\\\\Assets\\\\Materials\\\\Snake\\\\Wall.nizimat.json\")",
-      "Bash(/tmp/verify_clay.ps1 << 'PSEOF'\n$files = Get-ChildItem \"C:\\\\Workspace\\\\DZForestDemo\\\\NiziKit\\\\UI\\\\*.cs\"\n$found = $false\nforeach \\($f in $files\\) {\n    $matches = Select-String -Path $f.FullName -Pattern '\\(ctx|_context\\)\\\\.Clay\\\\.OpenElement\\\\\\('\n    if \\($matches\\) {\n        $found = $true\n        foreach \\($m in $matches\\) {\n            Write-Host \"REMAINING: $\\($f.Name\\):$\\($m.LineNumber\\): $\\($m.Line.Trim\\(\\)\\)\"\n        }\n    }\n}\nif \\(-not $found\\) {\n    Write-Host \"SUCCESS: No remaining occurrences of .Clay.OpenElement\\( found.\"\n}\nPSEOF)"
+      "Bash(/tmp/verify_clay.ps1 << 'PSEOF'\n$files = Get-ChildItem \"C:\\\\Workspace\\\\DZForestDemo\\\\NiziKit\\\\UI\\\\*.cs\"\n$found = $false\nforeach \\($f in $files\\) {\n    $matches = Select-String -Path $f.FullName -Pattern '\\(ctx|_context\\)\\\\.Clay\\\\.OpenElement\\\\\\('\n    if \\($matches\\) {\n        $found = $true\n        foreach \\($m in $matches\\) {\n            Write-Host \"REMAINING: $\\($f.Name\\):$\\($m.LineNumber\\): $\\($m.Line.Trim\\(\\)\\)\"\n        }\n    }\n}\nif \\(-not $found\\) {\n    Write-Host \"SUCCESS: No remaining occurrences of .Clay.OpenElement\\( found.\"\n}\nPSEOF)",
+      "Bash(git grep:*)"
     ]
   }
 }
