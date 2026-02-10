@@ -6,72 +6,61 @@
              x:Class="NiziKit.Editor.Views.ComponentsPanel"
              x:DataType="vm:EditorViewModel">
 
-    <ScrollViewer VerticalScrollBarVisibility="Auto"
-                  Padding="0">
-        <StackPanel>
-            <views:SceneSettingsPanel IsVisible="{Binding !HasSelection}"
-                                       DataContext="{Binding}"/>
+    <Panel>
+        <views:SmoothScrollViewer x:Name="InspectorScroll"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="0,0,0,24">
+                <views:SceneSettingsPanel IsVisible="{Binding !HasSelection}"
+                                           DataContext="{Binding}"/>
 
-            <StackPanel IsVisible="{Binding DataContext.HasSelection, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                        DataContext="{Binding SelectedGameObject}">
+                <StackPanel IsVisible="{Binding DataContext.HasSelection, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                            DataContext="{Binding SelectedGameObject}">
 
-                <Border Background="{StaticResource EditorSurfaceRaised}"
-                        BorderBrush="{StaticResource EditorPanelBorder}"
-                        BorderThickness="1"
-                        Padding="14"
-                        Margin="0,0,0,16">
-                    <Grid ColumnDefinitions="Auto,Auto,*" RowDefinitions="Auto">
-                        <CheckBox Grid.Column="0"
-                                  IsChecked="{Binding IsActive}"
-                                  VerticalAlignment="Center"
-                                  Margin="0,0,10,0"/>
-                        <TextBlock Grid.Column="1"
-                                   Text="Name"
-                                   VerticalAlignment="Center"
-                                   Foreground="{StaticResource EditorTextSecondary}"
-                                   Margin="0,0,12,0"/>
-                        <TextBox Grid.Column="2"
-                                 Text="{Binding Name}"
-                                 VerticalAlignment="Center"/>
-                    </Grid>
-                </Border>
-
-                <Border Background="{StaticResource EditorSurfaceRaised}"
-                        BorderBrush="{StaticResource EditorPanelBorder}"
-                        BorderThickness="1"
-                        Padding="14"
-                        Margin="0,0,0,16">
-                    <StackPanel Spacing="14">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <TextBlock Text="Transform"
-                                       Classes="subtitle"
-                                       VerticalAlignment="Center"/>
-                            <Border Grid.Column="1"
-                                    Background="{StaticResource EditorAccentBrush}"
-                                    Padding="8,4">
-                                <ui:SymbolIcon Symbol="MapPin" FontSize="{StaticResource IconSizeSmall}" Foreground="#FFFFFF"/>
-                            </Border>
+                    <Border Classes="inspector-header">
+                        <Grid ColumnDefinitions="Auto,Auto,*" RowDefinitions="Auto">
+                            <CheckBox Grid.Column="0"
+                                      IsChecked="{Binding IsActive}"
+                                      VerticalAlignment="Center"
+                                      Margin="0,0,8,0"/>
+                            <TextBlock Grid.Column="1"
+                                       Text="Name"
+                                       VerticalAlignment="Center"
+                                       Foreground="{StaticResource EditorTextSecondary}"
+                                       Margin="0,0,10,0"/>
+                            <TextBox Grid.Column="2"
+                                     Text="{Binding Name}"
+                                     VerticalAlignment="Center"/>
                         </Grid>
+                    </Border>
 
-                        <StackPanel Spacing="10">
-                            <Grid ColumnDefinitions="60,*">
+                    <Border Classes="transform-section">
+                        <StackPanel Spacing="12">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <PathIcon Data="M12,2L4.5,20.29L5.21,21L12,18L18.79,21L19.5,20.29L12,2Z"
+                                          Width="{StaticResource IconSizeSmall}" Height="{StaticResource IconSizeSmall}"
+                                          Foreground="{StaticResource EditorAccentBrush}"/>
+                                <TextBlock Text="Transform"
+                                           Classes="subtitle"
+                                           VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <Grid ColumnDefinitions="70,*" Margin="0,4,0,0">
                                 <TextBlock Text="Position"
                                            Foreground="{StaticResource EditorTextSecondary}"
                                            VerticalAlignment="Center"/>
-                                <Grid Grid.Column="1" ColumnDefinitions="*,*,*">
+                                <Grid Grid.Column="1" ColumnDefinitions="*,4,*,4,*">
                                     <views:DraggableValueEditor Grid.Column="0"
                                                                 Label="X"
                                                                 LabelColor="{DynamicResource AxisXBrush}"
                                                                 Value="{Binding PositionX}"
-                                                                DragSensitivity="0.05"
-                                                                Margin="0,0,4,0"/>
-                                    <views:DraggableValueEditor Grid.Column="1"
+                                                                DragSensitivity="0.05"/>
+                                    <views:DraggableValueEditor Grid.Column="2"
                                                                 Label="Y"
                                                                 LabelColor="{DynamicResource AxisYBrush}"
                                                                 Value="{Binding PositionY}"
-                                                                DragSensitivity="0.05"
-                                                                Margin="0,0,4,0"/>
-                                    <views:DraggableValueEditor Grid.Column="2"
+                                                                DragSensitivity="0.05"/>
+                                    <views:DraggableValueEditor Grid.Column="4"
                                                                 Label="Z"
                                                                 LabelColor="{DynamicResource AxisZBrush}"
                                                                 Value="{Binding PositionZ}"
@@ -79,26 +68,24 @@
                                 </Grid>
                             </Grid>
 
-                            <Grid ColumnDefinitions="60,*">
+                            <Grid ColumnDefinitions="70,*">
                                 <TextBlock Text="Rotation"
                                            Foreground="{StaticResource EditorTextSecondary}"
                                            VerticalAlignment="Center"/>
-                                <Grid Grid.Column="1" ColumnDefinitions="*,*,*">
+                                <Grid Grid.Column="1" ColumnDefinitions="*,4,*,4,*">
                                     <views:DraggableValueEditor Grid.Column="0"
                                                                 Label="X"
                                                                 LabelColor="{DynamicResource AxisXBrush}"
                                                                 Value="{Binding RotationX}"
                                                                 DragSensitivity="0.5"
-                                                                StringFormat="F1"
-                                                                Margin="0,0,4,0"/>
-                                    <views:DraggableValueEditor Grid.Column="1"
+                                                                StringFormat="F1"/>
+                                    <views:DraggableValueEditor Grid.Column="2"
                                                                 Label="Y"
                                                                 LabelColor="{DynamicResource AxisYBrush}"
                                                                 Value="{Binding RotationY}"
                                                                 DragSensitivity="0.5"
-                                                                StringFormat="F1"
-                                                                Margin="0,0,4,0"/>
-                                    <views:DraggableValueEditor Grid.Column="2"
+                                                                StringFormat="F1"/>
+                                    <views:DraggableValueEditor Grid.Column="4"
                                                                 Label="Z"
                                                                 LabelColor="{DynamicResource AxisZBrush}"
                                                                 Value="{Binding RotationZ}"
@@ -107,24 +94,22 @@
                                 </Grid>
                             </Grid>
 
-                            <Grid ColumnDefinitions="60,*">
+                            <Grid ColumnDefinitions="70,*">
                                 <TextBlock Text="Scale"
                                            Foreground="{StaticResource EditorTextSecondary}"
                                            VerticalAlignment="Center"/>
-                                <Grid Grid.Column="1" ColumnDefinitions="*,*,*">
+                                <Grid Grid.Column="1" ColumnDefinitions="*,4,*,4,*">
                                     <views:DraggableValueEditor Grid.Column="0"
                                                                 Label="X"
                                                                 LabelColor="{DynamicResource AxisXBrush}"
                                                                 Value="{Binding ScaleX}"
-                                                                DragSensitivity="0.01"
-                                                                Margin="0,0,4,0"/>
-                                    <views:DraggableValueEditor Grid.Column="1"
+                                                                DragSensitivity="0.01"/>
+                                    <views:DraggableValueEditor Grid.Column="2"
                                                                 Label="Y"
                                                                 LabelColor="{DynamicResource AxisYBrush}"
                                                                 Value="{Binding ScaleY}"
-                                                                DragSensitivity="0.01"
-                                                                Margin="0,0,4,0"/>
-                                    <views:DraggableValueEditor Grid.Column="2"
+                                                                DragSensitivity="0.01"/>
+                                    <views:DraggableValueEditor Grid.Column="4"
                                                                 Label="Z"
                                                                 LabelColor="{DynamicResource AxisZBrush}"
                                                                 Value="{Binding ScaleZ}"
@@ -132,96 +117,117 @@
                                 </Grid>
                             </Grid>
                         </StackPanel>
-                    </StackPanel>
-                </Border>
+                    </Border>
 
-                <Grid ColumnDefinitions="*,Auto" Margin="0,0,0,12">
-                    <TextBlock Text="Components"
-                               Classes="subtitle"
-                               VerticalAlignment="Center"/>
-                    <TextBlock Grid.Column="1"
-                               Text="{Binding Components.Count, StringFormat='{}{0} items'}"
-                               Foreground="{StaticResource EditorTextMuted}"
-                               VerticalAlignment="Center"/>
-                </Grid>
+                    <Grid ColumnDefinitions="*,Auto" Margin="2,8,0,10">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <PathIcon Data="M3,3H9V7H3V3M15,10H21V14H15V10M3,17H9V21H3V17M13,3V7H11V3H13M13,10V12H11V10H13M13,14V16H11V14H13M13,17V19H11V17H13M13,21H11V19H13V21M15,3V7H17V3H15M21,3V7H19V3H21M19,10V12H17V10H19M21,14H19V12H21V14Z"
+                                      Width="{StaticResource IconSizeSmall}" Height="{StaticResource IconSizeSmall}"
+                                      Foreground="{StaticResource EditorTextSecondary}"/>
+                            <TextBlock Text="Components"
+                                       Classes="subtitle"
+                                       VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <Border Grid.Column="1"
+                                Background="{StaticResource EditorPanelElevated}"
+                                CornerRadius="12"
+                                Padding="10,3">
+                            <TextBlock Text="{Binding Components.Count}"
+                                       Foreground="{StaticResource EditorTextSecondary}"
+                                       VerticalAlignment="Center"
+                                       HorizontalAlignment="Center"
+                                       MinWidth="16"
+                                       TextAlignment="Center"/>
+                        </Border>
+                    </Grid>
 
-                <ItemsControl ItemsSource="{Binding Components}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="vm:ComponentViewModel">
-                            <Border Background="{StaticResource EditorSurfaceRaised}"
-                                    BorderBrush="{StaticResource EditorPanelBorder}"
-                                    BorderThickness="1"
-                                    Margin="0,0,0,8"
-                                    Padding="12">
-                                <StackPanel Spacing="0">
-                                    <Grid ColumnDefinitions="Auto,*,Auto">
-                                        <ToggleButton Grid.Column="0"
-                                                      IsChecked="{Binding IsExpanded}"
-                                                      Padding="6"
-                                                      VerticalAlignment="Center"
-                                                      Classes="ghost">
-                                            <ToggleButton.Styles>
-                                                <Style Selector="ToggleButton">
-                                                    <Setter Property="Content">
-                                                        <Template>
-                                                            <PathIcon Data="M8,5.14V19.14L19,12.14L8,5.14Z"
-                                                                      Width="12" Height="12"
-                                                                      Foreground="{DynamicResource EditorTextSecondary}"/>
-                                                        </Template>
-                                                    </Setter>
-                                                </Style>
-                                                <Style Selector="ToggleButton:checked">
-                                                    <Setter Property="Content">
-                                                        <Template>
-                                                            <PathIcon Data="M7,10L12,15L17,10H7Z"
-                                                                      Width="12" Height="12"
-                                                                      Foreground="{DynamicResource EditorTextPrimary}"/>
-                                                        </Template>
-                                                    </Setter>
-                                                </Style>
-                                            </ToggleButton.Styles>
-                                        </ToggleButton>
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{Binding DisplayName}"
-                                                   FontWeight="SemiBold"
-                                                   VerticalAlignment="Center"
-                                                   Margin="8,0,0,0"/>
-                                        <Button Grid.Column="2"
-                                                Padding="8,6"
-                                                Command="{Binding RemoveCommand}"
-                                                ToolTip.Tip="Remove Component"
-                                                Classes="ghost">
-                                            <ui:SymbolIcon Symbol="Delete"
-                                                           Foreground="{StaticResource EditorError}"/>
-                                        </Button>
-                                    </Grid>
-                                    <Border IsVisible="{Binding IsExpanded}"
-                                            Margin="0,12,0,0"
-                                            Padding="0">
-                                        <views:ComponentEditor DataContext="{Binding}"/>
-                                    </Border>
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
+                    <ItemsControl ItemsSource="{Binding Components}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ComponentViewModel">
+                                <Border Classes="component-card">
+                                    <StackPanel>
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <Button Grid.Column="0"
+                                                    Command="{Binding ToggleExpandedCommand}"
+                                                    Classes="ghost"
+                                                    HorizontalAlignment="Stretch"
+                                                    HorizontalContentAlignment="Left"
+                                                    Padding="12,10"
+                                                    CornerRadius="4,0,0,0">
+                                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                                    <PathIcon Width="{StaticResource IconSizeXS}" Height="{StaticResource IconSizeXS}"
+                                                              VerticalAlignment="Center">
+                                                        <PathIcon.Data>
+                                                            <Binding Path="IsExpanded">
+                                                                <Binding.Converter>
+                                                                    <x:Static Member="vm:ComponentViewModel.ExpandIconConverter"/>
+                                                                </Binding.Converter>
+                                                            </Binding>
+                                                        </PathIcon.Data>
+                                                        <PathIcon.Foreground>
+                                                            <Binding Path="IsExpanded">
+                                                                <Binding.Converter>
+                                                                    <x:Static Member="vm:ComponentViewModel.ExpandColorConverter"/>
+                                                                </Binding.Converter>
+                                                            </Binding>
+                                                        </PathIcon.Foreground>
+                                                    </PathIcon>
+                                                    <TextBlock Text="{Binding DisplayName}"
+                                                               FontWeight="SemiBold"
+                                                               VerticalAlignment="Center"/>
+                                                </StackPanel>
+                                            </Button>
+                                            <Button Grid.Column="1"
+                                                    Padding="8,6"
+                                                    Margin="0,4,8,4"
+                                                    Command="{Binding RemoveCommand}"
+                                                    ToolTip.Tip="Remove Component"
+                                                    Classes="ghost">
+                                                <PathIcon Data="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z"
+                                                          Width="{StaticResource IconSizeSmall}" Height="{StaticResource IconSizeSmall}"
+                                                          Foreground="{StaticResource EditorError}"/>
+                                            </Button>
+                                        </Grid>
+                                        <Border IsVisible="{Binding IsExpanded}"
+                                                Classes="component-body"
+                                                CornerRadius="0,0,4,4">
+                                            <views:ComponentEditor DataContext="{Binding}"/>
+                                        </Border>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
 
-                <Button HorizontalAlignment="Stretch"
-                        HorizontalContentAlignment="Center"
-                        Padding="14,12"
-                        Margin="0,8,0,0"
-                        IsVisible="{Binding !IsAddingComponent}"
-                        Command="{Binding ToggleAddComponentPanelCommand}"
-                        Classes="accent">
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <ui:SymbolIcon Symbol="Add" Foreground="#FFFFFF"/>
-                        <TextBlock Text="Add Component" Foreground="#FFFFFF"/>
-                    </StackPanel>
-                </Button>
-
-                <views:AddComponentPanel IsVisible="{Binding IsAddingComponent}"
-                                         DataContext="{Binding}"/>
+                    <Button HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Center"
+                            Padding="14,12"
+                            Margin="0,6,0,0"
+                            IsVisible="{Binding !IsAddingComponent}"
+                            Command="{Binding ToggleAddComponentPanelCommand}"
+                            Classes="accent">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <ui:SymbolIcon Symbol="Add" FontSize="{StaticResource IconSizeSmall}" Foreground="#FFFFFF"/>
+                            <TextBlock Text="Add Component" Foreground="#FFFFFF"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </StackPanel>
-        </StackPanel>
-    </ScrollViewer>
+        </views:SmoothScrollViewer>
+
+        <Border x:Name="AddComponentOverlay"
+                IsVisible="{Binding SelectedGameObject.IsAddingComponent, FallbackValue=False}"
+                Background="#D0000000"
+                ZIndex="100">
+            <Border Background="{StaticResource EditorPanelBackground}"
+                    BorderBrush="{StaticResource EditorPanelBorder}"
+                    BorderThickness="1"
+                    CornerRadius="{StaticResource RadiusLarge}"
+                    VerticalAlignment="Stretch"
+                    Margin="8,8,8,8"
+                    Padding="0">
+                <views:AddComponentPanel DataContext="{Binding SelectedGameObject}"/>
+            </Border>
+        </Border>
+    </Panel>
 </UserControl>

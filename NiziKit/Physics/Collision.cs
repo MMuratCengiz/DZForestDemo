@@ -28,7 +28,7 @@ public struct ContactPointBuffer
 public ref struct Collision
 {
     public GameObject Other;
-    public RigidbodyComponent? Rigidbody;
+    public Rigidbody? Rigidbody;
     public Vector3 RelativeVelocity;
     public int ContactCount;
     public ContactPointBuffer Contacts;

@@ -55,7 +55,7 @@ public partial class FileBrowserViewModel : ObservableObject
         get => (int)Filter;
         set
         {
-            if (value >= 0 && value <= 5)
+            if (value is >= 0 and <= 5)
             {
                 Filter = (AssetFileType)value;
             }

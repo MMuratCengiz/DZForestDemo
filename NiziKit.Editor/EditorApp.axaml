@@ -59,6 +59,19 @@
 
         <SolidColorBrush x:Key="EditorSurfaceRaised" Color="#FF101014"/>
         <SolidColorBrush x:Key="EditorSurfaceOverlay" Color="#FF181820"/>
+        <SolidColorBrush x:Key="EditorSurfaceInset" Color="#FF0C0C0F"/>
+
+        <SolidColorBrush x:Key="EditorFocusRing" Color="#80408060"/>
+        <SolidColorBrush x:Key="EditorComponentAccent" Color="#FF2A4A3A"/>
+        <SolidColorBrush x:Key="EditorComponentBorder" Color="#FF1E3028"/>
+        <SolidColorBrush x:Key="EditorSectionHeaderBg" Color="#FF0E0E12"/>
+
+        <SolidColorBrush x:Key="EditorScrollThumb" Color="#FF303040"/>
+        <SolidColorBrush x:Key="EditorScrollThumbHover" Color="#FF404055"/>
+        <SolidColorBrush x:Key="EditorScrollTrack" Color="#FF0A0A0C"/>
+
+        <SolidColorBrush x:Key="EditorDragLabelBg" Color="#FF1A2825"/>
+        <SolidColorBrush x:Key="EditorDragLabelHover" Color="#FF203530"/>
 
         <Color x:Key="EditorGradientStart">#FF2A5045</Color>
         <Color x:Key="EditorGradientEnd">#FF1A3530</Color>
@@ -66,6 +79,11 @@
         <LinearGradientBrush x:Key="EditorAccentGradient" StartPoint="0%,0%" EndPoint="100%,100%">
             <GradientStop Color="{StaticResource EditorGradientStart}" Offset="0"/>
             <GradientStop Color="{StaticResource EditorGradientEnd}" Offset="1"/>
+        </LinearGradientBrush>
+
+        <LinearGradientBrush x:Key="EditorSectionGradient" StartPoint="0%,0%" EndPoint="100%,0%">
+            <GradientStop Color="#FF182820" Offset="0"/>
+            <GradientStop Color="#FF101014" Offset="1"/>
         </LinearGradientBrush>
     </Application.Resources>
 

@@ -55,7 +55,7 @@ public class DrawBinding : ShaderBinding<GameObject>
         _instanceBuffer.Write(in instanceData);
 
         var animator = target.GetComponent<Animator>();
-        if (animator != null && animator.BoneCount > 0)
+        if (animator is { BoneCount: > 0 })
         {
             _boneData.CopyFrom(animator.BoneMatrices);
             _boneMatricesBuffer.Write(in _boneData);

@@ -99,6 +99,14 @@ public enum PhysicsBodyType
     Kinematic
 }
 
+public enum ForceMode
+{
+    Force,
+    Impulse,
+    VelocityChange,
+    Acceleration
+}
+
 public readonly struct PhysicsBodyDesc
 {
     public PhysicsShape Shape { get; init; }

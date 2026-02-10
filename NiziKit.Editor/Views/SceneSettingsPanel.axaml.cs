@@ -42,7 +42,9 @@ public partial class SceneSettingsPanel : UserControl
     private void BuildSkyboxEditors()
     {
         if (_skyboxFacesPanel == null || DataContext is not EditorViewModel vm)
+        {
             return;
+        }
 
         _skyboxFacesPanel.Children.Clear();
 
@@ -105,7 +107,7 @@ public partial class SceneSettingsPanel : UserControl
     private static void EnsureSkybox()
     {
         var scene = World.CurrentScene;
-        if (scene != null && scene.Skybox == null)
+        if (scene is { Skybox: null })
         {
             scene.Skybox = new SkyboxData();
         }

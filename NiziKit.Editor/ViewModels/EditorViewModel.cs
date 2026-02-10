@@ -7,6 +7,7 @@ using NiziKit.Core;
 using NiziKit.Editor.Gizmos;
 using NiziKit.Editor.Services;
 using NiziKit.Editor.Views.Editors;
+using NiziKit.Light;
 
 namespace NiziKit.Editor.ViewModels;
 
@@ -143,6 +144,21 @@ public partial class EditorViewModel : ObservableObject
 
         SceneDisplayName = scene.Name ?? "Scene";
 
+        foreach (var cam in scene.GetAllCameras())
+        {
+            var freeFly = cam.Owner?.GetComponent<FreeFlyController>();
+            if (freeFly != null)
+            {
+                freeFly.IsEnabled = false;
+            }
+
+            var orbit = cam.Owner?.GetComponent<OrbitController>();
+            if (orbit != null)
+            {
+                orbit.IsEnabled = false;
+            }
+        }
+
         foreach (var obj in scene.RootObjects)
         {
             RootObjects.Add(new GameObjectViewModel(obj, this));
@@ -175,6 +191,55 @@ public partial class EditorViewModel : ObservableObject
         var child = SelectedGameObject.GameObject.CreateChild("New Child");
         var vm = new GameObjectViewModel(child, this);
         SelectedGameObject.Children.Add(vm);
+    }
+
+    [RelayCommand]
+    private void NewDirectionalLight()
+    {
+        var scene = World.CurrentScene;
+        if (scene == null)
+        {
+            return;
+        }
+
+        var light = scene.CreateObject<DirectionalLight>("Directional Light");
+        light.LookAt(new System.Numerics.Vector3(0.5f, -1f, 0.5f));
+        var vm = new GameObjectViewModel(light, this);
+        RootObjects.Add(vm);
+        SelectedGameObject = vm;
+    }
+
+    [RelayCommand]
+    private void NewPointLight()
+    {
+        var scene = World.CurrentScene;
+        if (scene == null)
+        {
+            return;
+        }
+
+        var light = scene.CreateObject<PointLight>("Point Light");
+        light.LocalPosition = new System.Numerics.Vector3(0, 3, 0);
+        var vm = new GameObjectViewModel(light, this);
+        RootObjects.Add(vm);
+        SelectedGameObject = vm;
+    }
+
+    [RelayCommand]
+    private void NewSpotLight()
+    {
+        var scene = World.CurrentScene;
+        if (scene == null)
+        {
+            return;
+        }
+
+        var light = scene.CreateObject<SpotLight>("Spot Light");
+        light.LocalPosition = new System.Numerics.Vector3(0, 3, 0);
+        light.LookAt(new System.Numerics.Vector3(0, -1, 0));
+        var vm = new GameObjectViewModel(light, this);
+        RootObjects.Add(vm);
+        SelectedGameObject = vm;
     }
 
     [RelayCommand]
@@ -442,6 +507,14 @@ public partial class EditorViewModel : ObservableObject
     private void CloseAssetBrowser()
     {
         IsAssetBrowserOpen = false;
+    }
+
+    partial void OnIsAssetBrowserOpenChanged(bool value)
+    {
+        if (value)
+        {
+            AssetBrowserViewModel.Refresh();
+        }
     }
 
     public void OpenAssetPicker(AssetRefType assetType, string? currentAssetPath, Action<AssetInfo?> callback)

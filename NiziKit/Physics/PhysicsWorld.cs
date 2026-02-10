@@ -21,7 +21,7 @@ public sealed partial class PhysicsWorld : IWorldEventListener, IDisposable
     private readonly ThreadDispatcher _threadDispatcher;
     private readonly Dictionary<int, BodyHandle> _bodyHandles = new();
     private readonly Dictionary<int, StaticHandle> _staticHandles = new();
-    private readonly Dictionary<int, (GameObject Go, RigidbodyComponent Rigidbody)> _trackedObjects = new();
+    private readonly Dictionary<int, (GameObject Go, Rigidbody Rigidbody)> _trackedObjects = new();
     private readonly Dictionary<BodyHandle, int> _bodyToId = new();
     private readonly Dictionary<StaticHandle, int> _staticToId = new();
     private readonly Dictionary<int, List<ConstraintHandle>> _constraintsByOwner = new();

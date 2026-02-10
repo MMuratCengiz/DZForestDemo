@@ -85,7 +85,7 @@ public sealed partial class PhysicsWorld
             return;
         }
 
-        var parentRb = parent.GetComponent<RigidbodyComponent>();
+        var parentRb = parent.GetComponent<Rigidbody>();
         if (parentRb?.BodyHandle == null)
         {
             return;
@@ -169,7 +169,7 @@ public sealed partial class PhysicsWorld
             return;
         }
 
-        if (wheel.ConnectedBodyHandle.HasValue && wheel.WheelBodyHandle.HasValue)
+        if (wheel is { ConnectedBodyHandle: not null, WheelBodyHandle: not null })
         {
             IgnoreCollision(wheel.ConnectedBodyHandle.Value, wheel.WheelBodyHandle.Value, false);
         }

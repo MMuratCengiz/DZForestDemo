@@ -135,7 +135,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
     private async Task LoadRequiredAssetsAsync(HashSet<string> assetRefs, CancellationToken ct)
     {
         var packsToLoad = assetRefs
-            .Select(r => AssetPacks.GetPackForPath(r))
+            .Select(AssetPacks.GetPackForPath)
             .Where(p => p != null && !AssetPacks.IsLoaded(p))
             .Distinct()
             .ToList();
@@ -171,11 +171,12 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
                 foreach (var comp in obj.Components)
                 {
-                    if (comp.Type.Equals("mesh", StringComparison.OrdinalIgnoreCase))
+                    var shortType = GetShortTypeName(comp.Type);
+                    if (shortType.Equals("mesh", StringComparison.OrdinalIgnoreCase))
                     {
                         meshRef = comp.Properties?.GetStringOrDefault("mesh");
                     }
-                    else if (comp.Type.Equals("material", StringComparison.OrdinalIgnoreCase) && comp.Properties != null)
+                    else if (shortType.Equals("material", StringComparison.OrdinalIgnoreCase) && comp.Properties != null)
                     {
                         // Read variant from material component tags
                         if (comp.Properties.TryGetValue("tags", out var tagsElement) && tagsElement.ValueKind == JsonValueKind.Object)
@@ -615,7 +616,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
     private void AddComponent(GameObject obj, ComponentJson data)
     {
-        if (data.Type.Equals("material", StringComparison.OrdinalIgnoreCase))
+        if (GetShortTypeName(data.Type).Equals("material", StringComparison.OrdinalIgnoreCase))
         {
             var matComp = obj.AddComponent<MaterialComponent>();
             if (data.Properties != null)
@@ -647,7 +648,17 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             return;
         }
 
-        switch (data.Type.ToLowerInvariant())
+        var typeNameLower = data.Type.ToLowerInvariant();
+        if (typeNameLower.Contains('.'))
+        {
+            typeNameLower = typeNameLower.Substring(typeNameLower.LastIndexOf('.') + 1);
+        }
+        if (typeNameLower.EndsWith("component"))
+        {
+            typeNameLower = typeNameLower[..^9];
+        }
+
+        switch (typeNameLower)
         {
             case "mesh":
                 var meshComp = obj.AddComponent<MeshComponent>();
@@ -663,10 +674,10 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
                 var rb = bodyType switch
                 {
-                    BodyType.Dynamic => RigidbodyComponent.Dynamic(shape, mass),
-                    BodyType.Static => RigidbodyComponent.Static(shape),
-                    BodyType.Kinematic => RigidbodyComponent.Kinematic(shape),
-                    _ => RigidbodyComponent.Static(shape)
+                    BodyType.Dynamic => Rigidbody.Dynamic(shape, mass),
+                    BodyType.Static => Rigidbody.Static(shape),
+                    BodyType.Kinematic => Rigidbody.Kinematic(shape),
+                    _ => Rigidbody.Static(shape)
                 };
                 obj.AddComponent(rb);
                 break;
@@ -707,13 +718,13 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
                     surfaceComp.RoughnessValue = data.Properties.GetSingleOrDefault("roughnessValue", 0.5f);
 
                     var albedoColor = data.Properties.GetFloatArrayOrDefault("albedoColor");
-                    if (albedoColor != null && albedoColor.Length >= 4)
+                    if (albedoColor is { Length: >= 4 })
                     {
                         surfaceComp.AlbedoColor = new Vector4(albedoColor[0], albedoColor[1], albedoColor[2], albedoColor[3]);
                     }
 
                     var emissiveColor = data.Properties.GetFloatArrayOrDefault("emissiveColor");
-                    if (emissiveColor != null && emissiveColor.Length >= 3)
+                    if (emissiveColor is { Length: >= 3 })
                     {
                         surfaceComp.EmissiveColor = new Vector3(emissiveColor[0], emissiveColor[1], emissiveColor[2]);
                     }
@@ -721,13 +732,13 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
                     surfaceComp.EmissiveIntensity = data.Properties.GetSingleOrDefault("emissiveIntensity", 0.0f);
 
                     var uvScale = data.Properties.GetFloatArrayOrDefault("uvScale");
-                    if (uvScale != null && uvScale.Length >= 2)
+                    if (uvScale is { Length: >= 2 })
                     {
                         surfaceComp.UVScale = new Vector2(uvScale[0], uvScale[1]);
                     }
 
                     var uvOffset = data.Properties.GetFloatArrayOrDefault("uvOffset");
-                    if (uvOffset != null && uvOffset.Length >= 2)
+                    if (uvOffset is { Length: >= 2 })
                     {
                         surfaceComp.UVOffset = new Vector2(uvOffset[0], uvOffset[1]);
                     }
@@ -927,7 +938,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
     private static PhysicsShape CreateBoxShape(IReadOnlyDictionary<string, JsonElement>? properties)
     {
         var sizeArr = properties.GetFloatArrayOrDefault("size");
-        if (sizeArr != null && sizeArr.Length >= 3)
+        if (sizeArr is { Length: >= 3 })
         {
             return PhysicsShape.Box(sizeArr[0], sizeArr[1], sizeArr[2]);
         }
@@ -965,6 +976,20 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         }
 
         return Quaternion.Identity;
+    }
+
+    private static string GetShortTypeName(string typeName)
+    {
+        var result = typeName;
+        if (result.Contains('.'))
+        {
+            result = result.Substring(result.LastIndexOf('.') + 1);
+        }
+        if (result.EndsWith("Component", StringComparison.OrdinalIgnoreCase))
+        {
+            result = result[..^9];
+        }
+        return result;
     }
 
     public override void Dispose()

@@ -7,6 +7,7 @@
     <Border Background="{StaticResource EditorPanelBackground}"
             BorderBrush="{StaticResource EditorPanelBorder}"
             BorderThickness="1"
+            CornerRadius="4"
             Padding="10,6">
         <StackPanel Orientation="Horizontal" Spacing="6">
             <Button Command="{Binding Toggle2DModeCommand}"

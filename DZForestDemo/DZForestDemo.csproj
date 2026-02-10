@@ -16,6 +16,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\NiziKit\NiziKit.csproj" />
+      <ProjectReference Include="..\NiziKit.Generators\NiziKit.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
     <ItemGroup>

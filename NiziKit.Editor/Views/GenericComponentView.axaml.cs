@@ -161,15 +161,36 @@ public partial class GenericComponentView : UserControl
         return prop.CanWrite && prop.GetSetMethod() != null;
     }
 
+    private static string FormatPropertyName(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return name;
+        }
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append(name[0]);
+        for (int i = 1; i < name.Length; i++)
+        {
+            if (char.IsUpper(name[i]) && !char.IsUpper(name[i - 1]))
+            {
+                sb.Append(' ');
+            }
+            sb.Append(name[i]);
+        }
+        return sb.ToString();
+    }
+
     private Control? CreatePropertyControl(IComponent component, PropertyInfo prop, bool skipLabel = false)
     {
-        var panel = new StackPanel { Spacing = 4, Margin = new Thickness(0, 0, 0, 6) };
+        var panel = new StackPanel { Spacing = 3, Margin = new Thickness(0, 0, 0, 6) };
+        var displayName = FormatPropertyName(prop.Name);
 
         if (prop.PropertyType != typeof(bool) && !skipLabel)
         {
             var label = new TextBlock
             {
-                Text = prop.Name,
+                Text = displayName,
                 Classes = { "label" }
             };
             panel.Children.Add(label);
@@ -208,17 +229,13 @@ public partial class GenericComponentView : UserControl
             };
             var label = new TextBlock
             {
-                Text = prop.Name,
+                Text = displayName,
                 Classes = { "label" },
                 VerticalAlignment = VerticalAlignment.Center
             };
             boolPanel.Children.Add(editor);
             boolPanel.Children.Add(label);
             panel.Children.Add(boolPanel);
-        }
-        else if (prop.PropertyType == typeof(bool))
-        {
-            panel.Children.Add(editor);
         }
         else
         {

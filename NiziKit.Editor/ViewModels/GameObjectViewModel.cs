@@ -4,8 +4,10 @@ using Avalonia.Data.Converters;
 using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using NiziKit.Assets;
 using NiziKit.Components;
 using NiziKit.Core;
+using NiziKit.Physics;
 
 namespace NiziKit.Editor.ViewModels;
 
@@ -341,10 +343,49 @@ public partial class GameObjectViewModel : ObservableObject
         var component = (IComponent?)Activator.CreateInstance(componentType);
         if (component != null)
         {
+            FitComponentToMeshBounds(component);
             AddComponent(component);
         }
 
         IsAddingComponent = false;
+    }
+
+    private void FitComponentToMeshBounds(IComponent component)
+    {
+        var mesh = _gameObject.GetComponent<MeshComponent>()?.Mesh;
+        if (mesh == null)
+        {
+            return;
+        }
+
+        var bounds = mesh.Bounds;
+        var size = bounds.Size * _gameObject.LocalScale;
+        var center = bounds.Center;
+
+        switch (component)
+        {
+            case BoxCollider box:
+                box.Size = size;
+                box.Center = center;
+                break;
+            case SphereCollider sphere:
+                sphere.Radius = MathF.Max(size.X, MathF.Max(size.Y, size.Z)) * 0.5f;
+                sphere.Center = center;
+                break;
+            case CapsuleCollider capsule:
+                capsule.Radius = MathF.Max(size.X, size.Z) * 0.5f;
+                capsule.Height = size.Y;
+                capsule.Center = center;
+                break;
+            case CylinderCollider cylinder:
+                cylinder.Radius = MathF.Max(size.X, size.Z) * 0.5f;
+                cylinder.Height = size.Y;
+                cylinder.Center = center;
+                break;
+            case Rigidbody rb:
+                rb.Shape = PhysicsShape.Box(size);
+                break;
+        }
     }
 
     public IEnumerable<Type> GetAvailableComponentTypes()

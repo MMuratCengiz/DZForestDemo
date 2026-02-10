@@ -3,8 +3,8 @@
   "cameras": [
     {
       "name": "Main Camera",
-      "position": [3.0303328, -1.6397858, -35.62742],
-      "rotation": [-5.500405, -17.532503, 0],
+      "position": [-10.674002, -72.245804, -198.67415],
+      "rotation": [-19.767044, 1.7188736, 0],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -30,10 +30,10 @@
   "lights": [
     {
       "type": "directional",
-      "name": "Sun",
-      "direction": [0.3, -0.8, 0.4],
-      "color": [1.0, 0.95, 0.9],
-      "intensity": 0.7,
+      "name": "Directional Light",
+      "direction": [0.3930465, -0.84710366, 0.3576728],
+      "color": [1, 1, 1],
+      "intensity": 1,
       "castsShadows": true
     }
   ],
@@ -41,21 +41,34 @@
     {
       "name": "Character_Viking",
       "active": true,
-      "position": [0, 0, 0],
-      "rotation": [0, 0, 0],
+      "position": [-1.2923927E-05, -84697.93, 0.00051649613],
+      "rotation": [4.0916016E-06, 5.809548E-07, 1.0138471E-07],
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Chr_Attach_Bear_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.9
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
+        },
+        {
+          "type": "NiziKit.Components.Rigidbody",
+          "bodyType": "dynamic",
+          "mass": 1,
+          "shape": {
+            "type": "box",
+            "size": [
+              1,
+              1,
+              1
+            ]
+          },
+          "speculativeMargin": 0.1,
+          "sleepThreshold": 0.01
         }
       ],
       "children": []
@@ -68,16 +81,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Chr_Attach_Fur_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.9
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -90,16 +101,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Chr_Attach_Fur_02.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.9
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -107,21 +116,19 @@
     {
       "name": "Boat",
       "active": true,
-      "position": [26.5, 6, 19.5],
-      "rotation": [-29.771297, -3.8793628, 78.36984],
+      "position": [26.5, 10, 19.5],
+      "rotation": [10.298912, -28.33266, 74.732124],
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Large_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.7
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -134,16 +141,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Veh_Boat_Small_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.7
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -156,16 +161,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Veh_Cart_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.7
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -178,16 +181,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Table_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.7
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -200,16 +201,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Chair_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.7
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -222,16 +221,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Chair_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.7
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -244,16 +241,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Bench_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.7
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -266,16 +261,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Anvil_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.3
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -283,21 +276,34 @@
     {
       "name": "Barrel2",
       "active": true,
-      "position": [5, 0, 5],
+      "position": [5, -113092.516, 5],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Barrel_02.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.7
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
+        },
+        {
+          "type": "NiziKit.Components.Rigidbody",
+          "bodyType": "dynamic",
+          "mass": 1,
+          "shape": {
+            "type": "box",
+            "size": [
+              1,
+              1,
+              1
+            ]
+          },
+          "speculativeMargin": 0.1,
+          "sleepThreshold": 0.01
         }
       ],
       "children": []
@@ -305,21 +311,44 @@
     {
       "name": "Barrel",
       "active": true,
-      "position": [6, 0, 6],
-      "rotation": [0, 0, 0],
+      "position": [5.9999948, 0.71945626, 6.0000253],
+      "rotation": [-1.092128E-08, 2.0584757E-06, -4.913297E-09],
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Barrel_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.7
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
+        },
+        {
+          "type": "NiziKit.Components.CharacterController",
+          "moveSpeed": 5,
+          "jumpForce": 5,
+          "groundCheckDistance": 0.3,
+          "isGrounded": true
+        },
+        {
+          "type": "NiziKit.Components.Rigidbody",
+          "bodyType": "dynamic",
+          "mass": 1,
+          "shape": {
+            "type": "box",
+            "size": [
+              0.8459735,
+              0.93941665,
+              0.8263009
+            ]
+          },
+          "speculativeMargin": 0.1,
+          "sleepThreshold": 0.01
+        },
+        {
+          "type": "DZForestDemo.Script.JumpController"
         }
       ],
       "children": []
@@ -332,18 +361,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Fire_Pit_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.6,
-          "emissiveColor": [1.0, 0.4, 0.1],
-          "emissiveIntensity": 2.0
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -356,16 +381,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Flag_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.8
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -378,16 +401,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Wep_Axe_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.3
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -400,16 +421,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Wep_Sword_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.3
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -422,16 +441,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Wep_Shield_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.3
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -444,16 +461,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Wep_Hammer_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.3
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -466,16 +481,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Wep_Spear_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.3
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -488,16 +501,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Tree_Pine_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.8
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -510,16 +521,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Tree_Pine_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.8
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -532,16 +541,14 @@
       "scale": [1.2, 1.2, 1.2],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Tree_Pine_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.8
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -554,16 +561,14 @@
       "scale": [0.8, 0.8, 0.8],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Rock_Cliff_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.8
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -576,16 +581,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Bush_Berries_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.8
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -598,16 +601,14 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Bush_Berries_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.8
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []
@@ -617,20 +618,23 @@
       "active": true,
       "position": [0, -0.25, 0],
       "rotation": [0, 0, 0],
-      "scale": [90.67196, 1, 113.75],
+      "scale": [90.67, 1, 113.75],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "geometry:box"
         },
         {
-          "type": "surface",
-          "albedoColor": [
-            0.5,
-            0.5,
-            0.5,
-            1
-          ]
+          "type": "NiziKit.Components.SurfaceComponent"
+        },
+        {
+          "type": "NiziKit.Components.BoxCollider",
+          "size": [
+            90.67,
+            1,
+            113.75
+          ],
+          "isTrigger": false
         }
       ],
       "children": []
@@ -643,25 +647,23 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex",
-          "metallicValue": 1.0,
-          "roughnessValue": 0.5
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         },
         {
-          "type": "material",
+          "type": "NiziKit.Components.MaterialComponent",
           "tags": {
             "variant": "SKINNED"
           }
         },
         {
-          "type": "animator",
+          "type": "NiziKit.Animation.Animator",
           "skeleton": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.ozzskel",
           "defaultAnimation": "A_Idle_Crouching_Masc",
           "animations": [
@@ -686,11 +688,11 @@
       "scale": [1, 1, 1],
       "components": [
         {
-          "type": "mesh",
+          "type": "NiziKit.Components.MeshComponent",
           "mesh": "Synty/Models/DarkFantasy/FBX/Vehicles/SM_Veh_Wagon_01.nizimesh"
         },
         {
-          "type": "surface",
+          "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/DarkFantasy/Textures/Alts/PolygonDarkFantasy_Texture_01_A.dztex"
         }
       ],

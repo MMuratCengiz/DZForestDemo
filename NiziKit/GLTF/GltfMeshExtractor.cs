@@ -41,7 +41,7 @@ public static class GltfMeshExtractor
 
         foreach (var node in root.Nodes)
         {
-            if (node.Skin.HasValue && node.Mesh.HasValue)
+            if (node is { Skin: not null, Mesh: not null })
             {
                 result.Add(node.Mesh.Value);
             }

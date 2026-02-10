@@ -55,6 +55,11 @@ public static class AssetPacks
 
     public static string? GetPackForPath(string path)
     {
+        var normalized = path.Replace('\\', '/').TrimStart('/');
+        if (_fileIndex.TryGetValue(normalized, out var entry))
+        {
+            return entry.packName;
+        }
         return Content.Manifest?.GetPackForPath(path);
     }
 
@@ -69,7 +74,7 @@ public static class AssetPacks
         EnsurePackLoaded(packName);
         if (TryGet(packName, out var pack) && pack != null)
         {
-            return pack.Meshes.GetValueOrDefault(path);
+            return pack.GetOrLoadMesh(path);
         }
         return null;
     }
@@ -85,7 +90,7 @@ public static class AssetPacks
         EnsurePackLoaded(packName);
         if (TryGet(packName, out var pack) && pack != null)
         {
-            return pack.Skeletons.GetValueOrDefault(path);
+            return pack.GetOrLoadSkeleton(path);
         }
         return null;
     }
@@ -101,7 +106,7 @@ public static class AssetPacks
         EnsurePackLoaded(packName);
         if (TryGet(packName, out var pack) && pack != null)
         {
-            return pack.AnimationData.GetValueOrDefault(path);
+            return pack.GetOrLoadAnimationData(path);
         }
         return null;
     }
@@ -115,7 +120,7 @@ public static class AssetPacks
         }
 
         EnsurePackLoaded(packName);
-        return TryGet(packName, out var pack) ? pack?.Textures.GetValueOrDefault(path) : null;
+        return TryGet(packName, out var pack) ? pack?.GetOrLoadTexture(path) : null;
     }
 
     public static void EnsurePackLoaded(string packName)
@@ -179,12 +184,57 @@ public static class AssetPacks
 
     private static void DiscoverAndLoadPacks()
     {
-        DiscoverAndIndexPacks();
+        var assetsPath = Content.ResolvePath("");
+        if (!Directory.Exists(assetsPath))
+        {
+            return;
+        }
+
+        // Published mode: load binary .nizipack files
+        var packFiles = Directory.GetFiles(assetsPath, "*.nizipack", SearchOption.TopDirectoryOnly);
+        if (packFiles.Length > 0)
+        {
+            Parallel.ForEach(packFiles, packFile =>
+            {
+                var packName = Path.GetFileNameWithoutExtension(packFile);
+                if (!IsLoaded(packName))
+                {
+                    AssetPack.Load(packFile);
+                }
+            });
+            return;
+        }
+
+        // Dev mode: scan for asset files and create a default pack
+        if (!IsLoaded("default"))
+        {
+            AssetPack.LoadFromDirectory(assetsPath);
+        }
     }
 
     private static async Task DiscoverAndLoadPacksAsync(CancellationToken ct)
     {
-        await Task.Run(DiscoverAndIndexPacks, ct);
+        var assetsPath = Content.ResolvePath("");
+        if (!Directory.Exists(assetsPath))
+        {
+            return;
+        }
+
+        var packFiles = Directory.GetFiles(assetsPath, "*.nizipack", SearchOption.TopDirectoryOnly);
+        if (packFiles.Length > 0)
+        {
+            var tasks = packFiles
+                .Select(packFile => (packFile, packName: Path.GetFileNameWithoutExtension(packFile)))
+                .Where(x => !IsLoaded(x.packName))
+                .Select(x => AssetPack.LoadAsync(x.packFile, ct));
+            await Task.WhenAll(tasks);
+            return;
+        }
+
+        if (!IsLoaded("default"))
+        {
+            await AssetPack.LoadFromDirectoryAsync(assetsPath, "default", ct);
+        }
     }
 
     public static void DiscoverAndIndexPacks()
@@ -196,13 +246,23 @@ public static class AssetPacks
         }
 
         var packFiles = Directory.GetFiles(assetsPath, "*.nizipack", SearchOption.TopDirectoryOnly);
-        foreach (var packFile in packFiles)
+        if (packFiles.Length > 0)
         {
-            var packName = Path.GetFileNameWithoutExtension(packFile);
-            if (!_providers.ContainsKey(packName))
+            foreach (var packFile in packFiles)
             {
-                IndexPack(packFile, packName);
+                var packName = Path.GetFileNameWithoutExtension(packFile);
+                if (!_providers.ContainsKey(packName))
+                {
+                    IndexPack(packFile, packName);
+                }
             }
+            return;
+        }
+
+        // Dev mode: create a default pack from directory scan
+        if (!IsLoaded("default"))
+        {
+            AssetPack.LoadFromDirectory(assetsPath);
         }
     }
 

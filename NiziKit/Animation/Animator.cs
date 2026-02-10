@@ -21,7 +21,7 @@ public enum BlendMode
     Additive
 }
 
-[NiziComponent(TypeName = "animator")]
+[NiziComponent]
 public partial class Animator : IDisposable
 {
     private static readonly ILogger Logger = Log.Get<Animator>();
@@ -491,7 +491,7 @@ public partial class Animator : IDisposable
             return;
         }
 
-        if (layer.IsBlending && layer.BlendDuration > 0)
+        if (layer is { IsBlending: true, BlendDuration: > 0 })
         {
             SampleBlended(layer);
         }

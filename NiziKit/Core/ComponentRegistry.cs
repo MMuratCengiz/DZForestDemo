@@ -165,7 +165,7 @@ public static class ComponentRegistry
             if (!_typeCache.TryGetValue(typeName, out typeInfo))
             {
                 typeInfo = _typeCache.Values.FirstOrDefault(t =>
-                    t.Type.Name.Equals(typeName, StringComparison.OrdinalIgnoreCase));
+                    t.Type.FullName != null && t.Type.FullName.Equals(typeName, StringComparison.OrdinalIgnoreCase));
             }
         }
 

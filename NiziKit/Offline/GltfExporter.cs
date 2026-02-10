@@ -142,7 +142,7 @@ public sealed class GltfExporter : IDisposable
             importFlags |= PostProcessSteps.RemoveRedundantMaterials;
         }
 
-        if (desc.GenerateNormals && !desc.DropNormals)
+        if (desc is { GenerateNormals: true, DropNormals: false })
         {
             importFlags |= desc.SmoothNormals
                 ? PostProcessSteps.GenerateSmoothNormals
@@ -318,7 +318,7 @@ public sealed class GltfExporter : IDisposable
             importFlags |= PostProcessSteps.RemoveRedundantMaterials;
         }
 
-        if (desc.GenerateNormals && !desc.DropNormals)
+        if (desc is { GenerateNormals: true, DropNormals: false })
         {
             importFlags |= desc.SmoothNormals
                 ? PostProcessSteps.GenerateSmoothNormals

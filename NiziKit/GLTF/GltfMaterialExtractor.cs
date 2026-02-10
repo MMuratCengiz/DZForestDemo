@@ -113,7 +113,7 @@ public static class GltfMaterialExtractor
             DoubleSided = material.DoubleSided
         };
 
-        if (material.EmissiveFactor != null && material.EmissiveFactor.Length >= 3)
+        if (material.EmissiveFactor is { Length: >= 3 })
         {
             data.EmissiveFactor = new Vector3(
                 material.EmissiveFactor[0],
@@ -125,7 +125,7 @@ public static class GltfMaterialExtractor
         {
             var pbr = material.PbrMetallicRoughness;
 
-            if (pbr.BaseColorFactor != null && pbr.BaseColorFactor.Length >= 4)
+            if (pbr.BaseColorFactor is { Length: >= 4 })
             {
                 data.BaseColorFactor = new Vector4(
                     pbr.BaseColorFactor[0],

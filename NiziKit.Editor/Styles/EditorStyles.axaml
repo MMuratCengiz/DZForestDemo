@@ -18,9 +18,9 @@
         <x:Double x:Key="IconSizeXXL">48</x:Double>
         <x:Double x:Key="IconSizeHuge">56</x:Double>
 
-        <x:Double x:Key="PanelMinWidth">280</x:Double>
-        <x:Double x:Key="PanelMaxWidth">500</x:Double>
-        <x:Double x:Key="PanelPreferredWidth">380</x:Double>
+        <x:Double x:Key="PanelMinWidth">500</x:Double>
+        <x:Double x:Key="PanelMaxWidth">600</x:Double>
+        <x:Double x:Key="PanelPreferredWidth">500</x:Double>
 
         <x:Double x:Key="TileMinWidth">100</x:Double>
         <x:Double x:Key="TileMaxWidth">150</x:Double>
@@ -98,7 +98,18 @@
         <Setter Property="Background" Value="{DynamicResource EditorPanelElevated}"/>
         <Setter Property="Foreground" Value="{DynamicResource EditorTextPrimary}"/>
         <Setter Property="BorderBrush" Value="{DynamicResource EditorPanelBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
         <Setter Property="CornerRadius" Value="{StaticResource RadiusMedium}"/>
+        <Setter Property="Padding" Value="10,7"/>
+    </Style>
+
+    <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="{DynamicResource EditorFocusRing}"/>
+        <Setter Property="BorderThickness" Value="1.5"/>
+    </Style>
+
+    <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
+        <Setter Property="BorderBrush" Value="{DynamicResource EditorPanelBorderLight}"/>
     </Style>
 
     <Style Selector="Button">
@@ -180,6 +191,8 @@
     <Style Selector="TreeViewItem">
         <Setter Property="FontSize" Value="{StaticResource FontSizeBody}"/>
         <Setter Property="Foreground" Value="{DynamicResource EditorTextPrimary}"/>
+        <Setter Property="Padding" Value="2,1"/>
+        <Setter Property="MinHeight" Value="32"/>
     </Style>
 
     <Style Selector="ListBoxItem">
@@ -219,6 +232,34 @@
 
     <Style Selector="ScrollViewer">
         <Setter Property="Background" Value="Transparent"/>
+    </Style>
+
+    <Style Selector="ScrollBar">
+        <Setter Property="Width" Value="8"/>
+        <Setter Property="MinWidth" Value="8"/>
+    </Style>
+
+    <Style Selector="ScrollBar /template/ Thumb">
+        <Setter Property="Background" Value="{DynamicResource EditorScrollThumb}"/>
+        <Setter Property="MinHeight" Value="24"/>
+        <Setter Property="Width" Value="6"/>
+        <Setter Property="Margin" Value="1,0"/>
+    </Style>
+
+    <Style Selector="ScrollBar /template/ Thumb:pointerover">
+        <Setter Property="Background" Value="{DynamicResource EditorScrollThumbHover}"/>
+        <Setter Property="Width" Value="8"/>
+        <Setter Property="Margin" Value="0"/>
+    </Style>
+
+    <Style Selector="ScrollBar /template/ RepeatButton#PART_LineUpButton">
+        <Setter Property="Height" Value="0"/>
+        <Setter Property="MinHeight" Value="0"/>
+    </Style>
+
+    <Style Selector="ScrollBar /template/ RepeatButton#PART_LineDownButton">
+        <Setter Property="Height" Value="0"/>
+        <Setter Property="MinHeight" Value="0"/>
     </Style>
 
     <Style Selector="Border.editor-panel">
@@ -364,6 +405,76 @@
 
     <Style Selector="ListBox">
         <Setter Property="Background" Value="Transparent"/>
+    </Style>
+
+    <Style Selector="TextBlock.label">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
+        <Setter Property="Foreground" Value="{DynamicResource EditorTextSecondary}"/>
+        <Setter Property="Margin" Value="2,0,0,2"/>
+        <Setter Property="TextTrimming" Value="CharacterEllipsis"/>
+    </Style>
+
+    <Style Selector="TextBlock.section-header">
+        <Setter Property="FontSize" Value="{StaticResource FontSizeCaption}"/>
+        <Setter Property="FontWeight" Value="SemiBold"/>
+        <Setter Property="Foreground" Value="{DynamicResource EditorTextMuted}"/>
+        <Setter Property="Margin" Value="0,4,0,6"/>
+    </Style>
+
+    <Style Selector="Border.component-card">
+        <Setter Property="Background" Value="{DynamicResource EditorSurfaceRaised}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource EditorPanelBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusMedium}"/>
+        <Setter Property="Padding" Value="0"/>
+        <Setter Property="Margin" Value="0,0,0,6"/>
+    </Style>
+
+    <Style Selector="Border.component-card:pointerover">
+        <Setter Property="BorderBrush" Value="{DynamicResource EditorPanelBorderLight}"/>
+    </Style>
+
+    <Style Selector="Border.component-header">
+        <Setter Property="Padding" Value="10,8"/>
+        <Setter Property="Cursor" Value="Hand"/>
+    </Style>
+
+    <Style Selector="Border.component-header:pointerover">
+        <Setter Property="Background" Value="{DynamicResource EditorHover}"/>
+    </Style>
+
+    <Style Selector="Border.component-body">
+        <Setter Property="Padding" Value="12,8,12,12"/>
+        <Setter Property="Background" Value="{DynamicResource EditorSurfaceInset}"/>
+    </Style>
+
+    <Style Selector="Border.transform-section">
+        <Setter Property="Background" Value="{DynamicResource EditorSurfaceRaised}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource EditorPanelBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusMedium}"/>
+        <Setter Property="Padding" Value="14"/>
+        <Setter Property="Margin" Value="0,0,0,12"/>
+    </Style>
+
+    <Style Selector="Separator.thin">
+        <Setter Property="Height" Value="1"/>
+        <Setter Property="Background" Value="{DynamicResource EditorPanelBorder}"/>
+        <Setter Property="Margin" Value="0"/>
+    </Style>
+
+    <Style Selector="Border.inspector-header">
+        <Setter Property="Background" Value="{DynamicResource EditorSurfaceRaised}"/>
+        <Setter Property="BorderBrush" Value="{DynamicResource EditorPanelBorder}"/>
+        <Setter Property="BorderThickness" Value="1"/>
+        <Setter Property="CornerRadius" Value="{StaticResource RadiusMedium}"/>
+        <Setter Property="Padding" Value="12,10"/>
+        <Setter Property="Margin" Value="0,0,0,12"/>
+    </Style>
+
+    <Style Selector="Slider /template/ Thumb">
+        <Setter Property="Width" Value="14"/>
+        <Setter Property="Height" Value="14"/>
     </Style>
 
 </Styles>

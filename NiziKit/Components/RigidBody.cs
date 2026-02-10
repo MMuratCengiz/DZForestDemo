@@ -1,10 +1,12 @@
+using System.Numerics;
 using BepuPhysics;
+using NiziKit.Application.Timing;
 using NiziKit.Physics;
 
 namespace NiziKit.Components;
 
 [NiziComponent]
-public partial class RigidbodyComponent
+public partial class Rigidbody
 {
     [JsonProperty("shape")]
     public partial PhysicsShape Shape { get; set; }
@@ -25,10 +27,181 @@ public partial class RigidbodyComponent
     internal StaticHandle? StaticHandle { get; set; }
 
     public bool IsRegistered => BodyHandle.HasValue || StaticHandle.HasValue;
+    public bool IsDynamic => BodyType == PhysicsBodyType.Dynamic;
+    public bool IsStatic => BodyType == PhysicsBodyType.Static;
+    public bool IsKinematic => BodyType == PhysicsBodyType.Kinematic;
 
-    public static RigidbodyComponent Dynamic(PhysicsShape shape, float mass = 1f)
+    public Vector3 Velocity
     {
-        return new RigidbodyComponent
+        get => IsRegistered ? Core.World.PhysicsWorld.GetVelocity(Owner!.Id) : Vector3.Zero;
+        set
+        {
+            if (IsRegistered)
+            {
+                Core.World.PhysicsWorld.SetVelocity(Owner!.Id, value);
+            }
+        }
+    }
+
+    public Vector3 AngularVelocity
+    {
+        get => IsRegistered ? Core.World.PhysicsWorld.GetAngularVelocity(Owner!.Id) : Vector3.Zero;
+        set
+        {
+            if (IsRegistered)
+            {
+                Core.World.PhysicsWorld.SetAngularVelocity(Owner!.Id, value);
+            }
+        }
+    }
+
+    public Vector3 Position
+    {
+        get
+        {
+            if (!IsRegistered || Owner == null)
+            {
+                return Vector3.Zero;
+            }
+
+            var pose = Core.World.PhysicsWorld.GetPose(Owner.Id);
+            return pose?.Position ?? Owner.LocalPosition;
+        }
+    }
+
+    public Quaternion Rotation
+    {
+        get
+        {
+            if (!IsRegistered || Owner == null)
+            {
+                return Quaternion.Identity;
+            }
+
+            var pose = Core.World.PhysicsWorld.GetPose(Owner.Id);
+            return pose?.Rotation ?? Owner.LocalRotation;
+        }
+    }
+
+    public bool IsSleeping => IsRegistered && Core.World.PhysicsWorld.IsSleeping(Owner!.Id);
+
+    public Rigidbody()
+    {
+        Shape = PhysicsShape.Cube(1f);
+        Mass = 1f;
+        SpeculativeMargin = 0.1f;
+        SleepThreshold = 0.01f;
+    }
+
+    public void AddForce(Vector3 force)
+    {
+        if (!IsRegistered)
+        {
+            return;
+        }
+
+        Core.World.PhysicsWorld.ApplyImpulse(Owner!.Id, force * Time.DeltaTime);
+    }
+
+    public void AddForce(Vector3 force, ForceMode mode)
+    {
+        if (!IsRegistered)
+        {
+            return;
+        }
+
+        var id = Owner!.Id;
+        var world = Core.World.PhysicsWorld;
+        switch (mode)
+        {
+            case ForceMode.Force:
+                world.ApplyImpulse(id, force * Time.DeltaTime);
+                break;
+            case ForceMode.Impulse:
+                world.ApplyImpulse(id, force);
+                break;
+            case ForceMode.Acceleration:
+                world.ApplyImpulse(id, force * Mass * Time.DeltaTime);
+                break;
+            case ForceMode.VelocityChange:
+                world.SetVelocity(id, world.GetVelocity(id) + force);
+                break;
+        }
+    }
+
+    public void AddForceAtPosition(Vector3 force, Vector3 worldPoint)
+    {
+        if (!IsRegistered)
+        {
+            return;
+        }
+
+        Core.World.PhysicsWorld.ApplyImpulse(Owner!.Id, force * Time.DeltaTime, worldPoint);
+    }
+
+    public void AddTorque(Vector3 torque)
+    {
+        if (!IsRegistered)
+        {
+            return;
+        }
+
+        Core.World.PhysicsWorld.ApplyAngularImpulse(Owner!.Id, torque * Time.DeltaTime);
+    }
+
+    public void AddTorque(Vector3 torque, ForceMode mode)
+    {
+        if (!IsRegistered)
+        {
+            return;
+        }
+
+        var id = Owner!.Id;
+        var world = Core.World.PhysicsWorld;
+        switch (mode)
+        {
+            case ForceMode.Force:
+                world.ApplyAngularImpulse(id, torque * Time.DeltaTime);
+                break;
+            case ForceMode.Impulse:
+                world.ApplyAngularImpulse(id, torque);
+                break;
+            case ForceMode.Acceleration:
+                world.ApplyAngularImpulse(id, torque * Mass * Time.DeltaTime);
+                break;
+            case ForceMode.VelocityChange:
+                world.SetAngularVelocity(id, world.GetAngularVelocity(id) + torque);
+                break;
+        }
+    }
+
+    public void MovePosition(Vector3 position)
+    {
+        if (Owner != null)
+        {
+            Owner.LocalPosition = position;
+        }
+    }
+
+    public void MoveRotation(Quaternion rotation)
+    {
+        if (Owner != null)
+        {
+            Owner.LocalRotation = rotation;
+        }
+    }
+
+    public void WakeUp()
+    {
+        if (IsRegistered)
+        {
+            Core.World.PhysicsWorld.Awake(Owner!.Id);
+        }
+    }
+
+    public static Rigidbody Dynamic(PhysicsShape shape, float mass = 1f)
+    {
+        return new Rigidbody
         {
             Shape = shape,
             BodyType = PhysicsBodyType.Dynamic,
@@ -36,9 +209,9 @@ public partial class RigidbodyComponent
         };
     }
 
-    public static RigidbodyComponent Static(PhysicsShape shape)
+    public static Rigidbody Static(PhysicsShape shape)
     {
-        return new RigidbodyComponent
+        return new Rigidbody
         {
             Shape = shape,
             BodyType = PhysicsBodyType.Static,
@@ -47,9 +220,9 @@ public partial class RigidbodyComponent
         };
     }
 
-    public static RigidbodyComponent Kinematic(PhysicsShape shape)
+    public static Rigidbody Kinematic(PhysicsShape shape)
     {
-        return new RigidbodyComponent
+        return new Rigidbody
         {
             Shape = shape,
             BodyType = PhysicsBodyType.Kinematic,

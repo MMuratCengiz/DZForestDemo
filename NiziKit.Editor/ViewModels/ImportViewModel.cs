@@ -328,7 +328,7 @@ public partial class ImportViewModel : ObservableObject
                     Dispatcher.UIThread.Post(() => Progress = (i + 1) * 100.0 / total);
                 }
 
-                var succeeded = items.Count(i => i.ImportComplete && i.ImportError == null);
+                var succeeded = items.Count(i => i is { ImportComplete: true, ImportError: null });
                 var failed = items.Count(i => i.ImportError != null);
 
                 Dispatcher.UIThread.Post(() =>
@@ -342,7 +342,7 @@ public partial class ImportViewModel : ObservableObject
                     IsImporting = false;
                     ImportSucceeded = true;
 
-                    var done = ImportItems.Where(i => i.ImportComplete && i.ImportError == null).ToList();
+                    var done = ImportItems.Where(i => i is { ImportComplete: true, ImportError: null }).ToList();
                     foreach (var d in done)
                     {
                         ImportItems.Remove(d);

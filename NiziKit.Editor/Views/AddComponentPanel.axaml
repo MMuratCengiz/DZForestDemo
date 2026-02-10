@@ -1,45 +1,74 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:NiziKit.Editor.ViewModels"
+             xmlns:ui="using:FluentAvalonia.UI.Controls"
              x:Class="NiziKit.Editor.Views.AddComponentPanel"
              x:DataType="vm:GameObjectViewModel">
 
-    <Border Background="{StaticResource EditorSurfaceRaised}"
-            BorderBrush="{StaticResource EditorPanelBorder}"
-            BorderThickness="1"
-            Padding="12"
-            Margin="0,12,0,0">
-        <StackPanel Spacing="8">
-            <Border Background="{StaticResource EditorAccentBrush}"
-                    Padding="10,8"
-                    Margin="-12,-12,-12,8">
-                <TextBlock Text="Add Component"
-                           FontWeight="SemiBold"
-                           Foreground="#FFFFFF"/>
-            </Border>
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+        <Border Grid.Row="0"
+                Background="{StaticResource EditorAccentGradient}"
+                Padding="16,12">
+            <Grid ColumnDefinitions="*,Auto">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <ui:SymbolIcon Symbol="Add" FontSize="{StaticResource IconSizeSmall}" Foreground="#FFFFFF"/>
+                    <TextBlock Text="Add Component"
+                               Classes="subtitle"
+                               Foreground="#FFFFFF"
+                               VerticalAlignment="Center"/>
+                </StackPanel>
+                <Button Grid.Column="1"
+                        Command="{Binding ToggleAddComponentPanelCommand}"
+                        ToolTip.Tip="Close"
+                        Padding="8"
+                        Classes="ghost">
+                    <ui:SymbolIcon Symbol="Dismiss" FontSize="{StaticResource IconSizeSmall}" Foreground="#FFFFFF"/>
+                </Button>
+            </Grid>
+        </Border>
 
-            <ScrollViewer MaxHeight="280"
-                          VerticalScrollBarVisibility="Auto">
-                <ItemsControl x:Name="ComponentTypesList">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Button Content="{Binding Name}"
-                                    HorizontalAlignment="Stretch"
-                                    HorizontalContentAlignment="Left"
-                                    Padding="12,10"
-                                    Margin="0,2"
-                                    Click="OnComponentTypeClicked"/>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
+        <Border Grid.Row="1" Padding="12,12,12,8">
+            <TextBox x:Name="SearchBox"
+                     Watermark="Search components..."/>
+        </Border>
 
+        <ScrollViewer Grid.Row="2"
+                      VerticalScrollBarVisibility="Auto"
+                      Padding="12,0">
+            <StackPanel Spacing="4">
+                <!-- Category list (dynamically populated) -->
+                <StackPanel x:Name="CategoryView" Spacing="4"/>
+
+                <!-- Items view (drill-in for a single category) -->
+                <StackPanel x:Name="ItemsView" Spacing="4" IsVisible="False">
+                    <Button x:Name="BackButton"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left"
+                            Padding="14,12"
+                            Classes="ghost"
+                            Click="OnBackClicked">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <ui:SymbolIcon Symbol="ChevronLeft"
+                                           FontSize="{StaticResource IconSizeSmall}"
+                                           Foreground="{DynamicResource EditorTextSecondary}"
+                                           VerticalAlignment="Center"/>
+                            <TextBlock x:Name="CategoryTitle" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+                    <StackPanel x:Name="ItemsList" Spacing="2"/>
+                </StackPanel>
+
+                <!-- Search results (grouped by category headers) -->
+                <StackPanel x:Name="SearchResultsView" Spacing="2" IsVisible="False"/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Row="3" Padding="12,8,12,12">
             <Button Content="Cancel"
                     HorizontalAlignment="Stretch"
                     HorizontalContentAlignment="Center"
-                    Padding="12,10"
-                    Margin="0,8,0,0"
+                    Padding="14,12"
                     Command="{Binding ToggleAddComponentPanelCommand}"/>
-        </StackPanel>
-    </Border>
+        </Border>
+    </Grid>
 </UserControl>

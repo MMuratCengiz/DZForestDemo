@@ -82,4 +82,9 @@ public static class Physics
     {
         World.Awake(gameObjectId);
     }
+
+    public static bool IsSleeping(int gameObjectId)
+    {
+        return World.IsSleeping(gameObjectId);
+    }
 }

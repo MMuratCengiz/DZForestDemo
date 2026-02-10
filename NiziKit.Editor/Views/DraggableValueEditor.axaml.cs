@@ -81,6 +81,8 @@ public partial class DraggableValueEditor : UserControl
             _dragLabel.PointerMoved += OnDragLabelPointerMoved;
             _dragLabel.PointerReleased += OnDragLabelPointerReleased;
             _dragLabel.PointerCaptureLost += OnDragLabelPointerCaptureLost;
+            _dragLabel.PointerEntered += OnDragLabelPointerEntered;
+            _dragLabel.PointerExited += OnDragLabelPointerExited;
         }
 
         if (_valueTextBox != null)
@@ -112,7 +114,7 @@ public partial class DraggableValueEditor : UserControl
 
     private void UpdateDisplay()
     {
-        if (_valueTextBox != null && !_valueTextBox.IsFocused)
+        if (_valueTextBox is { IsFocused: false })
         {
             _valueTextBox.Text = Value.ToString(StringFormat);
         }
@@ -131,6 +133,7 @@ public partial class DraggableValueEditor : UserControl
             _dragStartPoint = e.GetPosition(_dragLabel);
             _dragStartValue = Value;
             e.Pointer.Capture(_dragLabel);
+            UpdateDragLabelBackground(true);
             e.Handled = true;
         }
     }
@@ -158,6 +161,34 @@ public partial class DraggableValueEditor : UserControl
     private void OnDragLabelPointerCaptureLost(object? sender, PointerCaptureLostEventArgs e)
     {
         _isDragging = false;
+        UpdateDragLabelBackground(false);
+    }
+
+    private void OnDragLabelPointerEntered(object? sender, PointerEventArgs e)
+    {
+        UpdateDragLabelBackground(true);
+    }
+
+    private void OnDragLabelPointerExited(object? sender, PointerEventArgs e)
+    {
+        if (!_isDragging)
+        {
+            UpdateDragLabelBackground(false);
+        }
+    }
+
+    private void UpdateDragLabelBackground(bool highlighted)
+    {
+        if (_dragLabel == null)
+        {
+            return;
+        }
+
+        var key = highlighted ? "EditorDragLabelHover" : "EditorDragLabelBg";
+        if (this.TryFindResource(key, out var brush) && brush is IBrush b)
+        {
+            _dragLabel.Background = b;
+        }
     }
 
     private void OnValueTextBoxLostFocus(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
@@ -170,6 +201,7 @@ public partial class DraggableValueEditor : UserControl
         if (e.Key == Key.Enter)
         {
             TryParseAndSetValue();
+            _valueTextBox?.SelectAll();
             e.Handled = true;
         }
         else if (e.Key == Key.Escape)

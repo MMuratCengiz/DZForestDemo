@@ -1,17 +1,5 @@
 using NiziKit.Build;
 
-if (args.Length > 0 && args[0] == "generate-manifest")
-{
-    if (args.Length < 3)
-    {
-        Console.WriteLine("Usage: NiziKit.Build generate-manifest <assets-dir> <output-dir>");
-        return 1;
-    }
-
-    ManifestGenerator.Generate(args[1], args[2]);
-    return 0;
-}
-
 if (args.Length > 0 && args[0] == "build-packs")
 {
     if (args.Length < 3)

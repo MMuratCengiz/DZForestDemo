@@ -161,12 +161,12 @@ public sealed class DenOfIzTopLevel : EmbeddableControlRoot
                 return true;
             }
 
-            if (current is Border border && border.Background != null)
+            if (current is Border { Background: not null })
             {
                 return true;
             }
 
-            if (current is Panel panel && panel.Background != null)
+            if (current is Panel { Background: not null })
             {
                 return true;
             }

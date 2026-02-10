@@ -492,12 +492,12 @@ public sealed class ShaderProgramJson
             target.Type = overlay.Type;
         }
 
-        if (overlay.Stages != null && overlay.Stages.Count > 0)
+        if (overlay.Stages is { Count: > 0 })
         {
             target.Stages = overlay.Stages;
         }
 
-        if (overlay.Defines != null && overlay.Defines.Count > 0)
+        if (overlay.Defines is { Count: > 0 })
         {
             target.Defines ??= new Dictionary<string, string>();
             foreach (var (key, value) in overlay.Defines)
@@ -653,7 +653,7 @@ public sealed class ShaderProgramJson
             Blend = blendDesc
         };
 
-        using var renderTargets = pipeline.RenderTargets != null && pipeline.RenderTargets.Count > 0
+        using var renderTargets = pipeline.RenderTargets is { Count: > 0 }
             ? RenderTargetDescArray.Create(pipeline.RenderTargets.Select(rt => new RenderTargetDesc
             {
                 Format = rt.Format ?? backBufferFormat,
@@ -691,7 +691,7 @@ public sealed class ShaderProgramJson
             Blend = blendDesc
         };
 
-        using var renderTargets = pipeline.RenderTargets != null && pipeline.RenderTargets.Count > 0
+        using var renderTargets = pipeline.RenderTargets is { Count: > 0 }
             ? RenderTargetDescArray.Create(pipeline.RenderTargets.Select(rt => new RenderTargetDesc
             {
                 Format = rt.Format ?? backBufferFormat,
@@ -928,7 +928,7 @@ public sealed class ShaderProgramJson
             HitGroupType = json.HitGroupType
         };
 
-        if (json.LocalBindings != null && json.LocalBindings.Count > 0)
+        if (json.LocalBindings is { Count: > 0 })
         {
             var bindings = json.LocalBindings.Select(b => new ResourceBindingSlot
             {

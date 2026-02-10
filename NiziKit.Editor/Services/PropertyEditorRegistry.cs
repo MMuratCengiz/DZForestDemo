@@ -87,7 +87,7 @@ public static class PropertyEditorRegistry
             return factory(context);
         }
 
-        if (propType.IsValueType && !propType.IsPrimitive && !propType.IsEnum)
+        if (propType is { IsValueType: true, IsPrimitive: false, IsEnum: false })
         {
             return CreateStructEditor(context);
         }

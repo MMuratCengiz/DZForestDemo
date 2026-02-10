@@ -21,15 +21,7 @@ public class World : IDisposable
 
     public static void LoadScene(string scenePath)
     {
-        if (scenePath.EndsWith(".niziscene.json", StringComparison.OrdinalIgnoreCase) ||
-            scenePath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
-        {
-            LoadScene(new JsonScene(scenePath));
-        }
-        else
-        {
-            throw new ArgumentException($"Unsupported scene format: {scenePath}. Expected .niziscene.json");
-        }
+        LoadScene(new JsonScene(scenePath));
     }
 
     public static Task LoadSceneAsync(Scene scene, CancellationToken ct = default) => Instance._LoadSceneAsync(scene, ct);

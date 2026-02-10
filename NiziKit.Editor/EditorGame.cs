@@ -9,6 +9,7 @@ using NiziKit.Editor.Gizmos;
 using NiziKit.Editor.ViewModels;
 using NiziKit.Graphics;
 using NiziKit.Graphics.Renderer;
+using NiziKit.Physics;
 using NiziKit.Skia;
 using NiziKit.Skia.Avalonia;
 
@@ -210,7 +211,7 @@ public sealed class EditorGame : Game
                 _topLevel.InjectTextInput(text);
             }
         }
-        else if (ev.Type == EventType.WindowEvent && ev.Window.Event == WindowEventType.SizeChanged)
+        else if (ev is { Type: EventType.WindowEvent, Window.Event: WindowEventType.SizeChanged })
         {
             var width = (uint)ev.Window.Data1;
             var height = (uint)ev.Window.Data2;
@@ -331,6 +332,20 @@ public sealed class EditorGame : Game
             }
         }
 
+        foreach (var obj in scene.RootObjects)
+        {
+            if (obj.GetComponent<MeshComponent>() != null)
+            {
+                continue;
+            }
+
+            if (RayPointIntersection(ray, obj.WorldPosition, 0.5f, out var distance) && distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestObject = obj;
+            }
+        }
+
         if (closestObject != null)
         {
             var objectVm = FindGameObjectViewModel(viewModel.RootObjects, closestObject);
@@ -340,6 +355,34 @@ public sealed class EditorGame : Game
         {
             viewModel.SelectObject(null);
         }
+    }
+
+    private static bool RayPointIntersection(Ray ray, Vector3 point, float radius, out float distance)
+    {
+        distance = float.MaxValue;
+        var oc = ray.Origin - point;
+        var b = Vector3.Dot(oc, ray.Direction);
+        var c = Vector3.Dot(oc, oc) - radius * radius;
+        var discriminant = b * b - c;
+
+        if (discriminant < 0)
+        {
+            return false;
+        }
+
+        var t = -b - MathF.Sqrt(discriminant);
+        if (t < 0)
+        {
+            t = -b + MathF.Sqrt(discriminant);
+        }
+
+        if (t < 0)
+        {
+            return false;
+        }
+
+        distance = t;
+        return true;
     }
 
     private static GameObjectViewModel? FindGameObjectViewModel(IEnumerable<GameObjectViewModel> viewModels, GameObject target)

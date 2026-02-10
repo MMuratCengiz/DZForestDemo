@@ -1,7 +1,5 @@
 using System.Buffers.Binary;
 using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace NiziKit.Build;
 
@@ -12,16 +10,14 @@ public static class NiziPackBuilder
     private const int HeaderSize = 64;
     private const int Alignment = 8;
 
-    public static void Build(string packJsonPath, string assetsRoot, string outputPath)
+    private static readonly HashSet<string> AssetExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        var manifestJson = File.ReadAllText(packJsonPath);
-        var manifest = JsonSerializer.Deserialize<PackManifest>(manifestJson)
-            ?? throw new InvalidOperationException($"Failed to parse manifest: {packJsonPath}");
+        ".dztex", ".nizimesh", ".ozzskel", ".ozzanim"
+    };
 
-        var packDir = Path.GetDirectoryName(packJsonPath) ?? assetsRoot;
-        var relativePath = Path.GetRelativePath(assetsRoot, packJsonPath).Replace('\\', '/');
-
-        var files = CollectFiles(manifest, assetsRoot, relativePath);
+    public static void Build(string assetsRoot, string outputPath)
+    {
+        var files = ScanAssetFiles(assetsRoot);
 
         using var output = File.Create(outputPath);
         WritePackFile(output, files, assetsRoot);
@@ -29,53 +25,23 @@ public static class NiziPackBuilder
         Console.WriteLine($"  Built: {Path.GetFileName(outputPath)} ({files.Count} files, {output.Length:N0} bytes)");
     }
 
-    private static List<(string path, string fullPath)> CollectFiles(PackManifest manifest, string assetsRoot, string manifestRelativePath)
+    private static List<(string path, string fullPath)> ScanAssetFiles(string assetsRoot)
     {
         var files = new List<(string path, string fullPath)>();
 
-        var manifestFullPath = Path.Combine(assetsRoot, manifestRelativePath.Replace('/', Path.DirectorySeparatorChar));
-        files.Add(("pack.nizipack.json", manifestFullPath));
-
-        foreach (var path in manifest.Textures)
+        foreach (var file in Directory.EnumerateFiles(assetsRoot, "*.*", SearchOption.AllDirectories))
         {
-            AddFile(files, path, assetsRoot);
-        }
+            var ext = Path.GetExtension(file);
+            if (!AssetExtensions.Contains(ext))
+            {
+                continue;
+            }
 
-        foreach (var path in manifest.Meshes)
-        {
-            AddFile(files, path, assetsRoot);
-        }
-
-        foreach (var path in manifest.Skeletons)
-        {
-            AddFile(files, path, assetsRoot);
-        }
-
-        foreach (var path in manifest.Animations)
-        {
-            AddFile(files, path, assetsRoot);
+            var relativePath = Path.GetRelativePath(assetsRoot, file).Replace('\\', '/');
+            files.Add((relativePath, file));
         }
 
         return files;
-    }
-
-    private static void AddFile(List<(string path, string fullPath)> files, string path, string assetsRoot)
-    {
-        var normalizedPath = path.Replace('\\', '/').TrimStart('/');
-        var fullPath = Path.Combine(assetsRoot, normalizedPath.Replace('/', Path.DirectorySeparatorChar));
-
-        if (!File.Exists(fullPath))
-        {
-            Console.WriteLine($"  Warning: File not found: {normalizedPath}");
-            return;
-        }
-
-        if (files.Any(f => f.path.Equals(normalizedPath, StringComparison.OrdinalIgnoreCase)))
-        {
-            return;
-        }
-
-        files.Add((normalizedPath, fullPath));
     }
 
     private static void WritePackFile(FileStream output, List<(string path, string fullPath)> files, string assetsRoot)
@@ -174,50 +140,15 @@ public static class NiziPackBuilder
 
         Directory.CreateDirectory(outputDir);
 
-        var packJsonFiles = Directory.GetFiles(assetsDir, "*.nizipack.json", SearchOption.AllDirectories);
+        var outputPath = Path.Combine(outputDir, "default.nizipack");
 
-        if (packJsonFiles.Length == 0)
+        try
         {
-            Console.WriteLine("No .nizipack.json files found");
-            return;
+            Build(assetsDir, outputPath);
         }
-
-        Console.WriteLine($"Found {packJsonFiles.Length} pack(s)");
-
-        foreach (var packJsonPath in packJsonFiles)
+        catch (Exception ex)
         {
-            var packName = Path.GetFileNameWithoutExtension(Path.GetFileNameWithoutExtension(packJsonPath));
-            var outputPath = Path.Combine(outputDir, packName + ".nizipack");
-
-            try
-            {
-                Build(packJsonPath, assetsDir, outputPath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"  Error building {packName}: {ex.Message}");
-            }
+            Console.WriteLine($"  Error building default pack: {ex.Message}");
         }
-    }
-
-    private class PackManifest
-    {
-        [JsonPropertyName("name")]
-        public string Name { get; set; } = string.Empty;
-
-        [JsonPropertyName("version")]
-        public string Version { get; set; } = "1.0.0";
-
-        [JsonPropertyName("textures")]
-        public List<string> Textures { get; set; } = [];
-
-        [JsonPropertyName("meshes")]
-        public List<string> Meshes { get; set; } = [];
-
-        [JsonPropertyName("skeletons")]
-        public List<string> Skeletons { get; set; } = [];
-
-        [JsonPropertyName("animations")]
-        public List<string> Animations { get; set; } = [];
     }
 }

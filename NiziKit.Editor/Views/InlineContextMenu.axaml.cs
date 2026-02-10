@@ -49,20 +49,23 @@ public partial class InlineContextMenu : UserControl
             }
             else if (item.Children?.Any() == true)
             {
-                // Submenu - create expandable section
-                var expander = new Expander
+                MenuItems.Children.Add(new Border
                 {
-                    Header = CreateMenuItemContent(item),
-                    Padding = new Thickness(0),
-                    HorizontalAlignment = HorizontalAlignment.Stretch
-                };
+                    Height = 1,
+                    Margin = new Thickness(8, 4),
+                    Background = Avalonia.Application.Current?.FindResource("DividerStrokeColorDefaultBrush") as IBrush
+                });
 
-                var subPanel = new StackPanel { Spacing = 0, Margin = new Thickness(16, 0, 0, 0) };
+                var header = CreateMenuItemContent(item);
+                header.Margin = new Thickness(12, 6, 12, 2);
+                header.Opacity = 0.6;
+                MenuItems.Children.Add(header);
+
                 foreach (var child in item.Children)
                 {
                     if (child.IsSeparator)
                     {
-                        subPanel.Children.Add(new Border
+                        MenuItems.Children.Add(new Border
                         {
                             Height = 1,
                             Margin = new Thickness(8, 4),
@@ -71,12 +74,9 @@ public partial class InlineContextMenu : UserControl
                     }
                     else
                     {
-                        subPanel.Children.Add(CreateMenuButton(child));
+                        MenuItems.Children.Add(CreateMenuButton(child));
                     }
                 }
-
-                expander.Content = subPanel;
-                MenuItems.Children.Add(expander);
             }
             else
             {

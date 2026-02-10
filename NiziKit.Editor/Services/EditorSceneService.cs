@@ -5,6 +5,8 @@ using NiziKit.Assets.Serde;
 using NiziKit.Components;
 using NiziKit.ContentPipeline;
 using NiziKit.Core;
+using NiziKit.Light;
+using NiziKit.Physics;
 
 namespace NiziKit.Editor.Services;
 
@@ -47,7 +49,7 @@ public class EditorSceneService
         {
             foreach (var prop in type.GetProperties())
             {
-                if (prop.CanRead && prop.CanWrite && prop.Name != "Owner")
+                if (prop is { CanRead: true, CanWrite: true } && prop.Name != "Owner")
                 {
                     try
                     {
@@ -135,8 +137,18 @@ public class EditorSceneService
 
         foreach (var obj in scene.RootObjects)
         {
-            if (HasCameraComponent(obj) || IsLightObject(obj))
+            if (HasCameraComponent(obj))
             {
+                continue;
+            }
+
+            if (IsLightObject(obj))
+            {
+                var lightJson = ConvertLightToJson(obj);
+                if (lightJson != null)
+                {
+                    json.Lights.Add(lightJson);
+                }
                 continue;
             }
 
@@ -153,8 +165,56 @@ public class EditorSceneService
 
     private static bool IsLightObject(GameObject obj)
     {
-        var typeName = obj.GetType().Name;
-        return typeName.Contains("Light");
+        return obj is DirectionalLight or PointLight or SpotLight;
+    }
+
+    private static LightJson? ConvertLightToJson(GameObject obj)
+    {
+        if (obj is DirectionalLight directional)
+        {
+            return new LightJson
+            {
+                Type = LightType.Directional,
+                Name = directional.Name,
+                Direction = [directional.Direction.X, directional.Direction.Y, directional.Direction.Z],
+                Color = [directional.Color.X, directional.Color.Y, directional.Color.Z],
+                Intensity = directional.Intensity,
+                CastsShadows = directional.CastsShadows
+            };
+        }
+
+        if (obj is PointLight point)
+        {
+            return new LightJson
+            {
+                Type = LightType.Point,
+                Name = point.Name,
+                Position = [point.LocalPosition.X, point.LocalPosition.Y, point.LocalPosition.Z],
+                Color = [point.Color.X, point.Color.Y, point.Color.Z],
+                Intensity = point.Intensity,
+                Range = point.Range,
+                CastsShadows = point.CastsShadows
+            };
+        }
+
+        if (obj is SpotLight spot)
+        {
+            return new LightJson
+            {
+                Type = LightType.Spot,
+                Name = spot.Name,
+                Position = [spot.LocalPosition.X, spot.LocalPosition.Y, spot.LocalPosition.Z],
+                Direction = [spot.Direction.X, spot.Direction.Y, spot.Direction.Z],
+                Color = [spot.Color.X, spot.Color.Y, spot.Color.Z],
+                Intensity = spot.Intensity,
+                Range = spot.Range,
+                InnerAngle = spot.InnerConeAngle,
+                OuterAngle = spot.OuterConeAngle,
+                CastsShadows = spot.CastsShadows
+            };
+        }
+
+        return null;
     }
 
     private CameraJson ConvertCameraComponentToJson(CameraComponent camera)
@@ -243,11 +303,7 @@ public class EditorSceneService
     private ComponentJson? ConvertComponentToJson(IComponent component)
     {
         var type = component.GetType();
-        var typeName = type.Name.ToLowerInvariant();
-        if (typeName.EndsWith("component"))
-        {
-            typeName = typeName[..^9];
-        }
+        var typeName = type.FullName ?? type.Name;
 
         var json = new ComponentJson
         {
@@ -275,7 +331,6 @@ public class EditorSceneService
         }
         else if (component is SurfaceComponent surfaceComp)
         {
-            json.Type = "surface";
             if (!string.IsNullOrEmpty(surfaceComp.AlbedoRef))
             {
                 json.Properties["albedo"] = JsonSerializer.SerializeToElement(surfaceComp.AlbedoRef);
@@ -355,11 +410,30 @@ public class EditorSceneService
                 json.Properties["animations"] = JsonSerializer.SerializeToElement(externalAnimations);
             }
         }
+        else if (component is Rigidbody rbComp)
+        {
+            json.Properties["bodyType"] = JsonSerializer.SerializeToElement(rbComp.BodyType.ToString().ToLowerInvariant());
+            json.Properties["mass"] = JsonSerializer.SerializeToElement(rbComp.Mass);
+            json.Properties["shape"] = SerializePhysicsShape(rbComp.Shape);
+            if (rbComp.SpeculativeMargin != 0f)
+            {
+                json.Properties["speculativeMargin"] = JsonSerializer.SerializeToElement(rbComp.SpeculativeMargin);
+            }
+
+            if (rbComp.SleepThreshold != 0f)
+            {
+                json.Properties["sleepThreshold"] = JsonSerializer.SerializeToElement(rbComp.SleepThreshold);
+            }
+        }
+        else if (component is Collider colliderComp)
+        {
+            SerializeCollider(json, colliderComp);
+        }
         else
         {
             foreach (var prop in type.GetProperties())
             {
-                if (prop.CanRead && prop.Name != "Owner" && prop.PropertyType.IsPrimitive || prop.PropertyType == typeof(string))
+                if (prop.CanRead && prop.Name != "Owner" && (prop.PropertyType.IsPrimitive || prop.PropertyType == typeof(string)))
                 {
                     try
                     {
@@ -377,6 +451,60 @@ public class EditorSceneService
         }
 
         return json;
+    }
+
+    private static JsonElement SerializePhysicsShape(PhysicsShape shape)
+    {
+        var obj = new Dictionary<string, object>
+        {
+            ["type"] = shape.Type.ToString().ToLowerInvariant(),
+            ["size"] = new[] { shape.Size.X, shape.Size.Y, shape.Size.Z }
+        };
+        return JsonSerializer.SerializeToElement(obj);
+    }
+
+    private static void SerializeCollider(ComponentJson json, Collider collider)
+    {
+        if (collider is BoxCollider box)
+        {
+            json.Properties["size"] = JsonSerializer.SerializeToElement(new[] { box.Size.X, box.Size.Y, box.Size.Z });
+            json.Properties["isTrigger"] = JsonSerializer.SerializeToElement(box.IsTrigger);
+            if (box.Center != Vector3.Zero)
+            {
+                json.Properties["center"] = JsonSerializer.SerializeToElement(new[] { box.Center.X, box.Center.Y, box.Center.Z });
+            }
+        }
+        else if (collider is SphereCollider sphere)
+        {
+            json.Properties["radius"] = JsonSerializer.SerializeToElement(sphere.Radius);
+            json.Properties["isTrigger"] = JsonSerializer.SerializeToElement(sphere.IsTrigger);
+            if (sphere.Center != Vector3.Zero)
+            {
+                json.Properties["center"] = JsonSerializer.SerializeToElement(new[] { sphere.Center.X, sphere.Center.Y, sphere.Center.Z });
+            }
+        }
+        else if (collider is CapsuleCollider capsule)
+        {
+            json.Properties["radius"] = JsonSerializer.SerializeToElement(capsule.Radius);
+            json.Properties["height"] = JsonSerializer.SerializeToElement(capsule.Height);
+            json.Properties["direction"] = JsonSerializer.SerializeToElement(capsule.Direction.ToString().ToLowerInvariant());
+            json.Properties["isTrigger"] = JsonSerializer.SerializeToElement(capsule.IsTrigger);
+            if (capsule.Center != Vector3.Zero)
+            {
+                json.Properties["center"] = JsonSerializer.SerializeToElement(new[] { capsule.Center.X, capsule.Center.Y, capsule.Center.Z });
+            }
+        }
+        else if (collider is CylinderCollider cylinder)
+        {
+            json.Properties["radius"] = JsonSerializer.SerializeToElement(cylinder.Radius);
+            json.Properties["height"] = JsonSerializer.SerializeToElement(cylinder.Height);
+            json.Properties["direction"] = JsonSerializer.SerializeToElement(cylinder.Direction.ToString().ToLowerInvariant());
+            json.Properties["isTrigger"] = JsonSerializer.SerializeToElement(cylinder.IsTrigger);
+            if (cylinder.Center != Vector3.Zero)
+            {
+                json.Properties["center"] = JsonSerializer.SerializeToElement(new[] { cylinder.Center.X, cylinder.Center.Y, cylinder.Center.Z });
+            }
+        }
     }
 
     private static Vector3 QuaternionToEuler(Quaternion q)

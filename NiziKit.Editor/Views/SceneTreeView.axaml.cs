@@ -93,11 +93,19 @@ public partial class SceneTreeView : UserControl
 
     private void UpdateSceneRootSelection(bool selected)
     {
-        if (_sceneRootNode == null) return;
+        if (_sceneRootNode == null)
+        {
+            return;
+        }
+
         if (selected)
+        {
             _sceneRootNode.Classes.Add("selected");
+        }
         else
+        {
             _sceneRootNode.Classes.Remove("selected");
+        }
     }
 
     private void OnViewPointerPressed(object? sender, PointerPressedEventArgs e)
@@ -140,6 +148,29 @@ public partial class SceneTreeView : UserControl
                 Icon = Symbol.Add,
                 Command = vm.NewChildObjectCommand
             },
+            new()
+            {
+                Header = "Lights",
+                Icon = Symbol.WeatherSunnyFilled,
+                Children =
+                [
+                    new()
+                    {
+                        Header = "Directional Light",
+                        Command = vm.NewDirectionalLightCommand
+                    },
+                    new()
+                    {
+                        Header = "Point Light",
+                        Command = vm.NewPointLightCommand
+                    },
+                    new()
+                    {
+                        Header = "Spot Light",
+                        Command = vm.NewSpotLightCommand
+                    }
+                ]
+            },
             InlineMenuItem.Separator(),
             new()
             {
@@ -154,7 +185,7 @@ public partial class SceneTreeView : UserControl
 
     private void OnKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Delete && DataContext is EditorViewModel vm && vm.HasSelection)
+        if (e.Key == Key.Delete && DataContext is EditorViewModel { HasSelection: true } vm)
         {
             ShowDeleteConfirmation(vm);
             e.Handled = true;

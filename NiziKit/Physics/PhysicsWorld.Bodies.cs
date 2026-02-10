@@ -136,6 +136,15 @@ public sealed partial class PhysicsWorld
         }
     }
 
+    public bool IsSleeping(int id)
+    {
+        if (_bodyHandles.TryGetValue(id, out var handle))
+        {
+            return !_simulation.Bodies.GetBodyReference(handle).Awake;
+        }
+        return false;
+    }
+
     public BodyHandle CreateBodyDirect(BodyDescription description)
     {
         return _simulation.Bodies.Add(description);

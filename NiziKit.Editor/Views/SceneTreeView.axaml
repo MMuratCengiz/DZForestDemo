@@ -14,8 +14,9 @@
         <Grid RowDefinitions="Auto,*,Auto">
             <Border Grid.Row="0"
                     x:Name="SceneRootNode"
-                    Padding="6,8"
-                    Margin="0,0,0,4"
+                    Padding="8,8"
+                    Margin="0,0,0,2"
+                    CornerRadius="3"
                     Cursor="Hand">
                 <Border.Styles>
                     <Style Selector="Border#SceneRootNode">
@@ -23,6 +24,8 @@
                     </Style>
                     <Style Selector="Border#SceneRootNode.selected">
                         <Setter Property="Background" Value="{DynamicResource EditorSelected}"/>
+                        <Setter Property="BorderBrush" Value="{DynamicResource EditorComponentBorder}"/>
+                        <Setter Property="BorderThickness" Value="0,0,0,0"/>
                     </Style>
                     <Style Selector="Border#SceneRootNode:not(.selected):pointerover">
                         <Setter Property="Background" Value="{DynamicResource EditorHover}"/>
@@ -30,52 +33,58 @@
                 </Border.Styles>
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <PathIcon Data="M18,18H6V6H18M18,4H6A2,2 0 0,0 4,6V18A2,2 0 0,0 6,20H18A2,2 0 0,0 20,18V6C20,4.89 19.1,4 18,4Z"
-                              Width="20" Height="20"
+                              Width="{StaticResource IconSizeBase}" Height="{StaticResource IconSizeBase}"
                               Foreground="{StaticResource EditorAccentBrush}"/>
                     <TextBlock Text="{Binding SceneDisplayName, FallbackValue='Scene'}"
                                VerticalAlignment="Center"
                                FontWeight="SemiBold"/>
                 </StackPanel>
             </Border>
-            <TreeView Grid.Row="1"
-                      x:Name="SceneTree"
-                      ItemsSource="{Binding RootObjects}"
-                      SelectionMode="Single"
-                      Background="Transparent"
-                      Margin="0"
-                      PointerPressed="OnTreeViewPointerPressed">
-                <TreeView.ItemTemplate>
-                    <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:GameObjectViewModel">
-                        <Border Padding="4,6"
-                                Background="Transparent"
-                                CornerRadius="2">
-                            <StackPanel Orientation="Horizontal" Spacing="10">
-                                <PathIcon Data="{Binding TypeIconData}"
-                                          Width="20" Height="20"
-                                          Foreground="{Binding TypeIconColor}"
-                                          VerticalAlignment="Center"
-                                          Opacity="{Binding IsActive, Converter={x:Static vm:GameObjectViewModel.ActiveToOpacityConverter}}"/>
-                                <TextBlock Text="{Binding Name}"
-                                           VerticalAlignment="Center"
-                                           Foreground="{Binding IsActive, Converter={StaticResource BoolToForegroundConverter}}"/>
-                            </StackPanel>
-                        </Border>
-                    </TreeDataTemplate>
-                </TreeView.ItemTemplate>
-                <TreeView.Styles>
-                    <Style Selector="TreeViewItem">
-                        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
-                        <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
-                        <Setter Property="Padding" Value="2"/>
-                    </Style>
-                    <Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
-                        <Setter Property="Background" Value="{DynamicResource EditorSelected}"/>
-                    </Style>
-                    <Style Selector="TreeViewItem:pointerover /template/ Border#PART_LayoutRoot">
-                        <Setter Property="Background" Value="{DynamicResource EditorHover}"/>
-                    </Style>
-                </TreeView.Styles>
-            </TreeView>
+
+            <views:SmoothScrollViewer Grid.Row="1"
+                          VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <TreeView x:Name="SceneTree"
+                          ItemsSource="{Binding RootObjects}"
+                          SelectionMode="Single"
+                          Background="Transparent"
+                          Margin="0"
+                          PointerPressed="OnTreeViewPointerPressed">
+                    <TreeView.ItemTemplate>
+                        <TreeDataTemplate ItemsSource="{Binding Children}" x:DataType="vm:GameObjectViewModel">
+                            <Border Padding="4,4"
+                                    Background="Transparent"
+                                    CornerRadius="3">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <PathIcon Data="{Binding TypeIconData}"
+                                              Width="{StaticResource IconSizeSmall}" Height="{StaticResource IconSizeSmall}"
+                                              Foreground="{Binding TypeIconColor}"
+                                              VerticalAlignment="Center"
+                                              Opacity="{Binding IsActive, Converter={x:Static vm:GameObjectViewModel.ActiveToOpacityConverter}}"/>
+                                    <TextBlock Text="{Binding Name}"
+                                               VerticalAlignment="Center"
+                                               Foreground="{Binding IsActive, Converter={StaticResource BoolToForegroundConverter}}"/>
+                                </StackPanel>
+                            </Border>
+                        </TreeDataTemplate>
+                    </TreeView.ItemTemplate>
+                    <TreeView.Styles>
+                        <Style Selector="TreeViewItem">
+                            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}"/>
+                            <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}"/>
+                            <Setter Property="Padding" Value="2,0"/>
+                        </Style>
+                        <Style Selector="TreeViewItem:selected /template/ Border#PART_LayoutRoot">
+                            <Setter Property="Background" Value="{DynamicResource EditorSelected}"/>
+                            <Setter Property="CornerRadius" Value="3"/>
+                        </Style>
+                        <Style Selector="TreeViewItem:pointerover /template/ Border#PART_LayoutRoot">
+                            <Setter Property="Background" Value="{DynamicResource EditorHover}"/>
+                            <Setter Property="CornerRadius" Value="3"/>
+                        </Style>
+                    </TreeView.Styles>
+                </TreeView>
+            </views:SmoothScrollViewer>
 
             <Border Grid.Row="2"
                     x:Name="DeleteConfirmPanel"

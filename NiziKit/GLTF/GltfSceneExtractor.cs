@@ -116,7 +116,7 @@ public static class GltfSceneExtractor
     {
         Matrix4x4 result;
 
-        if (node.Matrix != null && node.Matrix.Length == 16)
+        if (node.Matrix is { Length: 16 })
         {
             var m = node.Matrix;
             result = new Matrix4x4(
@@ -131,17 +131,17 @@ public static class GltfSceneExtractor
             var rotation = Quaternion.Identity;
             var scale = Vector3.One;
 
-            if (node.Translation != null && node.Translation.Length >= 3)
+            if (node.Translation is { Length: >= 3 })
             {
                 translation = new Vector3(node.Translation[0], node.Translation[1], node.Translation[2]);
             }
 
-            if (node.Rotation != null && node.Rotation.Length >= 4)
+            if (node.Rotation is { Length: >= 4 })
             {
                 rotation = new Quaternion(node.Rotation[0], node.Rotation[1], node.Rotation[2], node.Rotation[3]);
             }
 
-            if (node.Scale != null && node.Scale.Length >= 3)
+            if (node.Scale is { Length: >= 3 })
             {
                 scale = new Vector3(node.Scale[0], node.Scale[1], node.Scale[2]);
             }

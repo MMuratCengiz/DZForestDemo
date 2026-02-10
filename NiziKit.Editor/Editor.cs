@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using DenOfIz;
 using NiziKit.Application;
@@ -23,6 +24,8 @@ public static class Editor
         EditorDesc? config = null,
         [CallerFilePath] string callerFilePath = "")
     {
+        LoadAssembliesFromBaseDirectory();
+
         Desc = config ?? new EditorDesc();
         var callerDir = Path.GetDirectoryName(callerFilePath) ?? ".";
         var gameProjectDir = Path.GetFullPath(Path.Combine(callerDir, Desc.GameProjectDir));
@@ -49,5 +52,37 @@ public static class Editor
         };
 
         Game.Run<EditorGame>(desc);
+    }
+
+    private static void LoadAssembliesFromBaseDirectory()
+    {
+        var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+        var loadedPaths = AppDomain.CurrentDomain.GetAssemblies()
+            .Where(a => !a.IsDynamic)
+            .Select(a => a.Location)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var dll in Directory.GetFiles(baseDir, "*.dll"))
+        {
+            if (loadedPaths.Contains(dll))
+            {
+                continue;
+            }
+
+            try
+            {
+                var name = AssemblyName.GetAssemblyName(dll);
+                if (name.Name != null &&
+                    !name.Name.StartsWith("System", StringComparison.Ordinal) &&
+                    !name.Name.StartsWith("Microsoft", StringComparison.Ordinal))
+                {
+                    Assembly.LoadFrom(dll);
+                }
+            }
+            catch
+            {
+                // Ignore assemblies that can't be loaded
+            }
+        }
     }
 }

@@ -27,7 +27,7 @@ public static class NiziMeshWriter
 
         WriteMatrix(writer, mesh.NodeTransform);
 
-        var hasIbm = mesh.InverseBindMatrices != null && mesh.InverseBindMatrices.Length > 0;
+        var hasIbm = mesh.InverseBindMatrices is { Length: > 0 };
         writer.Write(hasIbm);
         if (hasIbm)
         {

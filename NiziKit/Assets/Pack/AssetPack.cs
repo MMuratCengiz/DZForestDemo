@@ -6,7 +6,6 @@ namespace NiziKit.Assets.Pack;
 
 public sealed class AssetPack : IDisposable
 {
-    private const string ManifestFileName = "pack.nizipack.json";
 
     public string Name { get; private set; } = string.Empty;
     public string Version { get; private set; } = "1.0.0";
@@ -18,6 +17,7 @@ public sealed class AssetPack : IDisposable
     private readonly ConcurrentDictionary<string, byte[]> _animationData = new(StringComparer.OrdinalIgnoreCase);
 
     private IAssetPackProvider? _provider;
+    private AssetPackJson _definition = new();
     private string _basePath = string.Empty;
     private bool _disposed;
 
@@ -83,10 +83,10 @@ public sealed class AssetPack : IDisposable
     public bool TryGetSkeleton(string path, out Skeleton? skeleton) => _skeletons.TryGetValue(path, out skeleton);
     public bool TryGetAnimationData(string path, out byte[]? data) => _animationData.TryGetValue(path, out data);
 
-    public IEnumerable<string> GetMeshPaths() => _meshes.Keys;
-    public IEnumerable<string> GetSkeletonPaths() => _skeletons.Keys;
-    public IEnumerable<string> GetAnimationPaths() => _animationData.Keys;
-    public IEnumerable<string> GetTexturePaths() => _textures.Keys;
+    public IEnumerable<string> GetMeshPaths() => _definition.Meshes;
+    public IEnumerable<string> GetSkeletonPaths() => _definition.Skeletons;
+    public IEnumerable<string> GetAnimationPaths() => _definition.Animations;
+    public IEnumerable<string> GetTexturePaths() => _definition.Textures;
 
     public Texture2d LoadTextureFromPack(string path)
     {
@@ -114,42 +114,84 @@ public sealed class AssetPack : IDisposable
         return texture;
     }
 
+    /// <summary>
+    /// Load a pack from a binary .nizipack file path.
+    /// Assets are not loaded eagerly — they are loaded on-demand when requested.
+    /// </summary>
     private void LoadInternal(string path)
     {
         SourcePath = path;
-        var (provider, manifestPath) = CreateProvider(path);
-        _provider = provider;
-        _basePath = provider.BasePath;
-        var json = provider.ReadText(manifestPath);
-        var definition = AssetPackJson.FromJson(json);
+        var fullPath = Path.IsPathRooted(path) ? path : Content.ResolvePath(path);
 
-        Name = definition.Name;
-        Version = definition.Version;
+        _provider = new BinaryAssetPackProvider(fullPath);
+        _basePath = _provider.BasePath;
+
+        var packName = Path.GetFileNameWithoutExtension(fullPath);
+        _definition = AssetPackJson.FromFilePaths(packName, _provider.GetFilePaths());
+
+        Name = _definition.Name;
+        Version = _definition.Version;
         AssetPacks.Register(Name, this);
 
-        var allPaths = GetAllFilePaths(definition);
+        var allPaths = GetAllFilePaths(_definition);
         AssetPacks.RegisterProvider(Name, _provider, allPaths);
-
-        LoadAssets(definition);
     }
 
-    private async Task LoadInternalAsync(string path, CancellationToken ct)
+    private Task LoadInternalAsync(string path, CancellationToken ct)
     {
-        SourcePath = path;
-        var (provider, manifestPath) = CreateProvider(path);
-        _provider = provider;
-        _basePath = provider.BasePath;
-        var json = await provider.ReadTextAsync(manifestPath, ct);
-        var definition = AssetPackJson.FromJson(json);
+        LoadInternal(path);
+        return Task.CompletedTask;
+    }
 
-        Name = definition.Name;
-        Version = definition.Version;
+    public static AssetPack LoadFromDirectory(string assetsRoot, string packName = "default")
+    {
+        var pack = new AssetPack();
+        pack.LoadFromDirectoryInternal(assetsRoot, packName);
+        return pack;
+    }
+
+    public static async Task<AssetPack> LoadFromDirectoryAsync(string assetsRoot, string packName = "default", CancellationToken ct = default)
+    {
+        var pack = new AssetPack();
+        await pack.LoadFromDirectoryInternalAsync(assetsRoot, packName, ct);
+        return pack;
+    }
+
+    private void LoadFromDirectoryInternal(string assetsRoot, string packName)
+    {
+        SourcePath = packName;
+        _provider = new FolderAssetPackProvider(assetsRoot);
+        _basePath = assetsRoot;
+
+        var assetFiles = ScanAssetFiles(assetsRoot);
+        _definition = AssetPackJson.FromFilePaths(packName, assetFiles);
+
+        Name = _definition.Name;
+        Version = _definition.Version;
         AssetPacks.Register(Name, this);
 
-        var allPaths = GetAllFilePaths(definition);
+        var allPaths = GetAllFilePaths(_definition);
         AssetPacks.RegisterProvider(Name, _provider, allPaths);
+    }
 
-        await LoadAssetsAsync(definition, ct);
+    private Task LoadFromDirectoryInternalAsync(string assetsRoot, string packName, CancellationToken ct)
+    {
+        LoadFromDirectoryInternal(assetsRoot, packName);
+        return Task.CompletedTask;
+    }
+
+    private static List<string> ScanAssetFiles(string assetsRoot)
+    {
+        var files = new List<string>();
+        foreach (var file in Directory.EnumerateFiles(assetsRoot, "*.*", SearchOption.AllDirectories))
+        {
+            var ext = Path.GetExtension(file);
+            if (AssetPackJson.ExtensionToAssetType.ContainsKey(ext))
+            {
+                files.Add(Path.GetRelativePath(assetsRoot, file).Replace('\\', '/'));
+            }
+        }
+        return files;
     }
 
     private static IEnumerable<string> GetAllFilePaths(AssetPackJson definition)
@@ -160,41 +202,73 @@ public sealed class AssetPack : IDisposable
             .Concat(definition.Animations);
     }
 
-    private static (IAssetPackProvider provider, string manifestPath) CreateProvider(string path)
+    public Texture2d? GetOrLoadTexture(string path)
     {
-        var assetsRoot = Content.ResolvePath("");
-        var fullPath = Path.IsPathRooted(path) ? path : Content.ResolvePath(path);
-
-        if (fullPath.EndsWith(".nizipack", StringComparison.OrdinalIgnoreCase) && File.Exists(fullPath))
+        if (_textures.TryGetValue(path, out var texture))
         {
-            return (CreatePackProvider(fullPath), ManifestFileName);
+            return texture;
         }
 
-        if (fullPath.EndsWith(".nizipack.json", StringComparison.OrdinalIgnoreCase) && File.Exists(fullPath))
+        if (_provider == null)
         {
-            var relativeManifestPath = Path.GetRelativePath(assetsRoot, fullPath).Replace('\\', '/');
-            return (new FolderAssetPackProvider(assetsRoot), relativeManifestPath);
+            return null;
         }
 
-        var packFilePath = fullPath + ".nizipack";
-        if (File.Exists(packFilePath))
-        {
-            return (CreatePackProvider(packFilePath), ManifestFileName);
-        }
-
-        var jsonPackFilePath = fullPath + ".nizipack.json";
-        if (File.Exists(jsonPackFilePath))
-        {
-            var relativeManifestPath = Path.GetRelativePath(assetsRoot, jsonPackFilePath).Replace('\\', '/');
-            return (new FolderAssetPackProvider(assetsRoot), relativeManifestPath);
-        }
-
-        throw new FileNotFoundException($"Asset pack not found: {path}");
+        var bytes = _provider.ReadBytes(path);
+        texture = new Texture2d();
+        texture.LoadFromBytes(path, bytes);
+        return _textures.GetOrAdd(path, texture);
     }
 
-    private static IAssetPackProvider CreatePackProvider(string packPath)
+    public Mesh? GetOrLoadMesh(string path)
     {
-        return new BinaryAssetPackProvider(packPath);
+        if (_meshes.TryGetValue(path, out var mesh))
+        {
+            return mesh;
+        }
+
+        if (_provider == null)
+        {
+            return null;
+        }
+
+        var bytes = _provider.ReadBytes(path);
+        mesh = Mesh.Load(bytes);
+        Assets.Register(mesh, path);
+        return _meshes.GetOrAdd(path, mesh);
+    }
+
+    public Skeleton? GetOrLoadSkeleton(string path)
+    {
+        if (_skeletons.TryGetValue(path, out var skeleton))
+        {
+            return skeleton;
+        }
+
+        if (_provider == null)
+        {
+            return null;
+        }
+
+        var bytes = _provider.ReadBytes(path);
+        skeleton = Skeleton.Load(bytes);
+        return _skeletons.GetOrAdd(path, skeleton);
+    }
+
+    public byte[]? GetOrLoadAnimationData(string path)
+    {
+        if (_animationData.TryGetValue(path, out var data))
+        {
+            return data;
+        }
+
+        if (_provider == null)
+        {
+            return null;
+        }
+
+        data = _provider.ReadBytes(path);
+        return _animationData.GetOrAdd(path, data);
     }
 
     private void LoadAssets(AssetPackJson definition)

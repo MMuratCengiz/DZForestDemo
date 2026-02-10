@@ -3,7 +3,6 @@
   <PropertyGroup>
     <NiziKitAssetsDir Condition="'$(NiziKitAssetsDir)' == ''">$(ProjectDir)Assets</NiziKitAssetsDir>
     <_IsBlazorWasm Condition="'$(UsingMicrosoftNETSdkBlazorWebAssembly)' == 'true'">true</_IsBlazorWasm>
-    <GenerateNiziKitManifest Condition="'$(GenerateNiziKitManifest)' == ''">true</GenerateNiziKitManifest>
     <BuildNiziPacksOnPublish Condition="'$(BuildNiziPacksOnPublish)' == ''">true</BuildNiziPacksOnPublish>
   </PropertyGroup>
 
@@ -22,22 +21,6 @@
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
-
-  <ItemGroup Condition="Exists('$(NiziKitAssetsDir)') AND Exists('$(NiziKitAssetsDir)\manifest.json')">
-    <Content Include="$(NiziKitAssetsDir)\manifest.json">
-      <Link>Assets\manifest.json</Link>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </Content>
-  </ItemGroup>
-
-  <Target Name="GenerateNiziManifest" AfterTargets="Build"
-          Condition="'$(GenerateNiziKitManifest)' == 'true' AND Exists('$(NiziKitAssetsDir)')">
-    <PropertyGroup>
-      <_NiziKitBuildProject>$(MSBuildThisFileDirectory)..\..\NiziKit.Build\NiziKit.Build.csproj</_NiziKitBuildProject>
-    </PropertyGroup>
-    <Exec Command="dotnet run --project &quot;$(_NiziKitBuildProject)&quot; -- generate-manifest &quot;$(NiziKitAssetsDir)&quot; &quot;$(NiziKitAssetsDir)&quot;" />
-  </Target>
 
   <Target Name="BuildNiziPacks" AfterTargets="Publish"
           Condition="'$(BuildNiziPacksOnPublish)' == 'true' AND Exists('$(NiziKitAssetsDir)')">

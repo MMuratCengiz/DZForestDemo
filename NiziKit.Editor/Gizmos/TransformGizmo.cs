@@ -329,8 +329,8 @@ public class TransformGizmo
         var u = Vector3.Dot(localHit, axis1) / scale;
         var v = Vector3.Dot(localHit, axis2) / scale;
 
-        if (u >= PlaneOffset && u <= PlaneOffset + PlaneSize &&
-            v >= PlaneOffset && v <= PlaneOffset + PlaneSize)
+        if (u is >= PlaneOffset and <= PlaneOffset + PlaneSize &&
+            v is >= PlaneOffset and <= PlaneOffset + PlaneSize)
         {
             distance = hitDist;
             return true;

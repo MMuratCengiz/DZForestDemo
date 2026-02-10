@@ -78,7 +78,7 @@ public sealed class Assets : IDisposable
             return;
         }
 
-        if (mesh.CpuVertices != null && mesh.CpuIndices != null)
+        if (mesh is { CpuVertices: not null, CpuIndices: not null })
         {
             mesh.VertexBuffer = _UploadVertices(mesh.CpuVertices, mesh.Format);
             mesh.IndexBuffer = UploadIndices(mesh.CpuIndices);

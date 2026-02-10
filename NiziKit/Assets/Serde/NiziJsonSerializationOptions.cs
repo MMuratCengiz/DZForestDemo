@@ -34,7 +34,8 @@ public class CompactFloatArrayConverter : JsonConverter<float[]>
 
     public override void Write(Utf8JsonWriter writer, float[] value, JsonSerializerOptions options)
     {
-        var formatted = string.Join(", ", value.Select(f => f.ToString("G", CultureInfo.InvariantCulture)));
+        var formatted = string.Join(", ", value.Select(f =>
+            float.IsNaN(f) || float.IsInfinity(f) ? "0" : f.ToString("G", CultureInfo.InvariantCulture)));
         writer.WriteRawValue("[" + formatted + "]");
     }
 }

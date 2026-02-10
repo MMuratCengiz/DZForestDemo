@@ -41,7 +41,7 @@ public class AssetWorld : IWorldEventListener
     private static void TryUploadMesh(GameObject go)
     {
         var meshComp = go.GetComponent<MeshComponent>();
-        if (meshComp?.Mesh != null && !meshComp.Mesh.IsUploaded)
+        if (meshComp?.Mesh is { IsUploaded: false })
         {
             Assets.Upload(meshComp.Mesh);
         }
