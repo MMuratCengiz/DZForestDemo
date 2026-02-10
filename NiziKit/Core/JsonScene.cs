@@ -787,7 +787,16 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
         if (reference.StartsWith("geometry:"))
         {
-            var geoType = reference[9..].ToLowerInvariant();
+            var afterPrefix = reference[9..].ToLowerInvariant();
+            var colonIdx = afterPrefix.IndexOf(':');
+            var geoType = colonIdx >= 0 ? afterPrefix[..colonIdx] : afterPrefix;
+
+            if (colonIdx >= 0)
+            {
+                var inlineParams = BuildGeometryParams(geoType, afterPrefix[(colonIdx + 1)..].Split(':'));
+                return CreateGeometry(geoType, inlineParams);
+            }
+
             return CreateGeometry(geoType, parameters);
         }
 
@@ -842,7 +851,17 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
         if (meshRef.StartsWith("geometry:"))
         {
-            var geoType = meshRef[9..].ToLowerInvariant();
+            var afterPrefix = meshRef[9..].ToLowerInvariant();
+            var colonIdx = afterPrefix.IndexOf(':');
+            var geoType = colonIdx >= 0 ? afterPrefix[..colonIdx] : afterPrefix;
+
+            // If inline params exist (e.g. "geometry:box:1:1:1"), parse and use them
+            if (colonIdx >= 0)
+            {
+                var inlineParams = BuildGeometryParams(geoType, afterPrefix[(colonIdx + 1)..].Split(':'));
+                return CreateGeometry(geoType, inlineParams);
+            }
+
             return geoType switch
             {
                 "box" => Assets.Assets.CreateBox(
@@ -892,6 +911,30 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             "torus" => Assets.Assets.CreateTorus(diameter, width, tessellation),
             _ => throw new NotSupportedException($"Unknown geometry type: {geoType}")
         };
+    }
+
+    private static Dictionary<string, object> BuildGeometryParams(string geoType, string[] values)
+    {
+        string[] paramNames = geoType switch
+        {
+            "box" => ["width", "height", "depth"],
+            "sphere" => ["diameter", "tessellation"],
+            "cylinder" => ["diameter", "height", "tessellation"],
+            "cone" => ["diameter", "height", "tessellation"],
+            "quad" => ["width", "height"],
+            "torus" => ["diameter", "width", "tessellation"],
+            _ => []
+        };
+
+        var dict = new Dictionary<string, object>();
+        for (var i = 0; i < paramNames.Length && i < values.Length; i++)
+        {
+            if (float.TryParse(values[i], System.Globalization.NumberStyles.Float,
+                    System.Globalization.CultureInfo.InvariantCulture, out var val))
+                dict[paramNames[i]] = val;
+        }
+
+        return dict;
     }
 
     private static float GetParam(IReadOnlyDictionary<string, object>? parameters, string key, float defaultValue)

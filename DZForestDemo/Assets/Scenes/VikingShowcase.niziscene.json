@@ -4,7 +4,7 @@
     {
       "name": "Main Camera",
       "position": [1.7775733, 9.141837, -34.880928],
-      "rotation": [23.335878, -9.645209, 6.6524887],
+      "rotation": [20.766598, -14.507475, 5.976743],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -41,7 +41,7 @@
     {
       "name": "Character_Viking",
       "active": true,
-      "position": [-1.2923927E-05, -209155.7, 0.00051649613],
+      "position": [-1.2923927E-05, -333594.47, 0.00051649613],
       "rotation": [4.0916016E-06, 5.809548E-07, 1.0138471E-07],
       "scale": [1, 1, 1],
       "components": [
@@ -117,7 +117,7 @@
       "name": "Boat",
       "active": false,
       "position": [26.5, 10, 19.5],
-      "rotation": [-3.6567042, -29.796911, 78.31148],
+      "rotation": [-9.733414, 28.517178, 74.85919],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -182,7 +182,7 @@
       "components": [
         {
           "type": "NiziKit.Components.MeshComponent",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Table_01.nizimesh"
+          "mesh": "Synty/Models/StreetRacer/SM_Bld_Warehouse_Door_01.nizimesh"
         },
         {
           "type": "NiziKit.Components.SurfaceComponent",
@@ -276,7 +276,7 @@
     {
       "name": "Barrel2",
       "active": true,
-      "position": [5, -237575.5, 5],
+      "position": [5, -362026.78, 5],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
       "components": [
@@ -311,8 +311,8 @@
     {
       "name": "Barrel",
       "active": true,
-      "position": [26.404987, 0.7497239, 15.556159],
-      "rotation": [3.790236E-09, -4.827932E-06, -2.028418E-08],
+      "position": [26.404984, 0.7497239, 15.556169],
+      "rotation": [-1.134473E-10, -4.3953087E-06, -2.4559185E-08],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -594,26 +594,6 @@
       "children": []
     },
     {
-      "name": "Bush2",
-      "active": true,
-      "position": [14, 0, -5],
-      "rotation": [0, 0, 0],
-      "scale": [1, 1, 1],
-      "components": [
-        {
-          "type": "NiziKit.Components.MeshComponent",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Bush_Berries_01.nizimesh"
-        },
-        {
-          "type": "NiziKit.Components.SurfaceComponent",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
-          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
-        }
-      ],
-      "children": []
-    },
-    {
       "name": "Platform",
       "active": false,
       "position": [0, -0.25, 0],
@@ -622,7 +602,7 @@
       "components": [
         {
           "type": "NiziKit.Components.MeshComponent",
-          "mesh": "geometry:box"
+          "mesh": "geometry:box:1:1:1"
         },
         {
           "type": "NiziKit.Components.SurfaceComponent"
@@ -641,47 +621,6 @@
     },
     {
       "name": "New Object",
-      "active": true,
-      "position": [-0.28755423, 0.642045, -5.34352],
-      "rotation": [0, 0, 0],
-      "scale": [1, 1, 1],
-      "components": [
-        {
-          "type": "NiziKit.Components.MeshComponent",
-          "mesh": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.nizimesh"
-        },
-        {
-          "type": "NiziKit.Components.SurfaceComponent",
-          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
-          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
-          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
-        },
-        {
-          "type": "NiziKit.Components.MaterialComponent",
-          "tags": {
-            "variant": "SKINNED"
-          }
-        },
-        {
-          "type": "NiziKit.Animation.Animator",
-          "skeleton": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.ozzskel",
-          "defaultAnimation": "A_Idle_Crouching_Masc",
-          "animations": [
-            {
-              "name": "A_Idle_Crouching_Masc",
-              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/Idle/A_Idle_Crouching_Masc.ozzanim"
-            },
-            {
-              "name": "A_Jump_Sprinting_Masc",
-              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/InAir/A_Jump_Sprinting_Masc.ozzanim"
-            }
-          ]
-        }
-      ],
-      "children": []
-    },
-    {
-      "name": "New Object",
       "active": false,
       "position": [0, 0, -9.997309],
       "rotation": [0, 0, 0],
@@ -693,7 +632,27 @@
         },
         {
           "type": "NiziKit.Components.SurfaceComponent",
-          "albedo": "Synty/Textures/StreetRacer/Textures/Vehicles/PolygonStreetRacer_Veh_Tex_26_Rust_Painted_Red.dztex"
+          "albedo": "Synty/Textures/DungeonRealms/Textures/Dungeons_2_Texture_Emission_01.dztex"
+        }
+      ],
+      "children": []
+    },
+    {
+      "name": "Bush2",
+      "active": true,
+      "position": [14, 0, -5],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "components": [
+        {
+          "type": "NiziKit.Components.MeshComponent",
+          "mesh": "Synty/Models/VikingRealm/FBX/SM_Env_Bush_Berries_01.nizimesh"
+        },
+        {
+          "type": "NiziKit.Components.SurfaceComponent",
+          "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
+          "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
+          "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
         }
       ],
       "children": []

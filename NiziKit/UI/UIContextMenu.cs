@@ -8,12 +8,13 @@ public struct UiContextMenuItem
 {
     public string Label;
     public string? Icon;
+    public string? Shortcut;
     public bool IsSeparator;
     public bool IsDisabled;
 
-    public static UiContextMenuItem Item(string label, string? icon = null)
+    public static UiContextMenuItem Item(string label, string? icon = null, string? shortcut = null)
     {
-        return new UiContextMenuItem { Label = label, Icon = icon };
+        return new UiContextMenuItem { Label = label, Icon = icon, Shortcut = shortcut };
     }
 
     public static UiContextMenuItem Separator()
@@ -274,6 +275,22 @@ public ref struct UiContextMenu
                         TextColor = (item.IsDisabled ? _disabledTextColor : _textColor).ToClayColor(),
                         FontSize = _fontSize
                     });
+
+                    if (!string.IsNullOrEmpty(item.Shortcut))
+                    {
+                        // Spacer to push shortcut to the right
+                        var spacerId = _context.StringCache.GetId("CMSpc", Id, (uint)i);
+                        var spacerDecl = new ClayElementDeclaration { Id = spacerId };
+                        spacerDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
+                        _context.OpenElement(spacerDecl);
+                        _context.Clay.CloseElement();
+
+                        _context.Clay.Text(item.Shortcut, new ClayTextDesc
+                        {
+                            TextColor = _disabledTextColor.ToClayColor(),
+                            FontSize = _fontSize
+                        });
+                    }
                 }
                 _context.Clay.CloseElement();
 

@@ -4,6 +4,7 @@ using NiziKit.Application;
 using NiziKit.Components;
 using NiziKit.Core;
 using NiziKit.Editor.Gizmos;
+using NiziKit.Editor.Services;
 using NiziKit.Editor.UI;
 using NiziKit.Editor.ViewModels;
 using NiziKit.Graphics;
@@ -30,6 +31,12 @@ public sealed class EditorGame : Game
     private bool _textInputActive;
     private bool _gizmoDragging;
     private bool _shiftHeld;
+    private bool _ctrlHeld;
+
+    // Gizmo drag undo state
+    private Vector3 _gizmoDragStartPosition;
+    private Quaternion _gizmoDragStartRotation;
+    private Vector3 _gizmoDragStartScale;
 
     public EditorGame(GameDesc? desc = null) : base(desc)
     {
@@ -179,8 +186,14 @@ public sealed class EditorGame : Game
                 _shiftHeld = true;
             }
 
+            if (ev.Key.KeyCode == KeyCode.Lctrl || ev.Key.KeyCode == KeyCode.Rctrl)
+            {
+                _ctrlHeld = true;
+            }
+
             if (!_textInputActive)
             {
+                HandleKeyboardShortcuts(ev.Key.KeyCode);
                 HandleGizmoModeKey(ev.Key.KeyCode);
 
                 if (ev.Key.KeyCode == KeyCode.F)
@@ -202,6 +215,11 @@ public sealed class EditorGame : Game
             if (ev.Key.KeyCode == KeyCode.Lshift || ev.Key.KeyCode == KeyCode.Rshift)
             {
                 _shiftHeld = false;
+            }
+
+            if (ev.Key.KeyCode == KeyCode.Lctrl || ev.Key.KeyCode == KeyCode.Rctrl)
+            {
+                _ctrlHeld = false;
             }
         }
         else if (ev.Type == EventType.TextInput)
@@ -237,6 +255,15 @@ public sealed class EditorGame : Game
         if (gizmoPass.Gizmo.BeginDrag(ray, _editorCamera))
         {
             _gizmoDragging = true;
+
+            var selected = _viewModel.SelectedGameObject?.GameObject;
+            if (selected != null)
+            {
+                _gizmoDragStartPosition = selected.LocalPosition;
+                _gizmoDragStartRotation = selected.LocalRotation;
+                _gizmoDragStartScale = selected.LocalScale;
+            }
+
             return true;
         }
 
@@ -260,6 +287,22 @@ public sealed class EditorGame : Game
         var gizmoPass = _renderer.GizmoPass;
         gizmoPass?.Gizmo.EndDrag();
         _gizmoDragging = false;
+
+        var selected = _viewModel.SelectedGameObject?.GameObject;
+        if (selected != null)
+        {
+            var newPos = selected.LocalPosition;
+            var newRot = selected.LocalRotation;
+            var newScl = selected.LocalScale;
+
+            if (newPos != _gizmoDragStartPosition || newRot != _gizmoDragStartRotation || newScl != _gizmoDragStartScale)
+            {
+                _viewModel.UndoSystem.Execute(new GizmoTransformAction(selected,
+                    _gizmoDragStartPosition, _gizmoDragStartRotation, _gizmoDragStartScale,
+                    newPos, newRot, newScl));
+                _viewModel.MarkDirty();
+            }
+        }
     }
 
     private void CancelGizmoDrag()
@@ -267,6 +310,36 @@ public sealed class EditorGame : Game
         var gizmoPass = _renderer.GizmoPass;
         gizmoPass?.Gizmo.CancelDrag();
         _gizmoDragging = false;
+    }
+
+    private void HandleKeyboardShortcuts(KeyCode keyCode)
+    {
+        if (_ctrlHeld)
+        {
+            switch (keyCode)
+            {
+                case KeyCode.Z when _shiftHeld:
+                    _viewModel.Redo();
+                    return;
+                case KeyCode.Z:
+                    _viewModel.Undo();
+                    return;
+                case KeyCode.Y:
+                    _viewModel.Redo();
+                    return;
+                case KeyCode.S:
+                    _viewModel.SaveScene();
+                    return;
+                case KeyCode.D:
+                    _viewModel.DuplicateObject();
+                    return;
+            }
+        }
+
+        if (keyCode == KeyCode.Delete)
+        {
+            _viewModel.DeleteObject();
+        }
     }
 
     private void HandleGizmoModeKey(KeyCode keyCode)

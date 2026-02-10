@@ -30,12 +30,14 @@ public ref struct UiTreeView
     private UiColor _textColor;
     private UiColor _iconColor;
     private UiColor _chevronColor;
+    private UiColor _guideColor;
     private UiColor _borderColor;
     private ushort _fontSize;
     private float _indentSize;
     private float _itemHeight;
     private UiSizing _width;
     private UiSizing _height;
+    private bool _showGuides;
 
     internal UiTreeView(UiContext ctx, string id, UiTreeViewState state, List<UiTreeNode> roots)
     {
@@ -50,12 +52,14 @@ public ref struct UiTreeView
         _textColor = UiColor.Rgb(210, 210, 210);
         _iconColor = UiColor.Rgb(160, 160, 160);
         _chevronColor = UiColor.Rgb(140, 140, 140);
+        _guideColor = UiColor.Rgb(50, 50, 55);
         _borderColor = UiColor.Rgb(55, 55, 60);
         _fontSize = 13;
-        _indentSize = 18;
+        _indentSize = 16;
         _itemHeight = 26;
         _width = UiSizing.Grow();
         _height = UiSizing.Grow();
+        _showGuides = true;
     }
 
     public uint Id { get; }
@@ -77,6 +81,9 @@ public ref struct UiTreeView
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiTreeView ChevronColor(UiColor color) { _chevronColor = color; return this; }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiTreeView GuideColor(UiColor color) { _guideColor = color; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiTreeView BorderColor(UiColor color) { _borderColor = color; return this; }
@@ -101,6 +108,9 @@ public ref struct UiTreeView
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiTreeView Height(UiSizing sizing) { _height = sizing; return this; }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiTreeView ShowGuides(bool show) { _showGuides = show; return this; }
 
     private uint _nodeIndex;
 
@@ -152,13 +162,60 @@ public ref struct UiTreeView
         rowDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
         rowDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
         rowDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(_itemHeight);
-        rowDecl.Layout.Padding = new ClayPadding { Left = (ushort)(4 + depth * _indentSize), Right = 4 };
-        rowDecl.Layout.ChildGap = 6;
+        rowDecl.Layout.Padding = new ClayPadding { Left = 4, Right = 4 };
+        rowDecl.Layout.ChildGap = 4;
         rowDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
         rowDecl.BackgroundColor = bgColor.ToClayColor();
 
         _context.OpenElement(rowDecl);
         {
+            if (depth > 0)
+            {
+                if (_showGuides)
+                {
+                    var guidesId = _context.StringCache.GetId("TVGs", Id, nodeIdx);
+                    var guidesDecl = new ClayElementDeclaration { Id = guidesId };
+                    guidesDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
+                    guidesDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(depth * _indentSize);
+                    guidesDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(_itemHeight);
+                    guidesDecl.Layout.ChildGap = 0;
+
+                    _context.OpenElement(guidesDecl);
+                    {
+                        for (var i = 0; i < depth; i++)
+                        {
+                            var guideId = _context.StringCache.GetId("TVG", Id, nodeIdx * 32 + (uint)i);
+                            var guideDecl = new ClayElementDeclaration { Id = guideId };
+                            guideDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(_indentSize);
+                            guideDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(_itemHeight);
+                            guideDecl.Layout.ChildAlignment.X = ClayAlignmentX.Center;
+                            guideDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
+
+                            _context.OpenElement(guideDecl);
+                            {
+                                var lineId = _context.StringCache.GetId("TVL", Id, nodeIdx * 32 + (uint)i);
+                                var lineDecl = new ClayElementDeclaration { Id = lineId };
+                                lineDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(1);
+                                lineDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(_itemHeight);
+                                lineDecl.BackgroundColor = _guideColor.ToClayColor();
+                                _context.OpenElement(lineDecl);
+                                _context.Clay.CloseElement();
+                            }
+                            _context.Clay.CloseElement();
+                        }
+                    }
+                    _context.Clay.CloseElement();
+                }
+                else
+                {
+                    var spacerId = _context.StringCache.GetId("TVInd", Id, nodeIdx);
+                    var spacerDecl = new ClayElementDeclaration { Id = spacerId };
+                    spacerDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(depth * _indentSize);
+                    _context.OpenElement(spacerDecl);
+                    _context.Clay.CloseElement();
+                }
+            }
+
             if (hasChildren)
             {
                 var chevronId = _context.StringCache.GetId("TVChev", Id, nodeIdx);
@@ -216,7 +273,8 @@ public ref struct UiTreeView
             _context.Clay.Text(node.Label, new ClayTextDesc
             {
                 TextColor = _textColor.ToClayColor(),
-                FontSize = _fontSize
+                FontSize = _fontSize,
+                WrapMode = ClayTextWrapMode.None
             });
         }
         _context.Clay.CloseElement();

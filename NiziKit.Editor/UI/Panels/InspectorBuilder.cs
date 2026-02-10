@@ -1,3 +1,4 @@
+using NiziKit.Editor.Services;
 using NiziKit.Editor.Theme;
 using NiziKit.Editor.ViewModels;
 using NiziKit.UI;
@@ -73,7 +74,8 @@ public static class InspectorBuilder
 
         ui.Icon(obj.TypeIcon, obj.TypeIconColor, t.IconSizeSmall);
 
-        var name = obj.Name;
+        var oldName = obj.Name;
+        var name = oldName;
         if (Ui.TextField(ctx, "ObjName", ref name)
             .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
             .TextColor(t.TextPrimary)
@@ -86,6 +88,9 @@ public static class InspectorBuilder
         {
             obj.Name = name;
             obj.Editor.MarkDirty();
+            obj.Editor.UndoSystem.Execute(
+                new NameChangeAction(obj, oldName, name),
+                $"Name_{obj.GameObject.GetHashCode()}");
         }
 
         var isActive = obj.IsActive;
@@ -101,6 +106,7 @@ public static class InspectorBuilder
         {
             obj.IsActive = newActive;
             obj.Editor.MarkDirty();
+            obj.Editor.UndoSystem.Execute(new ActiveToggleAction(obj, isActive, newActive));
         }
     }
 

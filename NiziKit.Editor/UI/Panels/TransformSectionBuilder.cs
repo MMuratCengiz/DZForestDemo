@@ -1,3 +1,5 @@
+using System.Numerics;
+using NiziKit.Editor.Services;
 using NiziKit.Editor.Theme;
 using NiziKit.Editor.ViewModels;
 using NiziKit.UI;
@@ -33,6 +35,11 @@ public static class TransformSectionBuilder
             .LabelColor(t.TextSecondary)
             .Open();
 
+        var go = obj.GameObject;
+        var oldPos = go.LocalPosition;
+        var oldRot = go.LocalRotation;
+        var oldScl = go.LocalScale;
+
         {
             using var row = grid.Row("Position");
             var px = obj.PositionX;
@@ -46,6 +53,11 @@ public static class TransformSectionBuilder
                 obj.PositionY = py;
                 obj.PositionZ = pz;
                 obj.Editor.MarkDirty();
+
+                obj.Editor.UndoSystem.Execute(new TransformChangeAction(go,
+                    oldPos, oldRot, oldScl,
+                    go.LocalPosition, go.LocalRotation, go.LocalScale),
+                    $"Transform_Pos_{go.Name}");
             }
         }
 
@@ -62,6 +74,11 @@ public static class TransformSectionBuilder
                 obj.RotationY = ry;
                 obj.RotationZ = rz;
                 obj.Editor.MarkDirty();
+
+                obj.Editor.UndoSystem.Execute(new TransformChangeAction(go,
+                    oldPos, oldRot, oldScl,
+                    go.LocalPosition, go.LocalRotation, go.LocalScale),
+                    $"Transform_Rot_{go.Name}");
             }
         }
 
@@ -78,6 +95,11 @@ public static class TransformSectionBuilder
                 obj.ScaleY = sy;
                 obj.ScaleZ = sz;
                 obj.Editor.MarkDirty();
+
+                obj.Editor.UndoSystem.Execute(new TransformChangeAction(go,
+                    oldPos, oldRot, oldScl,
+                    go.LocalPosition, go.LocalRotation, go.LocalScale),
+                    $"Transform_Scl_{go.Name}");
             }
         }
     }

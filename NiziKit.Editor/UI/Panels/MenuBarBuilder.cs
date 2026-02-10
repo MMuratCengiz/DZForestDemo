@@ -56,7 +56,7 @@ public static class MenuBarBuilder
         var fileItems = new[]
         {
             UiContextMenuItem.Item("Open Scene...", FontAwesome.FolderOpen),
-            UiContextMenuItem.Item("Save Scene", FontAwesome.Save),
+            UiContextMenuItem.Item("Save Scene", FontAwesome.Save, "Ctrl+S"),
         };
 
         var fileResult = Ui.ContextMenu(ctx, "FileMenu_menu", fileItems)
@@ -87,13 +87,21 @@ public static class MenuBarBuilder
             editMenuState.OpenBelow(ctx.GetElementId("EditMenu"));
         }
 
+        var undoItem = UiContextMenuItem.Item("Undo", FontAwesome.Undo, "Ctrl+Z");
+        undoItem.IsDisabled = !vm.UndoSystem.CanUndo;
+        var redoItem = UiContextMenuItem.Item("Redo", FontAwesome.Redo, "Ctrl+Shift+Z");
+        redoItem.IsDisabled = !vm.UndoSystem.CanRedo;
+
         var editItems = new[]
         {
+            undoItem,
+            redoItem,
+            UiContextMenuItem.Separator(),
             UiContextMenuItem.Item("New Object", FontAwesome.Plus),
             UiContextMenuItem.Item("New Child", FontAwesome.Plus),
             UiContextMenuItem.Separator(),
-            UiContextMenuItem.Item("Duplicate", FontAwesome.Copy),
-            UiContextMenuItem.Item("Delete", FontAwesome.Trash),
+            UiContextMenuItem.Item("Duplicate", FontAwesome.Copy, "Ctrl+D"),
+            UiContextMenuItem.Item("Delete", FontAwesome.Trash, "Del"),
         };
 
         var editResult = Ui.ContextMenu(ctx, "EditMenu_menu", editItems)
@@ -106,17 +114,25 @@ public static class MenuBarBuilder
 
         if (editResult == 0)
         {
-            vm.NewObject();
+            vm.Undo();
         }
         else if (editResult == 1)
         {
-            vm.NewChildObject();
+            vm.Redo();
         }
         else if (editResult == 3)
         {
-            vm.DuplicateObject();
+            vm.NewObject();
         }
         else if (editResult == 4)
+        {
+            vm.NewChildObject();
+        }
+        else if (editResult == 6)
+        {
+            vm.DuplicateObject();
+        }
+        else if (editResult == 7)
         {
             vm.DeleteObject();
         }

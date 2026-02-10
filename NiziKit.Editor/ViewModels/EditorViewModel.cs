@@ -24,6 +24,8 @@ public class EditorViewModel
     private readonly AssetBrowserService _assetBrowserService;
     private readonly AssetFileService _assetFileService;
 
+    public UndoRedoSystem UndoSystem { get; } = new();
+
     public EditorViewModel()
     {
         _sceneService = new EditorSceneService();
@@ -132,7 +134,9 @@ public class EditorViewModel
         var obj = scene.CreateObject("New Object");
         var vm = new GameObjectViewModel(obj, this);
         RootObjects.Add(vm);
-        SelectedGameObject = vm;
+        SelectObject(vm);
+
+        UndoSystem.Execute(new CreateObjectAction(this, vm, null, "Create Object"));
     }
 
     public void NewChildObject()
@@ -142,9 +146,12 @@ public class EditorViewModel
             return;
         }
 
-        var child = SelectedGameObject.GameObject.CreateChild("New Child");
+        var parent = SelectedGameObject;
+        var child = parent.GameObject.CreateChild("New Child");
         var vm = new GameObjectViewModel(child, this);
-        SelectedGameObject.Children.Add(vm);
+        parent.Children.Add(vm);
+
+        UndoSystem.Execute(new CreateObjectAction(this, vm, parent, "Create Child Object"));
     }
 
     public void NewDirectionalLight()
@@ -159,7 +166,9 @@ public class EditorViewModel
         light.LookAt(new System.Numerics.Vector3(0.5f, -1f, 0.5f));
         var vm = new GameObjectViewModel(light, this);
         RootObjects.Add(vm);
-        SelectedGameObject = vm;
+        SelectObject(vm);
+
+        UndoSystem.Execute(new CreateObjectAction(this, vm, null, "Create Directional Light"));
     }
 
     public void NewPointLight()
@@ -174,7 +183,9 @@ public class EditorViewModel
         light.LocalPosition = new System.Numerics.Vector3(0, 3, 0);
         var vm = new GameObjectViewModel(light, this);
         RootObjects.Add(vm);
-        SelectedGameObject = vm;
+        SelectObject(vm);
+
+        UndoSystem.Execute(new CreateObjectAction(this, vm, null, "Create Point Light"));
     }
 
     public void NewSpotLight()
@@ -190,7 +201,9 @@ public class EditorViewModel
         light.LookAt(new System.Numerics.Vector3(0, -1, 0));
         var vm = new GameObjectViewModel(light, this);
         RootObjects.Add(vm);
-        SelectedGameObject = vm;
+        SelectObject(vm);
+
+        UndoSystem.Execute(new CreateObjectAction(this, vm, null, "Create Spot Light"));
     }
 
     public void DeleteObject()
@@ -206,18 +219,24 @@ public class EditorViewModel
             return;
         }
 
-        var parent = FindParent(SelectedGameObject);
+        var objectVm = SelectedGameObject;
+        var parent = FindParent(objectVm);
+        int index;
+
         if (parent != null)
         {
-            parent.RemoveChild(SelectedGameObject);
+            index = parent.Children.IndexOf(objectVm);
+            parent.RemoveChild(objectVm);
         }
         else
         {
-            scene.Destroy(SelectedGameObject.GameObject);
-            RootObjects.Remove(SelectedGameObject);
+            index = RootObjects.IndexOf(objectVm);
+            scene.Destroy(objectVm.GameObject);
+            RootObjects.Remove(objectVm);
         }
 
-        SelectedGameObject = null;
+        SelectObject(null);
+        UndoSystem.Execute(new DeleteObjectAction(this, objectVm, parent, index));
     }
 
     public void DuplicateObject()
@@ -242,14 +261,18 @@ public class EditorViewModel
             parent.GameObject.AddChild(clone);
             var vm = new GameObjectViewModel(clone, this);
             parent.Children.Add(vm);
-            SelectedGameObject = vm;
+            SelectObject(vm);
+
+            UndoSystem.Execute(new CreateObjectAction(this, vm, parent, "Duplicate Object"));
         }
         else
         {
             scene.Add(clone);
             var vm = new GameObjectViewModel(clone, this);
             RootObjects.Add(vm);
-            SelectedGameObject = vm;
+            SelectObject(vm);
+
+            UndoSystem.Execute(new CreateObjectAction(this, vm, null, "Duplicate Object"));
         }
     }
 
@@ -265,10 +288,23 @@ public class EditorViewModel
         IsDirty = false;
     }
 
+    public void Undo()
+    {
+        UndoSystem.Undo();
+        MarkDirty();
+    }
+
+    public void Redo()
+    {
+        UndoSystem.Redo();
+        MarkDirty();
+    }
+
     public void LoadScene(string path)
     {
         World.LoadScene(path);
         LoadFromCurrentScene();
+        UndoSystem.Clear();
         IsDirty = false;
     }
 
@@ -334,6 +370,7 @@ public class EditorViewModel
         World.CurrentScene?.Dispose();
         World.LoadScene(path);
         LoadFromCurrentScene();
+        UndoSystem.Clear();
         IsDirty = false;
     }
 

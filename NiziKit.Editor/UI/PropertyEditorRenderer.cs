@@ -3,6 +3,7 @@ using System.Reflection;
 using DenOfIz;
 using NiziKit.Assets;
 using NiziKit.Components;
+using NiziKit.Editor.Services;
 using NiziKit.Editor.Theme;
 using NiziKit.Editor.ViewModels;
 using NiziKit.UI;
@@ -52,43 +53,43 @@ public static class PropertyEditorRenderer
 
         if (propType == typeof(string))
         {
-            RenderStringEditor(ctx, id, prop, instance, canWrite, onChanged);
+            RenderStringEditor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType == typeof(float))
         {
-            RenderFloatEditor(ctx, id, prop, instance, canWrite, onChanged);
+            RenderFloatEditor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType == typeof(double))
         {
-            RenderDoubleEditor(ctx, id, prop, instance, canWrite, onChanged);
+            RenderDoubleEditor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType == typeof(int))
         {
-            RenderIntEditor(ctx, id, prop, instance, canWrite, onChanged);
+            RenderIntEditor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType == typeof(uint))
         {
-            RenderUIntEditor(ctx, id, prop, instance, canWrite, onChanged);
+            RenderUIntEditor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType == typeof(bool))
         {
-            RenderBoolEditor(ctx, id, prop, instance, canWrite, onChanged);
+            RenderBoolEditor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType == typeof(Vector2))
         {
-            RenderVector2Editor(ctx, id, prop, instance, canWrite, onChanged);
+            RenderVector2Editor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType == typeof(Vector3))
         {
-            RenderVector3Editor(ctx, id, prop, instance, canWrite, onChanged);
+            RenderVector3Editor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType == typeof(Vector4))
         {
-            RenderVector4Editor(ctx, id, prop, instance, canWrite, onChanged);
+            RenderVector4Editor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType.IsEnum)
         {
-            RenderEnumEditor(ctx, id, prop, instance, canWrite, onChanged);
+            RenderEnumEditor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (prop.GetCustomAttribute<AssetRefAttribute>() != null)
         {
@@ -102,10 +103,11 @@ public static class PropertyEditorRenderer
     }
 
     private static void RenderStringEditor(UiContext ctx, string id, PropertyInfo prop,
-        object instance, bool canWrite, Action? onChanged)
+        object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
-        var value = prop.GetValue(instance)?.ToString() ?? "";
+        var oldValue = prop.GetValue(instance)?.ToString() ?? "";
+        var value = oldValue;
 
         var changed = Ui.TextField(ctx, id, ref value)
             .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
@@ -121,15 +123,19 @@ public static class PropertyEditorRenderer
         if (changed && canWrite)
         {
             prop.SetValue(instance, value);
+            editorVm.UndoSystem.Execute(
+                new PropertyChangeAction(instance, prop, oldValue, value),
+                $"Prop_String_{prop.Name}");
             onChanged?.Invoke();
         }
     }
 
     private static void RenderFloatEditor(UiContext ctx, string id, PropertyInfo prop,
-        object instance, bool canWrite, Action? onChanged)
+        object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
-        var value = (float)(prop.GetValue(instance) ?? 0f);
+        var oldValue = prop.GetValue(instance) ?? 0f;
+        var value = (float)oldValue;
         var rangeAttr = prop.GetCustomAttribute<RangeAttribute>();
 
         bool changed;
@@ -162,16 +168,19 @@ public static class PropertyEditorRenderer
         if (changed && canWrite)
         {
             prop.SetValue(instance, value);
+            editorVm.UndoSystem.Execute(
+                new PropertyChangeAction(instance, prop, oldValue, value),
+                $"Prop_Float_{prop.Name}");
             onChanged?.Invoke();
         }
     }
 
     private static void RenderDoubleEditor(UiContext ctx, string id, PropertyInfo prop,
-        object instance, bool canWrite, Action? onChanged)
+        object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
-        var doubleValue = (double)(prop.GetValue(instance) ?? 0.0);
-        var floatValue = (float)doubleValue;
+        var oldValue = prop.GetValue(instance) ?? 0.0;
+        var floatValue = (float)(double)oldValue;
 
         var changed = Ui.DraggableValue(ctx, id)
             .LabelWidth(0)
@@ -185,17 +194,21 @@ public static class PropertyEditorRenderer
 
         if (changed && canWrite)
         {
-            prop.SetValue(instance, (double)floatValue);
+            var newValue = (double)floatValue;
+            prop.SetValue(instance, newValue);
+            editorVm.UndoSystem.Execute(
+                new PropertyChangeAction(instance, prop, oldValue, newValue),
+                $"Prop_Double_{prop.Name}");
             onChanged?.Invoke();
         }
     }
 
     private static void RenderIntEditor(UiContext ctx, string id, PropertyInfo prop,
-        object instance, bool canWrite, Action? onChanged)
+        object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
-        var intValue = (int)(prop.GetValue(instance) ?? 0);
-        var floatValue = (float)intValue;
+        var oldValue = prop.GetValue(instance) ?? 0;
+        var floatValue = (float)(int)oldValue;
 
         var changed = Ui.DraggableValue(ctx, id)
             .LabelWidth(0)
@@ -209,17 +222,21 @@ public static class PropertyEditorRenderer
 
         if (changed && canWrite)
         {
-            prop.SetValue(instance, (int)floatValue);
+            var newValue = (int)floatValue;
+            prop.SetValue(instance, newValue);
+            editorVm.UndoSystem.Execute(
+                new PropertyChangeAction(instance, prop, oldValue, newValue),
+                $"Prop_Int_{prop.Name}");
             onChanged?.Invoke();
         }
     }
 
     private static void RenderUIntEditor(UiContext ctx, string id, PropertyInfo prop,
-        object instance, bool canWrite, Action? onChanged)
+        object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
-        var uintValue = (uint)(prop.GetValue(instance) ?? 0u);
-        var floatValue = (float)uintValue;
+        var oldValue = prop.GetValue(instance) ?? 0u;
+        var floatValue = (float)(uint)oldValue;
 
         var changed = Ui.DraggableValue(ctx, id)
             .LabelWidth(0)
@@ -233,13 +250,17 @@ public static class PropertyEditorRenderer
 
         if (changed && canWrite)
         {
-            prop.SetValue(instance, (uint)Math.Max(0, floatValue));
+            var newValue = (uint)Math.Max(0, floatValue);
+            prop.SetValue(instance, newValue);
+            editorVm.UndoSystem.Execute(
+                new PropertyChangeAction(instance, prop, oldValue, newValue),
+                $"Prop_UInt_{prop.Name}");
             onChanged?.Invoke();
         }
     }
 
     private static void RenderBoolEditor(UiContext ctx, string id, PropertyInfo prop,
-        object instance, bool canWrite, Action? onChanged)
+        object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
         var value = (bool)(prop.GetValue(instance) ?? false);
@@ -255,31 +276,39 @@ public static class PropertyEditorRenderer
         if (newValue != value && canWrite)
         {
             prop.SetValue(instance, newValue);
+            editorVm.UndoSystem.Execute(
+                new PropertyChangeAction(instance, prop, value, newValue));
             onChanged?.Invoke();
         }
     }
 
     private static void RenderVector2Editor(UiContext ctx, string id, PropertyInfo prop,
-        object instance, bool canWrite, Action? onChanged)
+        object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
-        var value = (Vector2)(prop.GetValue(instance) ?? Vector2.Zero);
+        var oldValue = prop.GetValue(instance) ?? Vector2.Zero;
+        var value = (Vector2)oldValue;
         var x = value.X;
         var y = value.Y;
 
         if (Ui.Vec2Editor(ctx, id, ref x, ref y, 0.1f, "F2",
             t.AxisX, t.AxisY, t.InputBackground, t.InputBackgroundFocused, t.InputText) && canWrite)
         {
-            prop.SetValue(instance, new Vector2(x, y));
+            var newValue = new Vector2(x, y);
+            prop.SetValue(instance, newValue);
+            editorVm.UndoSystem.Execute(
+                new PropertyChangeAction(instance, prop, oldValue, newValue),
+                $"Prop_Vec2_{prop.Name}");
             onChanged?.Invoke();
         }
     }
 
     private static void RenderVector3Editor(UiContext ctx, string id, PropertyInfo prop,
-        object instance, bool canWrite, Action? onChanged)
+        object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
-        var value = (Vector3)(prop.GetValue(instance) ?? Vector3.Zero);
+        var oldValue = prop.GetValue(instance) ?? Vector3.Zero;
+        var value = (Vector3)oldValue;
         var x = value.X;
         var y = value.Y;
         var z = value.Z;
@@ -287,16 +316,21 @@ public static class PropertyEditorRenderer
         if (Ui.Vec3Editor(ctx, id, ref x, ref y, ref z, 0.1f, "F2",
             t.AxisX, t.AxisY, t.AxisZ, t.InputBackground, t.InputBackgroundFocused, t.InputText) && canWrite)
         {
-            prop.SetValue(instance, new Vector3(x, y, z));
+            var newValue = new Vector3(x, y, z);
+            prop.SetValue(instance, newValue);
+            editorVm.UndoSystem.Execute(
+                new PropertyChangeAction(instance, prop, oldValue, newValue),
+                $"Prop_Vec3_{prop.Name}");
             onChanged?.Invoke();
         }
     }
 
     private static void RenderVector4Editor(UiContext ctx, string id, PropertyInfo prop,
-        object instance, bool canWrite, Action? onChanged)
+        object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
-        var value = (Vector4)(prop.GetValue(instance) ?? Vector4.Zero);
+        var oldValue = prop.GetValue(instance) ?? Vector4.Zero;
+        var value = (Vector4)oldValue;
         var x = value.X;
         var y = value.Y;
         var z = value.Z;
@@ -306,19 +340,23 @@ public static class PropertyEditorRenderer
             t.AxisX, t.AxisY, t.AxisZ, UiColor.Rgb(200, 180, 50),
             t.InputBackground, t.InputBackgroundFocused, t.InputText) && canWrite)
         {
-            prop.SetValue(instance, new Vector4(x, y, z, w));
+            var newValue = new Vector4(x, y, z, w);
+            prop.SetValue(instance, newValue);
+            editorVm.UndoSystem.Execute(
+                new PropertyChangeAction(instance, prop, oldValue, newValue),
+                $"Prop_Vec4_{prop.Name}");
             onChanged?.Invoke();
         }
     }
 
     private static void RenderEnumEditor(UiContext ctx, string id, PropertyInfo prop,
-        object instance, bool canWrite, Action? onChanged)
+        object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
         var propType = prop.PropertyType;
         var names = Enum.GetNames(propType);
-        var currentValue = prop.GetValue(instance);
-        var selectedIndex = currentValue != null ? Array.IndexOf(Enum.GetValues(propType), currentValue) : 0;
+        var oldValue = prop.GetValue(instance);
+        var selectedIndex = oldValue != null ? Array.IndexOf(Enum.GetValues(propType), oldValue) : 0;
 
         if (Ui.Dropdown(ctx, id, names)
             .Background(t.SurfaceInset, t.Hover)
@@ -332,7 +370,10 @@ public static class PropertyEditorRenderer
             .Show(ref selectedIndex) && canWrite)
         {
             var values = Enum.GetValues(propType);
-            prop.SetValue(instance, values.GetValue(selectedIndex));
+            var newValue = values.GetValue(selectedIndex);
+            prop.SetValue(instance, newValue);
+            editorVm.UndoSystem.Execute(
+                new PropertyChangeAction(instance, prop, oldValue, newValue));
             onChanged?.Invoke();
         }
     }
@@ -360,6 +401,7 @@ public static class PropertyEditorRenderer
             .GrowWidth()
             .Show())
         {
+            var oldAssetValue = prop.GetValue(instance);
             editorVm.OpenAssetPicker(assetRefAttr.AssetType, assetPath, asset =>
             {
                 if (asset != null && prop.CanWrite)
@@ -368,6 +410,8 @@ public static class PropertyEditorRenderer
                     if (resolved != null)
                     {
                         prop.SetValue(instance, resolved);
+                        editorVm.UndoSystem.Execute(
+                            new PropertyChangeAction(instance, prop, oldAssetValue, resolved));
                     }
                     onChanged?.Invoke();
                 }
