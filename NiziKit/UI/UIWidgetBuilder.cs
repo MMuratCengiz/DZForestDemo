@@ -360,7 +360,7 @@ public ref struct WidgetBuilder(UiContext ctx, uint id)
             TextColor = (_isDisabled ? _style.DisabledColor : _style.TextColor).ToClayColor(),
             FontSize = _style.FontSize
         };
-        ctx.Clay.Text(StringView.Intern(text), desc);
+        ctx.Clay.Text(text, desc);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -371,7 +371,7 @@ public ref struct WidgetBuilder(UiContext ctx, uint id)
             TextColor = color.ToClayColor(),
             FontSize = _style.FontSize
         };
-        ctx.Clay.Text(StringView.Intern(text), desc);
+        ctx.Clay.Text(text, desc);
     }
 
     public WidgetStyle CurrentStyle => _style;
@@ -400,7 +400,7 @@ public static class WidgetBuilderExtensions
             TextColor = style.TextColor.ToClayColor(),
             FontSize = style.FontSize
         };
-        ctx.Clay.Text(StringView.Intern(text), desc);
+        ctx.Clay.Text(text, desc);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -411,7 +411,7 @@ public static class WidgetBuilderExtensions
             TextColor = color.ToClayColor(),
             FontSize = fontSize
         };
-        ctx.Clay.Text(StringView.Intern(text), desc);
+        ctx.Clay.Text(text, desc);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

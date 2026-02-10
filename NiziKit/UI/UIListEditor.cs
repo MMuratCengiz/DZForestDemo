@@ -126,7 +126,7 @@ public ref struct UiListEditor
 
             _context.OpenElement(headerDecl);
             {
-                _context.Clay.Text(StringView.Intern(_title), new ClayTextDesc
+                _context.Clay.Text(_title, new ClayTextDesc
                 {
                     TextColor = _textColor.ToClayColor(),
                     FontSize = _fontSize
@@ -153,7 +153,7 @@ public ref struct UiListEditor
                     addDecl.BorderRadius = ClayBorderRadius.CreateUniform(3);
 
                     _context.OpenElement(addDecl);
-                    _context.Clay.Text(StringView.Intern(FontAwesome.Plus), new ClayTextDesc
+                    _context.Clay.Text(FontAwesome.Plus, new ClayTextDesc
                     {
                         TextColor = UiColor.Rgb(100, 200, 100).ToClayColor(),
                         FontSize = 12,
@@ -183,7 +183,7 @@ public ref struct UiListEditor
                     removeDecl.BorderRadius = ClayBorderRadius.CreateUniform(3);
 
                     _context.OpenElement(removeDecl);
-                    _context.Clay.Text(StringView.Intern(FontAwesome.Minus), new ClayTextDesc
+                    _context.Clay.Text(FontAwesome.Minus, new ClayTextDesc
                     {
                         TextColor = UiColor.Rgb(200, 100, 100).ToClayColor(),
                         FontSize = 12,
@@ -229,7 +229,7 @@ public ref struct UiListEditor
                     itemDecl.BackgroundColor = itemBg.ToClayColor();
 
                     _context.OpenElement(itemDecl);
-                    _context.Clay.Text(StringView.Intern(items[i]), new ClayTextDesc
+                    _context.Clay.Text(items[i], new ClayTextDesc
                     {
                         TextColor = _textColor.ToClayColor(),
                         FontSize = _fontSize

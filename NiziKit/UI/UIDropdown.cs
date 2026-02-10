@@ -302,7 +302,7 @@ public ref struct UiDropdown
             {
                 var displayText = SelectedItem ?? _placeholder;
                 var textColor = SelectedItem != null ? _style.TextColor : UiColor.Gray;
-                _context.Clay.Text(StringView.Intern(displayText), new ClayTextDesc
+                _context.Clay.Text(displayText, new ClayTextDesc
                 {
                     TextColor = textColor.ToClayColor(),
                     FontSize = _style.FontSize
@@ -326,7 +326,7 @@ public ref struct UiDropdown
         _context.OpenElement(arrowDecl);
         {
             var arrowText = _state.IsOpen ? "^" : "v";
-            _context.Clay.Text(StringView.Intern(arrowText), new ClayTextDesc
+            _context.Clay.Text(arrowText, new ClayTextDesc
             {
                 TextColor = _arrowColor.ToClayColor(),
                 FontSize = 12
@@ -413,7 +413,7 @@ public ref struct UiDropdown
 
         _context.OpenElement(itemDecl);
         {
-            _context.Clay.Text(StringView.Intern(_items[index]), new ClayTextDesc
+            _context.Clay.Text(_items[index], new ClayTextDesc
             {
                 TextColor = _style.TextColor.ToClayColor(),
                 FontSize = _style.FontSize

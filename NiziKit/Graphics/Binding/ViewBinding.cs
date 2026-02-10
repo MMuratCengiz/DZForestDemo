@@ -1,6 +1,5 @@
 using System.Numerics;
 using DenOfIz;
-using NiziKit.Core;
 using NiziKit.Graphics.Binding.Data;
 using NiziKit.Graphics.Binding.Layout;
 using NiziKit.Graphics.Buffers;

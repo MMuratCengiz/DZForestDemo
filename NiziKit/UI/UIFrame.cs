@@ -59,7 +59,7 @@ public readonly ref struct UiFrame
                 _ => ClayTextAlignment.Left
             }
         };
-        _context.Clay.Text(StringView.Intern(text), desc);
+        _context.Clay.Text(text, desc);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -78,7 +78,7 @@ public readonly ref struct UiFrame
             FontId = FontAwesome.FontId,
             TextAlignment = ClayTextAlignment.Center
         };
-        _context.Clay.Text(StringView.Intern(icon), desc);
+        _context.Clay.Text(icon, desc);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -96,7 +96,7 @@ public readonly ref struct UiFrame
                 _ => ClayTextAlignment.Left
             }
         };
-        _context.Clay.Text(StringView.Intern(icon), desc);
+        _context.Clay.Text(icon, desc);
     }
 }
 

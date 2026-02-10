@@ -1,5 +1,4 @@
 using DenOfIz;
-using BinaryReader = DenOfIz.BinaryReader;
 
 namespace NiziKit.Offline;
 

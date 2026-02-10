@@ -4,7 +4,6 @@ using DenOfIz;
 using NiziKit.Assets;
 using NiziKit.Graphics.Binding;
 using NiziKit.Graphics.Buffers;
-using NiziKit.Graphics.Resources;
 
 namespace NiziKit.Graphics.Renderer.Forward;
 

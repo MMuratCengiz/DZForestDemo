@@ -238,7 +238,7 @@ internal sealed class StringCache(Clay clay)
             return id;
         }
 
-        id = clay.HashString(StringView.Intern(name), 0, 0);
+        id = clay.HashString(name,0, 0);
         _cache[name] = id;
         return id;
     }
@@ -252,7 +252,7 @@ internal sealed class StringCache(Clay clay)
             return id;
         }
 
-        id = clay.HashString(StringView.Intern(name), index, 0);
+        id = clay.HashString(name,index, 0);
         _indexedCache[key] = id;
         return id;
     }
@@ -268,7 +268,7 @@ internal sealed class StringCache(Clay clay)
             return id;
         }
 
-        id = clay.HashString(StringView.Intern(name), parentId, subIndex);
+        id = clay.HashString(name,parentId, subIndex);
         _compositeCache[key] = id;
         return id;
     }

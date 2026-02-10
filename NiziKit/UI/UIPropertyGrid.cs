@@ -118,7 +118,7 @@ public ref struct UiPropertyGridScope
         labelDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
 
         _context.OpenElement(labelDecl);
-        _context.Clay.Text(StringView.Intern(label), new ClayTextDesc
+        _context.Clay.Text(label, new ClayTextDesc
         {
             TextColor = _labelColor.ToClayColor(),
             FontSize = _fontSize

@@ -366,7 +366,7 @@ public ref struct UiButton
                 FontSize = _fontSize,
                 TextAlignment = ClayTextAlignment.Center
             };
-            _context.Clay.Text(StringView.Intern(_text), textDesc);
+            _context.Clay.Text(_text, textDesc);
         }
         _context.Clay.CloseElement();
 
@@ -834,7 +834,7 @@ public ref struct UiCheckbox
                     TextColor = _labelColor.ToClayColor(),
                     FontSize = _fontSize
                 };
-                _context.Clay.Text(StringView.Intern(_label), textDesc);
+                _context.Clay.Text(_label, textDesc);
             }
         }
         _context.Clay.CloseElement();

@@ -1,7 +1,6 @@
 using DenOfIz;
 using NiziKit.Application;
 using NiziKit.Application.Timing;
-using NiziKit.Graphics;
 using NiziKit.Graphics.Renderer;
 using NiziKit.Graphics.Renderer.Forward;
 using NiziKit.UI;

@@ -898,7 +898,7 @@ public ref struct UiTextField
         {
             if (!string.IsNullOrEmpty(_placeholder))
             {
-                _context.Clay.Text(StringView.Intern(_placeholder),
+                _context.Clay.Text(_placeholder,
                     new ClayTextDesc { TextColor = _placeholderColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
             }
         }
@@ -931,7 +931,7 @@ public ref struct UiTextField
         }
         else if (!string.IsNullOrEmpty(text))
         {
-            _context.Clay.Text(StringView.Intern(text),
+            _context.Clay.Text(text,
                 new ClayTextDesc { TextColor = _textColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
         }
 
@@ -957,7 +957,7 @@ public ref struct UiTextField
 
         if (!string.IsNullOrEmpty(beforeSel))
         {
-            _context.Clay.Text(StringView.Intern(beforeSel),
+            _context.Clay.Text(beforeSel,
                 new ClayTextDesc { TextColor = _textColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
         }
 
@@ -967,22 +967,21 @@ public ref struct UiTextField
             selDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
             selDecl.BackgroundColor = _selectionColor.ToClayColor();
             _context.OpenElement(selDecl);
-            _context.Clay.Text(StringView.Intern(selected),
+            _context.Clay.Text(selected,
                 new ClayTextDesc { TextColor = _selectionTextColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
             _context.Clay.CloseElement();
         }
 
         if (!string.IsNullOrEmpty(afterSel))
         {
-            _context.Clay.Text(StringView.Intern(afterSel),
+            _context.Clay.Text(afterSel,
                 new ClayTextDesc { TextColor = _textColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
         }
     }
 
     private void RenderCursor(string text, int cursorPos, float lineHeight)
     {
-        var textView = StringView.Intern(text ?? "");
-        var cursorPixelX = _context.Clay.GetCursorOffsetAtIndex(textView, (uint)cursorPos, 0, _fontSize);
+        var cursorPixelX = _context.Clay.GetCursorOffsetAtIndex(text ?? "", (uint)cursorPos, 0, _fontSize);
         var cursorOffsetX = _context.Clay.PixelsToPoints(cursorPixelX);
 
         var cursorColor = _state.CursorVisible ? _cursorColor : UiColor.Transparent;
@@ -1045,7 +1044,7 @@ public ref struct UiTextField
             }
             else if (!string.IsNullOrEmpty(lineStr))
             {
-                _context.Clay.Text(StringView.Intern(lineStr),
+                _context.Clay.Text(lineStr,
                     new ClayTextDesc { TextColor = _textColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
             }
 
@@ -1062,8 +1061,7 @@ public ref struct UiTextField
 
     private void RenderFloatingLineCursor(uint lineId, string lineStr, int cursorCol, float lineHeight, int lineIdx)
     {
-        var textView = StringView.Intern(lineStr ?? "");
-        var cursorPixelX = _context.Clay.GetCursorOffsetAtIndex(textView, (uint)cursorCol, 0, _fontSize);
+        var cursorPixelX = _context.Clay.GetCursorOffsetAtIndex(lineStr ?? "", (uint)cursorCol, 0, _fontSize);
         var cursorOffsetX = _context.Clay.PixelsToPoints(cursorPixelX);
         var cursorColor = _state.CursorVisible ? _cursorColor : UiColor.Transparent;
 
@@ -1091,7 +1089,7 @@ public ref struct UiTextField
 
         if (!string.IsNullOrEmpty(beforeSel))
         {
-            _context.Clay.Text(StringView.Intern(beforeSel),
+            _context.Clay.Text(beforeSel,
                 new ClayTextDesc { TextColor = _textColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
         }
 
@@ -1101,14 +1099,14 @@ public ref struct UiTextField
             selDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
             selDecl.BackgroundColor = _selectionColor.ToClayColor();
             _context.OpenElement(selDecl);
-            _context.Clay.Text(StringView.Intern(selected),
+            _context.Clay.Text(selected,
                 new ClayTextDesc { TextColor = _selectionTextColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
             _context.Clay.CloseElement();
         }
 
         if (!string.IsNullOrEmpty(afterSel))
         {
-            _context.Clay.Text(StringView.Intern(afterSel),
+            _context.Clay.Text(afterSel,
                 new ClayTextDesc { TextColor = _textColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
         }
     }
@@ -1553,15 +1551,13 @@ public ref struct UiTextField
             lineIdx = Math.Min(lineIdx, Math.Max(0, _state.LineCount - 1));
 
             var lineStr = _state.GetLineString(lineIdx);
-            var textView = StringView.Intern(lineStr ?? "");
-            var col = (int)_context.Clay.GetCharIndexAtOffset(textView, clickX, 0, _fontSize);
+            var col = (int)_context.Clay.GetCharIndexAtOffset(lineStr ?? "", clickX, 0, _fontSize);
             return _state.GetPositionFromLineColumn(lineIdx, col);
         }
         else
         {
             var text = _state.Text;
-            var textView = StringView.Intern(text ?? "");
-            return (int)_context.Clay.GetCharIndexAtOffset(textView, clickX, 0, _fontSize);
+            return (int)_context.Clay.GetCharIndexAtOffset(text ?? "", clickX, 0, _fontSize);
         }
     }
 }

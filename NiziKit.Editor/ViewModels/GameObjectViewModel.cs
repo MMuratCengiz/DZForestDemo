@@ -1,5 +1,4 @@
 using System.Numerics;
-using NiziKit.Assets;
 using NiziKit.Components;
 using NiziKit.Core;
 using NiziKit.Physics;

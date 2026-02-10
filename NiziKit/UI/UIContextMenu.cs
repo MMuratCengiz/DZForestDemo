@@ -252,7 +252,7 @@ public ref struct UiContextMenu
                 {
                     if (!string.IsNullOrEmpty(item.Icon))
                     {
-                        _context.Clay.Text(StringView.Intern(item.Icon), new ClayTextDesc
+                        _context.Clay.Text(item.Icon, new ClayTextDesc
                         {
                             TextColor = (item.IsDisabled ? _disabledTextColor : _iconColor).ToClayColor(),
                             FontSize = _fontSize,
@@ -269,7 +269,7 @@ public ref struct UiContextMenu
                         _context.Clay.CloseElement();
                     }
 
-                    _context.Clay.Text(StringView.Intern(item.Label), new ClayTextDesc
+                    _context.Clay.Text(item.Label, new ClayTextDesc
                     {
                         TextColor = (item.IsDisabled ? _disabledTextColor : _textColor).ToClayColor(),
                         FontSize = _fontSize

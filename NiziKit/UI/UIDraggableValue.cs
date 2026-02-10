@@ -236,7 +236,7 @@ public ref struct UiDraggableValue
                 }
 
                 _context.OpenElement(labelDecl);
-                _context.Clay.Text(StringView.Intern(_label), new ClayTextDesc
+                _context.Clay.Text(_label, new ClayTextDesc
                 {
                     TextColor = effectiveLabelText.ToClayColor(),
                     FontSize = _fontSize,
@@ -264,14 +264,14 @@ public ref struct UiDraggableValue
 
             if (_prefix != null)
             {
-                _context.Clay.Text(StringView.Intern(_prefix), new ClayTextDesc
+                _context.Clay.Text(_prefix, new ClayTextDesc
                 {
                     TextColor = _prefixColor.ToClayColor(),
                     FontSize = _fontSize
                 });
             }
 
-            _context.Clay.Text(StringView.Intern(displayText), new ClayTextDesc
+            _context.Clay.Text(displayText, new ClayTextDesc
             {
                 TextColor = _valueTextColor.ToClayColor(),
                 FontSize = _fontSize

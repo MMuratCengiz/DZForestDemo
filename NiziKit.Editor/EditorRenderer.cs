@@ -4,7 +4,6 @@ using NiziKit.Components;
 using NiziKit.Core;
 using NiziKit.Editor.Gizmos;
 using NiziKit.Editor.ViewModels;
-using NiziKit.Graphics;
 using NiziKit.Graphics.Binding;
 using NiziKit.Graphics.Renderer;
 using NiziKit.Graphics.Resources;

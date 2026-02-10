@@ -212,7 +212,7 @@ public ref struct UiSlider
 
             if (_showValue)
             {
-                _context.Clay.Text(StringView.Intern(value.ToString(_format)), new ClayTextDesc
+                _context.Clay.Text(value.ToString(_format), new ClayTextDesc
                 {
                     TextColor = _valueColor.ToClayColor(),
                     FontSize = _fontSize

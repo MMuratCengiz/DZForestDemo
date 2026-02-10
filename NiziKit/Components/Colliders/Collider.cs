@@ -1,4 +1,3 @@
-using System.Numerics;
 using BepuPhysics;
 using BepuPhysics.Collidables;
 using NiziKit.Core;

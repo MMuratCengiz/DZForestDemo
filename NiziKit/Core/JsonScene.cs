@@ -6,7 +6,6 @@ using NiziKit.Assets.Pack;
 using NiziKit.Assets.Serde;
 using NiziKit.Components;
 using NiziKit.ContentPipeline;
-using NiziKit.Graphics;
 using NiziKit.Light;
 using NiziKit.Graphics.Renderer.Forward;
 using NiziKit.Physics;

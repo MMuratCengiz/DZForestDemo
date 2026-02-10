@@ -172,7 +172,7 @@ public ref struct UiTreeView
                 chevronDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
 
                 _context.OpenElement(chevronDecl);
-                _context.Clay.Text(StringView.Intern(chevronIcon), new ClayTextDesc
+                _context.Clay.Text(chevronIcon, new ClayTextDesc
                 {
                     TextColor = _chevronColor.ToClayColor(),
                     FontSize = 10,
@@ -204,7 +204,7 @@ public ref struct UiTreeView
 
             if (!string.IsNullOrEmpty(node.Icon))
             {
-                _context.Clay.Text(StringView.Intern(node.Icon), new ClayTextDesc
+                _context.Clay.Text(node.Icon, new ClayTextDesc
                 {
                     TextColor = _iconColor.ToClayColor(),
                     FontSize = (ushort)(_fontSize - 1),
@@ -213,7 +213,7 @@ public ref struct UiTreeView
                 });
             }
 
-            _context.Clay.Text(StringView.Intern(node.Label), new ClayTextDesc
+            _context.Clay.Text(node.Label, new ClayTextDesc
             {
                 TextColor = _textColor.ToClayColor(),
                 FontSize = _fontSize

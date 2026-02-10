@@ -2,7 +2,6 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using NiziKit.ContentPipeline;
 using NiziKit.Core;
-using NiziKit.Graphics;
 
 namespace NiziKit.Assets.Pack;
 

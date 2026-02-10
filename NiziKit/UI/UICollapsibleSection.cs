@@ -182,7 +182,7 @@ public ref struct UiCollapsibleSection
         _context.OpenElement(headerDecl);
         {
             var chevronIcon = _state.IsExpanded ? FontAwesome.ChevronDown : FontAwesome.ChevronRight;
-            _context.Clay.Text(StringView.Intern(chevronIcon), new ClayTextDesc
+            _context.Clay.Text(chevronIcon, new ClayTextDesc
             {
                 TextColor = _chevronColor.ToClayColor(),
                 FontSize = (ushort)(_fontSize - 2),
@@ -190,7 +190,7 @@ public ref struct UiCollapsibleSection
                 TextAlignment = ClayTextAlignment.Center
             });
 
-            _context.Clay.Text(StringView.Intern(_title), new ClayTextDesc
+            _context.Clay.Text(_title, new ClayTextDesc
             {
                 TextColor = _headerTextColor.ToClayColor(),
                 FontSize = _fontSize
@@ -212,7 +212,7 @@ public ref struct UiCollapsibleSection
                 badgeDecl.BackgroundColor = UiColor.Rgb(60, 60, 65).ToClayColor();
                 badgeDecl.BorderRadius = ClayBorderRadius.CreateUniform(3);
                 _context.OpenElement(badgeDecl);
-                _context.Clay.Text(StringView.Intern(_badge), new ClayTextDesc
+                _context.Clay.Text(_badge, new ClayTextDesc
                 {
                     TextColor = UiColor.Gray.ToClayColor(),
                     FontSize = (ushort)(_fontSize - 2)
@@ -230,7 +230,7 @@ public ref struct UiCollapsibleSection
                 actionDecl.Layout.Padding = new ClayPadding { Left = 4, Right = 4, Top = 2, Bottom = 2 };
                 actionDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
                 _context.OpenElement(actionDecl);
-                _context.Clay.Text(StringView.Intern(_headerActionIcon), new ClayTextDesc
+                _context.Clay.Text(_headerActionIcon, new ClayTextDesc
                 {
                     TextColor = actionColor.ToClayColor(),
                     FontSize = (ushort)(_fontSize - 2),
@@ -310,13 +310,13 @@ public readonly ref struct UiCollapsibleSectionScope
                 _ => ClayTextAlignment.Left
             }
         };
-        _context.Clay.Text(StringView.Intern(text), desc);
+        _context.Clay.Text(text, desc);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Icon(string icon, UiColor color, ushort size = 14)
     {
-        _context.Clay.Text(StringView.Intern(icon), new ClayTextDesc
+        _context.Clay.Text(icon, new ClayTextDesc
         {
             TextColor = color.ToClayColor(),
             FontSize = size,
