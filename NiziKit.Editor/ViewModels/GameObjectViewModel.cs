@@ -305,9 +305,6 @@ public class GameObjectViewModel
                 cylinder.Height = size.Y;
                 cylinder.Center = center;
                 break;
-            case Rigidbody rb:
-                rb.Shape = PhysicsShape.Box(size);
-                break;
         }
     }
 

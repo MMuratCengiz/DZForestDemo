@@ -406,7 +406,6 @@ public class EditorSceneService
         {
             json.Properties["bodyType"] = JsonSerializer.SerializeToElement(rbComp.BodyType.ToString().ToLowerInvariant());
             json.Properties["mass"] = JsonSerializer.SerializeToElement(rbComp.Mass);
-            json.Properties["shape"] = SerializePhysicsShape(rbComp.Shape);
             if (rbComp.SpeculativeMargin != 0f)
             {
                 json.Properties["speculativeMargin"] = JsonSerializer.SerializeToElement(rbComp.SpeculativeMargin);

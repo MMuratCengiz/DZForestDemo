@@ -13,19 +13,13 @@ public struct Renderable
     public IReadOnlyDictionary<string, string>? Tags;
 }
 
-public class RenderBatch
+public class RenderBatch(SurfaceComponent surface, Mesh mesh)
 {
-    public SurfaceComponent Surface { get; }
-    public Mesh Mesh { get; }
+    public SurfaceComponent Surface { get; } = surface;
+    public Mesh Mesh { get; } = mesh;
     public List<Renderable> Objects { get; } = new(32);
 
     public int Count => Objects.Count;
-
-    public RenderBatch(SurfaceComponent surface, Mesh mesh)
-    {
-        Surface = surface;
-        Mesh = mesh;
-    }
 
     public void Add(Renderable obj)
     {

@@ -1,20 +1,16 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
 using NiziKit.Assets;
+using NiziKit.Components;
+using NiziKit.Core;
 
 namespace NiziKit.Editor.Gizmos;
 
 [StructLayout(LayoutKind.Sequential)]
-public struct GizmoVertex
+public struct GizmoVertex(Vector3 position, Vector4 color)
 {
-    public Vector3 Position;
-    public Vector4 Color;
-
-    public GizmoVertex(Vector3 position, Vector4 color)
-    {
-        Position = position;
-        Color = color;
-    }
+    public Vector3 Position = position;
+    public Vector4 Color = color;
 }
 
 public static class GizmoGeometry
@@ -637,5 +633,175 @@ public static class GizmoGeometry
         vertices.Add(new GizmoVertex(tipTop, color));
         vertices.Add(new GizmoVertex(tipRight, color));
         vertices.Add(new GizmoVertex(tipFront, color));
+    }
+
+    public static readonly Vector4 ColliderWireframeColor = new(0.4f, 1.0f, 0.4f, 0.9f);
+    private const int WireframeCircleSegments = 32;
+
+    public static void BuildColliderWireframes(List<GizmoVertex> vertices, GameObject obj)
+    {
+        var collider = obj.GetComponent<Collider>();
+        if (collider == null)
+        {
+            return;
+        }
+
+        Matrix4x4.Decompose(obj.WorldMatrix, out _, out var rotation, out var translation);
+        var poseMatrix = Matrix4x4.CreateFromQuaternion(rotation) * Matrix4x4.CreateTranslation(translation);
+        BuildColliderWireframe(vertices, collider, poseMatrix);
+    }
+
+    private static void BuildColliderWireframe(List<GizmoVertex> vertices, Collider collider, Matrix4x4 worldMatrix)
+    {
+        switch (collider)
+        {
+            case BoxCollider box:
+                BuildBoxWireframe(vertices, box.Center, box.Size, worldMatrix, ColliderWireframeColor);
+                break;
+            case SphereCollider sphere:
+                BuildSphereWireframe(vertices, sphere.Center, sphere.Radius, worldMatrix, ColliderWireframeColor);
+                break;
+            case CapsuleCollider capsule:
+                BuildCapsuleWireframe(vertices, capsule.Center, capsule.Radius, capsule.Height, capsule.Direction, worldMatrix, ColliderWireframeColor);
+                break;
+            case CylinderCollider cylinder:
+                BuildCylinderWireframe(vertices, cylinder.Center, cylinder.Radius, cylinder.Height, cylinder.Direction, worldMatrix, ColliderWireframeColor);
+                break;
+        }
+    }
+
+    public static void BuildBoxWireframe(List<GizmoVertex> vertices, Vector3 center, Vector3 size, Matrix4x4 worldMatrix, Vector4 color)
+    {
+        var h = size * 0.5f;
+
+        Vector3[] corners =
+        [
+            new(-h.X, -h.Y, -h.Z),
+            new(h.X, -h.Y, -h.Z),
+            new(h.X, h.Y, -h.Z),
+            new(-h.X, h.Y, -h.Z),
+            new(-h.X, -h.Y, h.Z),
+            new(h.X, -h.Y, h.Z),
+            new(h.X, h.Y, h.Z),
+            new(-h.X, h.Y, h.Z)
+        ];
+
+        for (var i = 0; i < 8; i++)
+        {
+            corners[i] = Vector3.Transform(corners[i] + center, worldMatrix);
+        }
+
+        int[] edges = [0, 1, 1, 2, 2, 3, 3, 0, 4, 5, 5, 6, 6, 7, 7, 4, 0, 4, 1, 5, 2, 6, 3, 7];
+        for (var i = 0; i < edges.Length; i++)
+        {
+            vertices.Add(new GizmoVertex(corners[edges[i]], color));
+        }
+    }
+
+    public static void BuildSphereWireframe(List<GizmoVertex> vertices, Vector3 center, float radius, Matrix4x4 worldMatrix, Vector4 color)
+    {
+        BuildWireframeCircle(vertices, center, Vector3.UnitX, Vector3.UnitY, radius, worldMatrix, color);
+        BuildWireframeCircle(vertices, center, Vector3.UnitX, Vector3.UnitZ, radius, worldMatrix, color);
+        BuildWireframeCircle(vertices, center, Vector3.UnitY, Vector3.UnitZ, radius, worldMatrix, color);
+    }
+
+    public static void BuildCapsuleWireframe(List<GizmoVertex> vertices, Vector3 center, float radius, float height, ColliderDirection direction, Matrix4x4 worldMatrix, Vector4 color)
+    {
+        GetDirectionAxes(direction, out var up, out var right, out var forward);
+        var cylinderHalf = MathF.Max(0, (height - radius * 2f) * 0.5f);
+
+        var topCenter = center + up * cylinderHalf;
+        var bottomCenter = center - up * cylinderHalf;
+
+        BuildWireframeCircle(vertices, topCenter, right, forward, radius, worldMatrix, color);
+        BuildWireframeCircle(vertices, bottomCenter, right, forward, radius, worldMatrix, color);
+
+        const int lines = 4;
+        for (var i = 0; i < lines; i++)
+        {
+            var angle = (float)i / lines * MathF.PI * 2;
+            var offset = (MathF.Cos(angle) * right + MathF.Sin(angle) * forward) * radius;
+            var p1 = Vector3.Transform(topCenter + offset, worldMatrix);
+            var p2 = Vector3.Transform(bottomCenter + offset, worldMatrix);
+            vertices.Add(new GizmoVertex(p1, color));
+            vertices.Add(new GizmoVertex(p2, color));
+        }
+
+        BuildWireframeHalfCircle(vertices, topCenter, right, up, radius, worldMatrix, color);
+        BuildWireframeHalfCircle(vertices, topCenter, forward, up, radius, worldMatrix, color);
+        BuildWireframeHalfCircle(vertices, bottomCenter, right, -up, radius, worldMatrix, color);
+        BuildWireframeHalfCircle(vertices, bottomCenter, forward, -up, radius, worldMatrix, color);
+    }
+
+    public static void BuildCylinderWireframe(List<GizmoVertex> vertices, Vector3 center, float radius, float height, ColliderDirection direction, Matrix4x4 worldMatrix, Vector4 color)
+    {
+        GetDirectionAxes(direction, out var up, out var right, out var forward);
+        var halfHeight = height * 0.5f;
+
+        var topCenter = center + up * halfHeight;
+        var bottomCenter = center - up * halfHeight;
+
+        BuildWireframeCircle(vertices, topCenter, right, forward, radius, worldMatrix, color);
+        BuildWireframeCircle(vertices, bottomCenter, right, forward, radius, worldMatrix, color);
+
+        const int lines = 8;
+        for (var i = 0; i < lines; i++)
+        {
+            var angle = (float)i / lines * MathF.PI * 2;
+            var offset = (MathF.Cos(angle) * right + MathF.Sin(angle) * forward) * radius;
+            var p1 = Vector3.Transform(topCenter + offset, worldMatrix);
+            var p2 = Vector3.Transform(bottomCenter + offset, worldMatrix);
+            vertices.Add(new GizmoVertex(p1, color));
+            vertices.Add(new GizmoVertex(p2, color));
+        }
+    }
+
+    private static void BuildWireframeCircle(List<GizmoVertex> vertices, Vector3 center, Vector3 axis1, Vector3 axis2, float radius, Matrix4x4 worldMatrix, Vector4 color)
+    {
+        for (var i = 0; i < WireframeCircleSegments; i++)
+        {
+            var a1 = (float)i / WireframeCircleSegments * MathF.PI * 2;
+            var a2 = (float)(i + 1) / WireframeCircleSegments * MathF.PI * 2;
+            var p1 = center + (axis1 * MathF.Cos(a1) + axis2 * MathF.Sin(a1)) * radius;
+            var p2 = center + (axis1 * MathF.Cos(a2) + axis2 * MathF.Sin(a2)) * radius;
+            vertices.Add(new GizmoVertex(Vector3.Transform(p1, worldMatrix), color));
+            vertices.Add(new GizmoVertex(Vector3.Transform(p2, worldMatrix), color));
+        }
+    }
+
+    private static void BuildWireframeHalfCircle(List<GizmoVertex> vertices, Vector3 center, Vector3 tangent, Vector3 up, float radius, Matrix4x4 worldMatrix, Vector4 color)
+    {
+        var halfSegments = WireframeCircleSegments / 2;
+        for (var i = 0; i < halfSegments; i++)
+        {
+            var a1 = (float)i / halfSegments * MathF.PI;
+            var a2 = (float)(i + 1) / halfSegments * MathF.PI;
+            var p1 = center + (tangent * MathF.Cos(a1) + up * MathF.Sin(a1)) * radius;
+            var p2 = center + (tangent * MathF.Cos(a2) + up * MathF.Sin(a2)) * radius;
+            vertices.Add(new GizmoVertex(Vector3.Transform(p1, worldMatrix), color));
+            vertices.Add(new GizmoVertex(Vector3.Transform(p2, worldMatrix), color));
+        }
+    }
+
+    private static void GetDirectionAxes(ColliderDirection direction, out Vector3 up, out Vector3 right, out Vector3 forward)
+    {
+        switch (direction)
+        {
+            case ColliderDirection.X:
+                up = Vector3.UnitX;
+                right = Vector3.UnitY;
+                forward = Vector3.UnitZ;
+                break;
+            case ColliderDirection.Z:
+                up = Vector3.UnitZ;
+                right = Vector3.UnitX;
+                forward = Vector3.UnitY;
+                break;
+            default:
+                up = Vector3.UnitY;
+                right = Vector3.UnitX;
+                forward = Vector3.UnitZ;
+                break;
+        }
     }
 }

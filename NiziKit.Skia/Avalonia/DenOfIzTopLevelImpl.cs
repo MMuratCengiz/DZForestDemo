@@ -289,20 +289,14 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
     }
 }
 
-internal sealed class DenOfIzTextInputMethod : ITextInputMethodImpl
+internal sealed class DenOfIzTextInputMethod(DenOfIzTopLevelImpl owner) : ITextInputMethodImpl
 {
-    private readonly DenOfIzTopLevelImpl _owner;
     private TextInputMethodClient? _client;
-
-    public DenOfIzTextInputMethod(DenOfIzTopLevelImpl owner)
-    {
-        _owner = owner;
-    }
 
     public void SetClient(TextInputMethodClient? client)
     {
         _client = client;
-        _owner.OnTextInputActiveChanged(client != null);
+        owner.OnTextInputActiveChanged(client != null);
     }
 
     public void SetCursorRect(Rect rect)

@@ -2,21 +2,12 @@ using NiziKit.Components;
 
 namespace NiziKit.Editor.ViewModels;
 
-public class ComponentViewModel
+public class ComponentViewModel(IComponent component, GameObjectViewModel owner)
 {
-    private readonly IComponent _component;
-    private readonly GameObjectViewModel _owner;
+    public IComponent Component => component;
+    public GameObjectViewModel Owner => owner;
 
-    public ComponentViewModel(IComponent component, GameObjectViewModel owner)
-    {
-        _component = component;
-        _owner = owner;
-    }
-
-    public IComponent Component => _component;
-    public GameObjectViewModel Owner => _owner;
-
-    public string TypeName => _component.GetType().Name;
+    public string TypeName => component.GetType().Name;
 
     public string DisplayName
     {
@@ -40,11 +31,11 @@ public class ComponentViewModel
 
     public void NotifyChanged()
     {
-        _component.Owner?.NotifyComponentChanged(_component);
+        component.Owner?.NotifyComponentChanged(component);
     }
 
     public void Remove()
     {
-        _owner.RemoveComponent(this);
+        owner.RemoveComponent(this);
     }
 }

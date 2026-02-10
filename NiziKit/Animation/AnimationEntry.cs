@@ -37,6 +37,6 @@ public class AnimationEntry
 
     public override string ToString()
     {
-        return IsExternal ? $"{Name} (from {SourceRef})" : Name;
+        return Name;
     }
 }

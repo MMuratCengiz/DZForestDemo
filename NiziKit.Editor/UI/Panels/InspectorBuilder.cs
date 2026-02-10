@@ -1,6 +1,11 @@
+using NiziKit.Assets;
+using NiziKit.Assets.Pack;
+using NiziKit.Components;
+using NiziKit.Core;
 using NiziKit.Editor.Services;
 using NiziKit.Editor.Theme;
 using NiziKit.Editor.ViewModels;
+using NiziKit.Graphics.Renderer.Forward;
 using NiziKit.UI;
 
 namespace NiziKit.Editor.UI.Panels;
@@ -135,6 +140,14 @@ public static class InspectorBuilder
             ui.Icon(FontAwesome.Film, t.Accent, t.IconSizeSmall);
             ui.Text(vm.SceneDisplayName, new UiTextStyle { Color = t.TextPrimary, FontSize = t.FontSizeBody });
         }
+
+        BuildGridSettings(ui, ctx, vm);
+        BuildSkyboxSettings(ui, ctx, vm);
+    }
+
+    private static void BuildGridSettings(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    {
+        var t = EditorTheme.Current;
 
         using var section = Ui.CollapsibleSection(ctx, "GridSettings", "Grid Settings", true)
             .HeaderBackground(t.SectionHeaderBg, t.Hover)
@@ -278,6 +291,107 @@ public static class InspectorBuilder
             {
                 ui.Text(vm.AutoSaveStatus, new UiTextStyle { Color = t.TextMuted, FontSize = t.FontSizeCaption });
             }
+        }
+    }
+
+    private static void BuildSkyboxSettings(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    {
+        var t = EditorTheme.Current;
+        var scene = World.CurrentScene;
+        if (scene == null)
+        {
+            return;
+        }
+
+        using var section = Ui.CollapsibleSection(ctx, "SkyboxSettings", "Skybox Settings", false)
+            .HeaderBackground(t.SectionHeaderBg, t.Hover)
+            .HeaderTextColor(t.TextPrimary)
+            .BodyBackground(t.PanelBackground)
+            .ChevronColor(t.TextMuted)
+            .FontSize(t.FontSizeBody)
+            .Padding(8)
+            .Gap(4)
+            .Open();
+
+        if (!section.IsExpanded)
+        {
+            return;
+        }
+
+        scene.Skybox ??= new SkyboxData();
+
+        using var grid = Ui.PropertyGrid(ctx, "SkyboxGrid")
+            .LabelWidth(50)
+            .FontSize(t.FontSizeCaption)
+            .RowHeight(24)
+            .Gap(2)
+            .LabelColor(t.TextSecondary)
+            .Open();
+
+        RenderSkyboxFaceEditor(ui, ctx, grid, "Right", scene.Skybox.RightRef, vm, (tex, path) =>
+        {
+            scene.Skybox.Right = tex;
+            scene.Skybox.RightRef = path;
+        });
+
+        RenderSkyboxFaceEditor(ui, ctx, grid, "Left", scene.Skybox.LeftRef, vm, (tex, path) =>
+        {
+            scene.Skybox.Left = tex;
+            scene.Skybox.LeftRef = path;
+        });
+
+        RenderSkyboxFaceEditor(ui, ctx, grid, "Up", scene.Skybox.UpRef, vm, (tex, path) =>
+        {
+            scene.Skybox.Up = tex;
+            scene.Skybox.UpRef = path;
+        });
+
+        RenderSkyboxFaceEditor(ui, ctx, grid, "Down", scene.Skybox.DownRef, vm, (tex, path) =>
+        {
+            scene.Skybox.Down = tex;
+            scene.Skybox.DownRef = path;
+        });
+
+        RenderSkyboxFaceEditor(ui, ctx, grid, "Front", scene.Skybox.FrontRef, vm, (tex, path) =>
+        {
+            scene.Skybox.Front = tex;
+            scene.Skybox.FrontRef = path;
+        });
+
+        RenderSkyboxFaceEditor(ui, ctx, grid, "Back", scene.Skybox.BackRef, vm, (tex, path) =>
+        {
+            scene.Skybox.Back = tex;
+            scene.Skybox.BackRef = path;
+        });
+    }
+
+    private static void RenderSkyboxFaceEditor(UiFrame ui, UiContext ctx, UiPropertyGridScope grid,
+        string label, string? currentPath, EditorViewModel vm, Action<Texture2d?, string?> onChanged)
+    {
+        var t = EditorTheme.Current;
+
+        using var row = grid.Row(label);
+
+        var displayText = string.IsNullOrEmpty(currentPath) ? "(none)" : Path.GetFileName(currentPath);
+
+        if (Ui.Button(ctx, $"Skybox{label}Btn", displayText)
+            .Color(t.SurfaceInset, t.Hover, t.Active)
+            .TextColor(t.TextPrimary)
+            .FontSize(t.FontSizeCaption)
+            .CornerRadius(t.RadiusSmall)
+            .Padding(4, 3)
+            .GrowWidth()
+            .Show())
+        {
+            vm.OpenAssetPicker(AssetRefType.Texture, currentPath, asset =>
+            {
+                if (asset != null)
+                {
+                    var texture = AssetPacks.GetTextureByPath(asset.Path);
+                    onChanged(texture, asset.Path);
+                    vm.MarkDirty();
+                }
+            });
         }
     }
 }

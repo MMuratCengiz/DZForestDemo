@@ -39,26 +39,27 @@ public partial class Animator : IDisposable
     [JsonProperty("animations")]
     public List<AnimationEntry> Animations { get; set; } = [];
 
-    public bool IsPlaying { get; private set; }
-    public bool IsPaused { get; private set; }
-    public string? CurrentAnimation => _layers[0].CurrentAnimation?.Name;
-    public LoopMode CurrentLoopMode => _layers[0].LoopMode;
-    public float Time => _layers[0].Time;
-    public float NormalizedTime => _layers[0].NormalizedTime;
-    public float Duration => _layers[0].CurrentAnimation?.Duration ?? 0f;
-    public float Speed { get; set; } = 1f;
-    public int LoopCount => _layers[0].LoopCount;
+    [HideInInspector] public bool IsPlaying { get; private set; }
+    [HideInInspector] public bool IsPaused { get; private set; }
+    [HideInInspector] public string? CurrentAnimation => _layers[0].CurrentAnimation?.Name;
+    [HideInInspector] public LoopMode CurrentLoopMode => _layers[0].LoopMode;
+    [HideInInspector] public float Time => _layers[0].Time;
+    [HideInInspector] public float NormalizedTime => _layers[0].NormalizedTime;
+    [HideInInspector] public float Duration => _layers[0].CurrentAnimation?.Duration ?? 0f;
+    [HideInInspector] public float Speed { get; set; } = 1f;
+    [HideInInspector] public int LoopCount => _layers[0].LoopCount;
 
-    public bool IsBlending => _layers[0].IsBlending;
-    public float BlendProgress => _layers[0].BlendProgress;
+    [HideInInspector] public bool IsBlending => _layers[0].IsBlending;
+    [HideInInspector] public float BlendProgress => _layers[0].BlendProgress;
 
-    public int BoneCount { get; private set; }
-    public ReadOnlySpan<Matrix4x4> BoneMatrices => _boneMatrices.AsSpan(0, BoneCount);
-    public bool IsInitialized => _initialized;
+    [HideInInspector] public int BoneCount { get; private set; }
+    [HideInInspector] public ReadOnlySpan<Matrix4x4> BoneMatrices => _boneMatrices.AsSpan(0, BoneCount);
+    [HideInInspector] public bool IsInitialized => _initialized;
 
     private string[]? _cachedAnimationNames;
     private int _cachedAnimationCount = -1;
 
+    [HideInInspector]
     public IReadOnlyList<string> AnimationNames
     {
         get
@@ -80,9 +81,9 @@ public partial class Animator : IDisposable
         }
     }
 
-    public IReadOnlyList<string> JointNames => _jointNames;
+    [HideInInspector] public IReadOnlyList<string> JointNames => _jointNames;
 
-    public int LayerCount => _layerCount;
+    [HideInInspector] public int LayerCount => _layerCount;
 
     private readonly Layer[] _layers = new Layer[MaxLayers];
     private int _layerCount = 1;

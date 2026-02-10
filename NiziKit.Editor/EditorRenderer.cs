@@ -17,7 +17,7 @@ public class EditorRenderer(IRenderer gameRenderer) : IDisposable
 
     private readonly CycledTexture _sceneDepth = CycledTexture.DepthAttachment("EditorSceneDepth");
 
-    private readonly GizmoPass _gizmoPass = new();
+    private readonly EditorOverlayPass _overlayPass = new();
     private EditorViewModel? _editorViewModel;
 
     public RenderFrame RenderFrame => _renderFrame;
@@ -28,7 +28,7 @@ public class EditorRenderer(IRenderer gameRenderer) : IDisposable
         set => _editorViewModel = value;
     }
 
-    public GizmoPass GizmoPass => _gizmoPass;
+    public EditorOverlayPass EditorOverlayPass => _overlayPass;
 
     public CameraComponent? Camera
     {
@@ -57,24 +57,25 @@ public class EditorRenderer(IRenderer gameRenderer) : IDisposable
             _viewData.TotalTime = Time.TotalTime;
         }
 
-        _gizmoPass.BeginFrame();
+        _overlayPass.BeginFrame();
 
         var selected = _editorViewModel?.SelectedGameObject?.GameObject;
-        _gizmoPass.Gizmo.Target = selected;
+        _overlayPass.Gizmo.Target = selected;
 
         if (selected != null)
         {
-            _gizmoPass.AddSelectionBox(selected);
+            _overlayPass.AddSelectionBox(selected);
+            _overlayPass.BuildColliderWireframes(selected);
 
             if (_viewData.Camera != null)
             {
-                _gizmoPass.BuildGizmoGeometry(_viewData.Camera);
+                _overlayPass.BuildGizmoGeometry(_viewData.Camera);
             }
         }
 
         if (scene != null && _viewData.Camera != null)
         {
-            _gizmoPass.BuildSceneIcons(scene, _viewData.Camera, selected);
+            _overlayPass.BuildSceneIcons(scene, _viewData.Camera, selected);
         }
 
         var pass = _renderFrame.BeginGraphicsPass();
@@ -82,7 +83,7 @@ public class EditorRenderer(IRenderer gameRenderer) : IDisposable
         pass.SetDepthTarget(_sceneDepth, LoadOp.Load);
         pass.Begin();
 
-        _gizmoPass.Render(pass, _viewData, _sceneDepth);
+        _overlayPass.Render(pass, _viewData, _sceneDepth);
 
         pass.End();
     }
@@ -94,7 +95,7 @@ public class EditorRenderer(IRenderer gameRenderer) : IDisposable
 
     public void Dispose()
     {
-        _gizmoPass.Dispose();
+        _overlayPass.Dispose();
         _sceneDepth.Dispose();
         _renderFrame.Dispose();
         gameRenderer.Dispose();

@@ -13,6 +13,8 @@ public struct UiListEditorResult
     public bool Added;
     public bool Removed;
     public int RemovedIndex;
+    public bool ActionClicked;
+    public int ActionClickedIndex;
 }
 
 public ref struct UiListEditor
@@ -32,6 +34,9 @@ public ref struct UiListEditor
     private float _itemHeight;
     private UiSizing _width;
     private UiSizing _height;
+    private string? _itemActionIcon;
+    private UiColor _itemActionColor;
+    private UiColor _itemActionHoverColor;
 
     internal UiListEditor(UiContext ctx, string id, UiListEditorState state)
     {
@@ -51,6 +56,9 @@ public ref struct UiListEditor
         _itemHeight = 26;
         _width = UiSizing.Grow();
         _height = UiSizing.Fixed(200);
+        _itemActionIcon = null;
+        _itemActionColor = UiColor.Rgb(180, 180, 180);
+        _itemActionHoverColor = UiColor.Rgb(60, 60, 65);
     }
 
     public uint Id { get; }
@@ -93,6 +101,15 @@ public ref struct UiListEditor
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiListEditor Height(UiSizing sizing) { _height = sizing; return this; }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiListEditor ItemAction(string icon, UiColor color, UiColor? hoverColor = null)
+    {
+        _itemActionIcon = icon;
+        _itemActionColor = color;
+        _itemActionHoverColor = hoverColor ?? UiColor.Rgb(60, 60, 65);
+        return this;
+    }
 
     public UiListEditorResult Show(string[] items, ref int selectedIndex)
     {
@@ -234,9 +251,47 @@ public ref struct UiListEditor
                         TextColor = _textColor.ToClayColor(),
                         FontSize = _fontSize
                     });
+
+                    if (_itemActionIcon != null)
+                    {
+                        var spacerItemId = _context.StringCache.GetId("LEISpc", Id, (uint)i);
+                        var spacerItemDecl = new ClayElementDeclaration { Id = spacerItemId };
+                        spacerItemDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
+                        _context.OpenElement(spacerItemDecl);
+                        _context.Clay.CloseElement();
+
+                        var actionId = _context.StringCache.GetId("LEIAct", Id, (uint)i);
+                        var actionInteraction = _context.GetInteraction(actionId);
+                        var actionBg = actionInteraction.IsHovered ? _itemActionHoverColor : UiColor.Transparent;
+
+                        var actionDecl = new ClayElementDeclaration { Id = actionId };
+                        actionDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(20);
+                        actionDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(20);
+                        actionDecl.Layout.ChildAlignment.X = ClayAlignmentX.Center;
+                        actionDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
+                        actionDecl.BackgroundColor = actionBg.ToClayColor();
+                        actionDecl.BorderRadius = ClayBorderRadius.CreateUniform(3);
+
+                        _context.OpenElement(actionDecl);
+                        _context.Clay.Text(_itemActionIcon, new ClayTextDesc
+                        {
+                            TextColor = _itemActionColor.ToClayColor(),
+                            FontSize = (ushort)(_fontSize - 1),
+                            FontId = FontAwesome.FontId,
+                            TextAlignment = ClayTextAlignment.Center
+                        });
+                        _context.Clay.CloseElement();
+
+                        if (actionInteraction.WasClicked)
+                        {
+                            result.ActionClicked = true;
+                            result.ActionClickedIndex = i;
+                        }
+                    }
+
                     _context.Clay.CloseElement();
 
-                    if (interaction.WasClicked)
+                    if (interaction.WasClicked && !result.ActionClicked)
                     {
                         _state.SelectedIndex = i;
                         selectedIndex = i;

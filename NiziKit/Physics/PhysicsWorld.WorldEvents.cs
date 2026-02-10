@@ -86,7 +86,12 @@ public sealed partial class PhysicsWorld
         }
 
         var collider = go.GetComponent<Collider>();
-        var shape = collider?.CreateShape() ?? rigidbody.Shape;
+        if (collider == null)
+        {
+            return;
+        }
+
+        var shape = collider.CreateShape();
 
         if (shape.Size == System.Numerics.Vector3.Zero)
         {
@@ -97,31 +102,14 @@ public sealed partial class PhysicsWorld
         {
             var handle = CreateStaticBody(go.Id, go.LocalPosition, go.LocalRotation, shape);
             rigidbody.StaticHandle = handle;
-            if (collider != null)
-            {
-                collider.StaticHandle = handle;
-            }
+            collider.StaticHandle = handle;
         }
         else
         {
-            var desc = rigidbody.ToBodyDesc();
-            if (collider != null)
-            {
-                desc = new PhysicsBodyDesc
-                {
-                    Shape = shape,
-                    BodyType = desc.BodyType,
-                    Mass = desc.Mass,
-                    SpeculativeMargin = desc.SpeculativeMargin,
-                    SleepThreshold = desc.SleepThreshold
-                };
-            }
+            var desc = rigidbody.ToBodyDesc(shape);
             var handle = CreateBody(go.Id, go.LocalPosition, go.LocalRotation, desc);
             rigidbody.BodyHandle = handle;
-            if (collider != null)
-            {
-                collider.BodyHandle = handle;
-            }
+            collider.BodyHandle = handle;
         }
 
         _trackedObjects[go.Id] = (go, rigidbody);

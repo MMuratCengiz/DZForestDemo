@@ -8,9 +8,6 @@ namespace NiziKit.Components;
 [NiziComponent]
 public partial class Rigidbody
 {
-    [JsonProperty("shape")]
-    public partial PhysicsShape Shape { get; set; }
-
     [JsonProperty("bodyType")]
     public partial PhysicsBodyType BodyType { get; set; }
 
@@ -26,11 +23,16 @@ public partial class Rigidbody
     internal BodyHandle? BodyHandle { get; set; }
     internal StaticHandle? StaticHandle { get; set; }
 
+    [HideInInspector]
     public bool IsRegistered => BodyHandle.HasValue || StaticHandle.HasValue;
+    [HideInInspector]
     public bool IsDynamic => BodyType == PhysicsBodyType.Dynamic;
+    [HideInInspector]
     public bool IsStatic => BodyType == PhysicsBodyType.Static;
+    [HideInInspector]
     public bool IsKinematic => BodyType == PhysicsBodyType.Kinematic;
 
+    [HideInInspector]
     public Vector3 Velocity
     {
         get => IsRegistered ? Core.World.PhysicsWorld.GetVelocity(Owner!.Id) : Vector3.Zero;
@@ -43,6 +45,7 @@ public partial class Rigidbody
         }
     }
 
+    [HideInInspector]
     public Vector3 AngularVelocity
     {
         get => IsRegistered ? Core.World.PhysicsWorld.GetAngularVelocity(Owner!.Id) : Vector3.Zero;
@@ -55,6 +58,7 @@ public partial class Rigidbody
         }
     }
 
+    [HideInInspector]
     public Vector3 Position
     {
         get
@@ -69,6 +73,7 @@ public partial class Rigidbody
         }
     }
 
+    [HideInInspector]
     public Quaternion Rotation
     {
         get
@@ -83,11 +88,11 @@ public partial class Rigidbody
         }
     }
 
+    [HideInInspector]
     public bool IsSleeping => IsRegistered && Core.World.PhysicsWorld.IsSleeping(Owner!.Id);
 
     public Rigidbody()
     {
-        Shape = PhysicsShape.Cube(1f);
         Mass = 1f;
         SpeculativeMargin = 0.1f;
         SleepThreshold = 0.01f;
@@ -199,43 +204,40 @@ public partial class Rigidbody
         }
     }
 
-    public static Rigidbody Dynamic(PhysicsShape shape, float mass = 1f)
+    public static Rigidbody Dynamic(float mass = 1f)
     {
         return new Rigidbody
         {
-            Shape = shape,
             BodyType = PhysicsBodyType.Dynamic,
             Mass = mass
         };
     }
 
-    public static Rigidbody Static(PhysicsShape shape)
+    public static Rigidbody Static()
     {
         return new Rigidbody
         {
-            Shape = shape,
             BodyType = PhysicsBodyType.Static,
             Mass = 0f,
             SleepThreshold = 0f
         };
     }
 
-    public static Rigidbody Kinematic(PhysicsShape shape)
+    public static Rigidbody Kinematic()
     {
         return new Rigidbody
         {
-            Shape = shape,
             BodyType = PhysicsBodyType.Kinematic,
             Mass = 0f,
             SleepThreshold = 0f
         };
     }
 
-    internal PhysicsBodyDesc ToBodyDesc()
+    internal PhysicsBodyDesc ToBodyDesc(PhysicsShape shape)
     {
         return new PhysicsBodyDesc
         {
-            Shape = Shape,
+            Shape = shape,
             BodyType = BodyType,
             Mass = Mass,
             SpeculativeMargin = SpeculativeMargin,

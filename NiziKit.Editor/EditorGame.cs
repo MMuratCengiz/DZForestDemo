@@ -14,7 +14,7 @@ using NiziKit.UI;
 
 namespace NiziKit.Editor;
 
-public sealed class EditorGame : Game
+public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
 {
     private EditorRenderer _renderer = null!;
     private IRenderer _gameRenderer = null!;
@@ -33,14 +33,9 @@ public sealed class EditorGame : Game
     private bool _shiftHeld;
     private bool _ctrlHeld;
 
-    // Gizmo drag undo state
     private Vector3 _gizmoDragStartPosition;
     private Quaternion _gizmoDragStartRotation;
     private Vector3 _gizmoDragStartScale;
-
-    public EditorGame(GameDesc? desc = null) : base(desc)
-    {
-    }
 
     protected override void Load(Game game)
     {
@@ -50,12 +45,13 @@ public sealed class EditorGame : Game
         _gameRenderer = (IRenderer)Activator.CreateInstance(RendererType)!;
         _renderer = new EditorRenderer(_gameRenderer);
 
-        // Enable immediate-mode UI on the render frame
         _renderer.RenderFrame.EnableUi(UiContextDesc.Default);
         FontAwesome.InitializeEmbedded(_renderer.RenderFrame.UiContext.Clay);
 
-        _editorCameraObject = new GameObject("EditorCamera");
-        _editorCameraObject.LocalPosition = new Vector3(0, 15, -15);
+        _editorCameraObject = new GameObject("EditorCamera")
+        {
+            LocalPosition = new Vector3(0, 15, -15)
+        };
 
         _editorCamera = _editorCameraObject.AddComponent<CameraComponent>();
         _editorCamera.Priority = 1000;
@@ -81,7 +77,7 @@ public sealed class EditorGame : Game
         _viewModel.ViewPresetChanged += OnViewPresetChanged;
         _viewModel.ProjectionModeChanged += OnProjectionModeChanged;
         _viewModel.GridSettingsChanged += OnGridSettingsChanged;
-        _viewModel.SetGridDesc(_renderer.GizmoPass.Gizmo.GridDesc);
+        _viewModel.SetGridDesc(_renderer.EditorOverlayPass.Gizmo.GridDesc);
         SyncGridSettings(_viewModel);
     }
 
@@ -116,7 +112,7 @@ public sealed class EditorGame : Game
 
     private void UpdateGizmoHover()
     {
-        var gizmoPass = _renderer.GizmoPass;
+        var gizmoPass = _renderer.EditorOverlayPass;
         if (gizmoPass == null)
         {
             return;
@@ -245,7 +241,7 @@ public sealed class EditorGame : Game
 
     private bool TryBeginGizmoDrag()
     {
-        var gizmoPass = _renderer.GizmoPass;
+        var gizmoPass = _renderer.EditorOverlayPass;
         if (gizmoPass == null)
         {
             return false;
@@ -272,7 +268,7 @@ public sealed class EditorGame : Game
 
     private void HandleGizmoDrag(bool shiftHeld)
     {
-        var gizmoPass = _renderer.GizmoPass;
+        var gizmoPass = _renderer.EditorOverlayPass;
         if (gizmoPass == null)
         {
             return;
@@ -284,7 +280,7 @@ public sealed class EditorGame : Game
 
     private void EndGizmoDrag()
     {
-        var gizmoPass = _renderer.GizmoPass;
+        var gizmoPass = _renderer.EditorOverlayPass;
         gizmoPass?.Gizmo.EndDrag();
         _gizmoDragging = false;
 
@@ -307,7 +303,7 @@ public sealed class EditorGame : Game
 
     private void CancelGizmoDrag()
     {
-        var gizmoPass = _renderer.GizmoPass;
+        var gizmoPass = _renderer.EditorOverlayPass;
         gizmoPass?.Gizmo.CancelDrag();
         _gizmoDragging = false;
     }
@@ -344,7 +340,7 @@ public sealed class EditorGame : Game
 
     private void HandleGizmoModeKey(KeyCode keyCode)
     {
-        var gizmoPass = _renderer.GizmoPass;
+        var gizmoPass = _renderer.EditorOverlayPass;
         if (gizmoPass == null)
         {
             return;
@@ -541,7 +537,7 @@ public sealed class EditorGame : Game
             _viewModel.Is2DMode = false;
         }
 
-        var gizmoPass = _renderer.GizmoPass;
+        var gizmoPass = _renderer.EditorOverlayPass;
         gizmoPass.GridOrientation = preset switch
         {
             ViewPreset.Front or ViewPreset.Back => Matrix4x4.CreateRotationX(MathF.PI / 2),
@@ -569,7 +565,7 @@ public sealed class EditorGame : Game
         {
             _editorCamera.ProjectionType = ProjectionType.Perspective;
             _viewModel.CurrentViewPreset = ViewPreset.Free;
-            _renderer.GizmoPass.GridOrientation = Matrix4x4.Identity;
+            _renderer.EditorOverlayPass.GridOrientation = Matrix4x4.Identity;
         }
     }
 
@@ -580,7 +576,7 @@ public sealed class EditorGame : Game
 
     private void SyncGridSettings(EditorViewModel vm)
     {
-        var gizmoPass = _renderer.GizmoPass;
+        var gizmoPass = _renderer.EditorOverlayPass;
         gizmoPass.ShowGrid = vm.ShowGrid;
         gizmoPass.GridSize = vm.GridSize;
         gizmoPass.GridSpacing = vm.GridSpacing;

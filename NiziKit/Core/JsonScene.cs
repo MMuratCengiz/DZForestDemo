@@ -665,18 +665,25 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
                 break;
 
             case "rigidbody":
-                var shape = ParsePhysicsShape(data.Properties);
                 var bodyType = data.Properties.GetEnumOrDefault("bodyType", BodyType.Static);
                 var mass = data.Properties.GetSingleOrDefault("mass", 1f);
 
                 var rb = bodyType switch
                 {
-                    BodyType.Dynamic => Rigidbody.Dynamic(shape, mass),
-                    BodyType.Static => Rigidbody.Static(shape),
-                    BodyType.Kinematic => Rigidbody.Kinematic(shape),
-                    _ => Rigidbody.Static(shape)
+                    BodyType.Dynamic => Rigidbody.Dynamic(mass),
+                    BodyType.Static => Rigidbody.Static(),
+                    BodyType.Kinematic => Rigidbody.Kinematic(),
+                    _ => Rigidbody.Static()
                 };
+                rb.SpeculativeMargin = data.Properties.GetSingleOrDefault("speculativeMargin", 0.1f);
+                rb.SleepThreshold = data.Properties.GetSingleOrDefault("sleepThreshold", 0.01f);
                 obj.AddComponent(rb);
+
+                if (!obj.HasComponent<Collider>())
+                {
+                    var shape = ParsePhysicsShape(data.Properties);
+                    AddColliderFromShape(obj, shape);
+                }
                 break;
 
             case "surface":
@@ -931,7 +938,9 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         {
             if (float.TryParse(values[i], System.Globalization.NumberStyles.Float,
                     System.Globalization.CultureInfo.InvariantCulture, out var val))
+            {
                 dict[paramNames[i]] = val;
+            }
         }
 
         return dict;
@@ -951,6 +960,25 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             int i => i,
             _ => defaultValue
         };
+    }
+
+    private static void AddColliderFromShape(GameObject obj, PhysicsShape shape)
+    {
+        switch (shape.Type)
+        {
+            case PhysicsShapeType.Box:
+                obj.AddComponent(BoxCollider.Create(shape.Size));
+                break;
+            case PhysicsShapeType.Sphere:
+                obj.AddComponent(SphereCollider.Create(shape.Size.X * 0.5f));
+                break;
+            case PhysicsShapeType.Capsule:
+                obj.AddComponent(CapsuleCollider.Create(shape.Size.X, shape.Size.X * 2f + shape.Size.Y));
+                break;
+            case PhysicsShapeType.Cylinder:
+                obj.AddComponent(CylinderCollider.Create(shape.Size.X * 0.5f, shape.Size.Y));
+                break;
+        }
     }
 
     private static PhysicsShape ParsePhysicsShape(IReadOnlyDictionary<string, JsonElement>? properties)

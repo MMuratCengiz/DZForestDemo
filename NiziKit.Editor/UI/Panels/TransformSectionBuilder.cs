@@ -28,7 +28,7 @@ public static class TransformSectionBuilder
         }
 
         using var grid = Ui.PropertyGrid(ctx, "TransformGrid")
-            .LabelWidth(45)
+            .LabelWidth(55)
             .FontSize(t.FontSizeCaption)
             .RowHeight(24)
             .Gap(2)

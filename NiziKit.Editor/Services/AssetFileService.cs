@@ -30,7 +30,7 @@ public class FileEntry
     };
 }
 
-public class AssetFileService
+public class AssetFileService(string assetsPath)
 {
     private static readonly Dictionary<string, AssetFileType> ExtensionMap = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -48,19 +48,11 @@ public class AssetFileService
         { ".dztex", AssetFileType.Texture },
     };
 
-    private readonly string _assetsPath;
-
-    public AssetFileService()
+    public AssetFileService() : this(Content.ResolvePath(""))
     {
-        _assetsPath = Content.ResolvePath("");
     }
 
-    public AssetFileService(string assetsPath)
-    {
-        _assetsPath = assetsPath;
-    }
-
-    public string AssetsPath => _assetsPath;
+    public string AssetsPath => assetsPath;
 
     public IReadOnlyList<FileEntry> GetEntries(string directory, AssetFileType filter = AssetFileType.All)
     {
@@ -140,11 +132,11 @@ public class AssetFileService
 
     private string GetRelativePath(string fullPath)
     {
-        if (string.IsNullOrEmpty(_assetsPath))
+        if (string.IsNullOrEmpty(assetsPath))
         {
             return fullPath;
         }
 
-        return Path.GetRelativePath(_assetsPath, fullPath);
+        return Path.GetRelativePath(assetsPath, fullPath);
     }
 }

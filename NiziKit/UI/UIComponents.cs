@@ -790,16 +790,19 @@ public ref struct UiCheckbox
     public bool Show()
     {
         var interaction = _context.GetInteraction(Id);
-        var isHovered = interaction.IsHovered;
+
         var containerDecl = new ClayElementDeclaration { Id = Id };
         containerDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
+        containerDecl.Layout.Sizing.Width = ClaySizingAxis.Fit(0, float.MaxValue);
+        containerDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(0, float.MaxValue);
         containerDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
         containerDecl.Layout.ChildGap = (ushort)_gap;
 
         _context.OpenElement(containerDecl);
         {
-            var boxColor = isHovered ? _boxHoverColor : _boxColor;
-            var boxDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("ChkBox", Id) };
+            var boxColor = interaction.IsHovered ? _boxHoverColor : _boxColor;
+            var boxId = _context.StringCache.GetId("ChkBox", Id);
+            var boxDecl = new ClayElementDeclaration { Id = boxId };
             boxDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(_boxSize);
             boxDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(_boxSize);
             boxDecl.Layout.ChildAlignment.X = ClayAlignmentX.Center;

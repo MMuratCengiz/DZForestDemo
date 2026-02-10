@@ -1,3 +1,4 @@
+using NiziKit.Animation;
 using NiziKit.Editor.Theme;
 using NiziKit.Editor.ViewModels;
 using NiziKit.UI;
@@ -22,16 +23,16 @@ public static class ComponentEditorBuilder
             .Border(1, t.ComponentBorder)
             .HeaderAction(FontAwesome.Trash, t.TextMuted, t.Error);
 
+        using var scope = section.Open();
+
         componentVm.IsExpanded = section.IsExpanded;
 
         if (section.HeaderActionClicked)
         {
-            using var _ = section.Open();
             componentVm.Remove();
+            editorVm.MarkDirty();
             return;
         }
-
-        using var scope = section.Open();
 
         if (!componentVm.IsExpanded)
         {
@@ -43,5 +44,12 @@ public static class ComponentEditorBuilder
             componentVm.NotifyChanged();
             editorVm.MarkDirty();
         });
+
+        // Render custom playback controls for Animator components
+        if (componentVm.Component is Animator animator)
+        {
+            Ui.VerticalSpacer(ctx, 4);
+            AnimatorEditorBuilder.BuildPlaybackControls(ui, ctx, animator, editorVm, sectionId);
+        }
     }
 }

@@ -13,7 +13,7 @@ using Buffer = DenOfIz.Buffer;
 
 namespace NiziKit.Editor.Gizmos;
 
-public sealed class GizmoPass : IDisposable
+public sealed class EditorOverlayPass : IDisposable
 {
     private const int MaxSelectionBoxes = 64;
     private const int NumModes = 3;
@@ -57,13 +57,19 @@ public sealed class GizmoPass : IDisposable
     private float _gizmoScale;
     private bool _hasGizmo;
 
-    // Scene icons (cameras/lights)
     private Buffer? _sceneIconBuffer;
     private int _sceneIconVertexCount;
     private readonly List<GizmoVertex> _sceneIconVertices = new(1024);
     private readonly MappedBuffer<GizmoConstants> _sceneIconConstantBuffer;
     private readonly BindGroup[] _sceneIconBindGroups;
 
+    private Buffer? _colliderWireframeBuffer;
+    private int _colliderWireframeVertexCount;
+    private readonly List<GizmoVertex> _colliderWireframeVertices = new(2048);
+    private readonly MappedBuffer<GizmoConstants> _colliderWireframeConstantBuffer;
+    private readonly BindGroup[] _colliderWireframeBindGroups;
+
+    public bool ShowColliderWireframes { get; set; } = true;
     public bool ShowSceneIcons { get; set; } = true;
     public bool ShowGrid { get; set; } = true;
     public float GridSize { get; set; } = 50f;
@@ -73,7 +79,7 @@ public sealed class GizmoPass : IDisposable
 
     public TransformGizmo Gizmo { get; } = new();
 
-    public GizmoPass()
+    public EditorOverlayPass()
     {
         _shaders = new GizmoShaders();
 
@@ -82,6 +88,7 @@ public sealed class GizmoPass : IDisposable
         _selectionBindGroups = new BindGroup[numFrames];
         _gridBindGroups = new BindGroup[numFrames];
         _sceneIconBindGroups = new BindGroup[numFrames];
+        _colliderWireframeBindGroups = new BindGroup[numFrames];
         _boundDepthTextures = new Texture?[numFrames];
 
         for (var i = 0; i < numFrames; i++)
@@ -102,12 +109,17 @@ public sealed class GizmoPass : IDisposable
             {
                 Layout = _shaders.BindGroupLayout
             });
+            _colliderWireframeBindGroups[i] = GraphicsContext.Device.CreateBindGroup(new BindGroupDesc
+            {
+                Layout = _shaders.BindGroupLayout
+            });
         }
 
         _gizmoConstantBuffer = new MappedBuffer<GizmoConstants>(true, "GizmoConstants");
         _selectionConstantBuffer = new MappedBuffer<GizmoConstants>(true, "SelectionConstants");
         _gridConstantBuffer = new MappedBuffer<GizmoConstants>(true, "GridConstants");
         _sceneIconConstantBuffer = new MappedBuffer<GizmoConstants>(true, "SceneIconConstants");
+        _colliderWireframeConstantBuffer = new MappedBuffer<GizmoConstants>(true, "ColliderWireframeConstants");
 
         _gizmoBuffers = new Buffer[NumModes, NumAxes];
         _gizmoVertexCounts = new int[NumModes, NumAxes];
@@ -382,6 +394,7 @@ public sealed class GizmoPass : IDisposable
     public void BeginFrame()
     {
         _selectionBoxMatrices.Clear();
+        _colliderWireframeVertices.Clear();
         _hasGizmo = false;
     }
 
@@ -551,6 +564,82 @@ public sealed class GizmoPass : IDisposable
         _sceneIconVertexCount = vertexCount;
     }
 
+    public void BuildColliderWireframes(GameObject obj)
+    {
+        if (!ShowColliderWireframes)
+        {
+            return;
+        }
+
+        GizmoGeometry.BuildColliderWireframes(_colliderWireframeVertices, obj);
+
+        if (_colliderWireframeVertices.Count > 0)
+        {
+            BuildColliderWireframeBuffer();
+        }
+        else
+        {
+            _colliderWireframeVertexCount = 0;
+        }
+    }
+
+    private void BuildColliderWireframeBuffer()
+    {
+        _colliderWireframeBuffer?.Dispose();
+
+        var vertexCount = _colliderWireframeVertices.Count;
+        if (vertexCount == 0)
+        {
+            _colliderWireframeBuffer = null;
+            _colliderWireframeVertexCount = 0;
+            return;
+        }
+
+        var bufferSize = (uint)(Marshal.SizeOf<GizmoVertex>() * vertexCount);
+        _colliderWireframeBuffer = GraphicsContext.Device.CreateBuffer(new BufferDesc
+        {
+            NumBytes = bufferSize,
+            Usage = (uint)BufferUsageFlagBits.Vertex,
+            HeapType = HeapType.Gpu,
+            DebugName = StringView.Create("ColliderWireframeBuffer")
+        });
+
+        lock (GraphicsContext.TransferLock)
+        {
+            var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
+            {
+                Device = GraphicsContext.Device,
+                IssueBarriers = false
+            });
+            batchCopy.Begin();
+
+            var vertices = _colliderWireframeVertices.ToArray();
+            var handle = GCHandle.Alloc(vertices, GCHandleType.Pinned);
+            try
+            {
+                batchCopy.CopyToGPUBuffer(new CopyToGpuBufferDesc
+                {
+                    Data = new ByteArrayView
+                    {
+                        Elements = handle.AddrOfPinnedObject(),
+                        NumElements = bufferSize
+                    },
+                    DstBuffer = _colliderWireframeBuffer,
+                    DstBufferOffset = 0
+                });
+            }
+            finally
+            {
+                handle.Free();
+            }
+
+            batchCopy.Submit(null);
+            batchCopy.Dispose();
+        }
+
+        _colliderWireframeVertexCount = vertexCount;
+    }
+
     public void Render(GraphicsPass pass, ViewData viewData, CycledTexture sceneDepth)
     {
         var frameIndex = GraphicsContext.FrameIndex;
@@ -576,6 +665,15 @@ public sealed class GizmoPass : IDisposable
             pass.Bind(_sceneIconBindGroups[frameIndex]);
             pass.BindVertexBuffer(_sceneIconBuffer, 0, vertexStride);
             pass.Draw((uint)_sceneIconVertexCount, 1, 0, 0);
+        }
+
+        if (ShowColliderWireframes && _colliderWireframeBuffer != null && _colliderWireframeVertexCount > 0)
+        {
+            UpdateColliderWireframeConstants(viewData);
+            pass.BindPipeline(_shaders.LinePipeline);
+            pass.Bind(_colliderWireframeBindGroups[frameIndex]);
+            pass.BindVertexBuffer(_colliderWireframeBuffer, 0, vertexStride);
+            pass.Draw((uint)_colliderWireframeVertexCount, 1, 0, 0);
         }
 
         if (_hasGizmo)
@@ -699,6 +797,27 @@ public sealed class GizmoPass : IDisposable
         _sceneIconConstantBuffer.Write(in constants);
     }
 
+    private void UpdateColliderWireframeConstants(ViewData viewData)
+    {
+        var camera = viewData.Camera ?? viewData.Scene?.GetActiveCamera();
+        var viewProjection = camera?.ViewProjectionMatrix ?? Matrix4x4.Identity;
+        var cameraPosition = camera?.WorldPosition ?? Vector3.Zero;
+
+        var constants = new GizmoConstants
+        {
+            ViewProjection = viewProjection,
+            ModelMatrix = Matrix4x4.Identity,
+            CameraPosition = cameraPosition,
+            DepthBias = 0.0001f,
+            SelectionColor = GizmoGeometry.ColliderWireframeColor,
+            Opacity = 1f,
+            Time = viewData.TotalTime,
+            ScreenSize = new Vector2(GraphicsContext.Width, GraphicsContext.Height)
+        };
+
+        _colliderWireframeConstantBuffer.Write(in constants);
+    }
+
     private void UpdateBindGroups(int frameIndex, Texture depthTexture)
     {
         if (_boundDepthTextures[frameIndex] == depthTexture)
@@ -726,6 +845,11 @@ public sealed class GizmoPass : IDisposable
         _sceneIconBindGroups[frameIndex].SrvTexture(0, depthTexture);
         _sceneIconBindGroups[frameIndex].EndUpdate();
 
+        _colliderWireframeBindGroups[frameIndex].BeginUpdate();
+        _colliderWireframeBindGroups[frameIndex].Cbv(0, _colliderWireframeConstantBuffer[frameIndex]);
+        _colliderWireframeBindGroups[frameIndex].SrvTexture(0, depthTexture);
+        _colliderWireframeBindGroups[frameIndex].EndUpdate();
+
         _boundDepthTextures[frameIndex] = depthTexture;
     }
 
@@ -742,6 +866,7 @@ public sealed class GizmoPass : IDisposable
         _unitCubeBuffer.Dispose();
         _gridBuffer?.Dispose();
         _sceneIconBuffer?.Dispose();
+        _colliderWireframeBuffer?.Dispose();
 
         foreach (var bindGroup in _gizmoBindGroups)
         {
@@ -763,10 +888,16 @@ public sealed class GizmoPass : IDisposable
             bindGroup.Dispose();
         }
 
+        foreach (var bindGroup in _colliderWireframeBindGroups)
+        {
+            bindGroup.Dispose();
+        }
+
         _gizmoConstantBuffer.Dispose();
         _selectionConstantBuffer.Dispose();
         _gridConstantBuffer.Dispose();
         _sceneIconConstantBuffer.Dispose();
+        _colliderWireframeConstantBuffer.Dispose();
         _shaders.Dispose();
     }
 }

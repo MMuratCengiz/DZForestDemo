@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Numerics;
 using System.Reflection;
 using NiziKit.Core;
@@ -5,26 +6,18 @@ using NiziKit.Editor.ViewModels;
 
 namespace NiziKit.Editor.Services;
 
-public class PropertyChangeAction : IMergeableAction
+public class PropertyChangeAction(object instance, PropertyInfo property, object? oldValue, object? newValue)
+    : IMergeableAction
 {
-    private readonly object _instance;
-    private readonly PropertyInfo _property;
-    private readonly object? _oldValue;
-    private object? _newValue;
-
-    public PropertyChangeAction(object instance, PropertyInfo property, object? oldValue, object? newValue)
-    {
-        _instance = instance;
-        _property = property;
-        _oldValue = oldValue;
-        _newValue = newValue;
-    }
+    private readonly object _instance = instance;
+    private readonly PropertyInfo _property = property;
+    private object? _newValue = newValue;
 
     public string Description => $"Change {_property.Name}";
 
     public void Undo()
     {
-        _property.SetValue(_instance, _oldValue);
+        _property.SetValue(_instance, oldValue);
     }
 
     public void Redo()
@@ -45,36 +38,28 @@ public class PropertyChangeAction : IMergeableAction
     }
 }
 
-public class TransformChangeAction : IMergeableAction
+public class TransformChangeAction(
+    GameObject gameObject,
+    Vector3 oldPosition,
+    Quaternion oldRotation,
+    Vector3 oldScale,
+    Vector3 newPosition,
+    Quaternion newRotation,
+    Vector3 newScale)
+    : IMergeableAction
 {
-    private readonly GameObject _gameObject;
-    private readonly Vector3 _oldPosition;
-    private readonly Quaternion _oldRotation;
-    private readonly Vector3 _oldScale;
-    private Vector3 _newPosition;
-    private Quaternion _newRotation;
-    private Vector3 _newScale;
-
-    public TransformChangeAction(GameObject gameObject,
-        Vector3 oldPosition, Quaternion oldRotation, Vector3 oldScale,
-        Vector3 newPosition, Quaternion newRotation, Vector3 newScale)
-    {
-        _gameObject = gameObject;
-        _oldPosition = oldPosition;
-        _oldRotation = oldRotation;
-        _oldScale = oldScale;
-        _newPosition = newPosition;
-        _newRotation = newRotation;
-        _newScale = newScale;
-    }
+    private readonly GameObject _gameObject = gameObject;
+    private Vector3 _newPosition = newPosition;
+    private Quaternion _newRotation = newRotation;
+    private Vector3 _newScale = newScale;
 
     public string Description => "Transform Change";
 
     public void Undo()
     {
-        _gameObject.LocalPosition = _oldPosition;
-        _gameObject.LocalRotation = _oldRotation;
-        _gameObject.LocalScale = _oldScale;
+        _gameObject.LocalPosition = oldPosition;
+        _gameObject.LocalRotation = oldRotation;
+        _gameObject.LocalScale = oldScale;
     }
 
     public void Redo()
@@ -97,64 +82,44 @@ public class TransformChangeAction : IMergeableAction
     }
 }
 
-public class GizmoTransformAction : IUndoAction
+public class GizmoTransformAction(
+    GameObject gameObject,
+    Vector3 oldPosition,
+    Quaternion oldRotation,
+    Vector3 oldScale,
+    Vector3 newPosition,
+    Quaternion newRotation,
+    Vector3 newScale)
+    : IUndoAction
 {
-    private readonly GameObject _gameObject;
-    private readonly Vector3 _oldPosition;
-    private readonly Quaternion _oldRotation;
-    private readonly Vector3 _oldScale;
-    private readonly Vector3 _newPosition;
-    private readonly Quaternion _newRotation;
-    private readonly Vector3 _newScale;
-
-    public GizmoTransformAction(GameObject gameObject,
-        Vector3 oldPosition, Quaternion oldRotation, Vector3 oldScale,
-        Vector3 newPosition, Quaternion newRotation, Vector3 newScale)
-    {
-        _gameObject = gameObject;
-        _oldPosition = oldPosition;
-        _oldRotation = oldRotation;
-        _oldScale = oldScale;
-        _newPosition = newPosition;
-        _newRotation = newRotation;
-        _newScale = newScale;
-    }
-
     public string Description => "Gizmo Transform";
 
     public void Undo()
     {
-        _gameObject.LocalPosition = _oldPosition;
-        _gameObject.LocalRotation = _oldRotation;
-        _gameObject.LocalScale = _oldScale;
+        gameObject.LocalPosition = oldPosition;
+        gameObject.LocalRotation = oldRotation;
+        gameObject.LocalScale = oldScale;
     }
 
     public void Redo()
     {
-        _gameObject.LocalPosition = _newPosition;
-        _gameObject.LocalRotation = _newRotation;
-        _gameObject.LocalScale = _newScale;
+        gameObject.LocalPosition = newPosition;
+        gameObject.LocalRotation = newRotation;
+        gameObject.LocalScale = newScale;
     }
 }
 
-public class NameChangeAction : IMergeableAction
+public class NameChangeAction(GameObjectViewModel viewModel, string oldName, string newName)
+    : IMergeableAction
 {
-    private readonly GameObjectViewModel _viewModel;
-    private readonly string _oldName;
-    private string _newName;
-
-    public NameChangeAction(GameObjectViewModel viewModel, string oldName, string newName)
-    {
-        _viewModel = viewModel;
-        _oldName = oldName;
-        _newName = newName;
-    }
+    private readonly GameObjectViewModel _viewModel = viewModel;
+    private string _newName = newName;
 
     public string Description => "Rename Object";
 
     public void Undo()
     {
-        _viewModel.Name = _oldName;
+        _viewModel.Name = oldName;
     }
 
     public void Redo()
@@ -173,145 +138,181 @@ public class NameChangeAction : IMergeableAction
     }
 }
 
-public class ActiveToggleAction : IUndoAction
+public class ActiveToggleAction(GameObjectViewModel viewModel, bool oldActive, bool newActive)
+    : IUndoAction
 {
-    private readonly GameObjectViewModel _viewModel;
-    private readonly bool _oldActive;
-    private readonly bool _newActive;
-
-    public ActiveToggleAction(GameObjectViewModel viewModel, bool oldActive, bool newActive)
-    {
-        _viewModel = viewModel;
-        _oldActive = oldActive;
-        _newActive = newActive;
-    }
-
     public string Description => "Toggle Active";
 
     public void Undo()
     {
-        _viewModel.IsActive = _oldActive;
+        viewModel.IsActive = oldActive;
     }
 
     public void Redo()
     {
-        _viewModel.IsActive = _newActive;
+        viewModel.IsActive = newActive;
     }
 }
 
-public class CreateObjectAction : IUndoAction
+public class CreateObjectAction(
+    EditorViewModel editorVm,
+    GameObjectViewModel objectVm,
+    GameObjectViewModel? parentVm,
+    string description)
+    : IUndoAction
 {
-    private readonly EditorViewModel _editorVm;
-    private readonly GameObjectViewModel _objectVm;
-    private readonly GameObjectViewModel? _parentVm;
-    private readonly string _description;
-
-    public CreateObjectAction(EditorViewModel editorVm, GameObjectViewModel objectVm,
-        GameObjectViewModel? parentVm, string description)
-    {
-        _editorVm = editorVm;
-        _objectVm = objectVm;
-        _parentVm = parentVm;
-        _description = description;
-    }
-
-    public string Description => _description;
+    public string Description => description;
 
     public void Undo()
     {
         var scene = World.CurrentScene;
-        if (scene == null) return;
-
-        if (_parentVm != null)
+        if (scene == null)
         {
-            _parentVm.RemoveChild(_objectVm);
+            return;
+        }
+
+        if (parentVm != null)
+        {
+            parentVm.RemoveChild(objectVm);
         }
         else
         {
-            scene.Destroy(_objectVm.GameObject);
-            _editorVm.RootObjects.Remove(_objectVm);
+            scene.Destroy(objectVm.GameObject);
+            editorVm.RootObjects.Remove(objectVm);
         }
 
-        if (_editorVm.SelectedGameObject == _objectVm)
+        if (editorVm.SelectedGameObject == objectVm)
         {
-            _editorVm.SelectObject(null);
+            editorVm.SelectObject(null);
         }
     }
 
     public void Redo()
     {
         var scene = World.CurrentScene;
-        if (scene == null) return;
-
-        if (_parentVm != null)
+        if (scene == null)
         {
-            _parentVm.AddChild(_objectVm);
+            return;
+        }
+
+        if (parentVm != null)
+        {
+            parentVm.AddChild(objectVm);
         }
         else
         {
-            scene.Add(_objectVm.GameObject);
-            _editorVm.RootObjects.Add(_objectVm);
+            scene.Add(objectVm.GameObject);
+            editorVm.RootObjects.Add(objectVm);
         }
 
-        _editorVm.SelectObject(_objectVm);
+        editorVm.SelectObject(objectVm);
     }
 }
 
-public class DeleteObjectAction : IUndoAction
+public class DeleteObjectAction(
+    EditorViewModel editorVm,
+    GameObjectViewModel objectVm,
+    GameObjectViewModel? parentVm,
+    int index)
+    : IUndoAction
 {
-    private readonly EditorViewModel _editorVm;
-    private readonly GameObjectViewModel _objectVm;
-    private readonly GameObjectViewModel? _parentVm;
-    private readonly int _index;
-
-    public DeleteObjectAction(EditorViewModel editorVm, GameObjectViewModel objectVm,
-        GameObjectViewModel? parentVm, int index)
-    {
-        _editorVm = editorVm;
-        _objectVm = objectVm;
-        _parentVm = parentVm;
-        _index = index;
-    }
-
     public string Description => "Delete Object";
 
     public void Undo()
     {
         var scene = World.CurrentScene;
-        if (scene == null) return;
-
-        if (_parentVm != null)
+        if (scene == null)
         {
-            _parentVm.GameObject.AddChild(_objectVm.GameObject);
-            _parentVm.Children.Insert(Math.Min(_index, _parentVm.Children.Count), _objectVm);
+            return;
+        }
+
+        if (parentVm != null)
+        {
+            parentVm.GameObject.AddChild(objectVm.GameObject);
+            parentVm.Children.Insert(Math.Min(index, parentVm.Children.Count), objectVm);
         }
         else
         {
-            scene.Add(_objectVm.GameObject);
-            _editorVm.RootObjects.Insert(Math.Min(_index, _editorVm.RootObjects.Count), _objectVm);
+            scene.Add(objectVm.GameObject);
+            editorVm.RootObjects.Insert(Math.Min(index, editorVm.RootObjects.Count), objectVm);
         }
 
-        _editorVm.SelectObject(_objectVm);
+        editorVm.SelectObject(objectVm);
     }
 
     public void Redo()
     {
         var scene = World.CurrentScene;
-        if (scene == null) return;
-
-        if (_parentVm != null)
+        if (scene == null)
         {
-            _parentVm.RemoveChild(_objectVm);
+            return;
+        }
+
+        if (parentVm != null)
+        {
+            parentVm.RemoveChild(objectVm);
         }
         else
         {
-            scene.Destroy(_objectVm.GameObject);
-            _editorVm.RootObjects.Remove(_objectVm);
+            scene.Destroy(objectVm.GameObject);
+            editorVm.RootObjects.Remove(objectVm);
         }
 
-        if (_editorVm.SelectedGameObject == _objectVm)
+        if (editorVm.SelectedGameObject == objectVm)
         {
-            _editorVm.SelectObject(null);
+            editorVm.SelectObject(null);
+        }
+    }
+}
+
+public class ListChangeAction(IList list, object[] oldSnapshot, object[] newSnapshot, string description)
+    : IUndoAction
+{
+    public string Description { get; } = description;
+
+    public void Undo()
+    {
+        list.Clear();
+        foreach (var entry in oldSnapshot)
+        {
+            list.Add(entry);
+        }
+    }
+
+    public void Redo()
+    {
+        list.Clear();
+        foreach (var entry in newSnapshot)
+        {
+            list.Add(entry);
+        }
+    }
+}
+
+public class DictionaryChangeAction(
+    IDictionary dict,
+    KeyValuePair<object, object>[] oldSnapshot,
+    KeyValuePair<object, object>[] newSnapshot,
+    string description)
+    : IUndoAction
+{
+    public string Description { get; } = description;
+
+    public void Undo()
+    {
+        dict.Clear();
+        foreach (var entry in oldSnapshot)
+        {
+            dict[entry.Key] = entry.Value;
+        }
+    }
+
+    public void Redo()
+    {
+        dict.Clear();
+        foreach (var entry in newSnapshot)
+        {
+            dict[entry.Key] = entry.Value;
         }
     }
 }

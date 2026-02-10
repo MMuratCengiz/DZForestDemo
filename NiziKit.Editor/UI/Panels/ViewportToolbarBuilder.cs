@@ -77,13 +77,13 @@ public static class ViewportToolbarBuilder
             .Border(UiBorder.All(1, t.Border))
             .CornerRadius(t.RadiusMedium)
             .Padding(6, 3)
-            .FitWidth()
+            .Width(UiSizing.Fit(vm.ShowStatistics ? 140 : 0))
             .FitHeight()
             .AlignChildrenY(UiAlignY.Center)
             .Gap(6)
             .Open())
         {
-            if (vm.ShowStatistics)
+        if (vm.ShowStatistics)
             {
                 ui.Text($"{vm.Fps:F0} FPS", new UiTextStyle { Color = t.TextSecondary, FontSize = t.FontSizeCaption });
                 ui.Text($"({vm.FrameTime:F1}ms)", new UiTextStyle { Color = t.TextMuted, FontSize = t.FontSizeCaption });

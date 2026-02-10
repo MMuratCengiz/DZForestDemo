@@ -237,10 +237,7 @@ public static class AssetPickerDialogBuilder
                 }
             }
 
-            if (filteredAssets.Count > 0)
-            {
-                RenderPagination(ui, ctx, state, filteredAssets.Count, totalPages, t);
-            }
+            RenderPagination(ui, ctx, state, filteredAssets.Count, totalPages, t);
         }
     }
 
@@ -383,53 +380,69 @@ public static class AssetPickerDialogBuilder
             .Background(t.SurfaceInset)
             .Open())
         {
-            ui.Text(totalItems + " items", new UiTextStyle
+            using (ui.Panel("PagItemCount")
+                .Width(UiSizing.Fit(60))
+                .FitHeight()
+                .Open())
             {
-                Color = t.TextMuted,
-                FontSize = t.FontSizeCaption
-            });
+                ui.Text(totalItems + " items", new UiTextStyle
+                {
+                    Color = t.TextMuted,
+                    FontSize = t.FontSizeCaption
+                });
+            }
 
             Ui.FlexSpacer(ctx);
 
-            var canPrev = state.CurrentPage > 0;
+            if (totalPages > 1)
             {
-                var prevBtn = Ui.Button(ctx, "PrevPage", "")
-                    .Color(UiColor.Transparent, t.Hover, t.Active)
-                    .Padding(4, 3)
-                    .CornerRadius(t.RadiusSmall)
-                    .Border(0, UiColor.Transparent);
-
-                using var prevScope = prevBtn.Open();
-                prevScope.Icon(FontAwesome.ChevronLeft,
-                    canPrev ? t.TextPrimary : t.TextDisabled, t.IconSizeSmall);
-
-                if (prevBtn.WasClicked() && canPrev)
+                var canPrev = state.CurrentPage > 0;
                 {
-                    state.CurrentPage--;
+                    var prevBtn = Ui.Button(ctx, "PrevPage", "")
+                        .Color(UiColor.Transparent, t.Hover, t.Active)
+                        .Padding(4, 3)
+                        .CornerRadius(t.RadiusSmall)
+                        .Border(0, UiColor.Transparent);
+
+                    using var prevScope = prevBtn.Open();
+                    prevScope.Icon(FontAwesome.ChevronLeft,
+                        canPrev ? t.TextPrimary : t.TextDisabled, t.IconSizeSmall);
+
+                    if (prevBtn.WasClicked() && canPrev)
+                    {
+                        state.CurrentPage--;
+                    }
                 }
-            }
 
-            ui.Text($"{state.CurrentPage + 1} / {totalPages}", new UiTextStyle
-            {
-                Color = t.TextSecondary,
-                FontSize = t.FontSizeCaption
-            });
-
-            var canNext = state.CurrentPage < totalPages - 1;
-            {
-                var nextBtn = Ui.Button(ctx, "NextPage", "")
-                    .Color(UiColor.Transparent, t.Hover, t.Active)
-                    .Padding(4, 3)
-                    .CornerRadius(t.RadiusSmall)
-                    .Border(0, UiColor.Transparent);
-
-                using var nextScope = nextBtn.Open();
-                nextScope.Icon(FontAwesome.ChevronRight,
-                    canNext ? t.TextPrimary : t.TextDisabled, t.IconSizeSmall);
-
-                if (nextBtn.WasClicked() && canNext)
+                using (ui.Panel("PagPageInd")
+                    .Width(UiSizing.Fit(40))
+                    .FitHeight()
+                    .AlignChildrenX(UiAlignX.Center)
+                    .Open())
                 {
-                    state.CurrentPage++;
+                    ui.Text($"{state.CurrentPage + 1} / {totalPages}", new UiTextStyle
+                    {
+                        Color = t.TextSecondary,
+                        FontSize = t.FontSizeCaption
+                    });
+                }
+
+                var canNext = state.CurrentPage < totalPages - 1;
+                {
+                    var nextBtn = Ui.Button(ctx, "NextPage", "")
+                        .Color(UiColor.Transparent, t.Hover, t.Active)
+                        .Padding(4, 3)
+                        .CornerRadius(t.RadiusSmall)
+                        .Border(0, UiColor.Transparent);
+
+                    using var nextScope = nextBtn.Open();
+                    nextScope.Icon(FontAwesome.ChevronRight,
+                        canNext ? t.TextPrimary : t.TextDisabled, t.IconSizeSmall);
+
+                    if (nextBtn.WasClicked() && canNext)
+                    {
+                        state.CurrentPage++;
+                    }
                 }
             }
         }

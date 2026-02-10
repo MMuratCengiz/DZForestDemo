@@ -1,6 +1,8 @@
+using System.Collections;
 using System.Numerics;
 using System.Reflection;
 using DenOfIz;
+using NiziKit.Animation;
 using NiziKit.Assets;
 using NiziKit.Components;
 using NiziKit.Editor.Services;
@@ -24,21 +26,47 @@ public static class PropertyEditorRenderer
         var t = EditorTheme.Current;
         var type = instance.GetType();
         var properties = type.GetProperties(BindingFlags.Public | BindingFlags.Instance)
-            .Where(p => p.CanRead && !SkippedProperties.Contains(p.Name) && !p.PropertyType.IsByRefLike)
-            .OrderBy(p => p.MetadataToken);
+            .Where(p => p.CanRead && !SkippedProperties.Contains(p.Name) && !p.PropertyType.IsByRefLike
+                        && p.GetCustomAttribute<HideInInspectorAttribute>() == null)
+            .OrderBy(p => p.MetadataToken)
+            .ToArray();
 
-        using var grid = Ui.PropertyGrid(ctx, prefix + "_PropGrid")
+        using (var grid = Ui.PropertyGrid(ctx, prefix + "_PropGrid")
             .LabelWidth(75)
             .FontSize(t.FontSizeCaption)
             .RowHeight(22)
             .Gap(1)
             .LabelColor(t.TextSecondary)
-            .Open();
+            .Open())
+        {
+            foreach (var prop in properties)
+            {
+                if (IsCollection(prop.PropertyType))
+                {
+                    continue;
+                }
+
+                var propId = prefix + "_" + prop.Name;
+                RenderProperty(ui, ctx, grid, propId, prop, instance, editorVm, onChanged);
+            }
+        }
 
         foreach (var prop in properties)
         {
+            if (!IsCollection(prop.PropertyType))
+            {
+                continue;
+            }
+
             var propId = prefix + "_" + prop.Name;
-            RenderProperty(ui, ctx, grid, propId, prop, instance, editorVm, onChanged);
+            if (IsDictionary(prop.PropertyType))
+            {
+                RenderDictionaryEditor(ui, ctx, propId, prop, instance, editorVm, onChanged);
+            }
+            else
+            {
+                RenderListEditor(ui, ctx, propId, prop, instance, editorVm, onChanged);
+            }
         }
     }
 
@@ -47,7 +75,8 @@ public static class PropertyEditorRenderer
     {
         var t = EditorTheme.Current;
         var propType = prop.PropertyType;
-        var canWrite = prop.CanWrite;
+        var canWrite = prop.CanWrite && prop.GetSetMethod() != null
+                      && prop.GetCustomAttribute<ReadOnlyAttribute>() == null;
 
         using var row = grid.Row(FormatPropertyName(prop.Name));
 
@@ -91,6 +120,10 @@ public static class PropertyEditorRenderer
         {
             RenderEnumEditor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
         }
+        else if (prop.GetCustomAttribute<AnimationSelectorAttribute>() != null)
+        {
+            RenderAnimationSelectorEditor(ctx, id, prop, instance, editorVm, onChanged);
+        }
         else if (prop.GetCustomAttribute<AssetRefAttribute>() != null)
         {
             RenderAssetRefEditor(ui, ctx, id, prop, instance, editorVm, onChanged);
@@ -127,6 +160,71 @@ public static class PropertyEditorRenderer
                 new PropertyChangeAction(instance, prop, oldValue, value),
                 $"Prop_String_{prop.Name}");
             onChanged?.Invoke();
+        }
+    }
+
+    private static void RenderAnimationSelectorEditor(UiContext ctx, string id, PropertyInfo prop,
+        object instance, EditorViewModel editorVm, Action? onChanged)
+    {
+        var t = EditorTheme.Current;
+        var attr = prop.GetCustomAttribute<AnimationSelectorAttribute>()!;
+
+        // Resolve the skeleton property to get available animation names
+        var skeletonProp = instance.GetType().GetProperty(attr.SkeletonPropertyName,
+            BindingFlags.Public | BindingFlags.Instance);
+        var skeleton = skeletonProp?.GetValue(instance) as Skeleton;
+        var animNames = skeleton?.AnimationNames;
+
+        if (animNames == null || animNames.Count == 0)
+        {
+            var value = prop.GetValue(instance)?.ToString() ?? "(no skeleton)";
+            Ui.TextField(ctx, id, ref value)
+                .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
+                .TextColor(t.TextMuted)
+                .BorderColor(t.Border, t.Accent)
+                .FontSize(t.FontSizeCaption)
+                .CornerRadius(t.RadiusSmall)
+                .Padding(4, 3)
+                .GrowWidth()
+                .ReadOnly(true)
+                .Show(ref value);
+            return;
+        }
+
+        var names = new string[animNames.Count];
+        for (var i = 0; i < animNames.Count; i++)
+        {
+            names[i] = animNames[i];
+        }
+
+        var oldValue = prop.GetValue(instance)?.ToString() ?? "";
+        var selectedIndex = Array.IndexOf(names, oldValue);
+        if (selectedIndex < 0)
+        {
+            selectedIndex = 0;
+        }
+
+        if (Ui.Dropdown(ctx, id, names)
+            .Background(t.SurfaceInset, t.Hover)
+            .TextColor(t.TextPrimary)
+            .FontSize(t.FontSizeCaption)
+            .CornerRadius(t.RadiusSmall)
+            .Padding(4, 3)
+            .GrowWidth()
+            .ItemHoverColor(t.Hover)
+            .DropdownBackground(t.PanelBackground)
+            .Placeholder("Select animation...")
+            .Show(ref selectedIndex))
+        {
+            var newValue = names[selectedIndex];
+            if (newValue != oldValue)
+            {
+                prop.SetValue(instance, newValue);
+                editorVm.UndoSystem.Execute(
+                    new PropertyChangeAction(instance, prop, oldValue, newValue),
+                    $"Prop_AnimSel_{prop.Name}");
+                onChanged?.Invoke();
+            }
         }
     }
 
@@ -265,9 +363,11 @@ public static class PropertyEditorRenderer
         var t = EditorTheme.Current;
         var value = (bool)(prop.GetValue(instance) ?? false);
 
+        var checkColor = canWrite ? t.Accent : t.TextDisabled;
+        var boxHover = canWrite ? t.Hover : t.SurfaceInset;
         var newValue = Ui.Checkbox(ctx, id, "", value)
-            .BoxColor(t.SurfaceInset, t.Hover)
-            .CheckColor(t.Accent)
+            .BoxColor(t.SurfaceInset, boxHover)
+            .CheckColor(checkColor)
             .BorderColor(t.Border)
             .BoxSize(14)
             .CornerRadius(t.RadiusSmall)
@@ -417,6 +517,520 @@ public static class PropertyEditorRenderer
                 }
             });
         }
+    }
+
+    private static bool IsCollection(Type type)
+    {
+        if (type.IsArray)
+        {
+            return true;
+        }
+
+        if (!type.IsGenericType)
+        {
+            return false;
+        }
+
+        var genericDef = type.GetGenericTypeDefinition();
+        return genericDef == typeof(List<>)
+               || genericDef == typeof(IReadOnlyList<>)
+               || genericDef == typeof(IList<>)
+               || genericDef == typeof(Dictionary<,>);
+    }
+
+    private static bool IsDictionary(Type type)
+    {
+        return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Dictionary<,>);
+    }
+
+    private static Type? GetCollectionElementType(Type type)
+    {
+        if (type.IsArray)
+        {
+            return type.GetElementType();
+        }
+
+        if (type.IsGenericType)
+        {
+            return type.GetGenericArguments()[0];
+        }
+
+        foreach (var iface in type.GetInterfaces())
+        {
+            if (iface.IsGenericType && iface.GetGenericTypeDefinition() == typeof(IEnumerable<>))
+            {
+                return iface.GetGenericArguments()[0];
+            }
+        }
+
+        return null;
+    }
+
+    private static (string[] items, int count) CollectItems(object collection)
+    {
+        if (collection is IList list)
+        {
+            var items = new string[list.Count];
+            for (var i = 0; i < list.Count; i++)
+            {
+                items[i] = list[i]?.ToString() ?? "(null)";
+            }
+
+            return (items, list.Count);
+        }
+
+        if (collection is IEnumerable enumerable)
+        {
+            var result = new List<string>();
+            foreach (var item in enumerable)
+            {
+                result.Add(item?.ToString() ?? "(null)");
+            }
+
+            return (result.ToArray(), result.Count);
+        }
+
+        return ([], 0);
+    }
+
+    private static object[] SnapshotList(IList list)
+    {
+        var snapshot = new object[list.Count];
+        for (var i = 0; i < list.Count; i++)
+        {
+            snapshot[i] = list[i]!;
+        }
+
+        return snapshot;
+    }
+
+    private static AssetRefType? GetListElementAssetRefType(Type elementType)
+    {
+        if (elementType == typeof(AnimationEntry))
+        {
+            return AssetRefType.Animation;
+        }
+
+        foreach (var p in elementType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        {
+            var attr = p.GetCustomAttribute<AssetRefAttribute>();
+            if (attr != null)
+            {
+                return attr.AssetType;
+            }
+        }
+
+        return null;
+    }
+
+    private static void RenderListEditor(UiFrame ui, UiContext ctx, string id,
+        PropertyInfo prop, object instance, EditorViewModel editorVm, Action? onChanged)
+    {
+        var t = EditorTheme.Current;
+        var value = prop.GetValue(instance);
+        if (value == null)
+        {
+            return;
+        }
+
+        var elementType = GetCollectionElementType(prop.PropertyType);
+        if (elementType == null)
+        {
+            return;
+        }
+
+        var mutableList = value as IList;
+        var declaredType = prop.PropertyType;
+        var isMutableType = declaredType.IsGenericType && declaredType.GetGenericTypeDefinition() == typeof(List<>);
+        var isMutable = mutableList != null && isMutableType;
+        var (items, count) = CollectItems(value);
+        var assetRefType = isMutable ? GetListElementAssetRefType(elementType) : null;
+        var title = FormatPropertyName(prop.Name);
+
+        var selectedIndex = -1;
+        var listId = id + "_List";
+
+        var contentHeight = 32 + count * 26;
+        var listHeight = Math.Clamp(contentHeight, 60, 200);
+
+        var editor = Ui.ListEditor(ctx, listId)
+            .Title(title)
+            .Background(t.SurfaceInset)
+            .SelectedColor(UiColor.Rgb(50, 80, 120))
+            .HoverColor(t.Hover)
+            .TextColor(t.TextPrimary)
+            .FontSize(t.FontSizeCaption)
+            .ItemHeight(26)
+            .Width(UiSizing.Grow())
+            .Height(UiSizing.Fixed(listHeight))
+            .ShowAdd(isMutable)
+            .ShowRemove(isMutable);
+
+        if (assetRefType.HasValue)
+        {
+            editor = editor.ItemAction(FontAwesome.FolderOpen, t.Accent, t.Hover);
+        }
+
+        var result = editor.Show(items, ref selectedIndex);
+
+        if (!isMutable || mutableList == null)
+        {
+            return;
+        }
+
+        if (result.Added)
+        {
+            if (assetRefType.HasValue)
+            {
+                var oldSnapshot = SnapshotList(mutableList);
+                editorVm.OpenAssetPicker(assetRefType.Value, null, asset =>
+                {
+                    if (asset == null)
+                    {
+                        return;
+                    }
+
+                    var newEntry = CreateEntryFromAsset(elementType, asset);
+                    if (newEntry == null)
+                    {
+                        return;
+                    }
+
+                    mutableList.Add(newEntry);
+                    editorVm.UndoSystem.Execute(
+                        new ListChangeAction(mutableList, oldSnapshot, SnapshotList(mutableList), $"Add {title} Entry"));
+                    onChanged?.Invoke();
+                });
+            }
+            else
+            {
+                var oldSnapshot = SnapshotList(mutableList);
+                var newItem = elementType == typeof(string) ? (object)"" : Activator.CreateInstance(elementType);
+                mutableList.Add(newItem);
+                editorVm.UndoSystem.Execute(
+                    new ListChangeAction(mutableList, oldSnapshot, SnapshotList(mutableList), $"Add {title} Entry"));
+                onChanged?.Invoke();
+            }
+        }
+
+        if (result.Removed && result.RemovedIndex >= 0 && result.RemovedIndex < mutableList.Count)
+        {
+            var oldSnapshot = SnapshotList(mutableList);
+            mutableList.RemoveAt(result.RemovedIndex);
+            editorVm.UndoSystem.Execute(
+                new ListChangeAction(mutableList, oldSnapshot, SnapshotList(mutableList), $"Remove {title} Entry"));
+            onChanged?.Invoke();
+        }
+
+        if (result.ActionClicked && result.ActionClickedIndex >= 0
+            && result.ActionClickedIndex < mutableList.Count && assetRefType.HasValue)
+        {
+            var actionIndex = result.ActionClickedIndex;
+            var oldSnapshot = SnapshotList(mutableList);
+            var currentSource = GetEntrySourcePath(mutableList[actionIndex]);
+
+            editorVm.OpenAssetPicker(assetRefType.Value, currentSource, asset =>
+            {
+                if (asset == null)
+                {
+                    return;
+                }
+
+                var updated = UpdateEntryFromAsset(elementType, mutableList[actionIndex], asset);
+                if (updated != null)
+                {
+                    mutableList[actionIndex] = updated;
+                }
+
+                editorVm.UndoSystem.Execute(
+                    new ListChangeAction(mutableList, oldSnapshot, SnapshotList(mutableList), $"Change {title} Source"));
+                onChanged?.Invoke();
+            });
+        }
+    }
+
+    private static KeyValuePair<object, object>[] SnapshotDictionary(IDictionary dict)
+    {
+        var snapshot = new KeyValuePair<object, object>[dict.Count];
+        var i = 0;
+        foreach (DictionaryEntry entry in dict)
+        {
+            snapshot[i++] = new KeyValuePair<object, object>(entry.Key, entry.Value!);
+        }
+        return snapshot;
+    }
+
+    private static void RenderDictionaryEditor(UiFrame ui, UiContext ctx, string id,
+        PropertyInfo prop, object instance, EditorViewModel editorVm, Action? onChanged)
+    {
+        var t = EditorTheme.Current;
+        var value = prop.GetValue(instance);
+        if (value is not IDictionary dict)
+        {
+            return;
+        }
+
+        var title = FormatPropertyName(prop.Name);
+
+        var entryKeys = new string[dict.Count];
+        var entryValues = new string[dict.Count];
+        var idx = 0;
+        foreach (DictionaryEntry entry in dict)
+        {
+            entryKeys[idx] = entry.Key.ToString() ?? "";
+            entryValues[idx] = entry.Value?.ToString() ?? "";
+            idx++;
+        }
+
+        var count = entryKeys.Length;
+
+        using (ui.Panel(id + "_DictC")
+            .Vertical()
+            .GrowWidth()
+            .FitHeight()
+            .Background(t.SurfaceInset)
+            .Border(1, UiColor.Rgb(55, 55, 60))
+            .CornerRadius(4)
+            .Open())
+        {
+            using (ui.Panel(id + "_DictH")
+                .Horizontal()
+                .GrowWidth()
+                .FixedHeight(30)
+                .Padding(8, 4, 4, 4)
+                .Gap(4)
+                .AlignChildrenY(UiAlignY.Center)
+                .Background(UiColor.Rgb(40, 40, 45))
+                .Open())
+            {
+                ui.Text(title, new UiTextStyle { Color = t.TextPrimary, FontSize = t.FontSizeCaption });
+
+                using (ui.Panel(id + "_DictSpc").GrowWidth().Open()) { }
+
+                var addBtn = ui.Panel(id + "_DictAdd")
+                    .FixedWidth(22)
+                    .FixedHeight(22)
+                    .CenterChildren()
+                    .CornerRadius(3);
+
+                if (addBtn.IsHovered())
+                {
+                    addBtn = addBtn.Background(UiColor.Rgb(60, 60, 65));
+                }
+
+                using (addBtn.Open())
+                {
+                    ui.Icon(FontAwesome.Plus, UiColor.Rgb(100, 200, 100), 12);
+                }
+
+                if (addBtn.WasClicked())
+                {
+                    var oldSnapshot = SnapshotDictionary(dict);
+                    var keyArgs = prop.PropertyType.GetGenericArguments();
+                    var keyType = keyArgs[0];
+                    var valueType = keyArgs[1];
+
+                    object newKey;
+                    if (keyType == typeof(string))
+                    {
+                        var baseKey = "NewKey";
+                        var suffix = 0;
+                        var candidate = baseKey;
+                        while (dict.Contains(candidate))
+                        {
+                            candidate = baseKey + (++suffix);
+                        }
+                        newKey = candidate;
+                    }
+                    else
+                    {
+                        newKey = Activator.CreateInstance(keyType)!;
+                    }
+
+                    var newVal = valueType == typeof(string) ? (object)"" : Activator.CreateInstance(valueType)!;
+                    dict[newKey] = newVal;
+                    editorVm.UndoSystem.Execute(
+                        new DictionaryChangeAction(dict, oldSnapshot, SnapshotDictionary(dict), $"Add {title} Entry"));
+                    onChanged?.Invoke();
+                }
+            }
+
+            for (var i = 0; i < count; i++)
+            {
+                using (ui.Panel(id + "_DR" + i)
+                    .Horizontal()
+                    .GrowWidth()
+                    .FixedHeight(26)
+                    .Padding(4, 0)
+                    .Gap(4)
+                    .AlignChildrenY(UiAlignY.Center)
+                    .Open())
+                {
+                    var keyFieldId = id + "_DK" + i;
+                    var keyVal = entryKeys[i];
+                    var oldKey = keyVal;
+
+                    var keyChanged = Ui.TextField(ctx, keyFieldId, ref keyVal)
+                        .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
+                        .TextColor(t.TextPrimary)
+                        .BorderColor(t.Border, t.Accent)
+                        .FontSize(t.FontSizeCaption)
+                        .CornerRadius(t.RadiusSmall)
+                        .Padding(4, 2)
+                        .Width(UiSizing.Percent(0.4f))
+                        .Show(ref keyVal);
+
+                    if (keyChanged && keyVal != oldKey && !dict.Contains(keyVal))
+                    {
+                        var oldSnapshot = SnapshotDictionary(dict);
+                        var existingValue = dict[oldKey];
+                        dict.Remove(oldKey);
+                        dict[keyVal] = existingValue;
+                        editorVm.UndoSystem.Execute(
+                            new DictionaryChangeAction(dict, oldSnapshot, SnapshotDictionary(dict),
+                                $"Rename {title} Key"));
+                        onChanged?.Invoke();
+                    }
+
+                    var valFieldId = id + "_DV" + i;
+                    var valVal = entryValues[i];
+                    var oldVal = valVal;
+
+                    var valChanged = Ui.TextField(ctx, valFieldId, ref valVal)
+                        .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
+                        .TextColor(t.TextPrimary)
+                        .BorderColor(t.Border, t.Accent)
+                        .FontSize(t.FontSizeCaption)
+                        .CornerRadius(t.RadiusSmall)
+                        .Padding(4, 2)
+                        .GrowWidth()
+                        .Show(ref valVal);
+
+                    if (valChanged && valVal != oldVal)
+                    {
+                        var oldSnapshot = SnapshotDictionary(dict);
+                        dict[entryKeys[i]] = valVal;
+                        editorVm.UndoSystem.Execute(
+                            new DictionaryChangeAction(dict, oldSnapshot, SnapshotDictionary(dict),
+                                $"Change {title} Value"));
+                        onChanged?.Invoke();
+                    }
+
+                    var removeBtn = ui.Panel(id + "_DRm" + i)
+                        .FixedWidth(20)
+                        .FixedHeight(20)
+                        .CenterChildren()
+                        .CornerRadius(3);
+
+                    if (removeBtn.IsHovered())
+                    {
+                        removeBtn = removeBtn.Background(UiColor.Rgb(60, 60, 65));
+                    }
+
+                    using (removeBtn.Open())
+                    {
+                        ui.Icon(FontAwesome.Minus, UiColor.Rgb(200, 100, 100), 12);
+                    }
+
+                    if (removeBtn.WasClicked())
+                    {
+                        var oldSnapshot = SnapshotDictionary(dict);
+                        dict.Remove(entryKeys[i]);
+                        editorVm.UndoSystem.Execute(
+                            new DictionaryChangeAction(dict, oldSnapshot, SnapshotDictionary(dict),
+                                $"Remove {title} Entry"));
+                        onChanged?.Invoke();
+                    }
+                }
+            }
+        }
+    }
+
+    private static object? CreateEntryFromAsset(Type elementType, AssetInfo asset)
+    {
+        if (elementType == typeof(AnimationEntry))
+        {
+            var fileName = System.IO.Path.GetFileNameWithoutExtension(asset.Name);
+            return AnimationEntry.External(fileName, asset.Path);
+        }
+
+        var instance = Activator.CreateInstance(elementType);
+        if (instance == null)
+        {
+            return null;
+        }
+
+        foreach (var p in elementType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        {
+            if (!p.CanWrite)
+            {
+                continue;
+            }
+
+            var attr = p.GetCustomAttribute<AssetRefAttribute>();
+            if (attr != null)
+            {
+                p.SetValue(instance, asset.Path);
+                break;
+            }
+        }
+
+        return instance;
+    }
+
+    private static object? UpdateEntryFromAsset(Type elementType, object? existing, AssetInfo asset)
+    {
+        if (elementType == typeof(AnimationEntry))
+        {
+            var fileName = System.IO.Path.GetFileNameWithoutExtension(asset.Name);
+            return AnimationEntry.External(fileName, asset.Path);
+        }
+
+        if (existing == null)
+        {
+            return CreateEntryFromAsset(elementType, asset);
+        }
+
+        foreach (var p in elementType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        {
+            if (!p.CanWrite)
+            {
+                continue;
+            }
+
+            var attr = p.GetCustomAttribute<AssetRefAttribute>();
+            if (attr != null)
+            {
+                p.SetValue(existing, asset.Path);
+                return existing;
+            }
+        }
+
+        return existing;
+    }
+
+    private static string? GetEntrySourcePath(object? entry)
+    {
+        if (entry is AnimationEntry animEntry)
+        {
+            return animEntry.SourceRef;
+        }
+
+        if (entry == null)
+        {
+            return null;
+        }
+
+        foreach (var p in entry.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        {
+            var attr = p.GetCustomAttribute<AssetRefAttribute>();
+            if (attr != null)
+            {
+                return p.GetValue(entry)?.ToString();
+            }
+        }
+
+        return null;
     }
 
     private static string? GetAssetPath(object? asset)

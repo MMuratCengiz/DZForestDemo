@@ -4,7 +4,7 @@
     {
       "name": "Main Camera",
       "position": [1.7775733, 9.141837, -34.880928],
-      "rotation": [20.766598, -14.507475, 5.976743],
+      "rotation": [-15.060339, -20.377853, 11.370759],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -41,7 +41,7 @@
     {
       "name": "Character_Viking",
       "active": true,
-      "position": [-1.2923927E-05, -333594.47, 0.00051649613],
+      "position": [-1.2923927E-05, -1457230.4, 0.00051649613],
       "rotation": [4.0916016E-06, 5.809548E-07, 1.0138471E-07],
       "scale": [1, 1, 1],
       "components": [
@@ -59,16 +59,17 @@
           "type": "NiziKit.Components.Rigidbody",
           "bodyType": "dynamic",
           "mass": 1,
-          "shape": {
-            "type": "box",
-            "size": [
-              1,
-              1,
-              1
-            ]
-          },
           "speculativeMargin": 0.1,
           "sleepThreshold": 0.01
+        },
+        {
+          "type": "NiziKit.Components.BoxCollider",
+          "size": [
+            1,
+            1,
+            1
+          ],
+          "isTrigger": false
         }
       ],
       "children": []
@@ -117,7 +118,7 @@
       "name": "Boat",
       "active": false,
       "position": [26.5, 10, 19.5],
-      "rotation": [-9.733414, 28.517178, 74.85919],
+      "rotation": [-4.8678136, -29.638763, 78.62688],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -176,13 +177,13 @@
     {
       "name": "Table",
       "active": true,
-      "position": [8, 0, -3],
+      "position": [8.239118, 0.2535448, -0.34437943],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
       "components": [
         {
           "type": "NiziKit.Components.MeshComponent",
-          "mesh": "Synty/Models/StreetRacer/SM_Bld_Warehouse_Door_01.nizimesh"
+          "mesh": "Synty/Models/DungeonRealms/FBX/SM_Prop_Camp_Table_Rug_04.nizimesh"
         },
         {
           "type": "NiziKit.Components.SurfaceComponent",
@@ -196,7 +197,7 @@
     {
       "name": "Chair1",
       "active": true,
-      "position": [7, 0, -2],
+      "position": [9.768937, 0, -0.3678385],
       "rotation": [0, 89.98021, 0],
       "scale": [1, 1, 1],
       "components": [
@@ -216,7 +217,7 @@
     {
       "name": "Chair2",
       "active": false,
-      "position": [9, 0, -2],
+      "position": [6.6925244, 0, -0.3144476],
       "rotation": [0, -89.98021, 0],
       "scale": [1, 1, 1],
       "components": [
@@ -276,7 +277,7 @@
     {
       "name": "Barrel2",
       "active": true,
-      "position": [5, -362026.78, 5],
+      "position": [5, -1485709.1, 5],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
       "components": [
@@ -294,16 +295,17 @@
           "type": "NiziKit.Components.Rigidbody",
           "bodyType": "dynamic",
           "mass": 1,
-          "shape": {
-            "type": "box",
-            "size": [
-              1,
-              1,
-              1
-            ]
-          },
           "speculativeMargin": 0.1,
           "sleepThreshold": 0.01
+        },
+        {
+          "type": "NiziKit.Components.BoxCollider",
+          "size": [
+            1,
+            1,
+            1
+          ],
+          "isTrigger": false
         }
       ],
       "children": []
@@ -311,13 +313,13 @@
     {
       "name": "Barrel",
       "active": true,
-      "position": [26.404984, 0.7497239, 15.556169],
-      "rotation": [-1.134473E-10, -4.3953087E-06, -2.4559185E-08],
+      "position": [35.795795, 0.74972385, -32.26731],
+      "rotation": [2.8224699E-08, -2.5166469E-06, 5.5291014E-08],
       "scale": [1, 1, 1],
       "components": [
         {
           "type": "NiziKit.Components.MeshComponent",
-          "mesh": "Synty/Models/VikingRealm/FBX/SM_Prop_Barrel_01.nizimesh"
+          "mesh": "Synty/Models/FantasyKingdom/Characters/SK_Chr_Blacksmith_Male_01.nizimesh"
         },
         {
           "type": "NiziKit.Components.SurfaceComponent",
@@ -333,22 +335,34 @@
           "isGrounded": true
         },
         {
+          "type": "NiziKit.Components.BoxCollider",
+          "size": [
+            1,
+            1,
+            1
+          ],
+          "isTrigger": false
+        },
+        {
           "type": "NiziKit.Components.Rigidbody",
           "bodyType": "dynamic",
           "mass": 1,
-          "shape": {
-            "type": "box",
-            "size": [
-              1,
-              1,
-              1
-            ]
-          },
           "speculativeMargin": 0.1,
           "sleepThreshold": 0.01
         },
         {
           "type": "DZForestDemo.Script.JumpController"
+        },
+        {
+          "type": "NiziKit.Animation.Animator",
+          "skeleton": "Synty/Models/FantasyKingdom/Characters/SK_Chr_Blacksmith_Male_01.ozzskel",
+          "defaultAnimation": "Take 001",
+          "animations": [
+            {
+              "name": "Take 001",
+              "source": "Synty/Models/FantasyKingdom/FBX/Take 001.ozzanim"
+            }
+          ]
         }
       ],
       "children": []
@@ -516,7 +530,7 @@
     {
       "name": "Tree2",
       "active": true,
-      "position": [20, 0, 5],
+      "position": [5.590873, 0, 5],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
       "components": [
@@ -597,7 +611,7 @@
       "name": "Platform",
       "active": false,
       "position": [0, -0.25, 0],
-      "rotation": [0, 0, 0],
+      "rotation": [0, 0.17670275, 0],
       "scale": [90.67, 1, 113.75],
       "components": [
         {
@@ -620,9 +634,9 @@
       "children": []
     },
     {
-      "name": "New Object",
+      "name": "New Object 2",
       "active": false,
-      "position": [0, 0, -9.997309],
+      "position": [2.2195172, 0, -9.997309],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
       "components": [
@@ -653,6 +667,41 @@
           "albedo": "Synty/Textures/VikingRealm/Textures/Alts/PolygonVikingRealm_Texture_01_A.dztex",
           "normal": "Synty/Textures/VikingRealm/Textures/PolygonVikingRealm_Normals_01.dztex",
           "metallic": "Synty/Textures/VikingRealm/Textures/Metallic/PolygonVikingRealm_Metallic_01.dztex"
+        }
+      ],
+      "children": []
+    },
+    {
+      "name": "Robot",
+      "active": true,
+      "position": [-2.5130491, 0.29315245, -8.371697],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "components": [
+        {
+          "type": "NiziKit.Components.SurfaceComponent",
+          "albedo": "Synty/Textures/BaseLocomotion/Demo_Textures/T_Polygon_Dummy_01.dztex"
+        },
+        {
+          "type": "NiziKit.Components.MeshComponent",
+          "mesh": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.nizimesh"
+        },
+        {
+          "type": "NiziKit.Components.MaterialComponent",
+          "tags": {
+            "SKINNED": "TRUE"
+          }
+        },
+        {
+          "type": "NiziKit.Animation.Animator",
+          "skeleton": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.ozzskel",
+          "defaultAnimation": "A_Idle_Crouching_Masc",
+          "animations": [
+            {
+              "name": "A_Idle_Crouching_Masc",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/Idle/A_Idle_Crouching_Masc.ozzanim"
+            }
+          ]
         }
       ],
       "children": []
