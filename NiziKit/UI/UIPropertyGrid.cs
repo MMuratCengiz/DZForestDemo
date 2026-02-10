@@ -107,7 +107,6 @@ public ref struct UiPropertyGridScope
 
         _context.Clay.OpenElement(rowDecl);
 
-        // Label
         var labelId = _context.StringCache.GetId("PGLbl", _parentId + rowIdx);
         var labelDecl = new ClayElementDeclaration { Id = labelId };
         labelDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(_labelWidth);
@@ -121,7 +120,6 @@ public ref struct UiPropertyGridScope
         });
         _context.Clay.CloseElement();
 
-        // Editor area (grow width) - caller fills content
         var editorId = _context.StringCache.GetId("PGEd", _parentId + rowIdx);
         var editorDecl = new ClayElementDeclaration { Id = editorId };
         editorDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
@@ -130,14 +128,13 @@ public ref struct UiPropertyGridScope
 
         _context.Clay.OpenElement(editorDecl);
 
-        // Returns a scope that closes: editor + row
         return new UiPropertyRowScope(_context);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose()
     {
-        _context.Clay.CloseElement(); // container
+        _context.Clay.CloseElement();
     }
 }
 
@@ -153,8 +150,8 @@ public readonly ref struct UiPropertyRowScope
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose()
     {
-        _context.Clay.CloseElement(); // editor area
-        _context.Clay.CloseElement(); // row
+        _context.Clay.CloseElement();
+        _context.Clay.CloseElement();
     }
 }
 

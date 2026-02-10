@@ -105,7 +105,6 @@ public ref struct UiTreeView
         _state.SelectedNodeId = selectedId;
         _nodeIndex = 0;
 
-        // Scrollable container
         var containerDecl = new ClayElementDeclaration { Id = Id };
         containerDecl.Layout.LayoutDirection = ClayLayoutDirection.TopToBottom;
         containerDecl.Layout.Sizing.Width = _width.ToClayAxis();
@@ -149,7 +148,6 @@ public ref struct UiTreeView
             : interaction.IsHovered ? _hoverColor
             : _bgColor;
 
-        // Row
         var rowDecl = new ClayElementDeclaration { Id = rowId };
         rowDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
         rowDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
@@ -161,7 +159,6 @@ public ref struct UiTreeView
 
         _context.Clay.OpenElement(rowDecl);
         {
-            // Chevron
             if (hasChildren)
             {
                 var chevronId = _context.StringCache.GetId("TVChev", Id + nodeIdx);
@@ -198,7 +195,6 @@ public ref struct UiTreeView
             }
             else
             {
-                // Empty spacer for alignment
                 var spacerId = _context.StringCache.GetId("TVSpc", Id + nodeIdx);
                 var spacerDecl = new ClayElementDeclaration { Id = spacerId };
                 spacerDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(14);
@@ -206,7 +202,6 @@ public ref struct UiTreeView
                 _context.Clay.CloseElement();
             }
 
-            // Icon
             if (!string.IsNullOrEmpty(node.Icon))
             {
                 _context.Clay.Text(StringView.Intern(node.Icon), new ClayTextDesc
@@ -218,7 +213,6 @@ public ref struct UiTreeView
                 });
             }
 
-            // Label
             _context.Clay.Text(StringView.Intern(node.Label), new ClayTextDesc
             {
                 TextColor = _textColor.ToClayColor(),
@@ -227,7 +221,6 @@ public ref struct UiTreeView
         }
         _context.Clay.CloseElement();
 
-        // Row click selects
         if (interaction.WasClicked)
         {
             selectedId = node.Id;
@@ -235,7 +228,6 @@ public ref struct UiTreeView
             changed = true;
         }
 
-        // Render children if expanded
         if (hasChildren && isExpanded)
         {
             foreach (var child in node.Children)

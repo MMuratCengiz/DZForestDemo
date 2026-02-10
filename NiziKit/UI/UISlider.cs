@@ -110,7 +110,6 @@ public ref struct UiSlider
         var trackInteraction = _context.GetInteraction(trackId);
         var thumbInteraction = _context.GetInteraction(thumbId);
 
-        // Drag logic
         if (thumbInteraction.IsPressed && !_state.IsDragging && _context.ActiveDragWidgetId == 0)
         {
             _state.IsDragging = true;
@@ -122,7 +121,6 @@ public ref struct UiSlider
             _state.IsDragging = false;
         }
 
-        // Click on track to set value
         if (trackInteraction.WasClicked && !_state.IsDragging)
         {
             var box = _context.Clay.GetElementBoundingBox(trackId);
@@ -144,7 +142,6 @@ public ref struct UiSlider
             }
         }
 
-        // Drag to adjust
         if (_state.IsDragging)
         {
             var box = _context.Clay.GetElementBoundingBox(trackId);
@@ -167,7 +164,6 @@ public ref struct UiSlider
             normalized = Math.Clamp((value - _min) / range, 0f, 1f);
         }
 
-        // Outer row container
         var containerDecl = new ClayElementDeclaration { Id = Id };
         containerDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
         containerDecl.Layout.Sizing.Width = _width.ToClayAxis();
@@ -177,7 +173,6 @@ public ref struct UiSlider
 
         _context.Clay.OpenElement(containerDecl);
         {
-            // Track
             var trackDecl = new ClayElementDeclaration { Id = trackId };
             trackDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
             trackDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(_trackHeight);
@@ -186,7 +181,6 @@ public ref struct UiSlider
 
             _context.Clay.OpenElement(trackDecl);
             {
-                // Fill bar
                 var fillId = _context.StringCache.GetId("SlFill", Id);
                 var fillDecl = new ClayElementDeclaration { Id = fillId };
                 fillDecl.Layout.Sizing.Width = ClaySizingAxis.Percent(normalized);
@@ -196,7 +190,6 @@ public ref struct UiSlider
                 _context.Clay.OpenElement(fillDecl);
                 _context.Clay.CloseElement();
 
-                // Thumb (floating attached to fill bar's right edge)
                 var thumbSize = _thumbRadius * 2;
                 var isThumbHovered = thumbInteraction.IsHovered || _state.IsDragging;
                 var thumbDecl = new ClayElementDeclaration { Id = thumbId };
@@ -217,7 +210,6 @@ public ref struct UiSlider
             }
             _context.Clay.CloseElement();
 
-            // Value text
             if (_showValue)
             {
                 _context.Clay.Text(StringView.Intern(value.ToString(_format)), new ClayTextDesc

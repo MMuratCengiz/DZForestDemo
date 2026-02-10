@@ -99,7 +99,6 @@ public ref struct UiListEditor
         var result = new UiListEditorResult();
         _state.SelectedIndex = selectedIndex;
 
-        // Container
         var containerDecl = new ClayElementDeclaration { Id = Id };
         containerDecl.Layout.LayoutDirection = ClayLayoutDirection.TopToBottom;
         containerDecl.Layout.Sizing.Width = _width.ToClayAxis();
@@ -114,7 +113,6 @@ public ref struct UiListEditor
 
         _context.Clay.OpenElement(containerDecl);
         {
-            // Header
             var headerId = _context.StringCache.GetId("LEHead", Id);
             var headerDecl = new ClayElementDeclaration { Id = headerId };
             headerDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
@@ -134,14 +132,12 @@ public ref struct UiListEditor
                     FontSize = _fontSize
                 });
 
-                // Flex spacer
                 var spacerId = _context.StringCache.GetId("LESpc", Id);
                 var spacerDecl = new ClayElementDeclaration { Id = spacerId };
                 spacerDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
                 _context.Clay.OpenElement(spacerDecl);
                 _context.Clay.CloseElement();
 
-                // Add button
                 if (_showAdd)
                 {
                     var addId = _context.StringCache.GetId("LEAdd", Id);
@@ -172,7 +168,6 @@ public ref struct UiListEditor
                     }
                 }
 
-                // Remove button
                 if (_showRemove)
                 {
                     var removeId = _context.StringCache.GetId("LEDel", Id);
@@ -206,7 +201,6 @@ public ref struct UiListEditor
             }
             _context.Clay.CloseElement();
 
-            // Item list (scrollable)
             var listId = _context.StringCache.GetId("LEList", Id);
             var listDecl = new ClayElementDeclaration { Id = listId };
             listDecl.Layout.LayoutDirection = ClayLayoutDirection.TopToBottom;

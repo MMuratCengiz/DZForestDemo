@@ -12,7 +12,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 {
     private RenderFrame _renderFrame = null!;
 
-    // Widget state
     private int _clickCount;
     private bool _checkboxA = true;
     private bool _checkboxB;
@@ -23,7 +22,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
     private int _activeTab;
     private readonly string[] _tabs = ["Widgets", "Layout", "Stress Test", "New Widgets"];
 
-    // New widgets state
     private float _sliderValue = 0.5f;
     private float _sliderValue2 = 50f;
     private float _dragValue = 1.0f;
@@ -52,7 +50,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
         _renderFrame.EnableDebugOverlay(DebugOverlayConfig.Default);
         _renderFrame.EnableUi(UiContextDesc.Default);
 
-        // Initialize FontAwesome from embedded resource
         FontAwesome.InitializeEmbedded(_renderFrame.UiContext.Clay);
     }
 
@@ -88,7 +85,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
             .Gap(0)
             .Open();
 
-        // Title bar
         using (ui.Panel("TitleBar")
                    .Horizontal()
                    .GrowWidth()
@@ -99,7 +95,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
                    .Gap(12)
                    .Open())
         {
-            // FontAwesome icon
             root.Icon(FontAwesome.Cubes, UiColor.Rgb(100, 200, 130), 20);
 
             root.Text("NiziKit UI Test", new UiTextStyle
@@ -111,7 +106,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
             Ui.FlexSpacer(ctx);
 
-            // Clock icon with FPS
             root.Icon(FontAwesome.Clock, UiColor.Rgb(180, 180, 180), 14);
             root.Text($"FPS: {Time.FramesPerSecond:F0}", new UiTextStyle
             {
@@ -119,11 +113,9 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
                 FontSize = 14,
             });
 
-            // Settings icon
             root.Icon(FontAwesome.Gear, UiColor.Rgb(150, 150, 150), 16);
         }
 
-        // Tab bar
         using (ui.Panel("TabBar")
                    .Horizontal()
                    .GrowWidth()
@@ -150,7 +142,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
             }
         }
 
-        // Content area
         using (ui.Panel("Content")
                    .Grow()
                    .Padding(16)
@@ -179,7 +170,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
     private void BuildWidgetsTab(UiFrame ui, UiContext ctx)
     {
-        // --- Icons Section ---
         SectionHeader(ui, "FontAwesome Icons");
 
         using (ui.Row("IconsRow").Gap(16).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
@@ -200,7 +190,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
         Ui.VerticalSpacer(ctx, 12);
 
-        // --- Buttons Section ---
         SectionHeader(ui, "Buttons");
 
         using (ui.Row("ButtonRow").Gap(8).FitHeight().GrowWidth().Open())
@@ -236,7 +225,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
         Ui.VerticalSpacer(ctx, 8);
 
-        // Custom button with content
         using (ui.Row("CustomBtnRow").Gap(8).FitHeight().GrowWidth().Open())
         {
             if (Ui.Button(ctx, "BtnLarge", "Large Button")
@@ -261,7 +249,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
         Ui.VerticalSpacer(ctx, 12);
 
-        // --- Checkboxes Section ---
         SectionHeader(ui, "Checkboxes");
 
         using (ui.Row("CheckboxRow").Gap(16).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
@@ -289,7 +276,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
         Ui.VerticalSpacer(ctx, 12);
 
-        // --- Text Fields Section ---
         SectionHeader(ui, "Text Fields");
 
         using (ui.Column("TextFieldCol").Gap(8).FitHeight().GrowWidth().Open())
@@ -316,7 +302,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
         Ui.VerticalSpacer(ctx, 12);
 
-        // --- Dropdown Section ---
         SectionHeader(ui, "Dropdown");
 
         using (ui.Row("DropdownRow").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
@@ -332,7 +317,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
         Ui.VerticalSpacer(ctx, 12);
 
-        // --- Cards Section ---
         SectionHeader(ui, "Cards");
 
         using (ui.Row("CardRow").Gap(12).FitHeight().GrowWidth().Open())
@@ -375,7 +359,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
         Ui.VerticalSpacer(ctx, 12);
 
-        // --- Dividers Section ---
         SectionHeader(ui, "Dividers & Spacers");
 
         using (ui.Column("DividerCol").Gap(8).FitHeight().GrowWidth().Open())
@@ -395,7 +378,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
     private void BuildLayoutTab(UiFrame ui, UiContext ctx)
     {
-        // --- Sizing demos ---
         SectionHeader(ui, "Fixed vs Grow vs Fit");
 
         using (ui.Row("SizingRow").Gap(8).FitHeight().GrowWidth().Open())
@@ -433,7 +415,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
         Ui.VerticalSpacer(ctx, 12);
 
-        // --- Alignment demos ---
         SectionHeader(ui, "Child Alignment");
 
         using (ui.Row("AlignRow").Gap(8).FitHeight().GrowWidth().Open())
@@ -459,12 +440,10 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
         Ui.VerticalSpacer(ctx, 12);
 
-        // --- Nested layout ---
         SectionHeader(ui, "Nested Layout");
 
         using (ui.Row("NestedOuter").Gap(8).FitHeight().GrowWidth().Open())
         {
-            // Left column
             using (ui.Column("NestedLeft")
                        .Width(UiSizing.Percent(0.3f))
                        .FitHeight()
@@ -491,7 +470,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
                 }
             }
 
-            // Right content
             using (ui.Column("NestedRight")
                        .GrowWidth()
                        .FitHeight()
@@ -504,7 +482,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
                 ui.Text("Main Content", UiTextStyle.Default.WithSize(14).WithColor(UiColor.Rgb(100, 149, 237)));
                 Ui.Divider(ctx, UiColor.Rgb(60, 60, 65));
 
-                // Grid-like layout with rows
                 for (var row = 0; row < 3; row++)
                 {
                     using (ui.Row($"GridRow{row}").Gap(8).FitHeight().GrowWidth().Open())
@@ -529,7 +506,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
         Ui.VerticalSpacer(ctx, 12);
 
-        // --- Scroll demo ---
         SectionHeader(ui, "Scrollable Content");
 
         using (ui.Panel("ScrollDemo")
@@ -623,7 +599,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
     private void BuildNewWidgetsTab(UiFrame ui, UiContext ctx)
     {
-        // --- Slider Section ---
         SectionHeader(ui, "Sliders");
 
         using (ui.Column("SliderCol").Gap(8).FitHeight().GrowWidth().Open())
@@ -652,7 +627,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
         Ui.VerticalSpacer(ctx, 12);
 
-        // --- DraggableValue Section ---
         SectionHeader(ui, "Draggable Value");
 
         using (ui.Row("DragRow").Gap(12).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
@@ -670,7 +644,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
         Ui.VerticalSpacer(ctx, 12);
 
-        // --- Vec3Editor Section ---
         SectionHeader(ui, "Vector Editor");
 
         using (ui.Row("VecRow").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
@@ -681,35 +654,39 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
         Ui.VerticalSpacer(ctx, 12);
 
-        // --- CollapsibleSection ---
         SectionHeader(ui, "Collapsible Sections");
 
-        using (Ui.CollapsibleSection(ctx, "CS1", "Transform", true)
+        using (var cs1 = Ui.CollapsibleSection(ctx, "CS1", "Transform", true)
                    .HeaderBackground(UiColor.Rgb(45, 45, 50), UiColor.Rgb(55, 55, 60))
                    .Badge("3 props")
                    .Open())
         {
-            using (ui.Row("CSRow1").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
+            if (cs1.IsExpanded)
             {
-                ui.Text("Position", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Gray));
-                Ui.Vec3Editor(ctx, "CSVec3", ref _posX, ref _posY, ref _posZ, 0.1f);
+                using (ui.Row("CSRow1").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
+                {
+                    ui.Text("Position", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Gray));
+                    Ui.Vec3Editor(ctx, "CSVec3", ref _posX, ref _posY, ref _posZ, 0.1f);
+                }
+                ui.Text("More transform properties would go here...", UiTextStyle.Default.WithSize(12).WithColor(UiColor.Rgb(140, 140, 140)));
             }
-            ui.Text("More transform properties would go here...", UiTextStyle.Default.WithSize(12).WithColor(UiColor.Rgb(140, 140, 140)));
         }
 
         Ui.VerticalSpacer(ctx, 4);
 
-        using (Ui.CollapsibleSection(ctx, "CS2", "Material", false)
+        using (var cs2 = Ui.CollapsibleSection(ctx, "CS2", "Material", false)
                    .HeaderBackground(UiColor.Rgb(45, 45, 50), UiColor.Rgb(55, 55, 60))
                    .Badge("shader")
                    .Open())
         {
-            ui.Text("Material settings collapsed by default.", UiTextStyle.Default.WithSize(12).WithColor(UiColor.Rgb(140, 140, 140)));
+            if (cs2.IsExpanded)
+            {
+                ui.Text("Material settings collapsed by default.", UiTextStyle.Default.WithSize(12).WithColor(UiColor.Rgb(140, 140, 140)));
+            }
         }
 
         Ui.VerticalSpacer(ctx, 12);
 
-        // --- TreeView Section ---
         SectionHeader(ui, "Tree View");
 
         using (ui.Row("TreeRow").Gap(12).FitHeight().GrowWidth().Open())
@@ -729,7 +706,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
         Ui.VerticalSpacer(ctx, 12);
 
-        // --- ContextMenu Section ---
         SectionHeader(ui, "Context Menu");
 
         using (ui.Row("CtxRow").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
@@ -753,7 +729,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
         Ui.VerticalSpacer(ctx, 12);
 
-        // --- PropertyGrid Section ---
         SectionHeader(ui, "Property Grid");
 
         using (var grid = Ui.PropertyGrid(ctx, "PropGrid").LabelWidth(100).Open())
@@ -780,7 +755,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
         Ui.VerticalSpacer(ctx, 12);
 
-        // --- ListEditor Section ---
         SectionHeader(ui, "List Editor");
 
         var listResult = Ui.ListEditor(ctx, "ListEd")

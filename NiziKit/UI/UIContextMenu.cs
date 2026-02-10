@@ -27,7 +27,7 @@ public sealed class UiContextMenuState
     public float PositionX { get; set; }
     public float PositionY { get; set; }
     public int HoveredIndex { get; set; } = -1;
-    public bool JustOpened { get; set; }
+    public int SkipCloseFrames { get; set; }
 
     public void OpenAt(float x, float y)
     {
@@ -35,13 +35,14 @@ public sealed class UiContextMenuState
         PositionX = x;
         PositionY = y;
         HoveredIndex = -1;
-        JustOpened = true;
+        SkipCloseFrames = 3;
     }
 
     public void Close()
     {
         IsOpen = false;
         HoveredIndex = -1;
+        SkipCloseFrames = 0;
     }
 }
 
@@ -153,9 +154,6 @@ public ref struct UiContextMenu
             return -1;
         }
 
-        var skipCloseCheck = _state.JustOpened;
-        _state.JustOpened = false;
-
         var clickedIndex = -1;
         var anyItemHovered = false;
 
@@ -258,7 +256,11 @@ public ref struct UiContextMenu
         }
         _context.Clay.CloseElement();
 
-        if (!skipCloseCheck && _context.MouseJustReleased && !anyItemHovered && !_context.Clay.PointerOver(Id))
+        if (_state.SkipCloseFrames > 0)
+        {
+            _state.SkipCloseFrames--;
+        }
+        else if (_context.MouseJustReleased && !anyItemHovered && !_context.Clay.PointerOver(Id))
         {
             _state.Close();
         }

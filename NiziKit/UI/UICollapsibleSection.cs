@@ -200,10 +200,7 @@ public ref struct UiCollapsibleSection
             return new UiCollapsibleSectionScope(_context, true);
         }
 
-        var hiddenDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("CSHide", Id) };
-        hiddenDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(0);
-        hiddenDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(0);
-        _context.Clay.OpenElement(hiddenDecl);
+        _context.Clay.CloseElement();
         return new UiCollapsibleSectionScope(_context, false);
     }
 
@@ -265,8 +262,11 @@ public readonly ref struct UiCollapsibleSectionScope
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose()
     {
-        _context.Clay.CloseElement(); // body or hidden element
-        _context.Clay.CloseElement(); // container
+        if (_isExpanded)
+        {
+            _context.Clay.CloseElement();
+            _context.Clay.CloseElement();
+        }
     }
 }
 
