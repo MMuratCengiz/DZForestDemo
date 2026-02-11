@@ -4,7 +4,7 @@
     {
       "name": "Main Camera",
       "position": [-0.23162663, 4.550002, -23.32802],
-      "rotation": [9.937334, -21.352577, 4.910667],
+      "rotation": [3.488001, -23.207024, 6.0722094],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -41,7 +41,7 @@
     {
       "name": "Character_Viking",
       "active": true,
-      "position": [-1.2923927E-05, -4875103, 0.00051649613],
+      "position": [-1.2923927E-05, -4999008.5, 0.00051649613],
       "rotation": [4.0916016E-06, 5.809548E-07, 1.0138471E-07],
       "scale": [1, 1, 1],
       "components": [
@@ -118,7 +118,7 @@
       "name": "Boat",
       "active": false,
       "position": [26.5, 10, 19.5],
-      "rotation": [18.372257, 24.141415, 81.29955],
+      "rotation": [-29.999224, -0.22477014, 77.39848],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -277,7 +277,7 @@
     {
       "name": "Barrel2",
       "active": true,
-      "position": [5, -4903619, 5],
+      "position": [5, -5027524.5, 5],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
       "components": [
@@ -313,8 +313,8 @@
     {
       "name": "Barrel",
       "active": true,
-      "position": [24.423542, -2830611.2, -105.879845],
-      "rotation": [-1.5908763, 0.0011459101, 0.004859527],
+      "position": [21.44028, -2954521, -115.69657],
+      "rotation": [-1.5908759, 0.0015504912, 0.00485391],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -721,7 +721,7 @@
         },
         {
           "type": "NiziKit.Components.MeshComponent",
-          "mesh": "Synty/Models/DarkFantasy/FBX/Characters/Unreal_Characters/SK_Chr_Gravedigger_Male_01.nizimesh"
+          "mesh": "Synty/Models/FantasyKingdom/Characters/SK_Chr_Bartender_01.nizimesh"
         },
         {
           "type": "NiziKit.Components.SurfaceComponent",
@@ -729,7 +729,7 @@
         },
         {
           "type": "NiziKit.Animation.Animator",
-          "skeleton": "Synty/Models/DarkFantasy/FBX/Characters/Unreal_Characters/SK_Chr_Gravedigger_Male_01.ozzskel",
+          "skeleton": "Synty/Models/FantasyKingdom/Characters/SK_Chr_Bartender_01.ozzskel",
           "animations": [
             {
               "name": "A_Idle_Crouching_Masc",

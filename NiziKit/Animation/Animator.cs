@@ -613,6 +613,7 @@ public partial class Animator : IDisposable
             else
             {
                 remap[i] = -1;
+                needsRemap = true;
             }
         }
 

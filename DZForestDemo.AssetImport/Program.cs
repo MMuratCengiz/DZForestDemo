@@ -69,62 +69,31 @@ void ImportBaseLocomotion(string baseLocoDir, string outputDir)
         return;
     }
 
-    var characterFile = Path.Combine(characterDir, "PolygonSyntyCharacter.fbx");
-    if (!File.Exists(characterFile))
-    {
-        return;
-    }
-
     using var exporter = new AssetExporter();
 
-    var characterOutputDir = Path.Combine(outputDir, "Character");
-    Directory.CreateDirectory(characterOutputDir);
-
-    var characterExportDesc = new AssetExportDesc
+    var characters = new[]
     {
-        SourcePath = characterFile,
-        OutputDirectory = characterOutputDir,
-        AssetName = "PolygonSyntyCharacter",
-        Format = ExportFormat.Glb,
-        Scale = 0.01f,
-        EmbedTextures = false,
-        OverwriteExisting = true,
-        OptimizeMeshes = true,
-        GenerateNormals = true,
-        CalculateTangents = true,
-        TriangulateMeshes = true,
-        JoinIdenticalVertices = true,
-        SmoothNormals = true,
-        SmoothNormalsAngle = 80.0f,
-        ExportSkeleton = true,
-        ExportAnimations = true
+        new { Name = "PolygonSyntyCharacter", AnimSubDir = "Polygon" },
+        new { Name = "SidekickSyntyCharacter", AnimSubDir = "Sidekick" }
     };
 
-    var charResult = exporter.Export(characterExportDesc);
-    if (!charResult.Success)
+    foreach (var character in characters)
     {
-        logger.LogError("BaseLocomotion: Character export failed: {Error}", charResult.ErrorMessage);
-        return;
-    }
-
-    if (!Directory.Exists(animationsDir) || charResult.OzzSkeleton == null)
-    {
-        return;
-    }
-
-    foreach (var animFile in Directory.EnumerateFiles(animationsDir, "*.fbx", SearchOption.AllDirectories))
-    {
-        var relativePath = Path.GetRelativePath(animationsDir, animFile);
-        var relativeDir = Path.GetDirectoryName(relativePath) ?? "";
-        var animName = Path.GetFileNameWithoutExtension(animFile);
-        var animOutputDir = Path.Combine(outputDir, "Animations", relativeDir);
-        Directory.CreateDirectory(animOutputDir);
-
-        var animExportDesc = new AssetExportDesc
+        var characterFile = Path.Combine(characterDir, $"{character.Name}.fbx");
+        if (!File.Exists(characterFile))
         {
-            SourcePath = animFile,
-            OutputDirectory = animOutputDir,
-            AssetName = animName,
+            logger.LogWarning("BaseLocomotion: {Name}.fbx not found, skipping", character.Name);
+            continue;
+        }
+
+        var characterOutputDir = Path.Combine(outputDir, "Character");
+        Directory.CreateDirectory(characterOutputDir);
+
+        var characterExportDesc = new AssetExportDesc
+        {
+            SourcePath = characterFile,
+            OutputDirectory = characterOutputDir,
+            AssetName = character.Name,
             Format = ExportFormat.Glb,
             Scale = 0.01f,
             EmbedTextures = false,
@@ -137,14 +106,56 @@ void ImportBaseLocomotion(string baseLocoDir, string outputDir)
             SmoothNormals = true,
             SmoothNormalsAngle = 80.0f,
             ExportSkeleton = true,
-            ExportAnimations = true,
-            ExternalSkeleton = charResult.OzzSkeleton
+            ExportAnimations = true
         };
 
-        var animResult = exporter.Export(animExportDesc);
-        if (!animResult.Success)
+        var charResult = exporter.Export(characterExportDesc);
+        if (!charResult.Success)
         {
-            logger.LogError("  Animation failed: {Name}: {Error}", animName, animResult.ErrorMessage);
+            logger.LogError("BaseLocomotion: {Name} export failed: {Error}", character.Name, charResult.ErrorMessage);
+            continue;
+        }
+
+        var charAnimDir = Path.Combine(animationsDir, character.AnimSubDir);
+        if (!Directory.Exists(charAnimDir) || charResult.OzzSkeleton == null)
+        {
+            continue;
+        }
+
+        foreach (var animFile in Directory.EnumerateFiles(charAnimDir, "*.fbx", SearchOption.AllDirectories))
+        {
+            var relativePath = Path.GetRelativePath(animationsDir, animFile);
+            var relativeDir = Path.GetDirectoryName(relativePath) ?? "";
+            var animName = Path.GetFileNameWithoutExtension(animFile);
+            var animOutputDir = Path.Combine(outputDir, "Animations", relativeDir);
+            Directory.CreateDirectory(animOutputDir);
+
+            var animExportDesc = new AssetExportDesc
+            {
+                SourcePath = animFile,
+                OutputDirectory = animOutputDir,
+                AssetName = animName,
+                Format = ExportFormat.Glb,
+                Scale = 0.01f,
+                EmbedTextures = false,
+                OverwriteExisting = true,
+                OptimizeMeshes = true,
+                GenerateNormals = true,
+                CalculateTangents = true,
+                TriangulateMeshes = true,
+                JoinIdenticalVertices = true,
+                SmoothNormals = true,
+                SmoothNormalsAngle = 80.0f,
+                ExportSkeleton = true,
+                ExportAnimations = true,
+                ExternalSkeleton = charResult.OzzSkeleton
+            };
+
+            var animResult = exporter.Export(animExportDesc);
+            if (!animResult.Success)
+            {
+                logger.LogError("  Animation failed: {Name}: {Error}", animName, animResult.ErrorMessage);
+            }
         }
     }
 }
