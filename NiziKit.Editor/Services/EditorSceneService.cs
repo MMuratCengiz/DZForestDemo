@@ -391,10 +391,6 @@ public class EditorSceneService
             {
                 json.Properties["retargetSource"] = JsonSerializer.SerializeToElement(animComp.RetargetSource.AssetPath);
             }
-            if (!string.IsNullOrEmpty(animComp.RetargetTPose))
-            {
-                json.Properties["retargetTPose"] = JsonSerializer.SerializeToElement(animComp.RetargetTPose);
-            }
             if (!string.IsNullOrEmpty(animComp.DefaultAnimation))
             {
                 json.Properties["defaultAnimation"] = JsonSerializer.SerializeToElement(animComp.DefaultAnimation);

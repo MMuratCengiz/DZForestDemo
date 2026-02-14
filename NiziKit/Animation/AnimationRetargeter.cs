@@ -211,17 +211,6 @@ public sealed class AnimationRetargeter : IDisposable
             _isMatchedBone[_bones[i].DestJointIndex] = true;
         }
 
-        // Log rest pose positions for all dest joints to check for degenerate values
-        for (var i = 0; i < destSkeleton.Joints.Count; i++)
-        {
-            var pos = dstTPoseModelMatrices[i].Translation;
-            if (pos.LengthSquared() < 0.0001f && i > 0)
-            {
-                Logger.LogWarning("Dest rest pose: joint [{Index}] '{Name}' at ORIGIN ({X:F4}, {Y:F4}, {Z:F4})",
-                    i, destSkeleton.Joints[i].Name, pos.X, pos.Y, pos.Z);
-            }
-        }
-
         var srcJointCount = sourceSkeleton.JointCount;
         _sourceModelTransforms = Float4x4Array.Create(new Matrix4x4[srcJointCount]);
         _sourceLocalTransforms = OzzJointTransformArray.Create(new OzzJointTransform[srcJointCount]);

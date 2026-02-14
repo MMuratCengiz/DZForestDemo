@@ -4,7 +4,7 @@
     {
       "name": "Main Camera",
       "position": [-0.23162663, 4.550002, -23.32802],
-      "rotation": [-21.370201, -9.897855, 8.660671],
+      "rotation": [-23.206013, -3.4950068, 7.50645],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -41,7 +41,7 @@
     {
       "name": "Character_Viking",
       "active": true,
-      "position": [-1.2923927E-05, -5239326, 0.00051649613],
+      "position": [-1.2923927E-05, -5258235, 0.00051649613],
       "rotation": [4.0916016E-06, 5.809548E-07, 1.0138471E-07],
       "scale": [1, 1, 1],
       "components": [
@@ -118,7 +118,7 @@
       "name": "Boat",
       "active": false,
       "position": [26.5, 10, 19.5],
-      "rotation": [-27.335909, -12.866357, 80.47953],
+      "rotation": [19.315275, 23.410889, 81.3768],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -277,7 +277,7 @@
     {
       "name": "Barrel2",
       "active": true,
-      "position": [5, -5267842, 5],
+      "position": [5, -5286751, 5],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
       "components": [
@@ -313,8 +313,8 @@
     {
       "name": "Barrel",
       "active": true,
-      "position": [23.08847, -3194872.2, -122.73293],
-      "rotation": [-1.5908734, 0.002761429, 0.004837095],
+      "position": [22.338465, -3213782.8, -122.23292],
+      "rotation": [-1.5908728, 0.0030299553, 0.0048333667],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -731,7 +731,7 @@
           "type": "NiziKit.Animation.Animator",
           "skeleton": "Synty/Models/FantasyKingdom/Characters/SK_Chr_Bartender_01.ozzskel",
           "retargetSource": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.ozzskel",
-          "retargetTPose": "Synty/Models/FantasyKingdom/FBX/Take 001.ozzanim",
+          "defaultAnimation": "A_Idle_Crouching_Masc",
           "animations": [
             {
               "name": "A_Idle_Crouching_Masc",

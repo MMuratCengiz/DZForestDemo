@@ -34,9 +34,6 @@ public partial class Animator : IDisposable
     [AssetRef(AssetRefType.Skeleton, "retargetSource")]
     public partial Skeleton? RetargetSource { get; set; }
 
-    [AssetRef(AssetRefType.Animation, "retargetTPose")]
-    public partial string? RetargetTPose { get; set; }
-
     [AnimationSelector("Skeleton")]
     [JsonProperty("defaultAnimation")]
     public partial string? DefaultAnimation { get; set; }
