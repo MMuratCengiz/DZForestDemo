@@ -231,8 +231,8 @@ public partial class Animator : IDisposable
             return;
         }
 
-        var srcTPose = RetargetSource.ExtractRestPoseModelMatrices();
-        var dstTPose = TryGetDstTPoseFromAnimation() ?? Skeleton.ExtractRestPoseModelMatrices();
+        var srcTPose = RetargetSource.ComputeRestPose();
+        var dstTPose = Skeleton.ComputeRestPose();
 
         _retargeter = new AnimationRetargeter();
         _retargeter.Setup(RetargetSource, Skeleton, srcTPose, dstTPose);
@@ -244,32 +244,6 @@ public partial class Animator : IDisposable
             _retargeter.Dispose();
             _retargeter = null;
         }
-    }
-
-    /// <summary>
-    /// Loads the retarget T-pose animation (e.g. Synty "Take 001") and samples it at frame 0
-    /// to get the destination skeleton's T-pose model matrices. "Take 001" in Synty FBX files
-    /// stores the character's bind pose as a single-frame animation.
-    /// </summary>
-    private Matrix4x4[]? TryGetDstTPoseFromAnimation()
-    {
-        if (string.IsNullOrEmpty(RetargetTPose) || Skeleton == null)
-        {
-            return null;
-        }
-
-        var animData = AssetPacks.GetAnimationDataByPath(RetargetTPose);
-        if (animData == null)
-        {
-            Logger.LogWarning("T-pose animation not found: '{Path}'", RetargetTPose);
-            return null;
-        }
-
-        var animName = Path.GetFileNameWithoutExtension(RetargetTPose);
-        var anim = Skeleton.LoadAnimation(animData, animName);
-        var result = Skeleton.SampleAnimationAtFrame0(anim);
-
-        return result;
     }
 
     private void LoadExternalAnimations()

@@ -28,6 +28,8 @@ public sealed class AnimationRetargeter : IDisposable
     private int _boneCount;
     private int[] _processOrder = [];
     private Matrix4x4[] _destRestPose = [];
+    private Matrix4x4[] _destRestLocalTransforms = [];
+    private bool[] _isMatchedBone = [];
     private Float4x4Array.Pinned? _sourceModelTransforms;
     private OzzJointTransformArray.Pinned? _sourceLocalTransforms;
     private Float4x4Array.Pinned? _sourceBlendModelTransforms;
@@ -52,6 +54,21 @@ public sealed class AnimationRetargeter : IDisposable
         Dispose();
         _sourceSkeleton = sourceSkeleton;
 
+        // Log all joint names for both skeletons
+        Logger.LogInformation("Source skeleton '{Name}' joints ({Count}):", sourceSkeleton.Name, sourceSkeleton.JointCount);
+        for (var i = 0; i < sourceSkeleton.Joints.Count; i++)
+        {
+            var j = sourceSkeleton.Joints[i];
+            Logger.LogInformation("  src[{Index}] '{Name}' parent={Parent}", i, j.Name, j.ParentIndex);
+        }
+
+        Logger.LogInformation("Dest skeleton '{Name}' joints ({Count}):", destSkeleton.Name, destSkeleton.JointCount);
+        for (var i = 0; i < destSkeleton.Joints.Count; i++)
+        {
+            var j = destSkeleton.Joints[i];
+            Logger.LogInformation("  dst[{Index}] '{Name}' parent={Parent}", i, j.Name, j.ParentIndex);
+        }
+
         var srcHumanoidMap = HumanoidBoneMapper.MapSkeleton(sourceSkeleton.Joints);
         var dstHumanoidMap = HumanoidBoneMapper.MapSkeleton(destSkeleton.Joints);
 
@@ -67,6 +84,27 @@ public sealed class AnimationRetargeter : IDisposable
             Logger.LogWarning("Destination skeleton '{Name}' does not have required humanoid bones for retargeting",
                 destSkeleton.Name);
             return;
+        }
+
+        // Log humanoid bone mapping for diagnostics
+        for (var humanoidBone = 0; humanoidBone < (int)HumanoidBone.Count; humanoidBone++)
+        {
+            var boneName = (HumanoidBone)humanoidBone;
+            var srcIdx = srcHumanoidMap[humanoidBone];
+            var dstIdx = dstHumanoidMap[humanoidBone];
+            var srcName = srcIdx >= 0 && srcIdx < sourceSkeleton.Joints.Count ? sourceSkeleton.Joints[srcIdx].Name : "MISSING";
+            var dstName = dstIdx >= 0 && dstIdx < destSkeleton.Joints.Count ? destSkeleton.Joints[dstIdx].Name : "MISSING";
+
+            if (srcIdx < 0 || dstIdx < 0)
+            {
+                Logger.LogWarning("Retarget bone {Bone}: src=[{SrcIdx}] '{SrcName}', dst=[{DstIdx}] '{DstName}' - SKIPPED",
+                    boneName, srcIdx, srcName, dstIdx, dstName);
+            }
+            else
+            {
+                Logger.LogInformation("Retarget bone {Bone}: src=[{SrcIdx}] '{SrcName}' -> dst=[{DstIdx}] '{DstName}'",
+                    boneName, srcIdx, srcName, dstIdx, dstName);
+            }
         }
 
         var bones = new List<RetargetBoneData>();
@@ -136,6 +174,47 @@ public sealed class AnimationRetargeter : IDisposable
         _destRestPose = new Matrix4x4[destSkeleton.JointCount];
         Array.Copy(dstTPoseModelMatrices, _destRestPose,
             Math.Min(dstTPoseModelMatrices.Length, _destRestPose.Length));
+
+        // Compute rest-pose LOCAL transforms for each dest joint so that unmatched bones
+        // can follow their parent during animation instead of staying stuck at T-pose position.
+        _destRestLocalTransforms = new Matrix4x4[destSkeleton.JointCount];
+        for (var i = 0; i < destSkeleton.JointCount; i++)
+        {
+            var parentIdx = destSkeleton.Joints[i].ParentIndex;
+            if (parentIdx >= 0 && parentIdx < dstTPoseModelMatrices.Length)
+            {
+                if (Matrix4x4.Invert(dstTPoseModelMatrices[parentIdx], out var invParent))
+                {
+                    _destRestLocalTransforms[i] = dstTPoseModelMatrices[i] * invParent;
+                }
+                else
+                {
+                    _destRestLocalTransforms[i] = dstTPoseModelMatrices[i];
+                }
+            }
+            else
+            {
+                _destRestLocalTransforms[i] = dstTPoseModelMatrices[i];
+            }
+        }
+
+        // Track which dest bones are matched so unmatched ones can inherit from parents.
+        _isMatchedBone = new bool[destSkeleton.JointCount];
+        for (var i = 0; i < _boneCount; i++)
+        {
+            _isMatchedBone[_bones[i].DestJointIndex] = true;
+        }
+
+        // Log rest pose positions for all dest joints to check for degenerate values
+        for (var i = 0; i < destSkeleton.Joints.Count; i++)
+        {
+            var pos = dstTPoseModelMatrices[i].Translation;
+            if (pos.LengthSquared() < 0.0001f && i > 0)
+            {
+                Logger.LogWarning("Dest rest pose: joint [{Index}] '{Name}' at ORIGIN ({X:F4}, {Y:F4}, {Z:F4})",
+                    i, destSkeleton.Joints[i].Name, pos.X, pos.Y, pos.Z);
+            }
+        }
 
         var srcJointCount = sourceSkeleton.JointCount;
         _sourceModelTransforms = Float4x4Array.Create(new Matrix4x4[srcJointCount]);
@@ -235,6 +314,7 @@ public sealed class AnimationRetargeter : IDisposable
             destModelMatrices[i] = _destRestPose[i];
         }
 
+        // Retarget matched humanoid bones
         for (var i = 0; i < _boneCount; i++)
         {
             ref var bone = ref _bones[_processOrder[i]];
@@ -261,6 +341,25 @@ public sealed class AnimationRetargeter : IDisposable
 
             destModelMatrices[bone.DestJointIndex] = dstLocal * dstParentModel;
         }
+
+        // Propagate retargeted parent transforms to unmatched child bones.
+        // Without this, unmatched bones (e.g. extra finger phalanges, thumb distal)
+        // would stay stuck at their T-pose model-space position while the hand moves.
+        // Joint indices are parent-before-child so forward iteration is safe.
+        for (var i = 0; i < destCount; i++)
+        {
+            if (_isMatchedBone.Length > i && _isMatchedBone[i])
+            {
+                continue;
+            }
+
+            var parentIdx = destJoints[i].ParentIndex;
+            if (parentIdx >= 0 && parentIdx < destCount &&
+                _destRestLocalTransforms.Length > i)
+            {
+                destModelMatrices[i] = _destRestLocalTransforms[i] * destModelMatrices[parentIdx];
+            }
+        }
     }
 
     public void Dispose()
@@ -277,6 +376,8 @@ public sealed class AnimationRetargeter : IDisposable
         _boneCount = 0;
         _processOrder = [];
         _destRestPose = [];
+        _destRestLocalTransforms = [];
+        _isMatchedBone = [];
         _sourceSkeleton = null;
         IsValid = false;
     }
