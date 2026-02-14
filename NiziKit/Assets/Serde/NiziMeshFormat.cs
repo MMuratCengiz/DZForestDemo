@@ -109,12 +109,7 @@ public static class NiziMeshReader
             throw new InvalidDataException("Invalid .nizimesh file: bad magic");
         }
 
-        var version = reader.ReadUInt32();
-        if (version != 2)
-        {
-            throw new InvalidDataException($"Unsupported .nizimesh version: {version} (expected 2, re-import required)");
-        }
-
+        reader.ReadUInt32();
         var name = ReadString(reader);
 
         var bounds = new BoundingBox
