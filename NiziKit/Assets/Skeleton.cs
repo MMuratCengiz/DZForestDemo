@@ -1,3 +1,4 @@
+using System.Numerics;
 using DenOfIz;
 using NiziKit.ContentPipeline;
 
@@ -275,10 +276,135 @@ public class Skeleton : IDisposable
         return animation;
     }
 
-    public void FinalizeLoading()
+    /// <summary>
+    /// Computes T-pose (rest pose) model-space matrices for each joint using the ozz rest pose.
+    /// </summary>
+    public Matrix4x4[] ExtractRestPoseModelMatrices()
     {
-        _exporter?.Dispose();
-        _exporter = null;
+        if (!OzzSkeleton.IsValid())
+        {
+            return ComputeModelMatricesFromLocalTransforms();
+        }
+
+        return ComputeRestPose();
+    }
+
+    /// <summary>
+    /// Returns true if all bones are near the origin, indicating an invalid/identity rest pose.
+    /// </summary>
+    internal static bool IsRestPoseDegenerate(Matrix4x4[] modelMatrices)
+    {
+        const float threshold = 0.001f;
+        for (var i = 0; i < modelMatrices.Length; i++)
+        {
+            var m = modelMatrices[i];
+            if (MathF.Abs(m.M41) > threshold ||
+                MathF.Abs(m.M42) > threshold ||
+                MathF.Abs(m.M43) > threshold)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private Matrix4x4[] ComputeRestPose()
+    {
+        var restPoses = OzzSkeleton.GetRestPoses().ToArray();
+        using var localTransforms = OzzJointTransformArray.Create(restPoses);
+        using var modelTransforms = Float4x4Array.Create(new Matrix4x4[JointCount]);
+
+        OzzSkeleton.RunLocalToModelFromTRS(new LocalToModelFromTRSDesc
+        {
+            LocalTransforms = localTransforms,
+            OutTransforms = modelTransforms
+        });
+
+        return modelTransforms.Value.AsSpan().ToArray();
+    }
+
+    /// <summary>
+    /// Computes T-pose model-space matrices from mesh inverse bind matrices.
+    /// Used when the skeleton was loaded from Ozz data and doesn't have glTF source.
+    /// </summary>
+    public static Matrix4x4[] ComputeRestPoseFromInverseBindMatrices(
+        int jointCount,
+        Matrix4x4[]? inverseBindMatrices,
+        int[]? jointRemapTable)
+    {
+        var result = new Matrix4x4[jointCount];
+        for (var i = 0; i < jointCount; i++)
+        {
+            result[i] = Matrix4x4.Identity;
+        }
+
+        if (inverseBindMatrices == null)
+        {
+            return result;
+        }
+
+        if (jointRemapTable != null)
+        {
+            for (var meshIdx = 0; meshIdx < jointRemapTable.Length; meshIdx++)
+            {
+                var skelIdx = jointRemapTable[meshIdx];
+                if (skelIdx >= 0 && skelIdx < result.Length && meshIdx < inverseBindMatrices.Length)
+                {
+                    Matrix4x4.Invert(inverseBindMatrices[meshIdx], out result[skelIdx]);
+                }
+            }
+        }
+        else
+        {
+            for (var i = 0; i < Math.Min(inverseBindMatrices.Length, jointCount); i++)
+            {
+                Matrix4x4.Invert(inverseBindMatrices[i], out result[i]);
+            }
+        }
+
+        return result;
+    }
+
+    private Matrix4x4[] ComputeModelMatricesFromLocalTransforms()
+    {
+        var matrices = new Matrix4x4[JointCount];
+        for (var i = 0; i < JointCount; i++)
+        {
+            var local = Joints[i].LocalTransform;
+            var parentIdx = Joints[i].ParentIndex;
+            matrices[i] = parentIdx >= 0 ? local * matrices[parentIdx] : local;
+        }
+        return matrices;
+    }
+
+    /// <summary>
+    /// Samples the given animation at frame 0 and returns model-space matrices.
+    /// Used to extract T-pose from a dedicated T-pose animation clip (e.g. "Take 001").
+    /// </summary>
+    public Matrix4x4[]? SampleAnimationAtFrame0(Animation anim)
+    {
+        if (!OzzSkeleton.IsValid())
+        {
+            return null;
+        }
+
+        using var localTransforms = OzzJointTransformArray.Create(new OzzJointTransform[JointCount]);
+        using var modelTransforms = Float4x4Array.Create(new Matrix4x4[JointCount]);
+
+        OzzSkeleton.RunSamplingJobLocal(new SamplingJobLocalDesc
+        {
+            Context = anim.OzzContext,
+            Ratio = 0f,
+            OutTransforms = localTransforms
+        });
+
+        OzzSkeleton.RunLocalToModelFromTRS(new LocalToModelFromTRSDesc
+        {
+            LocalTransforms = localTransforms,
+            OutTransforms = modelTransforms
+        });
+
+        return modelTransforms.Value.AsSpan().ToArray();
     }
 
     private static List<Joint> ExtractJoints(OzzSkeleton ozzSkeleton)
@@ -296,6 +422,22 @@ public class Skeleton : IDisposable
                 ParentIndex = i < parents.Length ? parents[i] : -1,
                 Name = i < ozzJoints.Length ? ozzJoints[i].Name.ToString() : $"Joint_{i}"
             };
+
+            if (i < ozzJoints.Length)
+            {
+                var rp = ozzJoints[i].RestPose;
+                var t = rp.Translation;
+                var r = rp.Rotation;
+                var s = rp.Scale;
+
+                var scale = Matrix4x4.CreateScale(s.X, s.Y, s.Z);
+                var rotation = Matrix4x4.CreateFromQuaternion(
+                    new Quaternion(r.X, r.Y, r.Z, r.W));
+                var translation = Matrix4x4.CreateTranslation(t.X, t.Y, t.Z);
+
+                joint.LocalTransform = scale * rotation * translation;
+            }
+
             joints.Add(joint);
         }
 

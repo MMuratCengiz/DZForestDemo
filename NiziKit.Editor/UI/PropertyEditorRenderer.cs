@@ -80,7 +80,11 @@ public static class PropertyEditorRenderer
 
         using var row = grid.Row(FormatPropertyName(prop.Name));
 
-        if (propType == typeof(string))
+        if (propType == typeof(string) && prop.GetCustomAttribute<AssetRefAttribute>() != null)
+        {
+            RenderAssetRefEditor(ui, ctx, id, prop, instance, editorVm, onChanged);
+        }
+        else if (propType == typeof(string))
         {
             RenderStringEditor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
         }
@@ -557,7 +561,8 @@ public static class PropertyEditorRenderer
         var assetRefAttr = prop.GetCustomAttribute<AssetRefAttribute>()!;
         var currentValue = prop.GetValue(instance);
         var assetPath = GetAssetPath(currentValue);
-        var rawText = string.IsNullOrEmpty(assetPath) ? "(none)" : assetPath;
+        var hasAsset = !string.IsNullOrEmpty(assetPath);
+        var rawText = hasAsset ? assetPath! : "(none)";
 
         var buttonId = ctx.GetElementId(id);
         var bbox = ctx.Clay.GetElementBoundingBox(buttonId);
@@ -578,16 +583,37 @@ public static class PropertyEditorRenderer
             {
                 if (asset != null && prop.CanWrite)
                 {
-                    var resolved = editorVm.AssetBrowser.ResolveAsset(assetRefAttr.AssetType, asset.Path);
-                    if (resolved != null)
+                    if (prop.PropertyType == typeof(string))
                     {
-                        prop.SetValue(instance, resolved);
+                        prop.SetValue(instance, asset.Path);
                         editorVm.UndoSystem.Execute(
-                            new PropertyChangeAction(instance, prop, oldAssetValue, resolved));
+                            new PropertyChangeAction(instance, prop, oldAssetValue, asset.Path));
+                    }
+                    else
+                    {
+                        var resolved = editorVm.AssetBrowser.ResolveAsset(assetRefAttr.AssetType, asset.Path);
+                        if (resolved != null)
+                        {
+                            prop.SetValue(instance, resolved);
+                            editorVm.UndoSystem.Execute(
+                                new PropertyChangeAction(instance, prop, oldAssetValue, resolved));
+                        }
                     }
                     onChanged?.Invoke();
                 }
             });
+        }
+
+        if (hasAsset && prop.CanWrite)
+        {
+            if (EditorUi.IconButton(ctx, id + "_Clear", FontAwesome.Xmark))
+            {
+                var oldAssetValue = prop.GetValue(instance);
+                prop.SetValue(instance, null);
+                editorVm.UndoSystem.Execute(
+                    new PropertyChangeAction(instance, prop, oldAssetValue, null));
+                onChanged?.Invoke();
+            }
         }
     }
 
@@ -1044,7 +1070,7 @@ public static class PropertyEditorRenderer
     {
         if (elementType == typeof(AnimationEntry))
         {
-            var fileName = System.IO.Path.GetFileNameWithoutExtension(asset.Name);
+            var fileName = Path.GetFileNameWithoutExtension(asset.Name);
             return AnimationEntry.External(fileName, asset.Path);
         }
 
@@ -1076,7 +1102,7 @@ public static class PropertyEditorRenderer
     {
         if (elementType == typeof(AnimationEntry))
         {
-            var fileName = System.IO.Path.GetFileNameWithoutExtension(asset.Name);
+            var fileName = Path.GetFileNameWithoutExtension(asset.Name);
             return AnimationEntry.External(fileName, asset.Path);
         }
 
@@ -1131,6 +1157,7 @@ public static class PropertyEditorRenderer
     {
         var path = asset switch
         {
+            string s => s,
             Mesh mesh => mesh.AssetPath,
             Skeleton skeleton => skeleton.AssetPath,
             Texture2d texture => texture.SourcePath,

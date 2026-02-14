@@ -4,7 +4,7 @@
     {
       "name": "Main Camera",
       "position": [-0.23162663, 4.550002, -23.32802],
-      "rotation": [3.488001, -23.207024, 6.0722094],
+      "rotation": [-19.641466, -13.078526, 9.062137],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -41,7 +41,7 @@
     {
       "name": "Character_Viking",
       "active": true,
-      "position": [-1.2923927E-05, -4999008.5, 0.00051649613],
+      "position": [-1.2923927E-05, -5144166, 0.00051649613],
       "rotation": [4.0916016E-06, 5.809548E-07, 1.0138471E-07],
       "scale": [1, 1, 1],
       "components": [
@@ -118,7 +118,7 @@
       "name": "Boat",
       "active": false,
       "position": [26.5, 10, 19.5],
-      "rotation": [-29.999224, -0.22477014, 77.39848],
+      "rotation": [6.8421226, -29.280306, 75.548904],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -277,7 +277,7 @@
     {
       "name": "Barrel2",
       "active": true,
-      "position": [5, -5027524.5, 5],
+      "position": [5, -5172682, 5],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
       "components": [
@@ -313,8 +313,8 @@
     {
       "name": "Barrel",
       "active": true,
-      "position": [21.44028, -2954521, -115.69657],
-      "rotation": [-1.5908759, 0.0015504912, 0.00485391],
+      "position": [19.371231, -3099702.2, -123.9325],
+      "rotation": [-1.5908736, 0.0026270878, 0.0048389602],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -707,7 +707,7 @@
       "children": []
     },
     {
-      "name": "Werewolf",
+      "name": "Bartender",
       "active": true,
       "position": [-11.234381, 0.41829205, 0],
       "rotation": [0, 0, 0],
@@ -730,6 +730,8 @@
         {
           "type": "NiziKit.Animation.Animator",
           "skeleton": "Synty/Models/FantasyKingdom/Characters/SK_Chr_Bartender_01.ozzskel",
+          "retargetSource": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.ozzskel",
+          "retargetTPose": "Synty/Models/FantasyKingdom/FBX/Take 001.ozzanim",
           "animations": [
             {
               "name": "A_Idle_Crouching_Masc",

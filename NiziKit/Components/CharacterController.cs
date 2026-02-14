@@ -78,6 +78,6 @@ public partial class CharacterController : IComponent
         }
 
         var origin = Owner.LocalPosition + Vector3.UnitY * 0.1f;
-        IsGrounded = NiziKit.Physics.Physics.Raycast(origin, -Vector3.UnitY, GroundCheckDistance + 0.1f, out _);
+        IsGrounded = Physics.Physics.Raycast(origin, -Vector3.UnitY, GroundCheckDistance + 0.1f, out _);
     }
 }

@@ -31,6 +31,12 @@ public partial class Animator : IDisposable
     [AssetRef(AssetRefType.Skeleton, "skeleton")]
     public partial Skeleton? Skeleton { get; set; }
 
+    [AssetRef(AssetRefType.Skeleton, "retargetSource")]
+    public partial Skeleton? RetargetSource { get; set; }
+
+    [AssetRef(AssetRefType.Animation, "retargetTPose")]
+    public partial string? RetargetTPose { get; set; }
+
     [AnimationSelector("Skeleton")]
     [JsonProperty("defaultAnimation")]
     public partial string? DefaultAnimation { get; set; }
@@ -68,8 +74,15 @@ public partial class Animator : IDisposable
                 {
                     names[i] = Animations[i].Name;
                 }
+
                 return names;
             }
+
+            if (RetargetSource != null)
+            {
+                return RetargetSource.AnimationNames;
+            }
+
             return Skeleton?.AnimationNames ?? Array.Empty<string>();
         }
     }
@@ -77,6 +90,7 @@ public partial class Animator : IDisposable
     [HideInInspector] public IReadOnlyList<string> JointNames => _jointNames;
 
     [HideInInspector] public int LayerCount => _layerCount;
+    [HideInInspector] public bool IsRetargeting => _retargeter?.IsValid == true;
 
     private readonly Layer[] _layers = new Layer[MaxLayers];
     private int _layerCount = 1;
@@ -87,6 +101,9 @@ public partial class Animator : IDisposable
     private int[]? _jointRemapTable;
     private Float4x4Array.Pinned? _ozzTransforms;
     private Float4x4Array.Pinned? _ozzBlendTransforms;
+    private OzzJointTransformArray.Pinned? _ozzLocalTransforms;
+    private OzzJointTransformArray.Pinned? _ozzBlendLocalTransforms;
+    private AnimationRetargeter? _retargeter;
     private bool _initialized;
     private string[] _jointNames = [];
 
@@ -126,7 +143,8 @@ public partial class Animator : IDisposable
 
         Animations.Clear();
 
-        foreach (var animName in Skeleton.AnimationNames)
+        var animSource = RetargetSource ?? Skeleton;
+        foreach (var animName in animSource.AnimationNames)
         {
             Animations.Add(AnimationEntry.FromSkeleton(animName));
         }
@@ -178,6 +196,8 @@ public partial class Animator : IDisposable
         BoneCount = Math.Min(Skeleton.JointCount, MaxBones);
         _ozzTransforms = Float4x4Array.Create(new Matrix4x4[BoneCount]);
         _ozzBlendTransforms = Float4x4Array.Create(new Matrix4x4[BoneCount]);
+        _ozzLocalTransforms = OzzJointTransformArray.Create(new OzzJointTransform[BoneCount]);
+        _ozzBlendLocalTransforms = OzzJointTransformArray.Create(new OzzJointTransform[BoneCount]);
         _initialized = true;
 
         _jointNames = new string[Skeleton.Joints.Count];
@@ -191,7 +211,7 @@ public partial class Animator : IDisposable
         _nodeTransform = meshComponent?.Mesh?.NodeTransform ?? Matrix4x4.Identity;
 
         BuildJointRemapTable(meshComponent?.Mesh?.JointNames);
-
+        InitializeRetargeting();
         LoadExternalAnimations();
 
         if (!string.IsNullOrEmpty(DefaultAnimation) && HasAnimation(DefaultAnimation))
@@ -200,12 +220,65 @@ public partial class Animator : IDisposable
         }
     }
 
+    private void InitializeRetargeting()
+    {
+        _retargeter?.Dispose();
+        _retargeter = null;
+
+        if (RetargetSource == null || Skeleton == null)
+        {
+            return;
+        }
+
+        var srcTPose = RetargetSource.ExtractRestPoseModelMatrices();
+        var dstTPose = TryGetDstTPoseFromAnimation() ?? Skeleton.ExtractRestPoseModelMatrices();
+
+        _retargeter = new AnimationRetargeter();
+        _retargeter.Setup(RetargetSource, Skeleton, srcTPose, dstTPose);
+
+        if (!_retargeter.IsValid)
+        {
+            Logger.LogWarning("Retargeting setup failed between '{Src}' and '{Dst}'",
+                RetargetSource.Name, Skeleton.Name);
+            _retargeter.Dispose();
+            _retargeter = null;
+        }
+    }
+
+    /// <summary>
+    /// Loads the retarget T-pose animation (e.g. Synty "Take 001") and samples it at frame 0
+    /// to get the destination skeleton's T-pose model matrices. "Take 001" in Synty FBX files
+    /// stores the character's bind pose as a single-frame animation.
+    /// </summary>
+    private Matrix4x4[]? TryGetDstTPoseFromAnimation()
+    {
+        if (string.IsNullOrEmpty(RetargetTPose) || Skeleton == null)
+        {
+            return null;
+        }
+
+        var animData = AssetPacks.GetAnimationDataByPath(RetargetTPose);
+        if (animData == null)
+        {
+            Logger.LogWarning("T-pose animation not found: '{Path}'", RetargetTPose);
+            return null;
+        }
+
+        var animName = Path.GetFileNameWithoutExtension(RetargetTPose);
+        var anim = Skeleton.LoadAnimation(animData, animName);
+        var result = Skeleton.SampleAnimationAtFrame0(anim);
+
+        return result;
+    }
+
     private void LoadExternalAnimations()
     {
         if (Skeleton == null)
         {
             return;
         }
+
+        var targetSkeleton = IsRetargeting ? RetargetSource! : Skeleton;
 
         for (var i = 0; i < Animations.Count; i++)
         {
@@ -220,7 +293,7 @@ public partial class Animator : IDisposable
                 var animData = AssetPacks.GetAnimationDataByPath(entry.SourceRef!);
                 if (animData != null)
                 {
-                    Skeleton.LoadAnimation(animData, entry.Name);
+                    targetSkeleton.LoadAnimation(animData, entry.Name);
                 }
             }
             catch (Exception ex)
@@ -254,6 +327,18 @@ public partial class Animator : IDisposable
             }
         }
 
+        if (RetargetSource != null)
+        {
+            var srcNames = RetargetSource.AnimationNames;
+            for (var i = 0; i < srcNames.Count; i++)
+            {
+                if (srcNames[i] == name)
+                {
+                    return true;
+                }
+            }
+        }
+
         var names = Skeleton?.AnimationNames ?? Array.Empty<string>();
         for (var i = 0; i < names.Count; i++)
         {
@@ -275,6 +360,7 @@ public partial class Animator : IDisposable
                 return Animations[i];
             }
         }
+
         return null;
     }
 
@@ -287,14 +373,22 @@ public partial class Animator : IDisposable
 
         var entry = GetAnimationEntry(name);
 
+        var animSkeleton = IsRetargeting ? RetargetSource! : Skeleton;
+
         if (entry == null)
         {
             try
             {
-                return Skeleton.GetAnimation(name);
+                return animSkeleton.GetAnimation(name);
             }
             catch
             {
+                if (IsRetargeting)
+                {
+                    try { return Skeleton.GetAnimation(name); }
+                    catch { return null; }
+                }
+
                 return null;
             }
         }
@@ -306,19 +400,20 @@ public partial class Animator : IDisposable
                 var animData = AssetPacks.GetAnimationDataByPath(entry.SourceRef!);
                 if (animData != null)
                 {
-                    return Skeleton.LoadAnimation(animData, entry.Name);
+                    return animSkeleton.LoadAnimation(animData, entry.Name);
                 }
             }
             catch
             {
                 return null;
             }
+
             return null;
         }
 
         try
         {
-            return Skeleton.GetAnimation(name);
+            return animSkeleton.GetAnimation(name);
         }
         catch
         {
@@ -488,52 +583,111 @@ public partial class Animator : IDisposable
             return;
         }
 
-        if (layer is { IsBlending: true, BlendDuration: > 0 })
+        if (_retargeter is { IsValid: true })
         {
-            SampleBlended(layer);
+            SampleLayerRetargeted(layer);
         }
-        else if (layer.CurrentAnimation != null)
+        else
         {
-            SampleSingle(layer.CurrentAnimation, layer.NormalizedTime, _ozzTransforms!);
+            SampleLayerDirect(layer);
         }
 
         ApplyLayerBlending(layerIndex);
     }
 
-    private void SampleSingle(Assets.Animation anim, float normalizedTime, Float4x4Array outTransforms)
+    private void SampleLayerDirect(Layer layer)
+    {
+        if (layer is { IsBlending: true, BlendDuration: > 0 })
+        {
+            SampleBlendedLocal(layer);
+        }
+        else if (layer.CurrentAnimation != null)
+        {
+            SampleLocal(layer.CurrentAnimation, layer.NormalizedTime, _ozzLocalTransforms!.Value);
+        }
+
+        if (layer is { IsBlending: true, BlendDuration: > 0 })
+        {
+            BlendAndConvertToModel(layer.BlendProgress);
+        }
+        else
+        {
+            ConvertLocalToModel(_ozzLocalTransforms!.Value, _ozzTransforms!.Value);
+        }
+    }
+
+    private void SampleLayerRetargeted(Layer layer)
+    {
+        var destMatrices = _ozzTransforms!.Value.AsSpan().Slice(0, BoneCount);
+
+        if (layer is { IsBlending: true, BlendDuration: > 0 } &&
+            layer.PreviousAnimation != null && layer.CurrentAnimation != null)
+        {
+            _retargeter!.SampleBlendedAndRetarget(
+                layer.PreviousAnimation, layer.PreviousNormalizedTime,
+                layer.CurrentAnimation, layer.NormalizedTime,
+                layer.BlendProgress,
+                destMatrices, Skeleton!.Joints);
+        }
+        else if (layer.CurrentAnimation != null)
+        {
+            _retargeter!.SampleAndRetarget(
+                layer.CurrentAnimation, layer.NormalizedTime,
+                destMatrices, Skeleton!.Joints);
+        }
+    }
+
+    private void SampleLocal(Assets.Animation anim, float normalizedTime, OzzJointTransformArray outLocalTransforms)
     {
         if (Skeleton == null)
         {
             return;
         }
 
-        var samplingDesc = new SamplingJobDesc
+        Skeleton.OzzSkeleton.RunSamplingJobLocal(new SamplingJobLocalDesc
         {
             Context = anim.OzzContext,
             Ratio = Math.Clamp(normalizedTime, 0f, 1f),
-            OutTransforms = outTransforms
-        };
-
-        Skeleton.OzzSkeleton.RunSamplingJob(in samplingDesc);
+            OutTransforms = outLocalTransforms
+        });
     }
 
-    private void SampleBlended(Layer layer)
+    private void ConvertLocalToModel(OzzJointTransformArray localTransforms, Float4x4Array outModelTransforms)
+    {
+        if (Skeleton == null)
+        {
+            return;
+        }
+
+        Skeleton.OzzSkeleton.RunLocalToModelFromTRS(new LocalToModelFromTRSDesc
+        {
+            LocalTransforms = localTransforms,
+            OutTransforms = outModelTransforms
+        });
+    }
+
+    private void SampleBlendedLocal(Layer layer)
     {
         if (Skeleton == null || !_initialized || layer.PreviousAnimation == null || layer.CurrentAnimation == null)
         {
             return;
         }
 
-        SampleSingle(layer.PreviousAnimation, layer.PreviousNormalizedTime, _ozzBlendTransforms!);
-        SampleSingle(layer.CurrentAnimation, layer.NormalizedTime, _ozzTransforms!);
+        SampleLocal(layer.PreviousAnimation, layer.PreviousNormalizedTime, _ozzBlendLocalTransforms!.Value);
+        SampleLocal(layer.CurrentAnimation, layer.NormalizedTime, _ozzLocalTransforms!.Value);
+    }
+
+    private void BlendAndConvertToModel(float blendWeight)
+    {
+        ConvertLocalToModel(_ozzBlendLocalTransforms!.Value, _ozzBlendTransforms!.Value);
+        ConvertLocalToModel(_ozzLocalTransforms!.Value, _ozzTransforms!.Value);
 
         var prevSpan = _ozzBlendTransforms!.Value.AsSpan();
         var currSpan = _ozzTransforms!.Value.AsSpan();
-        var weight = layer.BlendProgress;
 
         for (var i = 0; i < BoneCount; i++)
         {
-            currSpan[i] = Matrix4x4.Lerp(prevSpan[i], currSpan[i], weight);
+            currSpan[i] = Matrix4x4.Lerp(prevSpan[i], currSpan[i], blendWeight);
         }
     }
 
@@ -639,7 +793,6 @@ public partial class Animator : IDisposable
 
             if (skeletonIndex < 0)
             {
-                // Unmatched bone — keep in bind pose (identity transform)
                 _boneMatrices[i] = Matrix4x4.Identity;
                 continue;
             }
@@ -653,6 +806,10 @@ public partial class Animator : IDisposable
         _initialized = false;
         _ozzTransforms?.Dispose();
         _ozzBlendTransforms?.Dispose();
+        _ozzLocalTransforms?.Dispose();
+        _ozzBlendLocalTransforms?.Dispose();
+        _retargeter?.Dispose();
+        _retargeter = null;
     }
 
     private class Layer
