@@ -69,9 +69,16 @@ public sealed class EditorOverlayPass : IDisposable
     private readonly MappedBuffer<GizmoConstants> _colliderWireframeConstantBuffer;
     private readonly BindGroup[] _colliderWireframeBindGroups;
 
+    private Buffer? _skeletonBuffer;
+    private int _skeletonVertexCount;
+    private readonly List<GizmoVertex> _skeletonVertices = new(4096);
+    private readonly MappedBuffer<GizmoConstants> _skeletonConstantBuffer;
+    private readonly BindGroup[] _skeletonBindGroups;
+
     public bool ShowColliderWireframes { get; set; } = true;
     public bool ShowSceneIcons { get; set; } = true;
     public bool ShowGrid { get; set; } = true;
+    public bool ShowSkeletons { get; set; } = true;
     public float GridSize { get; set; } = 50f;
     public float GridSpacing { get; set; } = 1f;
     public int GridSubdivisions { get; set; } = 5;
@@ -89,6 +96,7 @@ public sealed class EditorOverlayPass : IDisposable
         _gridBindGroups = new BindGroup[numFrames];
         _sceneIconBindGroups = new BindGroup[numFrames];
         _colliderWireframeBindGroups = new BindGroup[numFrames];
+        _skeletonBindGroups = new BindGroup[numFrames];
         _boundDepthTextures = new Texture?[numFrames];
 
         for (var i = 0; i < numFrames; i++)
@@ -113,6 +121,10 @@ public sealed class EditorOverlayPass : IDisposable
             {
                 Layout = _shaders.BindGroupLayout
             });
+            _skeletonBindGroups[i] = GraphicsContext.Device.CreateBindGroup(new BindGroupDesc
+            {
+                Layout = _shaders.BindGroupLayout
+            });
         }
 
         _gizmoConstantBuffer = new MappedBuffer<GizmoConstants>(true, "GizmoConstants");
@@ -120,6 +132,7 @@ public sealed class EditorOverlayPass : IDisposable
         _gridConstantBuffer = new MappedBuffer<GizmoConstants>(true, "GridConstants");
         _sceneIconConstantBuffer = new MappedBuffer<GizmoConstants>(true, "SceneIconConstants");
         _colliderWireframeConstantBuffer = new MappedBuffer<GizmoConstants>(true, "ColliderWireframeConstants");
+        _skeletonConstantBuffer = new MappedBuffer<GizmoConstants>(true, "SkeletonConstants");
 
         _gizmoBuffers = new Buffer[NumModes, NumAxes];
         _gizmoVertexCounts = new int[NumModes, NumAxes];
@@ -395,6 +408,7 @@ public sealed class EditorOverlayPass : IDisposable
     {
         _selectionBoxMatrices.Clear();
         _colliderWireframeVertices.Clear();
+        _skeletonVertices.Clear();
         _hasGizmo = false;
     }
 
@@ -640,6 +654,82 @@ public sealed class EditorOverlayPass : IDisposable
         _colliderWireframeVertexCount = vertexCount;
     }
 
+    public void BuildSkeletonOverlay(GameObject obj)
+    {
+        if (!ShowSkeletons)
+        {
+            return;
+        }
+
+        GizmoGeometry.BuildSkeletonOverlay(_skeletonVertices, obj);
+
+        if (_skeletonVertices.Count > 0)
+        {
+            BuildSkeletonBuffer();
+        }
+        else
+        {
+            _skeletonVertexCount = 0;
+        }
+    }
+
+    private void BuildSkeletonBuffer()
+    {
+        _skeletonBuffer?.Dispose();
+
+        var vertexCount = _skeletonVertices.Count;
+        if (vertexCount == 0)
+        {
+            _skeletonBuffer = null;
+            _skeletonVertexCount = 0;
+            return;
+        }
+
+        var bufferSize = (uint)(Marshal.SizeOf<GizmoVertex>() * vertexCount);
+        _skeletonBuffer = GraphicsContext.Device.CreateBuffer(new BufferDesc
+        {
+            NumBytes = bufferSize,
+            Usage = (uint)BufferUsageFlagBits.Vertex,
+            HeapType = HeapType.Gpu,
+            DebugName = StringView.Create("SkeletonBuffer")
+        });
+
+        lock (GraphicsContext.TransferLock)
+        {
+            var batchCopy = new BatchResourceCopy(new BatchResourceCopyDesc
+            {
+                Device = GraphicsContext.Device,
+                IssueBarriers = false
+            });
+            batchCopy.Begin();
+
+            var vertices = _skeletonVertices.ToArray();
+            var handle = GCHandle.Alloc(vertices, GCHandleType.Pinned);
+            try
+            {
+                batchCopy.CopyToGPUBuffer(new CopyToGpuBufferDesc
+                {
+                    Data = new ByteArrayView
+                    {
+                        Elements = handle.AddrOfPinnedObject(),
+                        NumElements = bufferSize
+                    },
+                    DstBuffer = _skeletonBuffer,
+                    DstBufferOffset = 0
+                });
+            }
+            finally
+            {
+                handle.Free();
+            }
+
+            batchCopy.Submit(null);
+            batchCopy.Dispose();
+        }
+
+        _skeletonVertexCount = vertexCount;
+    }
+
     public void Render(GraphicsPass pass, ViewData viewData, CycledTexture sceneDepth)
     {
         var frameIndex = GraphicsContext.FrameIndex;
@@ -674,6 +764,15 @@ public sealed class EditorOverlayPass : IDisposable
             pass.Bind(_colliderWireframeBindGroups[frameIndex]);
             pass.BindVertexBuffer(_colliderWireframeBuffer, 0, vertexStride);
             pass.Draw((uint)_colliderWireframeVertexCount, 1, 0, 0);
+        }
+
+        if (ShowSkeletons && _skeletonBuffer != null && _skeletonVertexCount > 0)
+        {
+            UpdateSkeletonConstants(viewData);
+            pass.BindPipeline(_shaders.TrianglePipeline);
+            pass.Bind(_skeletonBindGroups[frameIndex]);
+            pass.BindVertexBuffer(_skeletonBuffer, 0, vertexStride);
+            pass.Draw((uint)_skeletonVertexCount, 1, 0, 0);
         }
 
         if (_hasGizmo)
@@ -818,6 +917,27 @@ public sealed class EditorOverlayPass : IDisposable
         _colliderWireframeConstantBuffer.Write(in constants);
     }
 
+    private void UpdateSkeletonConstants(ViewData viewData)
+    {
+        var camera = viewData.Camera ?? viewData.Scene?.GetActiveCamera();
+        var viewProjection = camera?.ViewProjectionMatrix ?? Matrix4x4.Identity;
+        var cameraPosition = camera?.WorldPosition ?? Vector3.Zero;
+
+        var constants = new GizmoConstants
+        {
+            ViewProjection = viewProjection,
+            ModelMatrix = Matrix4x4.Identity,
+            CameraPosition = cameraPosition,
+            DepthBias = 0.0001f,
+            SelectionColor = GizmoGeometry.BoneColor,
+            Opacity = 1f,
+            Time = viewData.TotalTime,
+            ScreenSize = new Vector2(GraphicsContext.Width, GraphicsContext.Height)
+        };
+
+        _skeletonConstantBuffer.Write(in constants);
+    }
+
     private void UpdateBindGroups(int frameIndex, Texture depthTexture)
     {
         if (_boundDepthTextures[frameIndex] == depthTexture)
@@ -850,6 +970,11 @@ public sealed class EditorOverlayPass : IDisposable
         _colliderWireframeBindGroups[frameIndex].SrvTexture(0, depthTexture);
         _colliderWireframeBindGroups[frameIndex].EndUpdate();
 
+        _skeletonBindGroups[frameIndex].BeginUpdate();
+        _skeletonBindGroups[frameIndex].Cbv(0, _skeletonConstantBuffer[frameIndex]);
+        _skeletonBindGroups[frameIndex].SrvTexture(0, depthTexture);
+        _skeletonBindGroups[frameIndex].EndUpdate();
+
         _boundDepthTextures[frameIndex] = depthTexture;
     }
 
@@ -867,6 +992,7 @@ public sealed class EditorOverlayPass : IDisposable
         _gridBuffer?.Dispose();
         _sceneIconBuffer?.Dispose();
         _colliderWireframeBuffer?.Dispose();
+        _skeletonBuffer?.Dispose();
 
         foreach (var bindGroup in _gizmoBindGroups)
         {
@@ -893,11 +1019,17 @@ public sealed class EditorOverlayPass : IDisposable
             bindGroup.Dispose();
         }
 
+        foreach (var bindGroup in _skeletonBindGroups)
+        {
+            bindGroup.Dispose();
+        }
+
         _gizmoConstantBuffer.Dispose();
         _selectionConstantBuffer.Dispose();
         _gridConstantBuffer.Dispose();
         _sceneIconConstantBuffer.Dispose();
         _colliderWireframeConstantBuffer.Dispose();
+        _skeletonConstantBuffer.Dispose();
         _shaders.Dispose();
     }
 }

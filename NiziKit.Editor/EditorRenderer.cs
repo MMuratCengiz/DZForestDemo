@@ -66,6 +66,7 @@ public class EditorRenderer(IRenderer gameRenderer) : IDisposable
         {
             _overlayPass.AddSelectionBox(selected);
             _overlayPass.BuildColliderWireframes(selected);
+            _overlayPass.BuildSkeletonOverlay(selected);
 
             if (_viewData.Camera != null)
             {

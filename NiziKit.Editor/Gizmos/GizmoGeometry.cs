@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
+using NiziKit.Animation;
 using NiziKit.Assets;
 using NiziKit.Components;
 using NiziKit.Core;
@@ -802,6 +803,130 @@ public static class GizmoGeometry
                 right = Vector3.UnitX;
                 forward = Vector3.UnitZ;
                 break;
+        }
+    }
+
+    public static readonly Vector4 BoneColor = new(0.5f, 0.9f, 0.2f, 1f);
+    public static readonly Vector4 JointColor = new(0.2f, 0.6f, 0.95f, 1f);
+    public static readonly Vector4 RootJointColor = new(0.95f, 0.3f, 0.3f, 1f);
+    private const float JointOctahedronSize = 0.015f;
+    private const int BonePyramidSegments = 4;
+
+    public static void BuildSkeletonOverlay(List<GizmoVertex> vertices, GameObject obj)
+    {
+        var animator = obj.GetComponent<Animator>();
+        var skeleton = animator?.Skeleton;
+        if (skeleton == null || skeleton.JointCount == 0)
+        {
+            return;
+        }
+
+        var worldMatrix = obj.WorldMatrix;
+        Matrix4x4[] modelTransforms;
+        if (animator is { IsInitialized: true, BoneCount: > 0 })
+        {
+            var span = animator.ModelSpaceTransforms;
+            modelTransforms = span.ToArray();
+        }
+        else
+        {
+            modelTransforms = skeleton.ExtractRestPoseModelMatrices();
+        }
+
+        var jointCount = Math.Min(skeleton.JointCount, modelTransforms.Length);
+
+        for (var i = 0; i < jointCount; i++)
+        {
+            var joint = skeleton.Joints[i];
+            var jointPos = Vector3.Transform(modelTransforms[i].Translation, worldMatrix);
+            var isRoot = joint.ParentIndex < 0;
+            var jointColor = isRoot ? RootJointColor : JointColor;
+
+            BuildOctahedron(vertices, jointPos, JointOctahedronSize, jointColor);
+            if (joint.ParentIndex >= 0 && joint.ParentIndex < jointCount)
+            {
+                var parentPos = Vector3.Transform(modelTransforms[joint.ParentIndex].Translation, worldMatrix);
+                BuildBonePyramid(vertices, parentPos, jointPos, BoneColor);
+            }
+        }
+    }
+
+    private static void BuildOctahedron(List<GizmoVertex> vertices, Vector3 center, float size, Vector4 color)
+    {
+        var top = center + Vector3.UnitY * size;
+        var bottom = center - Vector3.UnitY * size;
+        var front = center + Vector3.UnitZ * size;
+        var back = center - Vector3.UnitZ * size;
+        var left = center - Vector3.UnitX * size;
+        var right = center + Vector3.UnitX * size;
+
+        vertices.Add(new GizmoVertex(top, color));
+        vertices.Add(new GizmoVertex(front, color));
+        vertices.Add(new GizmoVertex(right, color));
+
+        vertices.Add(new GizmoVertex(top, color));
+        vertices.Add(new GizmoVertex(right, color));
+        vertices.Add(new GizmoVertex(back, color));
+
+        vertices.Add(new GizmoVertex(top, color));
+        vertices.Add(new GizmoVertex(back, color));
+        vertices.Add(new GizmoVertex(left, color));
+
+        vertices.Add(new GizmoVertex(top, color));
+        vertices.Add(new GizmoVertex(left, color));
+        vertices.Add(new GizmoVertex(front, color));
+
+        vertices.Add(new GizmoVertex(bottom, color));
+        vertices.Add(new GizmoVertex(right, color));
+        vertices.Add(new GizmoVertex(front, color));
+
+        vertices.Add(new GizmoVertex(bottom, color));
+        vertices.Add(new GizmoVertex(back, color));
+        vertices.Add(new GizmoVertex(right, color));
+
+        vertices.Add(new GizmoVertex(bottom, color));
+        vertices.Add(new GizmoVertex(left, color));
+        vertices.Add(new GizmoVertex(back, color));
+
+        vertices.Add(new GizmoVertex(bottom, color));
+        vertices.Add(new GizmoVertex(front, color));
+        vertices.Add(new GizmoVertex(left, color));
+    }
+
+    private static void BuildBonePyramid(List<GizmoVertex> vertices, Vector3 from, Vector3 to, Vector4 color)
+    {
+        var dir = to - from;
+        var length = dir.Length();
+        if (length < 0.0001f)
+        {
+            return;
+        }
+
+        dir /= length;
+        var width = length * 0.08f;
+        var midPoint = from + dir * (length * 0.15f);
+
+        var perp = GetPerpendicular(dir);
+        var perp2 = Vector3.Cross(dir, perp);
+
+        for (var i = 0; i < BonePyramidSegments; i++)
+        {
+            var angle1 = (float)i / BonePyramidSegments * MathF.PI * 2;
+            var angle2 = (float)(i + 1) / BonePyramidSegments * MathF.PI * 2;
+
+            var offset1 = (MathF.Cos(angle1) * perp + MathF.Sin(angle1) * perp2) * width;
+            var offset2 = (MathF.Cos(angle2) * perp + MathF.Sin(angle2) * perp2) * width;
+
+            var mid1 = midPoint + offset1;
+            var mid2 = midPoint + offset2;
+
+            vertices.Add(new GizmoVertex(from, color));
+            vertices.Add(new GizmoVertex(mid1, color));
+            vertices.Add(new GizmoVertex(mid2, color));
+
+            vertices.Add(new GizmoVertex(to, color));
+            vertices.Add(new GizmoVertex(mid2, color));
+            vertices.Add(new GizmoVertex(mid1, color));
         }
     }
 }

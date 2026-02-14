@@ -60,6 +60,7 @@ public partial class Animator : IDisposable
 
     [HideInInspector] public int BoneCount { get; private set; }
     [HideInInspector] public ReadOnlySpan<Matrix4x4> BoneMatrices => _boneMatrices.AsSpan(0, BoneCount);
+    [HideInInspector] public ReadOnlySpan<Matrix4x4> ModelSpaceTransforms => _layerTransforms.AsSpan(0, BoneCount);
     [HideInInspector] public bool IsInitialized => _initialized;
 
     [HideInInspector]
