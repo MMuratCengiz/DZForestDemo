@@ -73,8 +73,18 @@ void ImportBaseLocomotion(string baseLocoDir, string outputDir)
 
     var characters = new[]
     {
-        new { Name = "PolygonSyntyCharacter", AnimSubDir = "Polygon" },
-        new { Name = "SidekickSyntyCharacter", AnimSubDir = "Sidekick" }
+        new
+        {
+            Name = "PolygonSyntyCharacter",
+            AnimSubDir = "Polygon",
+            TPosePath = Path.Combine(animationsDir, "Polygon", "Neutral", "Additive", "TPose", "A_TPose_Neut.fbx")
+        },
+        new
+        {
+            Name = "SidekickSyntyCharacter",
+            AnimSubDir = "Sidekick",
+            TPosePath = Path.Combine(animationsDir, "Sidekick", "Neutral", "Additive", "TPose", "A_MOD_BL_TPose_Neut.fbx")
+        }
     };
 
     foreach (var character in characters)
@@ -106,7 +116,9 @@ void ImportBaseLocomotion(string baseLocoDir, string outputDir)
             SmoothNormals = true,
             SmoothNormalsAngle = 80.0f,
             ExportSkeleton = true,
-            ExportAnimations = true
+            ExportAnimations = true,
+            ReferenceSourcePath = File.Exists(character.TPosePath) ? character.TPosePath : null,
+            SanitizeTransforms = true
         };
 
         var charResult = exporter.Export(characterExportDesc);

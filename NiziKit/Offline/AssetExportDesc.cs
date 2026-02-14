@@ -35,6 +35,8 @@ public sealed class AssetExportDesc
     public bool ExportSkeleton { get; set; } = true;
     public bool ExportAnimations { get; set; } = true;
     public OzzSkeleton? ExternalSkeleton { get; set; }
+    public string? ReferenceSourcePath { get; set; }
+    public bool SanitizeTransforms { get; set; }
 
     internal GltfExportDesc ToGltfExportDesc()
     {
@@ -74,6 +76,7 @@ public sealed class AssetExportDesc
             ExportSkeleton = ExportSkeleton,
             ExportAnimations = ExportAnimations,
             OverwriteExisting = OverwriteExisting,
+            SanitizeTransforms = SanitizeTransforms,
             ExternalSkeleton = ExternalSkeleton ?? default
         };
     }

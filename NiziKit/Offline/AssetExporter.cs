@@ -115,6 +115,27 @@ public sealed class AssetExporter : IDisposable
     {
         using var ozzExporter = new OzzExporter();
         var ozzExportDesc = desc.ToOzzExportDesc(gltfBytes, basePath);
+
+        if (!string.IsNullOrEmpty(desc.ReferenceSourcePath) && File.Exists(desc.ReferenceSourcePath))
+        {
+            var refGltfExportDesc = new GltfExportDesc
+            {
+                SourceFilePath = desc.ReferenceSourcePath,
+                TargetDirectory = desc.OutputDirectory,
+                AssetNamePrefix = "_ref_temp",
+                OutputFormat = GltfExportFormat.Glb,
+                ScaleFactor = desc.Scale,
+                PreTransformVertices = false
+            };
+            var refResult = _gltfExporter.ExportToBytes(in refGltfExportDesc);
+            if (refResult.Success && refResult.GltfBytes != null)
+            {
+                ozzExportDesc.ReferenceGltfData = ByteArrayView.Create(refResult.GltfBytes);
+                ozzExportDesc.ReferenceGltfBasePath = StringView.Create(
+                    Path.GetDirectoryName(desc.ReferenceSourcePath) ?? "");
+            }
+        }
+
         var result = ozzExporter.Export(in ozzExportDesc);
 
         try

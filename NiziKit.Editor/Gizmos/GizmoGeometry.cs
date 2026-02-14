@@ -849,15 +849,6 @@ public static class GizmoGeometry
         else
         {
             modelTransforms = skeleton.ComputeRestPose();
-            if (Skeleton.IsRestPoseDegenerate(modelTransforms))
-            {
-                var mesh = obj.GetComponent<MeshComponent>()?.Mesh;
-                if (mesh?.InverseBindMatrices != null)
-                {
-                    modelTransforms = Skeleton.ComputeRestPoseFromInverseBindMatrices(
-                        skeleton.JointCount, mesh.InverseBindMatrices, null);
-                }
-            }
         }
 
         var jointCount = Math.Min(skeleton.JointCount, modelTransforms.Length);

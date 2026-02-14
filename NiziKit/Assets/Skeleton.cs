@@ -276,102 +276,11 @@ public class Skeleton : IDisposable
         return animation;
     }
 
-    /// <summary>
-    /// Returns true if all bones are near the origin, indicating an invalid/identity rest pose.
-    /// </summary>
-    public static bool IsRestPoseDegenerate(Matrix4x4[] modelMatrices)
-    {
-        const float threshold = 0.001f;
-        for (var i = 0; i < modelMatrices.Length; i++)
-        {
-            var m = modelMatrices[i];
-            if (MathF.Abs(m.M41) > threshold ||
-                MathF.Abs(m.M42) > threshold ||
-                MathF.Abs(m.M43) > threshold)
-            {
-                return false;
-            }
-        }
-        return true;
-    }
-
     public Matrix4x4[] ComputeRestPose()
     {
         var restPoses = OzzSkeleton.GetRestPoses().ToArray();
         using var localTransforms = OzzJointTransformArray.Create(restPoses);
         using var modelTransforms = Float4x4Array.Create(new Matrix4x4[JointCount]);
-
-        OzzSkeleton.RunLocalToModelFromTRS(new LocalToModelFromTRSDesc
-        {
-            LocalTransforms = localTransforms,
-            OutTransforms = modelTransforms
-        });
-
-        return modelTransforms.Value.AsSpan().ToArray();
-    }
-
-    /// <summary>
-    /// Computes T-pose model-space matrices from mesh inverse bind matrices.
-    /// Used when the skeleton was loaded from Ozz data and doesn't have glTF source.
-    /// </summary>
-    public static Matrix4x4[] ComputeRestPoseFromInverseBindMatrices(
-        int jointCount,
-        Matrix4x4[]? inverseBindMatrices,
-        int[]? jointRemapTable)
-    {
-        var result = new Matrix4x4[jointCount];
-        for (var i = 0; i < jointCount; i++)
-        {
-            result[i] = Matrix4x4.Identity;
-        }
-
-        if (inverseBindMatrices == null)
-        {
-            return result;
-        }
-
-        if (jointRemapTable != null)
-        {
-            for (var meshIdx = 0; meshIdx < jointRemapTable.Length; meshIdx++)
-            {
-                var skelIdx = jointRemapTable[meshIdx];
-                if (skelIdx >= 0 && skelIdx < result.Length && meshIdx < inverseBindMatrices.Length)
-                {
-                    Matrix4x4.Invert(inverseBindMatrices[meshIdx], out result[skelIdx]);
-                }
-            }
-        }
-        else
-        {
-            for (var i = 0; i < Math.Min(inverseBindMatrices.Length, jointCount); i++)
-            {
-                Matrix4x4.Invert(inverseBindMatrices[i], out result[i]);
-            }
-        }
-
-        return result;
-    }
-
-    /// <summary>
-    /// Samples the given animation at frame 0 and returns model-space matrices.
-    /// Used to extract T-pose from a dedicated T-pose animation clip (e.g. "Take 001").
-    /// </summary>
-    public Matrix4x4[]? SampleAnimationAtFrame0(Animation anim)
-    {
-        if (!OzzSkeleton.IsValid())
-        {
-            return null;
-        }
-
-        using var localTransforms = OzzJointTransformArray.Create(new OzzJointTransform[JointCount]);
-        using var modelTransforms = Float4x4Array.Create(new Matrix4x4[JointCount]);
-
-        OzzSkeleton.RunSamplingJobLocal(new SamplingJobLocalDesc
-        {
-            Context = anim.OzzContext,
-            Ratio = 0f,
-            OutTransforms = localTransforms
-        });
 
         OzzSkeleton.RunLocalToModelFromTRS(new LocalToModelFromTRSDesc
         {
