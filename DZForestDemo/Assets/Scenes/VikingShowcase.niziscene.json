@@ -4,7 +4,7 @@
     {
       "name": "Main Camera",
       "position": [-0.23162663, 4.550002, -23.32802],
-      "rotation": [-19.641466, -13.078526, 9.062137],
+      "rotation": [-21.370201, -9.897855, 8.660671],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -41,7 +41,7 @@
     {
       "name": "Character_Viking",
       "active": true,
-      "position": [-1.2923927E-05, -5144166, 0.00051649613],
+      "position": [-1.2923927E-05, -5239326, 0.00051649613],
       "rotation": [4.0916016E-06, 5.809548E-07, 1.0138471E-07],
       "scale": [1, 1, 1],
       "components": [
@@ -118,7 +118,7 @@
       "name": "Boat",
       "active": false,
       "position": [26.5, 10, 19.5],
-      "rotation": [6.8421226, -29.280306, 75.548904],
+      "rotation": [-27.335909, -12.866357, 80.47953],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -277,7 +277,7 @@
     {
       "name": "Barrel2",
       "active": true,
-      "position": [5, -5172682, 5],
+      "position": [5, -5267842, 5],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
       "components": [
@@ -313,8 +313,8 @@
     {
       "name": "Barrel",
       "active": true,
-      "position": [19.371231, -3099702.2, -123.9325],
-      "rotation": [-1.5908736, 0.0026270878, 0.0048389602],
+      "position": [23.08847, -3194872.2, -122.73293],
+      "rotation": [-1.5908734, 0.002761429, 0.004837095],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -709,7 +709,7 @@
     {
       "name": "Bartender",
       "active": true,
-      "position": [-11.234381, 0.41829205, 0],
+      "position": [-11, 0.25852764, 0],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
       "components": [
@@ -738,6 +738,34 @@
               "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Masculine/Idle/A_Idle_Crouching_Masc.ozzanim"
             }
           ]
+        }
+      ],
+      "children": []
+    },
+    {
+      "name": "Locomotion Dummy",
+      "active": true,
+      "position": [-9.041624, 0.30025387, 0],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "components": [
+        {
+          "type": "NiziKit.Components.MeshComponent",
+          "mesh": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.nizimesh"
+        },
+        {
+          "type": "NiziKit.Components.MaterialComponent",
+          "tags": {
+            "SKINNED": "TRUE"
+          }
+        },
+        {
+          "type": "NiziKit.Components.SurfaceComponent",
+          "albedo": "Synty/Textures/BaseLocomotion/Demo_Textures/T_PolygonApocalypse_01.dztex"
+        },
+        {
+          "type": "NiziKit.Animation.Animator",
+          "skeleton": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.ozzskel"
         }
       ],
       "children": []

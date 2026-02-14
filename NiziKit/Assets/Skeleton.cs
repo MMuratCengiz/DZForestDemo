@@ -277,22 +277,9 @@ public class Skeleton : IDisposable
     }
 
     /// <summary>
-    /// Computes T-pose (rest pose) model-space matrices for each joint using the ozz rest pose.
-    /// </summary>
-    public Matrix4x4[] ExtractRestPoseModelMatrices()
-    {
-        if (!OzzSkeleton.IsValid())
-        {
-            return ComputeModelMatricesFromLocalTransforms();
-        }
-
-        return ComputeRestPose();
-    }
-
-    /// <summary>
     /// Returns true if all bones are near the origin, indicating an invalid/identity rest pose.
     /// </summary>
-    internal static bool IsRestPoseDegenerate(Matrix4x4[] modelMatrices)
+    public static bool IsRestPoseDegenerate(Matrix4x4[] modelMatrices)
     {
         const float threshold = 0.001f;
         for (var i = 0; i < modelMatrices.Length; i++)
@@ -308,7 +295,7 @@ public class Skeleton : IDisposable
         return true;
     }
 
-    private Matrix4x4[] ComputeRestPose()
+    public Matrix4x4[] ComputeRestPose()
     {
         var restPoses = OzzSkeleton.GetRestPoses().ToArray();
         using var localTransforms = OzzJointTransformArray.Create(restPoses);
@@ -363,18 +350,6 @@ public class Skeleton : IDisposable
         }
 
         return result;
-    }
-
-    private Matrix4x4[] ComputeModelMatricesFromLocalTransforms()
-    {
-        var matrices = new Matrix4x4[JointCount];
-        for (var i = 0; i < JointCount; i++)
-        {
-            var local = Joints[i].LocalTransform;
-            var parentIdx = Joints[i].ParentIndex;
-            matrices[i] = parentIdx >= 0 ? local * matrices[parentIdx] : local;
-        }
-        return matrices;
     }
 
     /// <summary>

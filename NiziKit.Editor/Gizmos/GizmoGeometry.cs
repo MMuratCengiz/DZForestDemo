@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
+using NiziKit.Animation;
 using NiziKit.Assets;
 using NiziKit.Components;
 using NiziKit.Core;
@@ -143,7 +144,8 @@ public static class GizmoGeometry
         BuildScaleGizmo(vertices, Vector3.Zero, Quaternion.Identity, 1.0f, hoveredAxis, activeAxis);
     }
 
-    private static void BuildArrow(List<GizmoVertex> vertices, Vector3 origin, Vector3 direction, float scale, Vector4 color)
+    private static void BuildArrow(List<GizmoVertex> vertices, Vector3 origin, Vector3 direction, float scale,
+        Vector4 color)
     {
         var end = origin + direction * AxisLength * scale;
         var arrowBase = origin + direction * (AxisLength - ArrowHeadLength) * scale;
@@ -211,7 +213,8 @@ public static class GizmoGeometry
         }
     }
 
-    private static void BuildPlaneQuad(List<GizmoVertex> vertices, Vector3 origin, Vector3 axis1, Vector3 axis2, float scale, Vector4 color)
+    private static void BuildPlaneQuad(List<GizmoVertex> vertices, Vector3 origin, Vector3 axis1, Vector3 axis2,
+        float scale, Vector4 color)
     {
         var offset = PlaneOffset * scale;
         var size = PlaneSize * scale;
@@ -231,7 +234,8 @@ public static class GizmoGeometry
         vertices.Add(new GizmoVertex(p3, color));
     }
 
-    private static void BuildRing(List<GizmoVertex> vertices, Vector3 origin, Vector3 normal, float scale, Vector4 color)
+    private static void BuildRing(List<GizmoVertex> vertices, Vector3 origin, Vector3 normal, float scale,
+        Vector4 color)
     {
         var radius = RingRadius * scale;
         var tubeRadius = RingThickness * scale;
@@ -276,7 +280,8 @@ public static class GizmoGeometry
         }
     }
 
-    private static void BuildScaleAxis(List<GizmoVertex> vertices, Vector3 origin, Vector3 direction, float scale, Vector4 color)
+    private static void BuildScaleAxis(List<GizmoVertex> vertices, Vector3 origin, Vector3 direction, float scale,
+        Vector4 color)
     {
         var end = origin + direction * AxisLength * scale;
 
@@ -321,7 +326,8 @@ public static class GizmoGeometry
         AddQuad(vertices, corners[3], corners[2], corners[6], corners[7], color);
     }
 
-    private static void AddQuad(List<GizmoVertex> vertices, Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, Vector4 color)
+    private static void AddQuad(List<GizmoVertex> vertices, Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3,
+        Vector4 color)
     {
         vertices.Add(new GizmoVertex(p0, color));
         vertices.Add(new GizmoVertex(p1, color));
@@ -376,6 +382,7 @@ public static class GizmoGeometry
         {
             return Vector3.Normalize(Vector3.Cross(v, Vector3.UnitX));
         }
+
         return Vector3.Normalize(Vector3.Cross(v, Vector3.UnitY));
     }
 
@@ -385,7 +392,8 @@ public static class GizmoGeometry
     public static readonly Vector4 PointLightIconColor = new(1.0f, 0.7f, 0.2f, 1f);
     public static readonly Vector4 SpotLightIconColor = new(0.9f, 0.6f, 0.2f, 1f);
 
-    public static void BuildCameraIcon(List<GizmoVertex> vertices, Vector3 position, Quaternion rotation, float scale, Vector4 color)
+    public static void BuildCameraIcon(List<GizmoVertex> vertices, Vector3 position, Quaternion rotation, float scale,
+        Vector4 color)
     {
         var forward = Vector3.Transform(Vector3.UnitZ, rotation);
         var up = Vector3.Transform(Vector3.UnitY, rotation);
@@ -444,7 +452,8 @@ public static class GizmoGeometry
         AddQuad(vertices, f0, f1, f2, f3, color); // Far cap
     }
 
-    public static void BuildDirectionalLightIcon(List<GizmoVertex> vertices, Vector3 position, Vector3 direction, float scale, Vector4 color)
+    public static void BuildDirectionalLightIcon(List<GizmoVertex> vertices, Vector3 position, Vector3 direction,
+        float scale, Vector4 color)
     {
         var size = 0.25f * scale;
         var arrowLength = 0.5f * scale;
@@ -571,7 +580,8 @@ public static class GizmoGeometry
         vertices.Add(new GizmoVertex(left, color));
     }
 
-    public static void BuildSpotLightIcon(List<GizmoVertex> vertices, Vector3 position, Vector3 direction, float coneAngle, float scale, Vector4 color)
+    public static void BuildSpotLightIcon(List<GizmoVertex> vertices, Vector3 position, Vector3 direction,
+        float coneAngle, float scale, Vector4 color)
     {
         var depth = 0.5f * scale;
         var normal = Vector3.Normalize(direction);
@@ -662,15 +672,18 @@ public static class GizmoGeometry
                 BuildSphereWireframe(vertices, sphere.Center, sphere.Radius, worldMatrix, ColliderWireframeColor);
                 break;
             case CapsuleCollider capsule:
-                BuildCapsuleWireframe(vertices, capsule.Center, capsule.Radius, capsule.Height, capsule.Direction, worldMatrix, ColliderWireframeColor);
+                BuildCapsuleWireframe(vertices, capsule.Center, capsule.Radius, capsule.Height, capsule.Direction,
+                    worldMatrix, ColliderWireframeColor);
                 break;
             case CylinderCollider cylinder:
-                BuildCylinderWireframe(vertices, cylinder.Center, cylinder.Radius, cylinder.Height, cylinder.Direction, worldMatrix, ColliderWireframeColor);
+                BuildCylinderWireframe(vertices, cylinder.Center, cylinder.Radius, cylinder.Height, cylinder.Direction,
+                    worldMatrix, ColliderWireframeColor);
                 break;
         }
     }
 
-    public static void BuildBoxWireframe(List<GizmoVertex> vertices, Vector3 center, Vector3 size, Matrix4x4 worldMatrix, Vector4 color)
+    public static void BuildBoxWireframe(List<GizmoVertex> vertices, Vector3 center, Vector3 size,
+        Matrix4x4 worldMatrix, Vector4 color)
     {
         var h = size * 0.5f;
 
@@ -698,14 +711,16 @@ public static class GizmoGeometry
         }
     }
 
-    public static void BuildSphereWireframe(List<GizmoVertex> vertices, Vector3 center, float radius, Matrix4x4 worldMatrix, Vector4 color)
+    public static void BuildSphereWireframe(List<GizmoVertex> vertices, Vector3 center, float radius,
+        Matrix4x4 worldMatrix, Vector4 color)
     {
         BuildWireframeCircle(vertices, center, Vector3.UnitX, Vector3.UnitY, radius, worldMatrix, color);
         BuildWireframeCircle(vertices, center, Vector3.UnitX, Vector3.UnitZ, radius, worldMatrix, color);
         BuildWireframeCircle(vertices, center, Vector3.UnitY, Vector3.UnitZ, radius, worldMatrix, color);
     }
 
-    public static void BuildCapsuleWireframe(List<GizmoVertex> vertices, Vector3 center, float radius, float height, ColliderDirection direction, Matrix4x4 worldMatrix, Vector4 color)
+    public static void BuildCapsuleWireframe(List<GizmoVertex> vertices, Vector3 center, float radius, float height,
+        ColliderDirection direction, Matrix4x4 worldMatrix, Vector4 color)
     {
         GetDirectionAxes(direction, out var up, out var right, out var forward);
         var cylinderHalf = MathF.Max(0, (height - radius * 2f) * 0.5f);
@@ -733,7 +748,8 @@ public static class GizmoGeometry
         BuildWireframeHalfCircle(vertices, bottomCenter, forward, -up, radius, worldMatrix, color);
     }
 
-    public static void BuildCylinderWireframe(List<GizmoVertex> vertices, Vector3 center, float radius, float height, ColliderDirection direction, Matrix4x4 worldMatrix, Vector4 color)
+    public static void BuildCylinderWireframe(List<GizmoVertex> vertices, Vector3 center, float radius, float height,
+        ColliderDirection direction, Matrix4x4 worldMatrix, Vector4 color)
     {
         GetDirectionAxes(direction, out var up, out var right, out var forward);
         var halfHeight = height * 0.5f;
@@ -756,7 +772,8 @@ public static class GizmoGeometry
         }
     }
 
-    private static void BuildWireframeCircle(List<GizmoVertex> vertices, Vector3 center, Vector3 axis1, Vector3 axis2, float radius, Matrix4x4 worldMatrix, Vector4 color)
+    private static void BuildWireframeCircle(List<GizmoVertex> vertices, Vector3 center, Vector3 axis1, Vector3 axis2,
+        float radius, Matrix4x4 worldMatrix, Vector4 color)
     {
         for (var i = 0; i < WireframeCircleSegments; i++)
         {
@@ -769,7 +786,8 @@ public static class GizmoGeometry
         }
     }
 
-    private static void BuildWireframeHalfCircle(List<GizmoVertex> vertices, Vector3 center, Vector3 tangent, Vector3 up, float radius, Matrix4x4 worldMatrix, Vector4 color)
+    private static void BuildWireframeHalfCircle(List<GizmoVertex> vertices, Vector3 center, Vector3 tangent,
+        Vector3 up, float radius, Matrix4x4 worldMatrix, Vector4 color)
     {
         var halfSegments = WireframeCircleSegments / 2;
         for (var i = 0; i < halfSegments; i++)
@@ -783,7 +801,8 @@ public static class GizmoGeometry
         }
     }
 
-    private static void GetDirectionAxes(ColliderDirection direction, out Vector3 up, out Vector3 right, out Vector3 forward)
+    private static void GetDirectionAxes(ColliderDirection direction, out Vector3 up, out Vector3 right,
+        out Vector3 forward)
     {
         switch (direction)
         {
@@ -802,6 +821,139 @@ public static class GizmoGeometry
                 right = Vector3.UnitX;
                 forward = Vector3.UnitZ;
                 break;
+        }
+    }
+
+    public static readonly Vector4 BoneColor = new(0.5f, 0.9f, 0.2f, 1f);
+    public static readonly Vector4 JointColor = new(0.2f, 0.6f, 0.95f, 1f);
+    public static readonly Vector4 RootJointColor = new(0.95f, 0.3f, 0.3f, 1f);
+    private const float JointOctahedronSize = 0.015f;
+    private const int BonePyramidSegments = 4;
+
+    public static void BuildSkeletonOverlay(List<GizmoVertex> vertices, GameObject obj)
+    {
+        var animator = obj.GetComponent<Animator>();
+        var skeleton = animator?.Skeleton;
+        if (skeleton == null || skeleton.JointCount == 0)
+        {
+            return;
+        }
+
+        var worldMatrix = obj.WorldMatrix;
+        Matrix4x4[] modelTransforms;
+        if (animator is { IsInitialized: true, BoneCount: > 0 } &&
+            (animator.IsPlaying || animator.IsPaused))
+        {
+            modelTransforms = animator.ModelSpaceTransforms.ToArray();
+        }
+        else
+        {
+            modelTransforms = skeleton.ComputeRestPose();
+            if (Skeleton.IsRestPoseDegenerate(modelTransforms))
+            {
+                var mesh = obj.GetComponent<MeshComponent>()?.Mesh;
+                if (mesh?.InverseBindMatrices != null)
+                {
+                    modelTransforms = Skeleton.ComputeRestPoseFromInverseBindMatrices(
+                        skeleton.JointCount, mesh.InverseBindMatrices, null);
+                }
+            }
+        }
+
+        var jointCount = Math.Min(skeleton.JointCount, modelTransforms.Length);
+
+        for (var i = 0; i < jointCount; i++)
+        {
+            var joint = skeleton.Joints[i];
+            var jointPos = Vector3.Transform(modelTransforms[i].Translation, worldMatrix);
+            var isRoot = joint.ParentIndex < 0;
+            var jointColor = isRoot ? RootJointColor : JointColor;
+
+            BuildOctahedron(vertices, jointPos, JointOctahedronSize, jointColor);
+            if (joint.ParentIndex >= 0 && joint.ParentIndex < jointCount)
+            {
+                var parentPos = Vector3.Transform(modelTransforms[joint.ParentIndex].Translation, worldMatrix);
+                BuildBonePyramid(vertices, parentPos, jointPos, BoneColor);
+            }
+        }
+    }
+
+    private static void BuildOctahedron(List<GizmoVertex> vertices, Vector3 center, float size, Vector4 color)
+    {
+        var top = center + Vector3.UnitY * size;
+        var bottom = center - Vector3.UnitY * size;
+        var front = center + Vector3.UnitZ * size;
+        var back = center - Vector3.UnitZ * size;
+        var left = center - Vector3.UnitX * size;
+        var right = center + Vector3.UnitX * size;
+
+        vertices.Add(new GizmoVertex(top, color));
+        vertices.Add(new GizmoVertex(front, color));
+        vertices.Add(new GizmoVertex(right, color));
+
+        vertices.Add(new GizmoVertex(top, color));
+        vertices.Add(new GizmoVertex(right, color));
+        vertices.Add(new GizmoVertex(back, color));
+
+        vertices.Add(new GizmoVertex(top, color));
+        vertices.Add(new GizmoVertex(back, color));
+        vertices.Add(new GizmoVertex(left, color));
+
+        vertices.Add(new GizmoVertex(top, color));
+        vertices.Add(new GizmoVertex(left, color));
+        vertices.Add(new GizmoVertex(front, color));
+
+        vertices.Add(new GizmoVertex(bottom, color));
+        vertices.Add(new GizmoVertex(right, color));
+        vertices.Add(new GizmoVertex(front, color));
+
+        vertices.Add(new GizmoVertex(bottom, color));
+        vertices.Add(new GizmoVertex(back, color));
+        vertices.Add(new GizmoVertex(right, color));
+
+        vertices.Add(new GizmoVertex(bottom, color));
+        vertices.Add(new GizmoVertex(left, color));
+        vertices.Add(new GizmoVertex(back, color));
+
+        vertices.Add(new GizmoVertex(bottom, color));
+        vertices.Add(new GizmoVertex(front, color));
+        vertices.Add(new GizmoVertex(left, color));
+    }
+
+    private static void BuildBonePyramid(List<GizmoVertex> vertices, Vector3 from, Vector3 to, Vector4 color)
+    {
+        var dir = to - from;
+        var length = dir.Length();
+        if (length < 0.0001f)
+        {
+            return;
+        }
+
+        dir /= length;
+        var width = length * 0.08f;
+        var midPoint = from + dir * (length * 0.15f);
+
+        var perp = GetPerpendicular(dir);
+        var perp2 = Vector3.Cross(dir, perp);
+
+        for (var i = 0; i < BonePyramidSegments; i++)
+        {
+            var angle1 = (float)i / BonePyramidSegments * MathF.PI * 2;
+            var angle2 = (float)(i + 1) / BonePyramidSegments * MathF.PI * 2;
+
+            var offset1 = (MathF.Cos(angle1) * perp + MathF.Sin(angle1) * perp2) * width;
+            var offset2 = (MathF.Cos(angle2) * perp + MathF.Sin(angle2) * perp2) * width;
+
+            var mid1 = midPoint + offset1;
+            var mid2 = midPoint + offset2;
+
+            vertices.Add(new GizmoVertex(from, color));
+            vertices.Add(new GizmoVertex(mid1, color));
+            vertices.Add(new GizmoVertex(mid2, color));
+
+            vertices.Add(new GizmoVertex(to, color));
+            vertices.Add(new GizmoVertex(mid2, color));
+            vertices.Add(new GizmoVertex(mid1, color));
         }
     }
 }
