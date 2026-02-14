@@ -7,9 +7,9 @@ using NiziKit.Core;
 namespace NiziKit.Animation;
 
 /// <summary>
-/// Retargets animations from a source skeleton to a destination skeleton using the
-/// WickedEngine-style algorithm. Computes per-bone relative transform matrices at setup
-/// time, then applies them at runtime to convert source animation poses to destination space.
+/// Retargets animations from a source skeleton to a destination skeleton.
+/// Computes per-bone relative transform matrices at setup time,
+/// then applies them at runtime to convert source animation poses to destination space.
 /// </summary>
 public sealed class AnimationRetargeter : IDisposable
 {
@@ -55,7 +55,8 @@ public sealed class AnimationRetargeter : IDisposable
         _sourceSkeleton = sourceSkeleton;
 
         // Log all joint names for both skeletons
-        Logger.LogInformation("Source skeleton '{Name}' joints ({Count}):", sourceSkeleton.Name, sourceSkeleton.JointCount);
+        Logger.LogInformation("Source skeleton '{Name}' joints ({Count}):", sourceSkeleton.Name,
+            sourceSkeleton.JointCount);
         for (var i = 0; i < sourceSkeleton.Joints.Count; i++)
         {
             var j = sourceSkeleton.Joints[i];
@@ -92,12 +93,17 @@ public sealed class AnimationRetargeter : IDisposable
             var boneName = (HumanoidBone)humanoidBone;
             var srcIdx = srcHumanoidMap[humanoidBone];
             var dstIdx = dstHumanoidMap[humanoidBone];
-            var srcName = srcIdx >= 0 && srcIdx < sourceSkeleton.Joints.Count ? sourceSkeleton.Joints[srcIdx].Name : "MISSING";
-            var dstName = dstIdx >= 0 && dstIdx < destSkeleton.Joints.Count ? destSkeleton.Joints[dstIdx].Name : "MISSING";
+            var srcName = srcIdx >= 0 && srcIdx < sourceSkeleton.Joints.Count
+                ? sourceSkeleton.Joints[srcIdx].Name
+                : "MISSING";
+            var dstName = dstIdx >= 0 && dstIdx < destSkeleton.Joints.Count
+                ? destSkeleton.Joints[dstIdx].Name
+                : "MISSING";
 
             if (srcIdx < 0 || dstIdx < 0)
             {
-                Logger.LogWarning("Retarget bone {Bone}: src=[{SrcIdx}] '{SrcName}', dst=[{DstIdx}] '{DstName}' - SKIPPED",
+                Logger.LogWarning(
+                    "Retarget bone {Bone}: src=[{SrcIdx}] '{SrcName}', dst=[{DstIdx}] '{DstName}' - SKIPPED",
                     boneName, srcIdx, srcName, dstIdx, dstName);
             }
             else
