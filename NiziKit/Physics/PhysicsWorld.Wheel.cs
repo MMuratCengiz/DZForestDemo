@@ -80,12 +80,8 @@ public sealed partial class PhysicsWorld
         }
 
         var parent = wheelGo.Parent;
-        if (parent == null)
-        {
-            return;
-        }
 
-        var parentRb = parent.GetComponent<Rigidbody>();
+        var parentRb = parent?.GetComponent<Rigidbody>();
         if (parentRb?.BodyHandle == null)
         {
             return;

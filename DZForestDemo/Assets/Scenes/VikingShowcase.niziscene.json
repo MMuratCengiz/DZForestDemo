@@ -4,7 +4,7 @@
     {
       "name": "Main Camera",
       "position": [-0.23162663, 4.550002, -23.32802],
-      "rotation": [-23.206013, -3.4950068, 7.50645],
+      "rotation": [-23.44791, -0.5190241, 6.896334],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -41,7 +41,7 @@
     {
       "name": "Character_Viking",
       "active": true,
-      "position": [-1.2923927E-05, -5258235, 0.00051649613],
+      "position": [-1.2923927E-05, -5388379.5, 0.00051649613],
       "rotation": [4.0916016E-06, 5.809548E-07, 1.0138471E-07],
       "scale": [1, 1, 1],
       "components": [
@@ -118,7 +118,7 @@
       "name": "Boat",
       "active": false,
       "position": [26.5, 10, 19.5],
-      "rotation": [19.315275, 23.410889, 81.3768],
+      "rotation": [26.84641, -13.918001, 74.00103],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -277,7 +277,7 @@
     {
       "name": "Barrel2",
       "active": true,
-      "position": [5, -5286751, 5],
+      "position": [5, -5416922, 5],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
       "components": [
@@ -313,8 +313,8 @@
     {
       "name": "Barrel",
       "active": true,
-      "position": [22.338465, -3213782.8, -122.23292],
-      "rotation": [-1.5908728, 0.0030299553, 0.0048333667],
+      "position": [22.338465, -3343955.5, -122.23292],
+      "rotation": [-1.5908725, 0.003164141, 0.0048315036],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -709,7 +709,7 @@
     {
       "name": "Bartender",
       "active": true,
-      "position": [-11, 0.25852764, 0],
+      "position": [-11.001418, 0.25852764, 0],
       "rotation": [0, 0, 0],
       "scale": [1, 1, 1],
       "components": [

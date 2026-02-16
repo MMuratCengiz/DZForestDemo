@@ -37,6 +37,7 @@ public sealed class AssetExportDesc
     public OzzSkeleton? ExternalSkeleton { get; set; }
     public string? ReferenceSourcePath { get; set; }
     public bool SanitizeTransforms { get; set; }
+    public bool NormalizeSkeletonTransforms { get; set; }
 
     internal GltfExportDesc ToGltfExportDesc()
     {

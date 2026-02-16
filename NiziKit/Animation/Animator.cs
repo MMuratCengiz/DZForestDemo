@@ -611,12 +611,7 @@ public partial class Animator : IDisposable
 
     private void SampleLocal(Assets.Animation anim, float normalizedTime, OzzJointTransformArray outLocalTransforms)
     {
-        if (Skeleton == null)
-        {
-            return;
-        }
-
-        Skeleton.OzzSkeleton.RunSamplingJobLocal(new SamplingJobLocalDesc
+        Skeleton?.OzzSkeleton.RunSamplingJobLocal(new SamplingJobLocalDesc
         {
             Context = anim.OzzContext,
             Ratio = Math.Clamp(normalizedTime, 0f, 1f),
@@ -626,12 +621,7 @@ public partial class Animator : IDisposable
 
     private void ConvertLocalToModel(OzzJointTransformArray localTransforms, Float4x4Array outModelTransforms)
     {
-        if (Skeleton == null)
-        {
-            return;
-        }
-
-        Skeleton.OzzSkeleton.RunLocalToModelFromTRS(new LocalToModelFromTRSDesc
+        Skeleton?.OzzSkeleton.RunLocalToModelFromTRS(new LocalToModelFromTRSDesc
         {
             LocalTransforms = localTransforms,
             OutTransforms = outModelTransforms

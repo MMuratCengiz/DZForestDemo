@@ -45,6 +45,7 @@ void ImportSyntyAssets(string sourceDirectory, string outputDirectory)
         PreserveDirectoryStructure = true,
         ModelScale = 0.01f,
         GenerateMips = true,
+        NormalizeSkeletonTransforms = true,
         ExcludeDirectories = ["BaseLocomotion/Character", "BaseLocomotion/Animations", "Unreal_Characters"]
     });
 
@@ -77,13 +78,11 @@ void ImportBaseLocomotion(string baseLocoDir, string outputDir)
         {
             Name = "PolygonSyntyCharacter",
             AnimSubDir = "Polygon",
-            TPosePath = Path.Combine(animationsDir, "Polygon", "Neutral", "Additive", "TPose", "A_TPose_Neut.fbx")
         },
         new
         {
             Name = "SidekickSyntyCharacter",
             AnimSubDir = "Sidekick",
-            TPosePath = Path.Combine(animationsDir, "Sidekick", "Neutral", "Additive", "TPose", "A_MOD_BL_TPose_Neut.fbx")
         }
     };
 
@@ -117,8 +116,8 @@ void ImportBaseLocomotion(string baseLocoDir, string outputDir)
             SmoothNormalsAngle = 80.0f,
             ExportSkeleton = true,
             ExportAnimations = true,
-            ReferenceSourcePath = File.Exists(character.TPosePath) ? character.TPosePath : null,
-            SanitizeTransforms = true
+            SanitizeTransforms = true,
+            NormalizeSkeletonTransforms = true
         };
 
         var charResult = exporter.Export(characterExportDesc);
