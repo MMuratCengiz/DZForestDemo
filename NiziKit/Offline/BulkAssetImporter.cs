@@ -15,7 +15,7 @@ public sealed class BulkImportDesc
     public int MaxDegreeOfParallelism { get; set; } = Environment.ProcessorCount;
     public OzzSkeleton? ExternalSkeleton { get; set; }
     public List<string> ExcludeDirectories { get; set; } = [];
-    public bool NormalizeSkeletonTransforms { get; set; }
+    public bool RepairSkeletonTransforms { get; set; }
     public Action<string>? OnProgress { get; set; }
 }
 
@@ -198,7 +198,7 @@ public sealed class BulkAssetImporter : IDisposable
             ExportSkeleton = true,
             ExportAnimations = true,
             ExternalSkeleton = desc.ExternalSkeleton,
-            NormalizeSkeletonTransforms = desc.NormalizeSkeletonTransforms
+            RepairSkeletonTransforms = desc.RepairSkeletonTransforms
         };
 
         return exporter.Export(exportDesc);

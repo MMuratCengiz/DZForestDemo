@@ -45,7 +45,7 @@ void ImportSyntyAssets(string sourceDirectory, string outputDirectory)
         PreserveDirectoryStructure = true,
         ModelScale = 0.01f,
         GenerateMips = true,
-        NormalizeSkeletonTransforms = true,
+        RepairSkeletonTransforms = true,
         ExcludeDirectories = ["BaseLocomotion/Character", "BaseLocomotion/Animations", "Unreal_Characters"]
     });
 
@@ -117,7 +117,7 @@ void ImportBaseLocomotion(string baseLocoDir, string outputDir)
             ExportSkeleton = true,
             ExportAnimations = true,
             SanitizeTransforms = true,
-            NormalizeSkeletonTransforms = true
+            RepairSkeletonTransforms = true
         };
 
         var charResult = exporter.Export(characterExportDesc);

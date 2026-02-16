@@ -4,31 +4,31 @@ using NiziKit.GLTF.Data;
 namespace NiziKit.GLTF;
 
 /// <summary>
-/// Fixes broken skeleton transforms in glTF documents by deriving correct joint
+/// Repairs broken skeleton transforms in glTF documents by deriving correct joint
 /// node transforms from the inverse bind matrices. Assimp's FBX→glTF exporter
 /// can produce inconsistent data where node transforms don't match IBMs, causing
 /// collapsed/distorted meshes. The IBMs are the ground truth (they match the mesh
 /// vertex positions and skin weights), so we invert them to recover correct world
 /// poses and rebuild the node hierarchy from those.
 /// </summary>
-public static class SkeletonNormalizer
+public static class SkeletonRepair
 {
     /// <summary>
-    /// Parses GLB bytes, fixes skeleton transforms, and writes back to GLB.
+    /// Parses GLB bytes, repairs skeleton transforms, and writes back to GLB.
     /// </summary>
-    public static byte[] NormalizeGlb(byte[] glbBytes)
+    public static byte[] RepairGlb(byte[] glbBytes)
     {
         var document = GltfReader.ReadGlb(glbBytes);
-        NormalizeSkeletonTransforms(document);
+        RepairSkeletonTransforms(document);
         return GlbWriter.WriteGlb(document);
     }
 
     /// <summary>
-    /// Fixes skeleton transforms in-place on a parsed GltfDocument.
+    /// Repairs skeleton transforms in-place on a parsed GltfDocument.
     /// For each skin, derives correct world bind poses from the IBMs and
     /// recomputes node local transforms to match.
     /// </summary>
-    public static void NormalizeSkeletonTransforms(GltfDocument document)
+    public static void RepairSkeletonTransforms(GltfDocument document)
     {
         var root = document.Root;
         if (root.Skins == null || root.Nodes == null)
@@ -38,11 +38,11 @@ public static class SkeletonNormalizer
 
         foreach (var skin in root.Skins)
         {
-            NormalizeSkin(document, skin);
+            RepairSkin(document, skin);
         }
     }
 
-    private static void NormalizeSkin(GltfDocument document, GltfSkin skin)
+    private static void RepairSkin(GltfDocument document, GltfSkin skin)
     {
         var root = document.Root;
         var nodes = root.Nodes!;

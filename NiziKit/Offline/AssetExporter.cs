@@ -53,9 +53,9 @@ public sealed class AssetExporter : IDisposable
 
         var gltfBytes = gltfResult.GltfBytes;
 
-        if (desc.NormalizeSkeletonTransforms)
+        if (desc.RepairSkeletonTransforms)
         {
-            gltfBytes = SkeletonNormalizer.NormalizeGlb(gltfBytes);
+            gltfBytes = SkeletonRepair.RepairGlb(gltfBytes);
         }
 
         var meshPaths = ExportMeshes(desc, gltfBytes);
