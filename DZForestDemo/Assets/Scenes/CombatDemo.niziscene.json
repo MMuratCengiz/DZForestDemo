@@ -4,7 +4,7 @@
     {
       "name": "Main Camera",
       "position": [-0.23162663, 4.550002, -23.32802],
-      "rotation": [-23.44791, -0.5190241, 6.896334],
+      "rotation": [-23.000591, 4.7158895, 5.8286195],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -60,6 +60,63 @@
             113.75
           ],
           "isTrigger": false
+        }
+      ],
+      "children": []
+    },
+    {
+      "name": "My Character",
+      "active": true,
+      "position": [-5.5, 0.5, -0.5],
+      "rotation": [-179.99998, 5.0089543E-06, -179.99998],
+      "scale": [1, 1, 1],
+      "components": [
+        {
+          "type": "NiziKit.Components.MeshComponent",
+          "mesh": "Synty/Models/FantasyKingdom/Characters/SK_Chr_Soldier_Female_01.nizimesh"
+        },
+        {
+          "type": "NiziKit.Components.SurfaceComponent",
+          "albedo": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_01_B.dztex"
+        },
+        {
+          "type": "NiziKit.Animation.Animator",
+          "skeleton": "Synty/Models/FantasyKingdom/Characters/SK_Chr_Soldier_Female_01.ozzskel",
+          "retargetSource": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.ozzskel",
+          "animations": [
+            {
+              "name": "A_Idle_Crouching_Femn",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/Idle/A_Idle_Crouching_Femn.ozzanim"
+            },
+            {
+              "name": "A_Attack_HeavyCombo01C_ReturnToIdle_RootMotion_Sword",
+              "source": "Synty/Models/BaseLocomotion/Animations/MeleeCombat/Polygon/Attack/HeavyCombo01/A_Attack_HeavyCombo01C_ReturnToIdle_RootMotion_Sword.ozzanim"
+            }
+          ]
+        },
+        {
+          "type": "NiziKit.Components.MaterialComponent",
+          "tags": {
+            "SKINNED": "TRUE"
+          }
+        }
+      ],
+      "children": []
+    },
+    {
+      "name": "Dummy Target",
+      "active": true,
+      "position": [-5.428325, 0, 4.9811535],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "components": [
+        {
+          "type": "NiziKit.Components.MeshComponent",
+          "mesh": "Synty/Models/FantasyKingdom/FBX/SM_Prop_Dummy_Archery_02.nizimesh"
+        },
+        {
+          "type": "NiziKit.Components.SurfaceComponent",
+          "albedo": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_01_B.dztex"
         }
       ],
       "children": []
