@@ -2,8 +2,7 @@ using System.Numerics;
 
 namespace NiziKit.Components;
 
-[NiziComponent]
-public partial class CharacterController : IComponent
+public partial class CharacterController : NiziComponent
 {
     [JsonProperty("moveSpeed")]
     public partial float MoveSpeed { get; set; }
@@ -25,9 +24,9 @@ public partial class CharacterController : IComponent
         GroundCheckDistance = 0.3f;
     }
 
-    public void Begin()
+    public override void Begin()
     {
-        _rigidbody = Owner?.GetComponent<Rigidbody>();
+        _rigidbody = GetComponent<Rigidbody>();
     }
 
     private Rigidbody? GetRigidbody()
@@ -61,7 +60,7 @@ public partial class CharacterController : IComponent
         _rigidbody.Velocity = vel;
     }
 
-    public void Update()
+    public override void Update()
     {
         CheckGrounded();
         if (GetRigidbody() != null)

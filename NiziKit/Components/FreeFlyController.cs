@@ -3,8 +3,7 @@ using DenOfIz;
 
 namespace NiziKit.Components;
 
-[NiziComponent]
-public partial class FreeFlyController
+public partial class FreeFlyController : NiziComponent
 {
     private bool _isLooking;
     private int _lastMouseX;

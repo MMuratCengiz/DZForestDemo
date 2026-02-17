@@ -18,7 +18,6 @@ public static class EditorUiBuilder
             .Open();
 
         MenuBarBuilder.Build(ui, ctx, vm);
-
         using (ui.Panel("MainRow").Horizontal().Grow().Open())
         {
             using (ui.Panel("LeftPanel")
@@ -66,7 +65,6 @@ public static class EditorUiBuilder
             }
         }
 
-        // Context menus rendered at root level so floating AttachTo=Root works correctly
         SceneHierarchyBuilder.BuildContextMenu(ui, ctx, vm);
 
         if (vm.IsSavePromptOpen)

@@ -9,6 +9,7 @@ public sealed class GraphicsContext : IDisposable
     private static GraphicsContext? _instance;
     public static GraphicsContext Instance => _instance ?? throw new InvalidOperationException("GraphicsContext not initialized");
 
+    public static Window Window => Instance._window!;
     public static GraphicsApi GraphicsApi => Instance._graphicsApi;
     public static LogicalDevice Device => Instance._logicalDevice;
     public static SwapChain SwapChain => Instance._swapChain;

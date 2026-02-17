@@ -2,9 +2,9 @@ using NiziKit.Components;
 
 namespace NiziKit.Editor.ViewModels;
 
-public class ComponentViewModel(IComponent component, GameObjectViewModel owner)
+public class ComponentViewModel(NiziComponent component, GameObjectViewModel owner)
 {
-    public IComponent Component => component;
+    public NiziComponent Component => component;
     public GameObjectViewModel Owner => owner;
 
     public string TypeName => component.GetType().Name;

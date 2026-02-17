@@ -19,5 +19,5 @@ public interface IComponentFactory
     /// <param name="properties">The JSON properties dictionary from the component definition.</param>
     /// <param name="resolver">The asset resolver for resolving asset references.</param>
     /// <returns>The created component instance.</returns>
-    IComponent Create(IReadOnlyDictionary<string, JsonElement>? properties, IAssetResolver resolver);
+    NiziComponent Create(IReadOnlyDictionary<string, JsonElement>? properties, IAssetResolver resolver);
 }

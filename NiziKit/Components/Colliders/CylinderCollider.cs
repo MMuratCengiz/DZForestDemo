@@ -3,7 +3,6 @@ using NiziKit.Physics;
 
 namespace NiziKit.Components;
 
-[NiziComponent]
 public partial class CylinderCollider : Collider
 {
     [JsonProperty("radius")]

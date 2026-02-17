@@ -3,8 +3,7 @@ using DenOfIz;
 
 namespace NiziKit.Components;
 
-[NiziComponent]
-public partial class OrbitController
+public partial class OrbitController : NiziComponent
 {
     private bool _isLooking;
     private int _lastMouseX;

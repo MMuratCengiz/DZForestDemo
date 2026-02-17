@@ -1,3 +1,4 @@
+using DenOfIz;
 using Microsoft.Extensions.Logging;
 using NiziKit.Core;
 using NiziKit.Offline;
@@ -32,7 +33,7 @@ void ImportSyntyAssets(string sourceDirectory, string outputDirectory)
 
     if (Directory.Exists(baseLocoDir))
     {
-        ImportBaseLocomotion(baseLocoDir, baseLocoOutputDir);
+        ImportBaseLocomotion(baseLocoDir, sourceDirectory, baseLocoOutputDir);
     }
 
     using var importer = new BulkAssetImporter();
@@ -46,7 +47,7 @@ void ImportSyntyAssets(string sourceDirectory, string outputDirectory)
         ModelScale = 0.01f,
         GenerateMips = true,
         RepairSkeletonTransforms = true,
-        ExcludeDirectories = ["BaseLocomotion/Character", "BaseLocomotion/Animations", "Unreal_Characters"]
+        ExcludeDirectories = ["BaseLocomotion/Character", "BaseLocomotion/Animations", "BowCombat/Animations", "MeleeCombat/Animations", "Idles/Animations", "Unreal_Characters"]
     });
 
     logger.LogInformation("Synty: {ModelsExported} models, {TexturesExported} textures exported", result.ModelsExported, result.TexturesExported);
@@ -60,49 +61,100 @@ void ImportSyntyAssets(string sourceDirectory, string outputDirectory)
     }
 }
 
-void ImportBaseLocomotion(string baseLocoDir, string outputDir)
+OzzSkeleton? ImportBaseLocomotion(string baseLocoDir, string syntySourceDir, string outputDir)
 {
     var characterDir = Path.Combine(baseLocoDir, "Character");
     var animationsDir = Path.Combine(baseLocoDir, "Animations");
 
     if (!Directory.Exists(characterDir))
     {
-        return;
+        return null;
     }
 
     using var exporter = new AssetExporter();
 
-    var characters = new[]
+    // Use Polygon character only for consistency
+    var characterFile = Path.Combine(characterDir, "PolygonSyntyCharacter.fbx");
+    if (!File.Exists(characterFile))
     {
-        new
-        {
-            Name = "PolygonSyntyCharacter",
-            AnimSubDir = "Polygon",
-        },
-        new
-        {
-            Name = "SidekickSyntyCharacter",
-            AnimSubDir = "Sidekick",
-        }
+        logger.LogWarning("BaseLocomotion: PolygonSyntyCharacter.fbx not found, skipping");
+        return null;
+    }
+
+    var characterOutputDir = Path.Combine(outputDir, "Character");
+    Directory.CreateDirectory(characterOutputDir);
+
+    var characterExportDesc = new AssetExportDesc
+    {
+        SourcePath = characterFile,
+        OutputDirectory = characterOutputDir,
+        AssetName = "PolygonSyntyCharacter",
+        Format = ExportFormat.Glb,
+        Scale = 0.01f,
+        EmbedTextures = false,
+        OverwriteExisting = true,
+        OptimizeMeshes = true,
+        GenerateNormals = true,
+        CalculateTangents = true,
+        TriangulateMeshes = true,
+        JoinIdenticalVertices = true,
+        SmoothNormals = true,
+        SmoothNormalsAngle = 80.0f,
+        ExportSkeleton = true,
+        ExportAnimations = true,
+        SanitizeTransforms = true,
+        RepairSkeletonTransforms = true
     };
 
-    foreach (var character in characters)
+    var charResult = exporter.Export(characterExportDesc);
+    if (!charResult.Success)
     {
-        var characterFile = Path.Combine(characterDir, $"{character.Name}.fbx");
-        if (!File.Exists(characterFile))
+        logger.LogError("BaseLocomotion: PolygonSyntyCharacter export failed: {Error}", charResult.ErrorMessage);
+        return null;
+    }
+
+    if (charResult.OzzSkeleton == null)
+    {
+        logger.LogWarning("BaseLocomotion: No skeleton exported for PolygonSyntyCharacter");
+        return null;
+    }
+
+    // Import BaseLocomotion Polygon animations
+    var polygonAnimDir = Path.Combine(animationsDir, "Polygon");
+    if (Directory.Exists(polygonAnimDir))
+    {
+        ImportAnimationsWithSkeleton(exporter, polygonAnimDir, animationsDir, Path.Combine(outputDir, "Animations"), charResult.OzzSkeleton, "BaseLocomotion/Polygon");
+    }
+
+    // Import additional animation packs using the same Polygon skeleton
+    var animationPacks = new[] { "BowCombat", "MeleeCombat", "Idles" };
+    foreach (var pack in animationPacks)
+    {
+        var packAnimDir = Path.Combine(syntySourceDir, pack, "Animations");
+        if (Directory.Exists(packAnimDir))
         {
-            logger.LogWarning("BaseLocomotion: {Name}.fbx not found, skipping", character.Name);
-            continue;
+            ImportAnimationsWithSkeleton(exporter, packAnimDir, packAnimDir, Path.Combine(outputDir, "Animations", pack), charResult.OzzSkeleton, pack);
         }
+    }
 
-        var characterOutputDir = Path.Combine(outputDir, "Character");
-        Directory.CreateDirectory(characterOutputDir);
+    return charResult.OzzSkeleton;
+}
 
-        var characterExportDesc = new AssetExportDesc
+void ImportAnimationsWithSkeleton(AssetExporter exporter, string animSourceDir, string baseDir, string outputDir, OzzSkeleton skeleton, string packName)
+{
+    foreach (var animFile in Directory.EnumerateFiles(animSourceDir, "*.fbx", SearchOption.AllDirectories))
+    {
+        var relativePath = Path.GetRelativePath(baseDir, animFile);
+        var relativeDir = Path.GetDirectoryName(relativePath) ?? "";
+        var animName = Path.GetFileNameWithoutExtension(animFile);
+        var animOutputDir = Path.Combine(outputDir, relativeDir);
+        Directory.CreateDirectory(animOutputDir);
+
+        var animExportDesc = new AssetExportDesc
         {
-            SourcePath = characterFile,
-            OutputDirectory = characterOutputDir,
-            AssetName = character.Name,
+            SourcePath = animFile,
+            OutputDirectory = animOutputDir,
+            AssetName = animName,
             Format = ExportFormat.Glb,
             Scale = 0.01f,
             EmbedTextures = false,
@@ -116,59 +168,17 @@ void ImportBaseLocomotion(string baseLocoDir, string outputDir)
             SmoothNormalsAngle = 80.0f,
             ExportSkeleton = true,
             ExportAnimations = true,
-            SanitizeTransforms = true,
-            RepairSkeletonTransforms = true
+            ExternalSkeleton = skeleton
         };
 
-        var charResult = exporter.Export(characterExportDesc);
-        if (!charResult.Success)
+        var animResult = exporter.Export(animExportDesc);
+        if (!animResult.Success)
         {
-            logger.LogError("BaseLocomotion: {Name} export failed: {Error}", character.Name, charResult.ErrorMessage);
-            continue;
-        }
-
-        var charAnimDir = Path.Combine(animationsDir, character.AnimSubDir);
-        if (!Directory.Exists(charAnimDir) || charResult.OzzSkeleton == null)
-        {
-            continue;
-        }
-
-        foreach (var animFile in Directory.EnumerateFiles(charAnimDir, "*.fbx", SearchOption.AllDirectories))
-        {
-            var relativePath = Path.GetRelativePath(animationsDir, animFile);
-            var relativeDir = Path.GetDirectoryName(relativePath) ?? "";
-            var animName = Path.GetFileNameWithoutExtension(animFile);
-            var animOutputDir = Path.Combine(outputDir, "Animations", relativeDir);
-            Directory.CreateDirectory(animOutputDir);
-
-            var animExportDesc = new AssetExportDesc
-            {
-                SourcePath = animFile,
-                OutputDirectory = animOutputDir,
-                AssetName = animName,
-                Format = ExportFormat.Glb,
-                Scale = 0.01f,
-                EmbedTextures = false,
-                OverwriteExisting = true,
-                OptimizeMeshes = true,
-                GenerateNormals = true,
-                CalculateTangents = true,
-                TriangulateMeshes = true,
-                JoinIdenticalVertices = true,
-                SmoothNormals = true,
-                SmoothNormalsAngle = 80.0f,
-                ExportSkeleton = true,
-                ExportAnimations = true,
-                ExternalSkeleton = charResult.OzzSkeleton
-            };
-
-            var animResult = exporter.Export(animExportDesc);
-            if (!animResult.Success)
-            {
-                logger.LogError("  Animation failed: {Name}: {Error}", animName, animResult.ErrorMessage);
-            }
+            logger.LogError("  {PackName} animation failed: {Name}: {Error}", packName, animName, animResult.ErrorMessage);
         }
     }
+
+    logger.LogInformation("{PackName}: Animations imported", packName);
 }
 
 void ImportSkyboxTextures(string sourceDirectory, string outputDirectory)

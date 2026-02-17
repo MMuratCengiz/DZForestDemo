@@ -5,19 +5,18 @@ using NiziKit.Inputs;
 
 namespace DZForestDemo.Script;
 
-[NiziComponent]
-public partial class JumpController : IComponent
+public class JumpController : NiziComponent
 {
     private CharacterController? _controller;
 
-    public void Begin()
+    public override void Begin()
     {
-        _controller = Owner?.GetComponent<CharacterController>();
+        _controller = GetComponent<CharacterController>();
     }
 
-    public void Update()
+    public override void Update()
     {
-        _controller ??= Owner?.GetComponent<CharacterController>();
+        _controller ??= GetComponent<CharacterController>();
         if (_controller == null)
         {
             return;

@@ -20,7 +20,7 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
         _renderFrame.EnableUi(UiContextDesc.Default);
 
         _renderer = new ForwardRenderer();
-        World.LoadScene("Scenes/VikingShowcase.niziscene.json");
+        World.LoadScene("Scenes/CombatDemo.niziscene.json");
     }
 
     private static void RenderUi(UiFrame ui)

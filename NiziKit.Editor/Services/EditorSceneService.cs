@@ -41,11 +41,11 @@ public class EditorSceneService
         return clone;
     }
 
-    private IComponent? CloneComponent(IComponent component)
+    private NiziComponent? CloneComponent(NiziComponent component)
     {
         var type = component.GetType();
 
-        if (Activator.CreateInstance(type) is IComponent newComponent)
+        if (Activator.CreateInstance(type) is NiziComponent newComponent)
         {
             foreach (var prop in type.GetProperties())
             {
@@ -300,7 +300,7 @@ public class EditorSceneService
         return json;
     }
 
-    private ComponentJson? ConvertComponentToJson(IComponent component)
+    private ComponentJson? ConvertComponentToJson(NiziComponent component)
     {
         var type = component.GetType();
         var typeName = type.FullName ?? type.Name;

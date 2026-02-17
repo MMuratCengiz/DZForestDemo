@@ -17,8 +17,7 @@ public struct SuspensionSpring
     };
 }
 
-[NiziComponent]
-public partial class WheelColliderComponent
+public partial class WheelColliderComponent : NiziComponent
 {
     public partial float Radius { get; set; }
     public partial float Width { get; set; }

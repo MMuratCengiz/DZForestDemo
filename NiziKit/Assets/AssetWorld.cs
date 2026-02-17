@@ -18,7 +18,7 @@ public class AssetWorld : IWorldEventListener
     {
     }
 
-    public void ComponentAdded(GameObject go, IComponent component)
+    public void ComponentAdded(GameObject go, NiziComponent component)
     {
         if (component is MeshComponent)
         {
@@ -26,11 +26,11 @@ public class AssetWorld : IWorldEventListener
         }
     }
 
-    public void ComponentRemoved(GameObject go, IComponent component)
+    public void ComponentRemoved(GameObject go, NiziComponent component)
     {
     }
 
-    public void ComponentChanged(GameObject go, IComponent component)
+    public void ComponentChanged(GameObject go, NiziComponent component)
     {
         if (component is MeshComponent)
         {

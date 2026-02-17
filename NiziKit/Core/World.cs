@@ -115,9 +115,9 @@ public class World : IDisposable
 
     internal static void OnGameObjectCreated(GameObject go) => Instance._OnGameObjectCreated(go);
     internal static void OnGameObjectDestroyed(GameObject go) => Instance._OnGameObjectDestroyed(go);
-    internal static void OnComponentAdded(GameObject go, IComponent component) => Instance._OnComponentAdded(go, component);
-    internal static void OnComponentRemoved(GameObject go, IComponent component) => Instance._OnComponentRemoved(go, component);
-    internal static void OnComponentChanged(GameObject go, IComponent component) => Instance._OnComponentChanged(go, component);
+    internal static void OnComponentAdded(GameObject go, NiziComponent component) => Instance._OnComponentAdded(go, component);
+    internal static void OnComponentRemoved(GameObject go, NiziComponent component) => Instance._OnComponentRemoved(go, component);
+    internal static void OnComponentChanged(GameObject go, NiziComponent component) => Instance._OnComponentChanged(go, component);
 
     private readonly IWorldEventListener[] _worldEventListeners;
 
@@ -193,7 +193,7 @@ public class World : IDisposable
         go.IsInWorld = false;
     }
 
-    private void _OnComponentAdded(GameObject go, IComponent component)
+    private void _OnComponentAdded(GameObject go, NiziComponent component)
     {
         foreach (var listener in _worldEventListeners)
         {
@@ -201,7 +201,7 @@ public class World : IDisposable
         }
     }
 
-    private void _OnComponentRemoved(GameObject go, IComponent component)
+    private void _OnComponentRemoved(GameObject go, NiziComponent component)
     {
         foreach (var listener in _worldEventListeners)
         {
@@ -209,7 +209,7 @@ public class World : IDisposable
         }
     }
 
-    private void _OnComponentChanged(GameObject go, IComponent component)
+    private void _OnComponentChanged(GameObject go, NiziComponent component)
     {
         foreach (var listener in _worldEventListeners)
         {

@@ -23,8 +23,8 @@ public class GameObject(string name = "GameObject")
     private readonly List<GameObject> _children = [];
     public IReadOnlyList<GameObject> Children => _children;
 
-    private readonly List<IComponent> _components = [];
-    public IReadOnlyList<IComponent> Components => _components;
+    private readonly List<NiziComponent> _components = [];
+    public IReadOnlyList<NiziComponent> Components => _components;
 
     private Vector3 _localPosition;
     private Quaternion _localRotation = Quaternion.Identity;
@@ -130,7 +130,7 @@ public class GameObject(string name = "GameObject")
         _transformDirty = false;
     }
 
-    public T? GetComponent<T>() where T : class, IComponent
+    public T? GetComponent<T>() where T : NiziComponent
     {
         foreach (var component in _components)
         {
@@ -143,7 +143,7 @@ public class GameObject(string name = "GameObject")
         return null;
     }
 
-    public T AddComponent<T>() where T : IComponent, new()
+    public T AddComponent<T>() where T : NiziComponent, new()
     {
         var component = new T
         {
@@ -158,7 +158,7 @@ public class GameObject(string name = "GameObject")
         return component;
     }
 
-    public void AddComponent(IComponent component)
+    public void AddComponent(NiziComponent component)
     {
         component.Owner = this;
         _components.Add(component);
@@ -168,7 +168,7 @@ public class GameObject(string name = "GameObject")
         }
     }
 
-    public bool RemoveComponent<T>() where T : class, IComponent
+    public bool RemoveComponent<T>() where T : NiziComponent
     {
         for (var i = _components.Count - 1; i >= 0; i--)
         {
@@ -188,7 +188,7 @@ public class GameObject(string name = "GameObject")
         return false;
     }
 
-    public bool RemoveComponent(IComponent component)
+    public bool RemoveComponent(NiziComponent component)
     {
         var index = _components.IndexOf(component);
         if (index < 0)
@@ -206,7 +206,7 @@ public class GameObject(string name = "GameObject")
         return true;
     }
 
-    public void NotifyComponentChanged(IComponent component)
+    public void NotifyComponentChanged(NiziComponent component)
     {
         if (IsInWorld)
         {
@@ -214,7 +214,7 @@ public class GameObject(string name = "GameObject")
         }
     }
 
-    public bool HasComponent<T>() where T : class, IComponent
+    public bool HasComponent<T>() where T : NiziComponent
     {
         return GetComponent<T>() != null;
     }

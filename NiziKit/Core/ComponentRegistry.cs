@@ -67,7 +67,7 @@ public static class ComponentRegistry
                     continue;
                 }
 
-                if (!typeof(IComponent).IsAssignableFrom(type))
+                if (!typeof(NiziComponent).IsAssignableFrom(type))
                 {
                     continue;
                 }
@@ -134,7 +134,7 @@ public static class ComponentRegistry
         }
     }
 
-    public static void Register(string typeName, Func<IReadOnlyDictionary<string, JsonElement>?, IAssetResolver, IComponent> factory)
+    public static void Register(string typeName, Func<IReadOnlyDictionary<string, JsonElement>?, IAssetResolver, NiziComponent> factory)
     {
         lock (_lock)
         {
@@ -142,13 +142,13 @@ public static class ComponentRegistry
         }
     }
 
-    public static IComponent? Create(string typeName, IReadOnlyDictionary<string, JsonElement>? properties, IAssetResolver resolver)
+    public static NiziComponent? Create(string typeName, IReadOnlyDictionary<string, JsonElement>? properties, IAssetResolver resolver)
     {
         TryCreate(typeName, properties, resolver, out var component);
         return component;
     }
 
-    public static bool TryCreate(string typeName, IReadOnlyDictionary<string, JsonElement>? properties, IAssetResolver resolver, out IComponent? component)
+    public static bool TryCreate(string typeName, IReadOnlyDictionary<string, JsonElement>? properties, IAssetResolver resolver, out NiziComponent? component)
     {
         lock (_lock)
         {
@@ -179,9 +179,9 @@ public static class ComponentRegistry
         return true;
     }
 
-    private static IComponent CreateFromTypeInfo(ComponentTypeInfo typeInfo, IReadOnlyDictionary<string, JsonElement>? properties, IAssetResolver resolver)
+    private static NiziComponent CreateFromTypeInfo(ComponentTypeInfo typeInfo, IReadOnlyDictionary<string, JsonElement>? properties, IAssetResolver resolver)
     {
-        var instance = (IComponent)Activator.CreateInstance(typeInfo.Type)!;
+        var instance = (NiziComponent)Activator.CreateInstance(typeInfo.Type)!;
 
         if (properties != null && typeInfo.Properties.Count > 0)
         {
@@ -301,11 +301,11 @@ public static class ComponentRegistry
         }
     }
 
-    private sealed class DelegateComponentFactory(string typeName, Func<IReadOnlyDictionary<string, JsonElement>?, IAssetResolver, IComponent> factory) : IComponentFactory
+    private sealed class DelegateComponentFactory(string typeName, Func<IReadOnlyDictionary<string, JsonElement>?, IAssetResolver, NiziComponent> factory) : IComponentFactory
     {
         public string TypeName => typeName;
 
-        public IComponent Create(IReadOnlyDictionary<string, JsonElement>? properties, IAssetResolver resolver)
+        public NiziComponent Create(IReadOnlyDictionary<string, JsonElement>? properties, IAssetResolver resolver)
             => factory(properties, resolver);
     }
 

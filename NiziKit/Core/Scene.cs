@@ -393,7 +393,7 @@ public abstract class Scene(string name = "Scene") : IDisposable
         }
     }
 
-    public T? FindComponent<T>() where T : class, IComponent
+    public T? FindComponent<T>() where T : NiziComponent
     {
         foreach (var obj in _rootObjects)
         {
@@ -406,7 +406,7 @@ public abstract class Scene(string name = "Scene") : IDisposable
         return null;
     }
 
-    public IEnumerable<T> FindComponents<T>() where T : class, IComponent
+    public IEnumerable<T> FindComponents<T>() where T : NiziComponent
     {
         foreach (var obj in _rootObjects)
         {
@@ -417,7 +417,7 @@ public abstract class Scene(string name = "Scene") : IDisposable
         }
     }
 
-    private static T? FindComponentRecursive<T>(GameObject obj) where T : class, IComponent
+    private static T? FindComponentRecursive<T>(GameObject obj) where T : NiziComponent
     {
         var component = obj.GetComponent<T>();
         if (component != null)
@@ -436,7 +436,7 @@ public abstract class Scene(string name = "Scene") : IDisposable
         return null;
     }
 
-    private static IEnumerable<T> FindComponentsRecursive<T>(GameObject obj) where T : class, IComponent
+    private static IEnumerable<T> FindComponentsRecursive<T>(GameObject obj) where T : NiziComponent
     {
         var component = obj.GetComponent<T>();
         if (component != null)

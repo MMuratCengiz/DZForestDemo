@@ -94,16 +94,12 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         _viewModel.UpdateStatistics();
         _viewModel.Update(dt);
 
-        // Render scene + gizmos
         var renderFrame = _renderer.RenderFrame;
         renderFrame.BeginFrame();
 
         var sceneColor = _renderer.RenderScene();
-
-        // Render immediate-mode UI
         var ui = renderFrame.RenderUi(uiFrame => EditorUiBuilder.Build(uiFrame, renderFrame.UiContext, _viewModel));
 
-        // Composite UI over scene
         renderFrame.AlphaBlit(ui, sceneColor);
 
         renderFrame.Submit();
@@ -113,14 +109,8 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
 
     private void UpdateGizmoHover()
     {
-        var gizmoPass = _renderer.EditorOverlayPass;
-        if (gizmoPass == null)
-        {
-            return;
-        }
-
         var ray = _editorCamera.ScreenPointToRay(_lastMouseX, _lastMouseY, _width, _height);
-        gizmoPass.Gizmo.UpdateHover(ray, _editorCamera);
+        _renderer.EditorOverlayPass.Gizmo.UpdateHover(ray, _editorCamera);
     }
 
     private void UpdateMouseOverUi()
@@ -252,7 +242,6 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
             OnResize(width, height);
         }
 
-        // Determine if UI wants input (text field focused or mouse over UI)
         _textInputActive = renderFrame.UiContext.FocusedTextFieldId != 0;
 
         if (!UiWantsInput && !_gizmoDragging && !_keyConsumed)
@@ -264,11 +253,6 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
     private bool TryBeginGizmoDrag()
     {
         var gizmoPass = _renderer.EditorOverlayPass;
-        if (gizmoPass == null)
-        {
-            return false;
-        }
-
         var ray = _editorCamera.ScreenPointToRay(_lastMouseX, _lastMouseY, _width, _height);
         if (gizmoPass.Gizmo.BeginDrag(ray, _editorCamera))
         {
@@ -291,10 +275,6 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
     private void HandleGizmoDrag(bool shiftHeld)
     {
         var gizmoPass = _renderer.EditorOverlayPass;
-        if (gizmoPass == null)
-        {
-            return;
-        }
 
         var ray = _editorCamera.ScreenPointToRay(_lastMouseX, _lastMouseY, _width, _height);
         gizmoPass.Gizmo.UpdateDrag(ray, _editorCamera, shiftHeld);
@@ -367,11 +347,6 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
     private void HandleGizmoModeKey(KeyCode keyCode)
     {
         var gizmoPass = _renderer.EditorOverlayPass;
-        if (gizmoPass == null)
-        {
-            return;
-        }
-
         switch (keyCode)
         {
             case KeyCode.W:

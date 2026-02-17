@@ -239,7 +239,7 @@ public class GameObjectViewModel
         Children.Remove(child);
     }
 
-    public void AddComponent(IComponent component)
+    public void AddComponent(NiziComponent component)
     {
         _gameObject.AddComponent(component);
         Components.Add(new ComponentViewModel(component, this));
@@ -258,12 +258,12 @@ public class GameObjectViewModel
 
     public void AddComponentOfType(Type componentType)
     {
-        if (!typeof(IComponent).IsAssignableFrom(componentType))
+        if (!typeof(NiziComponent).IsAssignableFrom(componentType))
         {
             return;
         }
 
-        var component = (IComponent?)Activator.CreateInstance(componentType);
+        var component = (NiziComponent?)Activator.CreateInstance(componentType);
         if (component != null)
         {
             FitComponentToMeshBounds(component);
@@ -273,7 +273,7 @@ public class GameObjectViewModel
         IsAddingComponent = false;
     }
 
-    private void FitComponentToMeshBounds(IComponent component)
+    private void FitComponentToMeshBounds(NiziComponent component)
     {
         var mesh = _gameObject.GetComponent<MeshComponent>()?.Mesh;
         if (mesh == null)
@@ -327,14 +327,14 @@ public class GameObjectViewModel
         foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
         {
             var type = assembly.GetType(typeName);
-            if (type != null && typeof(IComponent).IsAssignableFrom(type))
+            if (type != null && typeof(NiziComponent).IsAssignableFrom(type))
             {
                 return type;
             }
 
             type = assembly.GetTypes().FirstOrDefault(t =>
                 t.Name.Equals(typeName, StringComparison.OrdinalIgnoreCase) &&
-                typeof(IComponent).IsAssignableFrom(t));
+                typeof(NiziComponent).IsAssignableFrom(t));
             if (type != null)
             {
                 return type;

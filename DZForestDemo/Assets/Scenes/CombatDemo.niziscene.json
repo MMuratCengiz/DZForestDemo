@@ -1,0 +1,68 @@
+{
+  "name": "Viking Showcase",
+  "cameras": [
+    {
+      "name": "Main Camera",
+      "position": [-0.23162663, 4.550002, -23.32802],
+      "rotation": [-23.44791, -0.5190241, 6.896334],
+      "fieldOfView": 0.785398,
+      "nearPlane": 0.1,
+      "farPlane": 1000,
+      "projectionType": "perspective",
+      "orthographicSize": 5,
+      "priority": 0,
+      "isActive": true,
+      "controller": {
+        "type": "freefly",
+        "moveSpeed": 10,
+        "lookSensitivity": 0.003
+      }
+    }
+  ],
+  "skybox": {
+    "right": "SkyBox/Textures/LearnOpenGL/right.dztex",
+    "left": "SkyBox/Textures/LearnOpenGL/left.dztex",
+    "up": "SkyBox/Textures/LearnOpenGL/top.dztex",
+    "down": "SkyBox/Textures/LearnOpenGL/bottom.dztex",
+    "front": "SkyBox/Textures/LearnOpenGL/front.dztex",
+    "back": "SkyBox/Textures/LearnOpenGL/back.dztex"
+  },
+  "lights": [
+    {
+      "type": "directional",
+      "name": "Directional Light",
+      "direction": [-0.6498308, -0.60697824, -0.45749024],
+      "color": [1, 1, 1],
+      "intensity": 1,
+      "castsShadows": true
+    }
+  ],
+  "objects": [
+    {
+      "name": "Platform",
+      "active": false,
+      "position": [0, -0.25, 0],
+      "rotation": [0, 0.17670275, 0],
+      "scale": [90.67, 1, 113.75],
+      "components": [
+        {
+          "type": "NiziKit.Components.MeshComponent",
+          "mesh": "geometry:box:1:1:1"
+        },
+        {
+          "type": "NiziKit.Components.SurfaceComponent"
+        },
+        {
+          "type": "NiziKit.Components.BoxCollider",
+          "size": [
+            90.67,
+            1,
+            113.75
+          ],
+          "isTrigger": false
+        }
+      ],
+      "children": []
+    }
+  ]
+}

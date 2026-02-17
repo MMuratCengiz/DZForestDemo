@@ -19,7 +19,7 @@ public sealed partial class PhysicsWorld
         UnregisterColliders(go);
     }
 
-    public void ComponentAdded(GameObject go, IComponent component)
+    public void ComponentAdded(GameObject go, NiziComponent component)
     {
         if (component is Rigidbody)
         {
@@ -36,7 +36,7 @@ public sealed partial class PhysicsWorld
         }
     }
 
-    public void ComponentRemoved(GameObject go, IComponent component)
+    public void ComponentRemoved(GameObject go, NiziComponent component)
     {
         if (component is Rigidbody)
         {
@@ -53,7 +53,7 @@ public sealed partial class PhysicsWorld
         }
     }
 
-    public void ComponentChanged(GameObject go, IComponent component)
+    public void ComponentChanged(GameObject go, NiziComponent component)
     {
         if (component is Rigidbody)
         {

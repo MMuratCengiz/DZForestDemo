@@ -5,8 +5,7 @@ using NiziKit.Physics;
 
 namespace NiziKit.Components;
 
-[NiziComponent]
-public partial class Rigidbody
+public partial class Rigidbody : NiziComponent
 {
     [JsonProperty("bodyType")]
     public partial PhysicsBodyType BodyType { get; set; }

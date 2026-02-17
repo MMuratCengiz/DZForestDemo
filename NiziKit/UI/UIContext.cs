@@ -32,6 +32,7 @@ public sealed class UiContext : IDisposable
             MaxNumFonts = desc.MaxNumFonts
         });
 
+        Clay.SetDpiScale(GraphicsContext.Window.GetDisplayScale());
         StringCache = new StringCache(Clay);
     }
 

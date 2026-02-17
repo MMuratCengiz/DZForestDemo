@@ -12,6 +12,8 @@ namespace NiziKit.Generators;
 [Generator]
 public class NiziComponentGenerator : IIncrementalGenerator
 {
+    private const string NiziComponentBaseClass = "NiziKit.Components.NiziComponent";
+
     public void Initialize(IncrementalGeneratorInitializationContext context)
     {
         var classDeclarations = context.SyntaxProvider
@@ -28,27 +30,44 @@ public class NiziComponentGenerator : IIncrementalGenerator
 
     private static bool IsCandidateClass(SyntaxNode node)
     {
-        return node is ClassDeclarationSyntax { AttributeLists.Count: > 0 } classDecl
-               && classDecl.Modifiers.Any(SyntaxKind.PartialKeyword);
+        // Look for any class that has a base type (potential NiziComponent subclass)
+        return node is ClassDeclarationSyntax { BaseList: not null } classDecl
+               && !classDecl.Modifiers.Any(SyntaxKind.AbstractKeyword);
     }
 
     private static ClassDeclarationSyntax? GetSemanticTarget(GeneratorSyntaxContext context)
     {
         var classDecl = (ClassDeclarationSyntax)context.Node;
+        var semanticModel = context.SemanticModel;
+        var classSymbol = semanticModel.GetDeclaredSymbol(classDecl);
 
-        foreach (var attributeList in classDecl.AttributeLists)
+        if (classSymbol is null)
         {
-            foreach (var attribute in attributeList.Attributes)
-            {
-                var name = attribute.Name.ToString();
-                if (name is "NiziComponent" or "NiziComponentAttribute")
-                {
-                    return classDecl;
-                }
-            }
+            return null;
+        }
+
+        // Check if this class inherits from NiziComponent
+        if (InheritsFromNiziComponent(classSymbol))
+        {
+            return classDecl;
         }
 
         return null;
+    }
+
+    private static bool InheritsFromNiziComponent(INamedTypeSymbol? classSymbol)
+    {
+        var current = classSymbol?.BaseType;
+        while (current != null)
+        {
+            var fullName = current.ToDisplayString();
+            if (fullName == NiziComponentBaseClass)
+            {
+                return true;
+            }
+            current = current.BaseType;
+        }
+        return false;
     }
 
     private static void Execute(Compilation compilation, ImmutableArray<ClassDeclarationSyntax?> classes, SourceProductionContext context)
@@ -79,19 +98,21 @@ public class NiziComponentGenerator : IIncrementalGenerator
             var info = ExtractComponentInfo(classSymbol, classDecl, compilation);
             componentInfos.Add(info);
 
-            var source = GeneratePartialClass(info, classDecl, compilation);
-            context.AddSource($"{classSymbol.Name}.g.cs", SourceText.From(source, Encoding.UTF8));
+            // Only generate partial class if there are partial properties to implement
+            if (info.PartialProperties.Count > 0)
+            {
+                var source = GeneratePartialClass(info);
+                context.AddSource($"{classSymbol.Name}.g.cs", SourceText.From(source, Encoding.UTF8));
+            }
         }
 
-        if (componentInfos.Any(c => c.GenerateFactory))
+        // Generate factory registration for all components
+        if (componentInfos.Count > 0)
         {
             var assemblyName = compilation.AssemblyName ?? "Generated";
             var registrationSource = GenerateModuleInitializer(componentInfos, assemblyName);
             context.AddSource("ComponentRegistration.g.cs", SourceText.From(registrationSource, Encoding.UTF8));
-        }
 
-        if (componentInfos.Count > 0)
-        {
             var schemaSource = GenerateComponentSchema(componentInfos);
             context.AddSource("ComponentSchema.g.cs", SourceText.From(schemaSource, Encoding.UTF8));
         }
@@ -102,34 +123,11 @@ public class NiziComponentGenerator : IIncrementalGenerator
         var semanticModel = compilation.GetSemanticModel(classDecl.SyntaxTree);
         var namespaceName = classSymbol.ContainingNamespace.ToDisplayString();
         var className = classSymbol.Name;
-
-        var attribute = classSymbol.GetAttributes()
-            .FirstOrDefault(a => a.AttributeClass?.Name == "NiziComponentAttribute");
-
-        string? typeName = null;
-        var generateFactory = true;
-
-        if (attribute != null)
-        {
-            foreach (var namedArg in attribute.NamedArguments)
-            {
-                if (namedArg is { Key: "TypeName", Value.Value: string tn })
-                {
-                    typeName = tn;
-                }
-                else if (namedArg is { Key: "GenerateFactory", Value.Value: bool gf })
-                {
-                    generateFactory = gf;
-                }
-            }
-        }
-
-        if (string.IsNullOrEmpty(typeName))
-        {
-            typeName = namespaceName + "." + className;
-        }
+        var typeName = namespaceName + "." + className;
 
         var properties = new List<PropertyInfo>();
+
+        // Auto-serialize ALL public settable properties (Unity-like behavior)
         foreach (var member in classSymbol.GetMembers())
         {
             if (member is not IPropertySymbol property)
@@ -137,48 +135,58 @@ public class NiziComponentGenerator : IIncrementalGenerator
                 continue;
             }
 
-            var jsonPropAttr = property.GetAttributes()
-                .FirstOrDefault(a => a.AttributeClass?.Name == "JsonPropertyAttribute");
-            var serializeFieldAttr = property.GetAttributes()
-                .FirstOrDefault(a => a.AttributeClass?.Name == "SerializeFieldAttribute");
+            // Skip properties inherited from NiziComponent base class
+            if (property.Name == "Owner")
+            {
+                continue;
+            }
+
+            // Must be public with a public setter
+            if (property.DeclaredAccessibility != Accessibility.Public ||
+                property.SetMethod == null ||
+                property.SetMethod.DeclaredAccessibility != Accessibility.Public)
+            {
+                continue;
+            }
+
+            // Check for [NonSerialized] or [HideInInspector] to opt-out
+            var nonSerializedAttr = property.GetAttributes()
+                .FirstOrDefault(a => a.AttributeClass?.Name is "NonSerializedAttribute" or "HideInInspectorAttribute");
+            if (nonSerializedAttr != null)
+            {
+                continue;
+            }
+
+            var propInfo = new PropertyInfo
+            {
+                Name = property.Name,
+                Type = property.Type.ToDisplayString(),
+                TypeSymbol = property.Type,
+                // Default JSON name is camelCase version of property name
+                JsonName = char.ToLower(property.Name[0]) + property.Name.Substring(1)
+            };
+
+            // Check for [AssetRef] attribute for special asset handling
             var assetRefAttr = property.GetAttributes()
                 .FirstOrDefault(a => a.AttributeClass?.Name == "AssetRefAttribute");
-
-            if (jsonPropAttr != null || serializeFieldAttr != null || assetRefAttr != null)
+            if (assetRefAttr is { ConstructorArguments.Length: >= 2 })
             {
-                var propInfo = new PropertyInfo
-                {
-                    Name = property.Name,
-                    Type = property.Type.ToDisplayString(),
-                    TypeSymbol = property.Type
-                };
-
-                if (jsonPropAttr is { ConstructorArguments.Length: > 0 })
-                {
-                    propInfo.JsonName = jsonPropAttr.ConstructorArguments[0].Value as string;
-                }
-                else if (serializeFieldAttr != null)
-                {
-                    foreach (var namedArg in serializeFieldAttr.NamedArguments)
-                    {
-                        if (namedArg is { Key: "Name", Value.Value: string name })
-                        {
-                            propInfo.JsonName = name;
-                        }
-                    }
-                    propInfo.JsonName ??= char.ToLower(property.Name[0]) + property.Name.Substring(1);
-                }
-
-                if (assetRefAttr is { ConstructorArguments.Length: >= 2 })
-                {
-                    propInfo.AssetType = (int?)assetRefAttr.ConstructorArguments[0].Value;
-                    propInfo.AssetJsonName = assetRefAttr.ConstructorArguments[1].Value as string;
-                }
-
-                properties.Add(propInfo);
+                propInfo.AssetType = (int?)assetRefAttr.ConstructorArguments[0].Value;
+                propInfo.AssetJsonName = assetRefAttr.ConstructorArguments[1].Value as string;
             }
+
+            // Check for [JsonProperty] to override JSON name
+            var jsonPropAttr = property.GetAttributes()
+                .FirstOrDefault(a => a.AttributeClass?.Name == "JsonPropertyAttribute");
+            if (jsonPropAttr is { ConstructorArguments.Length: > 0 })
+            {
+                propInfo.JsonName = jsonPropAttr.ConstructorArguments[0].Value as string ?? propInfo.JsonName;
+            }
+
+            properties.Add(propInfo);
         }
 
+        // Handle partial properties that need backing field generation
         var partialProperties = classDecl.Members
             .OfType<PropertyDeclarationSyntax>()
             .Where(p => p.Modifiers.Any(SyntaxKind.PartialKeyword))
@@ -207,31 +215,25 @@ public class NiziComponentGenerator : IIncrementalGenerator
         {
             Namespace = namespaceName,
             ClassName = className,
-            TypeName = typeName!,
-            GenerateFactory = generateFactory,
+            TypeName = typeName,
             Properties = properties,
             PartialProperties = partialProperties
         };
     }
 
-    private static string GeneratePartialClass(ComponentInfo info, ClassDeclarationSyntax classDecl, Compilation compilation)
+    private static string GeneratePartialClass(ComponentInfo info)
     {
         var sb = new StringBuilder();
 
         sb.AppendLine("// <auto-generated/>");
         sb.AppendLine("#nullable enable");
         sb.AppendLine();
-        sb.AppendLine("using NiziKit.Core;");
-        sb.AppendLine("using NiziKit.Components;");
-        sb.AppendLine();
         sb.AppendLine($"namespace {info.Namespace};");
         sb.AppendLine();
-        sb.AppendLine($"partial class {info.ClassName} : IComponent");
+        sb.AppendLine($"partial class {info.ClassName}");
         sb.AppendLine("{");
 
-        sb.AppendLine("    public GameObject? Owner { get; set; }");
-        sb.AppendLine();
-
+        // Generate backing fields for partial properties with change notification
         foreach (var prop in info.PartialProperties)
         {
             var fieldName = $"__{char.ToLower(prop.Name[0])}{prop.Name.Substring(1)}";
@@ -277,7 +279,7 @@ public class NiziComponentGenerator : IIncrementalGenerator
         sb.AppendLine("    internal static void Initialize()");
         sb.AppendLine("    {");
 
-        foreach (var comp in components.Where(c => c.GenerateFactory))
+        foreach (var comp in components)
         {
             sb.AppendLine($"        ComponentRegistry.Register(new {comp.ClassName}Factory());");
         }
@@ -285,7 +287,7 @@ public class NiziComponentGenerator : IIncrementalGenerator
         sb.AppendLine("    }");
         sb.AppendLine();
 
-        foreach (var comp in components.Where(c => c.GenerateFactory))
+        foreach (var comp in components)
         {
             GenerateFactoryClass(sb, comp);
         }
@@ -309,6 +311,16 @@ public class NiziComponentGenerator : IIncrementalGenerator
         sb.AppendLine("        }");
         sb.AppendLine("        return System.Numerics.Vector2.Zero;");
         sb.AppendLine("    }");
+        sb.AppendLine();
+        sb.AppendLine("    private static System.Numerics.Quaternion ParseQuaternion(JsonElement element)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        if (element.ValueKind == JsonValueKind.Array && element.GetArrayLength() >= 4)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            var arr = element.EnumerateArray().ToArray();");
+        sb.AppendLine("            return new System.Numerics.Quaternion(arr[0].GetSingle(), arr[1].GetSingle(), arr[2].GetSingle(), arr[3].GetSingle());");
+        sb.AppendLine("        }");
+        sb.AppendLine("        return System.Numerics.Quaternion.Identity;");
+        sb.AppendLine("    }");
 
         sb.AppendLine("}");
 
@@ -321,12 +333,13 @@ public class NiziComponentGenerator : IIncrementalGenerator
         sb.AppendLine("    {");
         sb.AppendLine($"        public string TypeName => \"{comp.TypeName}\";");
         sb.AppendLine();
-        sb.AppendLine("        public IComponent Create(IReadOnlyDictionary<string, JsonElement>? properties, IAssetResolver resolver)");
+        sb.AppendLine("        public NiziComponent Create(IReadOnlyDictionary<string, JsonElement>? properties, IAssetResolver resolver)");
         sb.AppendLine("        {");
         sb.AppendLine($"            var component = new {comp.Namespace}.{comp.ClassName}();");
 
         foreach (var prop in comp.Properties)
         {
+            // Asset reference properties get special handling
             if (!string.IsNullOrEmpty(prop.AssetJsonName))
             {
                 var resolverMethod = prop.AssetType switch
@@ -342,23 +355,24 @@ public class NiziComponentGenerator : IIncrementalGenerator
 
                 if (resolverMethod != null)
                 {
-                    sb.AppendLine($"            if (properties != null && properties.TryGetValue(\"{prop.AssetJsonName}\", out var {prop.Name.ToLower()}Ref) && {prop.Name.ToLower()}Ref.ValueKind == JsonValueKind.String)");
+                    var varName = $"{char.ToLower(prop.Name[0])}{prop.Name.Substring(1)}Ref";
+                    sb.AppendLine($"            if (properties != null && properties.TryGetValue(\"{prop.AssetJsonName}\", out var {varName}) && {varName}.ValueKind == JsonValueKind.String)");
                     sb.AppendLine("            {");
-                    sb.AppendLine($"                var {prop.Name.ToLower()}RefStr = {prop.Name.ToLower()}Ref.GetString()!;");
+                    sb.AppendLine($"                var {varName}Str = {varName}.GetString()!;");
                     if (prop.Type == "string" || prop.Type == "string?")
                     {
-                        sb.AppendLine($"                component.{prop.Name} = {prop.Name.ToLower()}RefStr;");
+                        sb.AppendLine($"                component.{prop.Name} = {varName}Str;");
                     }
                     else
                     {
-                        sb.AppendLine($"                component.{prop.Name} = resolver.{resolverMethod}({prop.Name.ToLower()}RefStr);");
+                        sb.AppendLine($"                component.{prop.Name} = resolver.{resolverMethod}({varName}Str);");
                     }
                     sb.AppendLine("            }");
                 }
             }
             else if (!string.IsNullOrEmpty(prop.JsonName))
             {
-                var varName = $"{prop.Name.ToLower()}Val";
+                var varName = $"{char.ToLower(prop.Name[0])}{prop.Name.Substring(1)}Val";
                 var getterMethod = GetJsonGetterMethod(prop.Type, varName);
                 if (getterMethod != null)
                 {
@@ -400,10 +414,18 @@ public class NiziComponentGenerator : IIncrementalGenerator
             "UInt32" or "uint" => $"{varName}.GetUInt32()",
             "Vector3" => $"ParseVector3({varName})",
             "Vector2" => $"ParseVector2({varName})",
+            "Quaternion" => $"ParseQuaternion({varName})",
             "PhysicsBodyType" => $"System.Enum.Parse<NiziKit.Physics.PhysicsBodyType>({varName}.GetString()!, true)",
             "PhysicsShapeType" => $"System.Enum.Parse<NiziKit.Physics.PhysicsShapeType>({varName}.GetString()!, true)",
+            _ when IsEnumType(baseType) => $"System.Enum.Parse<{baseType}>({varName}.GetString()!, true)",
             _ => null
         };
+    }
+
+    private static bool IsEnumType(string typeName)
+    {
+        // Simple heuristic - if it ends with common enum suffixes or contains "Type"
+        return typeName.EndsWith("Type") || typeName.EndsWith("Mode") || typeName.EndsWith("State");
     }
 
     private static string GenerateComponentSchema(List<ComponentInfo> components)
@@ -553,7 +575,6 @@ public class NiziComponentGenerator : IIncrementalGenerator
         public string Namespace { get; set; } = "";
         public string ClassName { get; set; } = "";
         public string TypeName { get; set; } = "";
-        public bool GenerateFactory { get; set; }
         public List<PropertyInfo> Properties { get; set; } = [];
         public List<PartialPropertyInfo> PartialProperties { get; set; } = [];
     }

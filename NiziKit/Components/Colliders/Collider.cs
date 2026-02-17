@@ -5,9 +5,8 @@ using NiziKit.Physics;
 
 namespace NiziKit.Components;
 
-public abstract class Collider : IComponent
+public abstract class Collider : NiziComponent
 {
-    public virtual GameObject? Owner { get; set; }
 
     internal BodyHandle? BodyHandle { get; set; }
     internal StaticHandle? StaticHandle { get; set; }

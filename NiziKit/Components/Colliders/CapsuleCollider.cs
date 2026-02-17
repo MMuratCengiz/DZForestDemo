@@ -10,7 +10,6 @@ public enum ColliderDirection
     Z = 2
 }
 
-[NiziComponent]
 public partial class CapsuleCollider : Collider
 {
     [JsonProperty("radius")]

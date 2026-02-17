@@ -3,8 +3,7 @@ using NiziKit.Physics;
 
 namespace NiziKit.Components;
 
-[NiziComponent]
-public partial class CameraComponent
+public partial class CameraComponent : NiziComponent
 {
     private float _aspectRatio = 16f / 9f;
 
@@ -108,12 +107,12 @@ public partial class CameraComponent
         return new Ray(nearWorld, Vector3.Normalize(farWorld - nearWorld));
     }
 
-    public void Initialize()
+    public override void Initialize()
     {
         Owner?.Scene?.RegisterCamera(this);
     }
 
-    public void OnDestroy()
+    public override void OnDestroy()
     {
         Owner?.Scene?.UnregisterCamera(this);
     }

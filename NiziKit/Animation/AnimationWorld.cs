@@ -39,7 +39,7 @@ public sealed class AnimationWorld : IWorldEventListener
         }
     }
 
-    public void ComponentAdded(GameObject go, IComponent component)
+    public void ComponentAdded(GameObject go, NiziComponent component)
     {
         if (component is Animator animator && _animatorsSet.Add(animator))
         {
@@ -47,7 +47,7 @@ public sealed class AnimationWorld : IWorldEventListener
         }
     }
 
-    public void ComponentRemoved(GameObject go, IComponent component)
+    public void ComponentRemoved(GameObject go, NiziComponent component)
     {
         if (component is Animator animator && _animatorsSet.Remove(animator))
         {
@@ -56,7 +56,7 @@ public sealed class AnimationWorld : IWorldEventListener
         }
     }
 
-    public void ComponentChanged(GameObject go, IComponent component)
+    public void ComponentChanged(GameObject go, NiziComponent component)
     {
     }
 

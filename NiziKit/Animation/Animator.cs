@@ -21,8 +21,7 @@ public enum BlendMode
     Additive
 }
 
-[NiziComponent]
-public partial class Animator : IDisposable
+public partial class Animator : NiziComponent, IDisposable
 {
     private static readonly ILogger Logger = Log.Get<Animator>();
     private const int MaxBones = 256;
@@ -179,7 +178,7 @@ public partial class Animator : IDisposable
         return false;
     }
 
-    public void Initialize()
+    public override void Initialize()
     {
         if (Skeleton == null)
         {

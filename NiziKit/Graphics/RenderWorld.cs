@@ -66,7 +66,7 @@ public class RenderWorld : IWorldEventListener
         Unregister(go);
     }
 
-    public void ComponentAdded(GameObject go, IComponent component)
+    public void ComponentAdded(GameObject go, NiziComponent component)
     {
         if (component is MeshComponent or SurfaceComponent or MaterialComponent)
         {
@@ -74,7 +74,7 @@ public class RenderWorld : IWorldEventListener
         }
     }
 
-    public void ComponentRemoved(GameObject go, IComponent component)
+    public void ComponentRemoved(GameObject go, NiziComponent component)
     {
         if (component is MeshComponent or SurfaceComponent or MaterialComponent)
         {
@@ -82,7 +82,7 @@ public class RenderWorld : IWorldEventListener
         }
     }
 
-    public void ComponentChanged(GameObject go, IComponent component)
+    public void ComponentChanged(GameObject go, NiziComponent component)
     {
         if (component is MeshComponent or SurfaceComponent or MaterialComponent)
         {
