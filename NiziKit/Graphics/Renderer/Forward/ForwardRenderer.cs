@@ -250,7 +250,7 @@ public class ForwardRenderer : IRenderer
         {
             if (obj.Tags?.GetBool("SKINNED") == true)
             {
-                return _skinnedShader;
+                return _shadowCasterSkinnedShader;
             }
         }
         return _shadowCasterShader;
