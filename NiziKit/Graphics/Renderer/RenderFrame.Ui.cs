@@ -12,6 +12,7 @@ public partial class RenderFrame
 {
     private UiContext? _uiContext;
     private CycledTexture? _uiRenderTarget;
+    private CycledTexture? _uiDepthTarget;
 
     public UiContext UiContext => _uiContext ?? throw new InvalidOperationException("UI not enabled. Call EnableUi first.");
 
@@ -20,6 +21,7 @@ public partial class RenderFrame
         _uiContext?.Dispose();
         _uiContext = new UiContext(desc);
         _uiRenderTarget = CycledTexture.ColorAttachment("UIRT");
+        _uiDepthTarget = CycledTexture.DepthAttachment("UIDepth");
         GraphicsContext.OnResize += OnUiResize;
     }
 
@@ -36,7 +38,7 @@ public partial class RenderFrame
 
     public CycledTexture RenderUi(UiBuildCallback buildCallback)
     {
-        if (_uiContext == null || _uiRenderTarget == null)
+        if (_uiContext == null || _uiRenderTarget == null || _uiDepthTarget == null)
         {
             throw new InvalidOperationException("UI not enabled. Call EnableUi first.");
         }
@@ -50,6 +52,7 @@ public partial class RenderFrame
 
         var pass = BeginGraphicsPass();
         pass.SetRenderTarget(0, _uiRenderTarget, LoadOp.Clear);
+        pass.SetDepthTarget(_uiDepthTarget!, LoadOp.Clear);
 
         pass.Begin();
         uiFrame.End((uint)_currentFrame, Time.DeltaTime, pass.CommandList);
@@ -65,6 +68,8 @@ public partial class RenderFrame
     private void DisposeUi()
     {
         GraphicsContext.OnResize -= OnUiResize;
+        _uiDepthTarget?.Dispose();
+        _uiDepthTarget = null;
         _uiRenderTarget?.Dispose();
         _uiRenderTarget = null;
         _uiContext?.Dispose();
