@@ -45,11 +45,9 @@ public class PlayableCharacter : NiziComponent
     private float _groundedBuffer;
     private float _groundY;
 
-    /// <summary>
-    /// Grace period after jump initiation during which ground detection is suppressed.
-    /// Prevents raycasts from immediately re-grounding the character before it rises.
-    /// </summary>
-    private float _jumpGraceTimer;
+    private Vector3 _groundNormal = Vector3.UnitY;
+    private float _groundAngle;
+    private float _fallVelocityAtLanding;
 
     private float _jumpBufferTimer;
     private bool _jumpHeld;
@@ -67,10 +65,11 @@ public class PlayableCharacter : NiziComponent
 
     private const float CoyoteTime = 0.15f;
     private const float JumpBufferTime = 0.15f;
-    private const float JumpGraceTime = 0.2f;
+    private const float JumpClearanceHeight = 0.5f;
     private const float GroundProbeRadius = 0.35f;
     private const float GroundProbeDepth = 1.2f;
     private const float GroundSnapThreshold = 0.05f;
+    private const float MaxSlopeAngle = 45f;
 
     public float MoveSpeed { get; set; } = 7f;
     public float RunSpeed { get; set; } = 12f;
@@ -94,6 +93,12 @@ public class PlayableCharacter : NiziComponent
     public float CameraSmoothSpeed { get; set; } = 5f;
     public float CameraLookHeight { get; set; } = 1.5f;
     public float CameraLookSmoothSpeed { get; set; } = 10f;
+
+    public bool IsGrounded => _isGrounded;
+    public bool IsAirborne => !_isGrounded;
+    public bool IsFalling => _velocity.Y < 0 && !_isGrounded;
+    public float GroundAngle => _groundAngle;
+    public Vector3 GroundNormal => _groundNormal;
 
     public string AnimIdle { get; set; } = "A_Idle_Standing_Femn";
     public string AnimWalk { get; set; } = "A_Walk_FwdStrafeF_Femn";
@@ -179,6 +184,18 @@ public class PlayableCharacter : NiziComponent
             return;
         }
 
+        // Slope sliding: on a surface steeper than MaxSlopeAngle, push downhill
+        if (_groundAngle > MaxSlopeAngle && _groundedBuffer <= 0f)
+        {
+            var slopeHorizontal = new Vector3(_groundNormal.X, 0, _groundNormal.Z);
+            if (slopeHorizontal.LengthSquared() > 0.001f)
+            {
+                var slideDir = Vector3.Normalize(slopeHorizontal);
+                var slideForce = Gravity * MathF.Sin(_groundAngle * MathF.PI / 180f);
+                _velocity += slideDir * slideForce * dt;
+            }
+        }
+
         float gravityScale;
         if (_velocity.Y < 0)
         {
@@ -229,24 +246,28 @@ public class PlayableCharacter : NiziComponent
     /// <summary>
     /// Probes for ground using 4 offset raycasts arranged around the character,
     /// positioned just outside the capsule collider radius to avoid self-intersection.
-    /// Suppressed during the jump grace period so the character can cleanly leave the ground.
+    /// Suppressed while jumping and still ascending near the ground surface.
+    /// Tracks ground normal and slope angle from raycast hits.
     /// Uses a coyote time buffer for stable ground state transitions.
     /// </summary>
     private void UpdateGroundDetection(float dt)
     {
-        if (_jumpGraceTimer > 0)
+        var pos = LocalPosition;
+
+        // Suppress ground detection while ascending from a jump and still close to the ground
+        if (_state == State.Jumping && _velocity.Y > 0 && pos.Y - _groundY < JumpClearanceHeight)
         {
-            _jumpGraceTimer -= dt;
             _groundedBuffer -= dt;
             _isGrounded = false;
             return;
         }
 
-        var pos = LocalPosition;
         var down = -Vector3.UnitY;
         var originY = 0.15f;
         var bestGroundY = float.MinValue;
         var hitGround = false;
+        var normalAccum = Vector3.Zero;
+        var hitCount = 0;
 
         Vector3[] offsets =
         [
@@ -261,6 +282,8 @@ public class PlayableCharacter : NiziComponent
             if (Physics.Raycast(pos + offset, down, GroundProbeDepth, out var hit))
             {
                 hitGround = true;
+                normalAccum += hit.Normal;
+                hitCount++;
                 if (hit.Point.Y > bestGroundY)
                 {
                     bestGroundY = hit.Point.Y;
@@ -270,16 +293,28 @@ public class PlayableCharacter : NiziComponent
 
         if (hitGround)
         {
+            var avgNormal = Vector3.Normalize(normalAccum / hitCount);
+            _groundNormal = avgNormal;
+            _groundAngle = MathF.Acos(MathF.Min(Vector3.Dot(avgNormal, Vector3.UnitY), 1f))
+                           * (180f / MathF.PI);
+
             var distToGround = pos.Y - bestGroundY;
-            if (distToGround < GroundProbeDepth - originY)
+            if (distToGround < GroundProbeDepth - originY && _groundAngle <= MaxSlopeAngle)
             {
                 _groundedBuffer = CoyoteTime;
                 _groundY = bestGroundY;
+            }
+            else
+            {
+                // Too steep — don't count as grounded
+                _groundedBuffer -= dt;
             }
         }
         else
         {
             _groundedBuffer -= dt;
+            _groundNormal = Vector3.UnitY;
+            _groundAngle = 0f;
         }
 
         _isGrounded = _groundedBuffer > 0f;
@@ -382,7 +417,6 @@ public class PlayableCharacter : NiziComponent
             _groundedBuffer = 0f;
             _isGrounded = false;
             _jumpBufferTimer = 0f;
-            _jumpGraceTimer = JumpGraceTime;
             _state = State.Jumping;
 
             string jumpAnim;
@@ -531,8 +565,11 @@ public class PlayableCharacter : NiziComponent
 
         if (_isGrounded && _velocity.Y <= 0)
         {
+            _fallVelocityAtLanding = MathF.Abs(_velocity.Y);
+            var impactRatio = MathF.Min(_fallVelocityAtLanding / MaxFallSpeed, 1f);
+            _landingTimer = MathF.FusedMultiplyAdd(0.30f, impactRatio, 0.05f); // 0.05..0.35
+
             _state = State.Landing;
-            _landingTimer = 0.2f;
             SetAnimation(AnimLand, LoopMode.Once);
         }
     }
