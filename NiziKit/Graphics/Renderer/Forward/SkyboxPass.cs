@@ -23,6 +23,7 @@ public class SkyboxPass : IDisposable
     private readonly Sampler _sampler;
     private readonly BindGroup[] _bindGroups;
     private readonly MappedBuffer<SkyboxConstants> _constantBuffer;
+    private readonly SkyboxData[] _skyboxes = [];
 
     public SkyboxPass()
     {
@@ -99,6 +100,7 @@ public class SkyboxPass : IDisposable
                 Layout = _bindGroupLayout
             });
         }
+        _skyboxes = new SkyboxData[numFrames];
     }
 
     public void Execute(Pass.GraphicsPass pass, Matrix4x4 inverseViewProjection, SkyboxData skybox)
@@ -110,6 +112,21 @@ public class SkyboxPass : IDisposable
             InverseViewProjection = inverseViewProjection
         });
 
+        SetSkybox(skybox);
+        pass.BindPipeline(_pipeline);
+        pass.Bind(_bindGroups[frameIndex]);
+        pass.Draw(3);
+    }
+
+    public void SetSkybox(SkyboxData skybox)
+    {
+        var frameIndex = GraphicsContext.FrameIndex;
+        if (_skyboxes[frameIndex] == skybox)
+        {
+            return;
+        }
+
+        _skyboxes[frameIndex] = skybox;
         var bg = _bindGroups[frameIndex];
         bg.BeginUpdate();
         bg.CbvWithDesc(new BindBufferDesc
@@ -126,9 +143,6 @@ public class SkyboxPass : IDisposable
         bg.Sampler(0, _sampler);
         bg.EndUpdate();
 
-        pass.BindPipeline(_pipeline);
-        pass.Bind(bg);
-        pass.Draw(3);
     }
 
     public void Dispose()
