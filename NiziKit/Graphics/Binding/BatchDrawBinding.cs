@@ -54,21 +54,22 @@ public class BatchDrawBinding : ShaderBinding<RenderBatch>
 
         for (var i = 0; i < count; i++)
         {
-            var go = objects[i].Owner;
+            ref readonly var obj = ref objects[i];
 
             _instanceData.Instances[i] = new GpuInstanceData
             {
-                Model = go.WorldMatrix,
+                Model = obj.Owner.WorldMatrix,
                 BoneOffset = boneOffset
             };
 
-            var animator = go.GetComponent<Animator>();
+            var animator = obj.Animator;
             if (animator is { BoneCount: > 0 })
             {
                 var boneCount = Math.Min(animator.BoneCount, GpuBoneTransforms.MaxBones - (int)boneOffset);
+                var bones = animator.BoneMatrices;
                 for (var b = 0; b < boneCount; b++)
                 {
-                    _boneData.Bones[(int)boneOffset + b] = animator.BoneMatrices[b];
+                    _boneData.Bones[(int)boneOffset + b] = bones[b];
                 }
                 boneOffset += (uint)boneCount;
             }

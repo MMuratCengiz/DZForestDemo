@@ -30,6 +30,8 @@ public class ForwardRenderer : IRenderer
     private readonly CycledTexture _sceneColor;
     private readonly CycledTexture _sceneDepth;
     private readonly CycledTexture _shadowDepth;
+    private readonly List<ShadowCasterInfo> _shadowCasterList = new(MaxShadowCasters);
+    private ShadowCasterInfo[] _shadowCasterArray = [];
 
     public CameraComponent? Camera
     {
@@ -142,7 +144,7 @@ public class ForwardRenderer : IRenderer
             _shadowViewData.DeltaTime = Time.DeltaTime;
             _shadowViewData.TotalTime = Time.TotalTime;
             _shadowViewData.ViewProjectionOverride = shadowCasters[i].LightViewProjection;
-            _shadowViewData.ShadowCasters = [];
+            _shadowViewData.ShadowCasters = Array.Empty<ShadowCasterInfo>();
 
             var shadowPass = frame.BeginGraphicsPass();
             shadowPass.SetDepthTarget(_shadowDepth, i == 0 ? LoadOp.Clear : LoadOp.Load);
@@ -172,7 +174,7 @@ public class ForwardRenderer : IRenderer
 
     private ShadowCasterInfo[] BuildShadowCasters(Scene scene)
     {
-        var casters = new List<ShadowCasterInfo>();
+        _shadowCasterList.Clear();
         var lightIndex = 0;
 
         foreach (var dl in scene.GetObjectsOfType<DirectionalLight>())
@@ -183,7 +185,7 @@ public class ForwardRenderer : IRenderer
                 continue;
             }
 
-            if (dl.CastsShadows && casters.Count < MaxShadowCasters)
+            if (dl.CastsShadows && _shadowCasterList.Count < MaxShadowCasters)
             {
                 var lightDir = Vector3.Normalize(dl.Direction);
                 var lightView = Matrix4x4.CreateLookAtLeftHanded(
@@ -199,7 +201,7 @@ public class ForwardRenderer : IRenderer
                     ShadowNearPlane, ShadowFarPlane
                 );
 
-                casters.Add(new ShadowCasterInfo
+                _shadowCasterList.Add(new ShadowCasterInfo
                 {
                     LightViewProjection = lightView * lightProj,
                     AtlasScaleOffset = new Vector4(1, 1, 0, 0), // Full texture, no atlas subdivision
@@ -212,7 +214,22 @@ public class ForwardRenderer : IRenderer
             lightIndex++;
         }
 
-        return casters.ToArray();
+        if (_shadowCasterList.Count == 0)
+        {
+            return Array.Empty<ShadowCasterInfo>();
+        }
+
+        if (_shadowCasterArray.Length != _shadowCasterList.Count)
+        {
+            _shadowCasterArray = new ShadowCasterInfo[_shadowCasterList.Count];
+        }
+
+        for (var i = 0; i < _shadowCasterList.Count; i++)
+        {
+            _shadowCasterArray[i] = _shadowCasterList[i];
+        }
+
+        return _shadowCasterArray;
     }
 
     private GpuShader SelectShader(RenderBatch batch)

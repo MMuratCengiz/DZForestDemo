@@ -193,7 +193,8 @@ public ref struct UiCollapsibleSection
             _context.Clay.Text(_title, new ClayTextDesc
             {
                 TextColor = _headerTextColor.ToClayColor(),
-                FontSize = _fontSize
+                FontSize = _fontSize,
+                WrapMode = ClayTextWrapMode.None
             });
 
             // Spacer to push badge/action to the right

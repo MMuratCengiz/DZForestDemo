@@ -42,7 +42,24 @@ public partial class OrbitController : NiziComponent
         IsEnabled = true;
     }
 
-    public Vector3 Forward
+    public override void Initialize()
+    {
+        if (Owner == null) return;
+
+        var forward = Vector3.Transform(Vector3.UnitZ, Owner.LocalRotation);
+        _currentYaw = MathF.Atan2(forward.X, forward.Z);
+        _currentPitch = MathF.Asin(Math.Clamp(forward.Y, -1f, 1f));
+        _targetYaw = _currentYaw;
+        _targetPitch = _currentPitch;
+        _targetPosition = Owner.LocalPosition;
+
+        if (OrbitDistance <= 0f && Owner.LocalPosition.LengthSquared() > 0.001f)
+        {
+            OrbitDistance = Vector3.Distance(Owner.LocalPosition, OrbitTarget);
+        }
+    }
+
+    public new Vector3 Forward
     {
         get
         {

@@ -256,6 +256,24 @@ public ref struct UiDropdown
         return changed;
     }
 
+    private string TruncateText(string text, float maxWidth)
+    {
+        if (maxWidth <= 0) return text;
+        var measured = _context.Clay.MeasureText(text, 0, _style.FontSize);
+        if (measured.Width <= maxWidth) return text;
+
+        const string ellipsis = "...";
+        var ellipsisDims = _context.Clay.MeasureText(ellipsis, 0, _style.FontSize);
+        var remaining = maxWidth - ellipsisDims.Width;
+        if (remaining <= 0) return ellipsis;
+
+        var fitChars = _context.Clay.GetCharIndexAtOffset(text, remaining, 0, _style.FontSize);
+        if (fitChars > 0 && fitChars < text.Length)
+            return text[..(int)fitChars] + ellipsis;
+
+        return ellipsis;
+    }
+
     private void RenderHeader(UiInteraction interaction)
     {
         var bgColor = _style.GetBackgroundColor(interaction.IsHovered, interaction.IsPressed, false);
@@ -283,16 +301,21 @@ public ref struct UiDropdown
 
         _context.OpenElement(headerDecl);
         {
-            var textDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("DDText", Id) };
+            var textContainerId = _context.StringCache.GetId("DDText", Id);
+            var textDecl = new ClayElementDeclaration { Id = textContainerId };
             textDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
             _context.OpenElement(textDecl);
             {
                 var displayText = SelectedItem ?? _placeholder;
+                var textBbox = _context.Clay.GetElementBoundingBox(textContainerId);
+                if (textBbox.Width > 0)
+                    displayText = TruncateText(displayText, textBbox.Width);
                 var textColor = SelectedItem != null ? _style.TextColor : UiColor.Gray;
                 _context.Clay.Text(displayText, new ClayTextDesc
                 {
                     TextColor = textColor.ToClayColor(),
-                    FontSize = _style.FontSize
+                    FontSize = _style.FontSize,
+                    WrapMode = ClayTextWrapMode.None
                 });
             }
             _context.Clay.CloseElement();

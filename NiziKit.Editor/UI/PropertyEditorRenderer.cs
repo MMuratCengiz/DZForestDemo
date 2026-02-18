@@ -32,10 +32,10 @@ public static class PropertyEditorRenderer
             .ToArray();
 
         using (var grid = Ui.PropertyGrid(ctx, prefix + "_PropGrid")
-            .LabelWidth(75)
+            .LabelWidth(95)
             .FontSize(t.FontSizeCaption)
-            .RowHeight(22)
-            .Gap(1)
+            .RowHeight(24)
+            .Gap(2)
             .LabelColor(t.TextSecondary)
             .Open())
         {

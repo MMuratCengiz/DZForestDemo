@@ -1,4 +1,5 @@
 using System.Numerics;
+using NiziKit.Core;
 using NiziKit.Editor.Services;
 using NiziKit.Editor.Theme;
 using NiziKit.Editor.ViewModels;
@@ -28,7 +29,7 @@ public static class TransformSectionBuilder
         }
 
         using var grid = Ui.PropertyGrid(ctx, "TransformGrid")
-            .LabelWidth(55)
+            .LabelWidth(68)
             .FontSize(t.FontSizeCaption)
             .RowHeight(24)
             .Gap(2)
@@ -58,6 +59,8 @@ public static class TransformSectionBuilder
                     oldPos, oldRot, oldScl,
                     go.LocalPosition, go.LocalRotation, go.LocalScale),
                     $"Transform_Pos_{go.Name}");
+
+                World.PhysicsWorld.SyncEditorTransform(go.Id, go.LocalPosition, go.LocalRotation);
             }
         }
 
@@ -79,6 +82,8 @@ public static class TransformSectionBuilder
                     oldPos, oldRot, oldScl,
                     go.LocalPosition, go.LocalRotation, go.LocalScale),
                     $"Transform_Rot_{go.Name}");
+
+                World.PhysicsWorld.SyncEditorTransform(go.Id, go.LocalPosition, go.LocalRotation);
             }
         }
 

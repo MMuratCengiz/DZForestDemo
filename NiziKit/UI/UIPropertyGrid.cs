@@ -106,8 +106,8 @@ public ref struct UiPropertyGridScope
         rowDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
         rowDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(_rowHeight, float.MaxValue);
         rowDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
-        rowDecl.Layout.Padding = new ClayPadding { Left = 8, Right = 8, Top = 4, Bottom = 4 };
-        rowDecl.Layout.ChildGap = 8;
+        rowDecl.Layout.Padding = new ClayPadding { Left = 8, Right = 8, Top = 3, Bottom = 3 };
+        rowDecl.Layout.ChildGap = 6;
         rowDecl.BackgroundColor = bg.ToClayColor();
 
         _context.OpenElement(rowDecl);

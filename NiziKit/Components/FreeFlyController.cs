@@ -49,6 +49,19 @@ public partial class FreeFlyController : NiziComponent
         IsEnabled = true;
     }
 
+    public override void Initialize()
+    {
+        if (Owner == null) return;
+
+        _targetPosition = Owner.LocalPosition;
+
+        var forward = Vector3.Transform(Vector3.UnitZ, Owner.LocalRotation);
+        _currentYaw = MathF.Atan2(forward.X, forward.Z);
+        _currentPitch = MathF.Asin(Math.Clamp(forward.Y, -1f, 1f));
+        _targetYaw = _currentYaw;
+        _targetPitch = _currentPitch;
+    }
+
     public Vector3 Forward
     {
         get

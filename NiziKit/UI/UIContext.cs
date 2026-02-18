@@ -102,15 +102,16 @@ public sealed class UiContext : IDisposable
             _mouseRightJustPressed = false;
         }
 
+        var dpiScale = Clay.GetDpiScale();
         if (ev.Type == EventType.MouseMotion)
         {
-            MouseX = ev.MouseMotion.X;
-            MouseY = ev.MouseMotion.Y;
+            MouseX = ev.MouseMotion.X / dpiScale;
+            MouseY = ev.MouseMotion.Y / dpiScale;
         }
         else if (ev.Type is EventType.MouseButtonDown or EventType.MouseButtonUp)
         {
-            MouseX = ev.MouseButton.X;
-            MouseY = ev.MouseButton.Y;
+            MouseX = ev.MouseButton.X / dpiScale;
+            MouseY = ev.MouseButton.Y / dpiScale;
         }
 
         Clay.HandleEvent(ev);

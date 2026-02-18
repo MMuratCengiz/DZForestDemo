@@ -60,6 +60,36 @@ public sealed partial class PhysicsWorld
             bodyRef.Pose.Position = position;
             bodyRef.Pose.Orientation = rotation;
         }
+        else if (_staticHandles.TryGetValue(id, out var staticHandle))
+        {
+            _simulation.Statics.GetDescription(staticHandle, out var desc);
+            desc.Pose = new RigidPose(position, rotation);
+            _simulation.Statics.ApplyDescription(staticHandle, desc);
+        }
+    }
+
+    /// <summary>
+    /// Syncs a physics body's pose from the GameObject's current transform.
+    /// Called by the editor after gizmo drags, transform panel edits, or undo/redo.
+    /// </summary>
+    public void SyncEditorTransform(int id, Vector3 position, Quaternion rotation)
+    {
+        if (_bodyHandles.TryGetValue(id, out var handle))
+        {
+            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
+            bodyRef.Pose.Position = position;
+            bodyRef.Pose.Orientation = rotation;
+            bodyRef.Velocity.Linear = Vector3.Zero;
+            bodyRef.Velocity.Angular = Vector3.Zero;
+            _simulation.Awakener.AwakenBody(handle);
+            _kinematicTargets.Remove(id);
+        }
+        else if (_staticHandles.TryGetValue(id, out var staticHandle))
+        {
+            _simulation.Statics.GetDescription(staticHandle, out var desc);
+            desc.Pose = new RigidPose(position, rotation);
+            _simulation.Statics.ApplyDescription(staticHandle, desc);
+        }
     }
 
     public void ApplyImpulse(int id, Vector3 impulse)
@@ -182,6 +212,138 @@ public sealed partial class PhysicsWorld
     {
         _bodyToId.Remove(handle);
         _bodyHandles.Remove(id);
+    }
+
+    public void SetKinematicTarget(int id, Vector3 position, Quaternion rotation)
+    {
+        _kinematicTargets[id] = (position, rotation);
+    }
+
+    public void SetKinematicTargetPosition(int id, Vector3 position)
+    {
+        if (_bodyHandles.TryGetValue(id, out var handle))
+        {
+            var currentRot = _simulation.Bodies.GetBodyReference(handle).Pose.Orientation;
+            _kinematicTargets[id] = (position, currentRot);
+        }
+    }
+
+    public void SetKinematicTargetRotation(int id, Quaternion rotation)
+    {
+        if (_bodyHandles.TryGetValue(id, out var handle))
+        {
+            var currentPos = _simulation.Bodies.GetBodyReference(handle).Pose.Position;
+            _kinematicTargets[id] = (currentPos, rotation);
+        }
+    }
+
+    public void ChangeBodyType(int id, PhysicsBodyType newType, float mass = 1f)
+    {
+        if (!_trackedObjects.TryGetValue(id, out var entry))
+        {
+            return;
+        }
+
+        var currentType = entry.Rigidbody.BodyType;
+        if (currentType == newType)
+        {
+            return;
+        }
+
+        var isCurrentBody = currentType is PhysicsBodyType.Dynamic or PhysicsBodyType.Kinematic;
+        var isNewBody = newType is PhysicsBodyType.Dynamic or PhysicsBodyType.Kinematic;
+
+        if (isCurrentBody && isNewBody)
+        {
+            if (!_bodyHandles.TryGetValue(id, out var handle))
+            {
+                return;
+            }
+
+            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
+
+            if (newType == PhysicsBodyType.Kinematic)
+            {
+                bodyRef.LocalInertia = new BodyInertia();
+            }
+            else
+            {
+                var collider = entry.Go.GetComponent<Components.Collider>();
+                if (collider != null)
+                {
+                    var shape = collider.CreateShape();
+                    bodyRef.LocalInertia = shape.ComputeInertia(mass);
+                }
+            }
+
+            _simulation.Awakener.AwakenBody(handle);
+            entry.Rigidbody.BodyType = newType;
+            entry.Rigidbody.Mass = mass;
+        }
+        else
+        {
+            var go = entry.Go;
+            var collider = go.GetComponent<Components.Collider>();
+            if (collider == null)
+            {
+                return;
+            }
+
+            Vector3 pos;
+            Quaternion rot;
+            Vector3 linearVel = Vector3.Zero;
+            Vector3 angularVel = Vector3.Zero;
+
+            if (_bodyHandles.TryGetValue(id, out var bodyHandle))
+            {
+                var bodyRef = _simulation.Bodies.GetBodyReference(bodyHandle);
+                pos = bodyRef.Pose.Position;
+                rot = bodyRef.Pose.Orientation;
+                linearVel = bodyRef.Velocity.Linear;
+                angularVel = bodyRef.Velocity.Angular;
+            }
+            else
+            {
+                pos = go.LocalPosition;
+                rot = go.LocalRotation;
+            }
+
+            _trackedObjects.Remove(id);
+            entry.Rigidbody.BodyHandle = null;
+            entry.Rigidbody.StaticHandle = null;
+            collider.BodyHandle = null;
+            collider.StaticHandle = null;
+            RemoveBody(id);
+
+            entry.Rigidbody.BodyType = newType;
+            entry.Rigidbody.Mass = mass;
+
+            if (newType == PhysicsBodyType.Static)
+            {
+                var shape = collider.CreateShape();
+                var staticHandle = CreateStaticBody(id, pos, rot, shape);
+                entry.Rigidbody.StaticHandle = staticHandle;
+                collider.StaticHandle = staticHandle;
+            }
+            else
+            {
+                var shape = collider.CreateShape();
+                var desc = entry.Rigidbody.ToBodyDesc(shape);
+                var newHandle = CreateBody(id, pos, rot, desc);
+                entry.Rigidbody.BodyHandle = newHandle;
+                collider.BodyHandle = newHandle;
+
+                if (newType == PhysicsBodyType.Dynamic)
+                {
+                    var bodyRef = _simulation.Bodies.GetBodyReference(newHandle);
+                    bodyRef.Velocity.Linear = linearVel;
+                    bodyRef.Velocity.Angular = angularVel;
+                    _simulation.Awakener.AwakenBody(newHandle);
+                }
+            }
+
+            _trackedObjects[id] = (go, entry.Rigidbody);
+        }
     }
 
     public void IgnoreCollision(BodyHandle a, BodyHandle b, bool ignore = true)

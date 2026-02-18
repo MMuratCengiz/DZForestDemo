@@ -28,8 +28,7 @@ public static class InspectorBuilder
             .GrowWidth()
             .GrowHeight()
             .ScrollVertical()
-            .Gap(4)
-            .Padding(4, 0)
+            .Gap(2)
             .Open();
 
         BuildObjectHeader(ui, ctx, selected);
@@ -47,7 +46,7 @@ public static class InspectorBuilder
                 .Horizontal()
                 .GrowWidth()
                 .FitHeight()
-                .Padding(8, 6)
+                .Padding(8, 12)
                 .AlignChildrenX(UiAlignX.Center)
                 .Open())
             {
@@ -70,11 +69,13 @@ public static class InspectorBuilder
         using var header = ui.Panel("ObjHeader")
             .Horizontal()
             .Background(t.PanelElevated)
-            .Padding(8, 6)
+            .Padding(12, 8)
             .Gap(8)
             .GrowWidth()
             .FitHeight()
             .AlignChildrenY(UiAlignY.Center)
+            .Border(UiBorder.Horizontal(0, UiColor.Transparent)
+                with { Bottom = 1, Color = t.Border })
             .Open();
 
         ui.Icon(obj.TypeIcon, obj.TypeIconColor, t.IconSizeSmall);
@@ -130,11 +131,13 @@ public static class InspectorBuilder
         using (ui.Panel("SceneHeader")
             .Horizontal()
             .Background(t.PanelElevated)
-            .Padding(8, 6)
+            .Padding(12, 8)
             .Gap(8)
             .GrowWidth()
             .FitHeight()
             .AlignChildrenY(UiAlignY.Center)
+            .Border(UiBorder.Horizontal(0, UiColor.Transparent)
+                with { Bottom = 1, Color = t.Border })
             .Open())
         {
             ui.Icon(FontAwesome.Film, t.Accent, t.IconSizeSmall);
@@ -165,7 +168,7 @@ public static class InspectorBuilder
         }
 
         using var grid = Ui.PropertyGrid(ctx, "GridSettingsGrid")
-            .LabelWidth(65)
+            .LabelWidth(75)
             .FontSize(t.FontSizeCaption)
             .RowHeight(24)
             .Gap(2)
@@ -321,7 +324,7 @@ public static class InspectorBuilder
         scene.Skybox ??= new SkyboxData();
 
         using var grid = Ui.PropertyGrid(ctx, "SkyboxGrid")
-            .LabelWidth(50)
+            .LabelWidth(65)
             .FontSize(t.FontSizeCaption)
             .RowHeight(24)
             .Gap(2)

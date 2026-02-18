@@ -60,6 +60,7 @@ public class TransformChangeAction(
         _gameObject.LocalPosition = oldPosition;
         _gameObject.LocalRotation = oldRotation;
         _gameObject.LocalScale = oldScale;
+        World.PhysicsWorld.SyncEditorTransform(_gameObject.Id, oldPosition, oldRotation);
     }
 
     public void Redo()
@@ -67,6 +68,7 @@ public class TransformChangeAction(
         _gameObject.LocalPosition = _newPosition;
         _gameObject.LocalRotation = _newRotation;
         _gameObject.LocalScale = _newScale;
+        World.PhysicsWorld.SyncEditorTransform(_gameObject.Id, _newPosition, _newRotation);
     }
 
     public bool MergeWith(IUndoAction newer)
@@ -99,6 +101,7 @@ public class GizmoTransformAction(
         gameObject.LocalPosition = oldPosition;
         gameObject.LocalRotation = oldRotation;
         gameObject.LocalScale = oldScale;
+        World.PhysicsWorld.SyncEditorTransform(gameObject.Id, oldPosition, oldRotation);
     }
 
     public void Redo()
@@ -106,6 +109,7 @@ public class GizmoTransformAction(
         gameObject.LocalPosition = newPosition;
         gameObject.LocalRotation = newRotation;
         gameObject.LocalScale = newScale;
+        World.PhysicsWorld.SyncEditorTransform(gameObject.Id, newPosition, newRotation);
     }
 }
 

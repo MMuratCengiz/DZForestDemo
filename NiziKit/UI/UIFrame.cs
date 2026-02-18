@@ -52,6 +52,7 @@ public readonly ref struct UiFrame
             TextColor = style.Color.ToClayColor(),
             FontSize = style.FontSize > 0 ? style.FontSize : (ushort)14,
             FontId = style.FontId,
+            WrapMode = ClayTextWrapMode.None,
             TextAlignment = style.Alignment switch
             {
                 UiTextAlign.Center => ClayTextAlignment.Center,
@@ -76,6 +77,7 @@ public readonly ref struct UiFrame
             TextColor = color.ToClayColor(),
             FontSize = size,
             FontId = FontAwesome.FontId,
+            WrapMode = ClayTextWrapMode.None,
             TextAlignment = ClayTextAlignment.Center
         };
         _context.Clay.Text(icon, desc);
@@ -89,6 +91,7 @@ public readonly ref struct UiFrame
             TextColor = style.Color.ToClayColor(),
             FontSize = style.FontSize > 0 ? style.FontSize : (ushort)14,
             FontId = FontAwesome.FontId,
+            WrapMode = ClayTextWrapMode.None,
             TextAlignment = style.Alignment switch
             {
                 UiTextAlign.Center => ClayTextAlignment.Center,

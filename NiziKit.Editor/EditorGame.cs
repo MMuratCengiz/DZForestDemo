@@ -278,6 +278,12 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
 
         var ray = _editorCamera.ScreenPointToRay(_lastMouseX, _lastMouseY, _width, _height);
         gizmoPass.Gizmo.UpdateDrag(ray, _editorCamera, shiftHeld);
+
+        var selected = _viewModel.SelectedGameObject?.GameObject;
+        if (selected != null)
+        {
+            World.PhysicsWorld.SyncEditorTransform(selected.Id, selected.LocalPosition, selected.LocalRotation);
+        }
     }
 
     private void EndGizmoDrag()
@@ -301,6 +307,8 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
                     newPos, newRot, newScl));
                 _viewModel.MarkDirty();
             }
+
+            World.PhysicsWorld.SyncEditorTransform(selected.Id, newPos, newRot);
         }
     }
 
@@ -309,6 +317,12 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         var gizmoPass = _renderer.EditorOverlayPass;
         gizmoPass?.Gizmo.CancelDrag();
         _gizmoDragging = false;
+
+        var selected = _viewModel.SelectedGameObject?.GameObject;
+        if (selected != null)
+        {
+            World.PhysicsWorld.SyncEditorTransform(selected.Id, selected.LocalPosition, selected.LocalRotation);
+        }
     }
 
     private bool HandleKeyboardShortcuts(KeyCode keyCode)

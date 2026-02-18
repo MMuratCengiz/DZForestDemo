@@ -261,6 +261,14 @@ public ref struct UiTreeView
 
             if (!string.IsNullOrEmpty(node.Icon))
             {
+                var iconId = _context.StringCache.GetId("TVIco", Id, nodeIdx);
+                var iconDecl = new ClayElementDeclaration { Id = iconId };
+                iconDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(16);
+                iconDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(_itemHeight);
+                iconDecl.Layout.ChildAlignment.X = ClayAlignmentX.Center;
+                iconDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
+
+                _context.OpenElement(iconDecl);
                 _context.Clay.Text(node.Icon, new ClayTextDesc
                 {
                     TextColor = _iconColor.ToClayColor(),
@@ -268,6 +276,7 @@ public ref struct UiTreeView
                     FontId = FontAwesome.FontId,
                     TextAlignment = ClayTextAlignment.Center
                 });
+                _context.Clay.CloseElement();
             }
 
             _context.Clay.Text(node.Label, new ClayTextDesc

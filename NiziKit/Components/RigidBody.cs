@@ -58,7 +58,7 @@ public partial class Rigidbody : NiziComponent
     }
 
     [HideInInspector]
-    public Vector3 Position
+    public new Vector3 Position
     {
         get
         {
@@ -73,7 +73,7 @@ public partial class Rigidbody : NiziComponent
     }
 
     [HideInInspector]
-    public Quaternion Rotation
+    public new Quaternion Rotation
     {
         get
         {
@@ -181,7 +181,16 @@ public partial class Rigidbody : NiziComponent
 
     public void MovePosition(Vector3 position)
     {
-        if (Owner != null)
+        if (Owner == null)
+        {
+            return;
+        }
+
+        if (IsKinematic && IsRegistered)
+        {
+            Core.World.PhysicsWorld.SetKinematicTargetPosition(Owner.Id, position);
+        }
+        else
         {
             Owner.LocalPosition = position;
         }
@@ -189,10 +198,57 @@ public partial class Rigidbody : NiziComponent
 
     public void MoveRotation(Quaternion rotation)
     {
-        if (Owner != null)
+        if (Owner == null)
+        {
+            return;
+        }
+
+        if (IsKinematic && IsRegistered)
+        {
+            Core.World.PhysicsWorld.SetKinematicTargetRotation(Owner.Id, rotation);
+        }
+        else
         {
             Owner.LocalRotation = rotation;
         }
+    }
+
+    public void Move(Vector3 position, Quaternion rotation)
+    {
+        if (Owner == null)
+        {
+            return;
+        }
+
+        if (IsKinematic && IsRegistered)
+        {
+            Core.World.PhysicsWorld.SetKinematicTarget(Owner.Id, position, rotation);
+        }
+        else
+        {
+            Owner.LocalPosition = position;
+            Owner.LocalRotation = rotation;
+        }
+    }
+
+    public void SetKinematic()
+    {
+        if (!IsRegistered || Owner == null)
+        {
+            return;
+        }
+
+        Core.World.PhysicsWorld.ChangeBodyType(Owner.Id, PhysicsBodyType.Kinematic);
+    }
+
+    public void SetDynamic(float mass = 1f)
+    {
+        if (!IsRegistered || Owner == null)
+        {
+            return;
+        }
+
+        Core.World.PhysicsWorld.ChangeBodyType(Owner.Id, PhysicsBodyType.Dynamic, mass);
     }
 
     public void WakeUp()

@@ -75,7 +75,140 @@ public class GameObject(string name = "GameObject")
         }
     }
 
-    public Vector3 WorldPosition => WorldMatrix.Translation;
+    public Vector3 WorldPosition
+    {
+        get => WorldMatrix.Translation;
+        set
+        {
+            if (Parent != null)
+            {
+                Matrix4x4.Invert(Parent.WorldMatrix, out var invParent);
+                LocalPosition = Vector3.Transform(value, invParent);
+            }
+            else
+            {
+                LocalPosition = value;
+            }
+        }
+    }
+
+    public Quaternion WorldRotation
+    {
+        get
+        {
+            Matrix4x4.Decompose(WorldMatrix, out _, out var rotation, out _);
+            return rotation;
+        }
+        set
+        {
+            if (Parent != null)
+            {
+                LocalRotation = Quaternion.Inverse(Parent.WorldRotation) * value;
+            }
+            else
+            {
+                LocalRotation = value;
+            }
+        }
+    }
+
+    public Vector3 Forward => Vector3.Normalize(Vector3.Transform(Vector3.UnitZ, LocalRotation));
+    public Vector3 Right => Vector3.Normalize(Vector3.Transform(Vector3.UnitX, LocalRotation));
+    public Vector3 Up => Vector3.Normalize(Vector3.Transform(Vector3.UnitY, LocalRotation));
+
+    public void Translate(Vector3 translation, Space relativeTo = Space.Self)
+    {
+        if (relativeTo == Space.Self)
+        {
+            LocalPosition += Vector3.Transform(translation, LocalRotation);
+        }
+        else
+        {
+            WorldPosition += translation;
+        }
+    }
+
+    public void Rotate(Vector3 eulerAngles, Space relativeTo = Space.Self)
+    {
+        var rotation = Quaternion.CreateFromYawPitchRoll(
+            eulerAngles.Y * (MathF.PI / 180f),
+            eulerAngles.X * (MathF.PI / 180f),
+            eulerAngles.Z * (MathF.PI / 180f));
+        Rotate(rotation, relativeTo);
+    }
+
+    public void Rotate(Quaternion rotation, Space relativeTo = Space.Self)
+    {
+        if (relativeTo == Space.Self)
+        {
+            LocalRotation = Quaternion.Normalize(LocalRotation * rotation);
+        }
+        else
+        {
+            LocalRotation = Quaternion.Normalize(rotation * LocalRotation);
+        }
+    }
+
+    public void LookAt(Vector3 target, Vector3? worldUp = null)
+    {
+        var up = worldUp ?? Vector3.UnitY;
+        var direction = target - WorldPosition;
+        if (direction.LengthSquared() < 0.000001f)
+            return;
+
+        var forward = Vector3.Normalize(direction);
+        var right = Vector3.Cross(up, forward);
+
+        if (right.LengthSquared() < 0.000001f)
+        {
+            right = Vector3.Cross(forward.Y > 0 ? -Vector3.UnitZ : Vector3.UnitZ, forward);
+        }
+
+        right = Vector3.Normalize(right);
+        var correctedUp = Vector3.Cross(forward, right);
+
+        var matrix = new Matrix4x4(
+            right.X, right.Y, right.Z, 0,
+            correctedUp.X, correctedUp.Y, correctedUp.Z, 0,
+            forward.X, forward.Y, forward.Z, 0,
+            0, 0, 0, 1);
+
+        var worldRot = Quaternion.CreateFromRotationMatrix(matrix);
+
+        if (Parent != null)
+        {
+            LocalRotation = Quaternion.Inverse(Parent.WorldRotation) * worldRot;
+        }
+        else
+        {
+            LocalRotation = worldRot;
+        }
+    }
+
+    public void SetParent(GameObject? newParent)
+    {
+        if (newParent == this || newParent == Parent)
+            return;
+
+        if (newParent == null)
+        {
+            Parent?.RemoveChild(this);
+        }
+        else
+        {
+            newParent.AddChild(this);
+        }
+    }
+
+    public void SetActive(bool active)
+    {
+        IsActive = active;
+    }
+
+    public void Destroy()
+    {
+        Scene?.Destroy(this);
+    }
 
     public GameObject CreateChild(string name = "SceneObject")
     {
@@ -90,8 +223,6 @@ public class GameObject(string name = "GameObject")
         child.Parent = this;
         _children.Add(child);
         child.MarkTransformDirty();
-
-        // If parent is in world, register child with world
         if (IsInWorld && !child.IsInWorld)
         {
             World.OnGameObjectCreated(child);
@@ -102,13 +233,28 @@ public class GameObject(string name = "GameObject")
     {
         if (_children.Remove(child))
         {
-            // If child was in world, unregister it
             if (child.IsInWorld)
             {
                 World.OnGameObjectDestroyed(child);
             }
             child.Parent = null;
         }
+    }
+
+    public GameObject? FindChild(string name)
+    {
+        foreach (var child in _children)
+        {
+            if (child.Name == name) return child;
+        }
+
+        foreach (var child in _children)
+        {
+            var found = child.FindChild(name);
+            if (found != null) return found;
+        }
+
+        return null;
     }
 
     private void MarkTransformDirty()
@@ -141,6 +287,57 @@ public class GameObject(string name = "GameObject")
         }
 
         return null;
+    }
+
+    public List<T> GetComponents<T>() where T : NiziComponent
+    {
+        var results = new List<T>();
+        foreach (var component in _components)
+        {
+            if (component is T typed) results.Add(typed);
+        }
+        return results;
+    }
+
+    public T? GetComponentInChildren<T>() where T : NiziComponent
+    {
+        var result = GetComponent<T>();
+        if (result != null) return result;
+
+        foreach (var child in _children)
+        {
+            result = child.GetComponentInChildren<T>();
+            if (result != null) return result;
+        }
+
+        return null;
+    }
+
+    public List<T> GetComponentsInChildren<T>() where T : NiziComponent
+    {
+        var results = new List<T>();
+        GetComponentsInChildrenRecursive(results);
+        return results;
+    }
+
+    private void GetComponentsInChildrenRecursive<T>(List<T> results) where T : NiziComponent
+    {
+        foreach (var component in _components)
+        {
+            if (component is T typed) results.Add(typed);
+        }
+
+        foreach (var child in _children)
+        {
+            child.GetComponentsInChildrenRecursive(results);
+        }
+    }
+
+    public T? GetComponentInParent<T>() where T : NiziComponent
+    {
+        var result = GetComponent<T>();
+        if (result != null) return result;
+        return Parent?.GetComponentInParent<T>();
     }
 
     public T AddComponent<T>() where T : NiziComponent, new()

@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using NiziKit.Animation;
 using NiziKit.Assets;
 using NiziKit.Components;
 using NiziKit.Core;
@@ -11,6 +12,7 @@ public struct Renderable
     public MeshComponent MeshComp;
     public SurfaceComponent Surface;
     public MaterialTags? Tags;
+    public Animator? Animator;
 }
 
 public class RenderBatch(SurfaceComponent surface, Mesh mesh)
@@ -125,7 +127,8 @@ public class RenderWorld : IWorldEventListener
             Owner = go,
             MeshComp = meshComp!,
             Surface = surfaceComp,
-            Tags = materialComp?.Tags
+            Tags = materialComp?.Tags,
+            Animator = go.GetComponent<Animator>()
         };
 
         _objectLookup[go] = (surfaceComp, mesh, batch.Count);

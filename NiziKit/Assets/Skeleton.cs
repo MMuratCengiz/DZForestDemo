@@ -121,6 +121,11 @@ public class Skeleton : IDisposable
 
     public Animation LoadAnimation(byte[] ozzAnimData, string? animName = null)
     {
+        if (!string.IsNullOrEmpty(animName) && _animations.TryGetValue(animName, out var cached))
+        {
+            return cached;
+        }
+
         var animContainer = CreateBinaryContainer(ozzAnimData);
         var context = OzzSkeleton.NewContext();
 
@@ -135,13 +140,13 @@ public class Skeleton : IDisposable
         {
             var nameView = Ozz.GetAnimationName(context);
             animName = nameView.NumChars > 0 ? nameView.ToString() : "animation";
-        }
 
-        if (_animations.TryGetValue(animName, out var cached))
-        {
-            animContainer.Dispose();
-            OzzSkeleton.DestroyContext(context);
-            return cached;
+            if (_animations.TryGetValue(animName, out cached))
+            {
+                animContainer.Dispose();
+                OzzSkeleton.DestroyContext(context);
+                return cached;
+            }
         }
 
         var duration = Ozz.GetAnimationDuration(context);

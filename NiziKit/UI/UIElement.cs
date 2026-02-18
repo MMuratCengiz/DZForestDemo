@@ -390,6 +390,7 @@ public ref struct UiElement
             TextColor = style.Color.ToClayColor(),
             FontSize = style.FontSize > 0 ? style.FontSize : (ushort)14,
             FontId = style.FontId,
+            WrapMode = ClayTextWrapMode.None,
             TextAlignment = style.Alignment switch
             {
                 UiTextAlign.Center => ClayTextAlignment.Center,
@@ -414,6 +415,7 @@ public ref struct UiElement
             TextColor = color.ToClayColor(),
             FontSize = size,
             FontId = FontAwesome.FontId,
+            WrapMode = ClayTextWrapMode.None,
             TextAlignment = ClayTextAlignment.Center
         };
         _context.Clay.Text(icon, desc);
@@ -427,6 +429,7 @@ public ref struct UiElement
             TextColor = style.Color.ToClayColor(),
             FontSize = style.FontSize > 0 ? style.FontSize : (ushort)14,
             FontId = FontAwesome.FontId,
+            WrapMode = ClayTextWrapMode.None,
             TextAlignment = style.Alignment switch
             {
                 UiTextAlign.Center => ClayTextAlignment.Center,
@@ -479,6 +482,7 @@ public readonly ref struct UiElementScope
             TextColor = style.Color.ToClayColor(),
             FontSize = style.FontSize > 0 ? style.FontSize : (ushort)14,
             FontId = style.FontId,
+            WrapMode = ClayTextWrapMode.None,
             TextAlignment = style.Alignment switch
             {
                 UiTextAlign.Center => ClayTextAlignment.Center,
@@ -503,6 +507,7 @@ public readonly ref struct UiElementScope
             TextColor = color.ToClayColor(),
             FontSize = size,
             FontId = FontAwesome.FontId,
+            WrapMode = ClayTextWrapMode.None,
             TextAlignment = ClayTextAlignment.Center
         };
         _context.Clay.Text(icon, desc);
@@ -516,6 +521,7 @@ public readonly ref struct UiElementScope
             TextColor = style.Color.ToClayColor(),
             FontSize = style.FontSize > 0 ? style.FontSize : (ushort)14,
             FontId = FontAwesome.FontId,
+            WrapMode = ClayTextWrapMode.None,
             TextAlignment = style.Alignment switch
             {
                 UiTextAlign.Center => ClayTextAlignment.Center,

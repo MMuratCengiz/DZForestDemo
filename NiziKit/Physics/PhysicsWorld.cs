@@ -22,6 +22,8 @@ public sealed partial class PhysicsWorld : IWorldEventListener, IDisposable
     private readonly Dictionary<int, BodyHandle> _bodyHandles = new();
     private readonly Dictionary<int, StaticHandle> _staticHandles = new();
     private readonly Dictionary<int, (GameObject Go, Rigidbody Rigidbody)> _trackedObjects = new();
+    private readonly Dictionary<int, (Vector3 Position, Quaternion Rotation)> _kinematicTargets = new();
+    private readonly Dictionary<int, (Vector3 Position, Quaternion Rotation)> _kinematicFinalPoses = new();
     private readonly Dictionary<BodyHandle, int> _bodyToId = new();
     private readonly Dictionary<StaticHandle, int> _staticToId = new();
     private readonly Dictionary<int, List<ConstraintHandle>> _constraintsByOwner = new();
@@ -65,10 +67,96 @@ public sealed partial class PhysicsWorld : IWorldEventListener, IDisposable
     public void Step(float dt)
     {
         UpdateWheelColliders(dt);
+        PrepareKinematics(dt);
         SwapContactBuffers();
         _simulation.Timestep(dt, _threadDispatcher);
         SyncToGameObjects();
         ProcessCollisionCallbacks();
+    }
+
+    private const float KinematicTeleportThreshold = 100f;
+
+    private void PrepareKinematics(float dt)
+    {
+        if (dt <= 0f)
+        {
+            return;
+        }
+
+        var inverseDt = 1f / dt;
+
+        foreach (var (id, entry) in _trackedObjects)
+        {
+            if (entry.Rigidbody.BodyType != PhysicsBodyType.Kinematic)
+            {
+                continue;
+            }
+
+            if (!_bodyHandles.TryGetValue(id, out var handle))
+            {
+                continue;
+            }
+
+            var bodyRef = _simulation.Bodies.GetBodyReference(handle);
+            var currentPos = bodyRef.Pose.Position;
+            var currentRot = bodyRef.Pose.Orientation;
+
+            Vector3 targetPos;
+            Quaternion targetRot;
+
+            if (_kinematicTargets.TryGetValue(id, out var target))
+            {
+                targetPos = target.Position;
+                targetRot = target.Rotation;
+                _kinematicTargets.Remove(id);
+            }
+            else
+            {
+                targetPos = entry.Go.LocalPosition;
+                targetRot = entry.Go.LocalRotation;
+            }
+
+            var displacement = targetPos - currentPos;
+
+            if (displacement.LengthSquared() > KinematicTeleportThreshold * KinematicTeleportThreshold)
+            {
+                bodyRef.Pose.Position = targetPos;
+                bodyRef.Pose.Orientation = targetRot;
+                bodyRef.Velocity.Linear = Vector3.Zero;
+                bodyRef.Velocity.Angular = Vector3.Zero;
+            }
+            else
+            {
+                bodyRef.Velocity.Linear = displacement * inverseDt;
+                bodyRef.Velocity.Angular = ComputeAngularVelocity(currentRot, targetRot, inverseDt);
+            }
+
+            _simulation.Awakener.AwakenBody(handle);
+            _kinematicFinalPoses[id] = (targetPos, targetRot);
+        }
+    }
+
+    private static Vector3 ComputeAngularVelocity(Quaternion from, Quaternion to, float inverseDt)
+    {
+        var delta = to * Quaternion.Conjugate(from);
+
+        if (delta.W < 0f)
+        {
+            delta = new Quaternion(-delta.X, -delta.Y, -delta.Z, -delta.W);
+        }
+
+        var axis = new Vector3(delta.X, delta.Y, delta.Z);
+        var sinHalfAngle = axis.Length();
+
+        if (sinHalfAngle < 1e-6f)
+        {
+            return Vector3.Zero;
+        }
+
+        var halfAngle = MathF.Atan2(sinHalfAngle, delta.W);
+        var angle = 2f * halfAngle;
+
+        return axis / sinHalfAngle * angle * inverseDt;
     }
 
     private void SyncToGameObjects()
@@ -80,7 +168,12 @@ public sealed partial class PhysicsWorld : IWorldEventListener, IDisposable
 
             if (rigidbody.BodyType == PhysicsBodyType.Kinematic)
             {
-                SetPose(id, go.LocalPosition, go.LocalRotation);
+                if (_kinematicFinalPoses.TryGetValue(id, out var finalPose))
+                {
+                    SetPose(id, finalPose.Position, finalPose.Rotation);
+                    go.LocalPosition = finalPose.Position;
+                    go.LocalRotation = finalPose.Rotation;
+                }
             }
             else if (rigidbody.BodyType == PhysicsBodyType.Dynamic)
             {
@@ -92,6 +185,8 @@ public sealed partial class PhysicsWorld : IWorldEventListener, IDisposable
                 }
             }
         }
+
+        _kinematicFinalPoses.Clear();
     }
 
     public void Dispose()
@@ -109,6 +204,8 @@ public sealed partial class PhysicsWorld : IWorldEventListener, IDisposable
         }
         _wheelColliders.Clear();
         _ignoredCollisionPairs.Clear();
+        _kinematicTargets.Clear();
+        _kinematicFinalPoses.Clear();
 
         foreach (var handle in _allConstraints.ToArray())
         {
@@ -180,7 +277,7 @@ internal readonly struct NarrowPhaseCallbacks(PhysicsWorld physicsWorld) : INarr
             return false;
         }
 
-        if (a.Mobility == CollidableMobility.Dynamic && b.Mobility == CollidableMobility.Dynamic)
+        if (a.Mobility != CollidableMobility.Static && b.Mobility != CollidableMobility.Static)
         {
             if (physicsWorld.ShouldIgnoreCollision(a.BodyHandle, b.BodyHandle))
             {

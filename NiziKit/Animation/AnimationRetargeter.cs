@@ -54,22 +54,6 @@ public sealed class AnimationRetargeter : IDisposable
         Dispose();
         _sourceSkeleton = sourceSkeleton;
 
-        // Log all joint names for both skeletons
-        Logger.LogInformation("Source skeleton '{Name}' joints ({Count}):", sourceSkeleton.Name,
-            sourceSkeleton.JointCount);
-        for (var i = 0; i < sourceSkeleton.Joints.Count; i++)
-        {
-            var j = sourceSkeleton.Joints[i];
-            Logger.LogInformation("  src[{Index}] '{Name}' parent={Parent}", i, j.Name, j.ParentIndex);
-        }
-
-        Logger.LogInformation("Dest skeleton '{Name}' joints ({Count}):", destSkeleton.Name, destSkeleton.JointCount);
-        for (var i = 0; i < destSkeleton.Joints.Count; i++)
-        {
-            var j = destSkeleton.Joints[i];
-            Logger.LogInformation("  dst[{Index}] '{Name}' parent={Parent}", i, j.Name, j.ParentIndex);
-        }
-
         var srcHumanoidMap = HumanoidBoneMapper.MapSkeleton(sourceSkeleton.Joints);
         var dstHumanoidMap = HumanoidBoneMapper.MapSkeleton(destSkeleton.Joints);
 
@@ -85,32 +69,6 @@ public sealed class AnimationRetargeter : IDisposable
             Logger.LogWarning("Destination skeleton '{Name}' does not have required humanoid bones for retargeting",
                 destSkeleton.Name);
             return;
-        }
-
-        // Log humanoid bone mapping for diagnostics
-        for (var humanoidBone = 0; humanoidBone < (int)HumanoidBone.Count; humanoidBone++)
-        {
-            var boneName = (HumanoidBone)humanoidBone;
-            var srcIdx = srcHumanoidMap[humanoidBone];
-            var dstIdx = dstHumanoidMap[humanoidBone];
-            var srcName = srcIdx >= 0 && srcIdx < sourceSkeleton.Joints.Count
-                ? sourceSkeleton.Joints[srcIdx].Name
-                : "MISSING";
-            var dstName = dstIdx >= 0 && dstIdx < destSkeleton.Joints.Count
-                ? destSkeleton.Joints[dstIdx].Name
-                : "MISSING";
-
-            if (srcIdx < 0 || dstIdx < 0)
-            {
-                Logger.LogWarning(
-                    "Retarget bone {Bone}: src=[{SrcIdx}] '{SrcName}', dst=[{DstIdx}] '{DstName}' - SKIPPED",
-                    boneName, srcIdx, srcName, dstIdx, dstName);
-            }
-            else
-            {
-                Logger.LogInformation("Retarget bone {Bone}: src=[{SrcIdx}] '{SrcName}' -> dst=[{DstIdx}] '{DstName}'",
-                    boneName, srcIdx, srcName, dstIdx, dstName);
-            }
         }
 
         var bones = new List<RetargetBoneData>();
@@ -218,10 +176,6 @@ public sealed class AnimationRetargeter : IDisposable
         _sourceBlendLocalTransforms = OzzJointTransformArray.Create(new OzzJointTransform[srcJointCount]);
 
         IsValid = true;
-
-        Logger.LogInformation(
-            "Retargeting setup: {BoneCount} matched bones between '{Src}' and '{Dst}'",
-            _boneCount, sourceSkeleton.Name, destSkeleton.Name);
     }
 
     /// <summary>
@@ -229,7 +183,7 @@ public sealed class AnimationRetargeter : IDisposable
     /// matrices into the destination output span.
     /// </summary>
     public void SampleAndRetarget(
-        Assets.Animation anim,
+        OzzContext context,
         float normalizedTime,
         Span<Matrix4x4> destModelMatrices,
         IReadOnlyList<Joint> destJoints)
@@ -239,7 +193,7 @@ public sealed class AnimationRetargeter : IDisposable
             return;
         }
 
-        SampleSourceLocal(anim, normalizedTime, _sourceLocalTransforms!.Value);
+        SampleSourceLocal(context, normalizedTime, _sourceLocalTransforms!.Value);
         ConvertSourceToModel(_sourceLocalTransforms!.Value, _sourceModelTransforms!.Value);
         ApplyRetarget(_sourceModelTransforms!.Value.AsSpan(), destModelMatrices, destJoints);
     }
@@ -249,9 +203,9 @@ public sealed class AnimationRetargeter : IDisposable
     /// the blended, retargeted model-space matrices into the destination output span.
     /// </summary>
     public void SampleBlendedAndRetarget(
-        Assets.Animation prevAnim,
+        OzzContext prevContext,
         float prevNormalizedTime,
-        Assets.Animation currAnim,
+        OzzContext currContext,
         float currNormalizedTime,
         float blendWeight,
         Span<Matrix4x4> destModelMatrices,
@@ -262,10 +216,10 @@ public sealed class AnimationRetargeter : IDisposable
             return;
         }
 
-        SampleSourceLocal(prevAnim, prevNormalizedTime, _sourceBlendLocalTransforms!.Value);
+        SampleSourceLocal(prevContext, prevNormalizedTime, _sourceBlendLocalTransforms!.Value);
         ConvertSourceToModel(_sourceBlendLocalTransforms!.Value, _sourceBlendModelTransforms!.Value);
 
-        SampleSourceLocal(currAnim, currNormalizedTime, _sourceLocalTransforms!.Value);
+        SampleSourceLocal(currContext, currNormalizedTime, _sourceLocalTransforms!.Value);
         ConvertSourceToModel(_sourceLocalTransforms!.Value, _sourceModelTransforms!.Value);
 
         var prevSpan = _sourceBlendModelTransforms!.Value.AsSpan();
@@ -279,11 +233,11 @@ public sealed class AnimationRetargeter : IDisposable
         ApplyRetarget(currSpan, destModelMatrices, destJoints);
     }
 
-    private void SampleSourceLocal(Assets.Animation anim, float normalizedTime, OzzJointTransformArray outLocal)
+    private void SampleSourceLocal(OzzContext context, float normalizedTime, OzzJointTransformArray outLocal)
     {
         _sourceSkeleton!.OzzSkeleton.RunSamplingJobLocal(new SamplingJobLocalDesc
         {
-            Context = anim.OzzContext,
+            Context = context,
             Ratio = Math.Clamp(normalizedTime, 0f, 1f),
             OutTransforms = outLocal
         });

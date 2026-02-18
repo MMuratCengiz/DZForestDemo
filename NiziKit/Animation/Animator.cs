@@ -533,6 +533,12 @@ public partial class Animator : NiziComponent, IDisposable
         for (var i = 0; i < _layerCount; i++)
         {
             _layers[i].Update(effectiveDelta);
+
+            if (!_layers[i].IsBlending)
+            {
+                _layers[i].DestroyBlendSamplingContext();
+            }
+
             if (_layers[i].IsActive)
             {
                 anyPlaying = true;
@@ -574,7 +580,7 @@ public partial class Animator : NiziComponent, IDisposable
         }
         else if (layer.CurrentAnimation != null)
         {
-            SampleLocal(layer.CurrentAnimation, layer.NormalizedTime, _ozzLocalTransforms!.Value);
+            SampleLocal(layer.SamplingContext, layer.NormalizedTime, _ozzLocalTransforms!.Value);
         }
 
         if (layer is { IsBlending: true, BlendDuration: > 0 })
@@ -595,24 +601,24 @@ public partial class Animator : NiziComponent, IDisposable
             layer.PreviousAnimation != null && layer.CurrentAnimation != null)
         {
             _retargeter!.SampleBlendedAndRetarget(
-                layer.PreviousAnimation, layer.PreviousNormalizedTime,
-                layer.CurrentAnimation, layer.NormalizedTime,
+                layer.BlendSamplingContext, layer.PreviousNormalizedTime,
+                layer.SamplingContext, layer.NormalizedTime,
                 layer.BlendProgress,
                 destMatrices, Skeleton!.Joints);
         }
         else if (layer.CurrentAnimation != null)
         {
             _retargeter!.SampleAndRetarget(
-                layer.CurrentAnimation, layer.NormalizedTime,
+                layer.SamplingContext, layer.NormalizedTime,
                 destMatrices, Skeleton!.Joints);
         }
     }
 
-    private void SampleLocal(Assets.Animation anim, float normalizedTime, OzzJointTransformArray outLocalTransforms)
+    private void SampleLocal(OzzContext context, float normalizedTime, OzzJointTransformArray outLocalTransforms)
     {
         Skeleton?.OzzSkeleton.RunSamplingJobLocal(new SamplingJobLocalDesc
         {
-            Context = anim.OzzContext,
+            Context = context,
             Ratio = Math.Clamp(normalizedTime, 0f, 1f),
             OutTransforms = outLocalTransforms
         });
@@ -634,8 +640,8 @@ public partial class Animator : NiziComponent, IDisposable
             return;
         }
 
-        SampleLocal(layer.PreviousAnimation, layer.PreviousNormalizedTime, _ozzBlendLocalTransforms!.Value);
-        SampleLocal(layer.CurrentAnimation, layer.NormalizedTime, _ozzLocalTransforms!.Value);
+        SampleLocal(layer.BlendSamplingContext, layer.PreviousNormalizedTime, _ozzBlendLocalTransforms!.Value);
+        SampleLocal(layer.SamplingContext, layer.NormalizedTime, _ozzLocalTransforms!.Value);
     }
 
     private void BlendAndConvertToModel(float blendWeight)
@@ -765,6 +771,11 @@ public partial class Animator : NiziComponent, IDisposable
     public void Dispose()
     {
         _initialized = false;
+        for (var i = 0; i < MaxLayers; i++)
+        {
+            _layers[i].DestroyAllContexts();
+        }
+
         _ozzTransforms?.Dispose();
         _ozzBlendTransforms?.Dispose();
         _ozzLocalTransforms?.Dispose();
@@ -794,8 +805,66 @@ public partial class Animator : NiziComponent, IDisposable
 
         public bool IsActive => CurrentAnimation != null;
 
+        public OzzContext SamplingContext;
+        public OzzContext BlendSamplingContext;
+        private Assets.Animation? _samplingContextOwner;
+        private Assets.Animation? _blendSamplingContextOwner;
+
+        public void EnsureSamplingContext(Assets.Animation anim)
+        {
+            if (anim == _samplingContextOwner)
+            {
+                return;
+            }
+
+            DestroySamplingContext();
+            SamplingContext = anim.CreateSamplingContext();
+            _samplingContextOwner = anim;
+        }
+
+        public void EnsureBlendSamplingContext(Assets.Animation anim)
+        {
+            if (anim == _blendSamplingContextOwner)
+            {
+                return;
+            }
+
+            DestroyBlendSamplingContext();
+            BlendSamplingContext = anim.CreateSamplingContext();
+            _blendSamplingContextOwner = anim;
+        }
+
+        public void DestroySamplingContext()
+        {
+            if ((ulong)SamplingContext != 0)
+            {
+                _samplingContextOwner?.DestroySamplingContext(SamplingContext);
+                SamplingContext = default;
+                _samplingContextOwner = null;
+            }
+        }
+
+        public void DestroyBlendSamplingContext()
+        {
+            if ((ulong)BlendSamplingContext != 0)
+            {
+                _blendSamplingContextOwner?.DestroySamplingContext(BlendSamplingContext);
+                BlendSamplingContext = default;
+                _blendSamplingContextOwner = null;
+            }
+        }
+
+        public void DestroyAllContexts()
+        {
+            DestroySamplingContext();
+            DestroyBlendSamplingContext();
+        }
+
         public void Play(Assets.Animation anim, LoopMode loop)
         {
+            DestroyBlendSamplingContext();
+            EnsureSamplingContext(anim);
+
             CurrentAnimation = anim;
             PreviousAnimation = null;
             LoopMode = loop;
@@ -816,6 +885,16 @@ public partial class Animator : NiziComponent, IDisposable
                 return;
             }
 
+            // Move current context to blend context
+            DestroyBlendSamplingContext();
+            BlendSamplingContext = SamplingContext;
+            _blendSamplingContextOwner = _samplingContextOwner;
+            SamplingContext = default;
+            _samplingContextOwner = null;
+
+            // Create new context for the incoming animation
+            EnsureSamplingContext(anim);
+
             PreviousAnimation = CurrentAnimation;
             PreviousTime = Time;
             PreviousNormalizedTime = NormalizedTime;
@@ -834,6 +913,7 @@ public partial class Animator : NiziComponent, IDisposable
 
         public void Stop()
         {
+            DestroyAllContexts();
             CurrentAnimation = null;
             PreviousAnimation = null;
             Time = 0;

@@ -1,22 +1,17 @@
 {
-  "name": "Viking Showcase",
+  "name": "Combat Demo",
   "cameras": [
     {
       "name": "Main Camera",
-      "position": [-0.23162663, 4.550002, -23.32802],
-      "rotation": [-23.000591, 4.7158895, 5.8286195],
+      "position": [-0.92046964, 11.240527, -9.284252],
+      "rotation": [29.538757, -9.106916E-07, 0],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
       "projectionType": "perspective",
       "orthographicSize": 5,
       "priority": 0,
-      "isActive": true,
-      "controller": {
-        "type": "freefly",
-        "moveSpeed": 10,
-        "lookSensitivity": 0.003
-      }
+      "isActive": true
     }
   ],
   "skybox": {
@@ -40,10 +35,10 @@
   "objects": [
     {
       "name": "Platform",
-      "active": false,
-      "position": [0, -0.25, 0],
-      "rotation": [0, 0.17670275, 0],
-      "scale": [90.67, 1, 113.75],
+      "active": true,
+      "position": [0, 0, 0],
+      "rotation": [0, 0, 0],
+      "scale": [90, 1, 90],
       "components": [
         {
           "type": "NiziKit.Components.MeshComponent",
@@ -55,11 +50,23 @@
         {
           "type": "NiziKit.Components.BoxCollider",
           "size": [
-            90.67,
+            90,
             1,
-            113.75
+            90
           ],
-          "isTrigger": false
+          "isTrigger": false,
+          "center": [
+            0,
+            0.5,
+            0
+          ]
+        },
+        {
+          "type": "NiziKit.Components.Rigidbody",
+          "bodyType": "static",
+          "mass": 0,
+          "speculativeMargin": 0.1,
+          "sleepThreshold": 0.01
         }
       ],
       "children": []
@@ -67,8 +74,8 @@
     {
       "name": "My Character",
       "active": true,
-      "position": [-5.5, 0.5, -0.5],
-      "rotation": [-179.99998, 5.0089543E-06, -179.99998],
+      "position": [-0.92047, 1.2405332, 5.7157536],
+      "rotation": [-180, 8.483199, -180],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -85,12 +92,72 @@
           "retargetSource": "Synty/Models/BaseLocomotion/Character/PolygonSyntyCharacter.ozzskel",
           "animations": [
             {
+              "name": "A_Idle_Standing_Femn",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/Idle/A_Idle_Standing_Femn.ozzanim"
+            },
+            {
               "name": "A_Idle_Crouching_Femn",
               "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/Idle/A_Idle_Crouching_Femn.ozzanim"
             },
             {
-              "name": "A_Attack_HeavyCombo01C_ReturnToIdle_RootMotion_Sword",
-              "source": "Synty/Models/BaseLocomotion/Animations/MeleeCombat/Polygon/Attack/HeavyCombo01/A_Attack_HeavyCombo01C_ReturnToIdle_RootMotion_Sword.ozzanim"
+              "name": "A_Walk_FwdStrafeF_Femn",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/Locomotion/Walk/A_Walk_FwdStrafeF_Femn.ozzanim"
+            },
+            {
+              "name": "A_Walk_FwdStrafeFL_Femn",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/Locomotion/Walk/A_Walk_FwdStrafeFL_Femn.ozzanim"
+            },
+            {
+              "name": "A_Walk_FwdStrafeFR_Femn",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/Locomotion/Walk/A_Walk_FwdStrafeFR_Femn.ozzanim"
+            },
+            {
+              "name": "A_Walk_FwdStrafeL_Femn",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/Locomotion/Walk/A_Walk_FwdStrafeL_Femn.ozzanim"
+            },
+            {
+              "name": "A_Walk_FwdStrafeR_Femn",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/Locomotion/Walk/A_Walk_FwdStrafeR_Femn.ozzanim"
+            },
+            {
+              "name": "A_Walk_BckStrafeB_Femn",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/Locomotion/Walk/A_Walk_BckStrafeB_Femn.ozzanim"
+            },
+            {
+              "name": "A_Walk_BckStrafeBL_Femn",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/Locomotion/Walk/A_Walk_BckStrafeBL_Femn.ozzanim"
+            },
+            {
+              "name": "A_Walk_BckStrafeBR_Femn",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/Locomotion/Walk/A_Walk_BckStrafeBR_Femn.ozzanim"
+            },
+            {
+              "name": "A_POLY_BL_Crouch_FwdStrafeF_Femn",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/Locomotion/Crouch/A_POLY_BL_Crouch_FwdStrafeF_Femn.ozzanim"
+            },
+            {
+              "name": "A_Jump_Idle_Femn",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/InAir/A_Jump_Idle_Femn.ozzanim"
+            },
+            {
+              "name": "A_Jump_Walking_Femn",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/InAir/A_Jump_Walking_Femn.ozzanim"
+            },
+            {
+              "name": "A_InAir_FallLarge_Femn",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/InAir/A_InAir_FallLarge_Femn.ozzanim"
+            },
+            {
+              "name": "A_Land_IdleHard_Femn",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/InAir/A_Land_IdleHard_Femn.ozzanim"
+            },
+            {
+              "name": "A_Turn_Standing_180L_Femn",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/Locomotion/Turn/A_Turn_Standing_180L_Femn.ozzanim"
+            },
+            {
+              "name": "A_Turn_Standing_180R_Femn",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/Locomotion/Turn/A_Turn_Standing_180R_Femn.ozzanim"
             }
           ]
         },
@@ -99,6 +166,65 @@
           "tags": {
             "SKINNED": "TRUE"
           }
+        },
+        {
+          "type": "NiziKit.Components.CapsuleCollider",
+          "radius": 0.3,
+          "height": 1.7,
+          "direction": "y",
+          "isTrigger": false,
+          "center": [
+            0,
+            0.85,
+            0
+          ]
+        },
+        {
+          "type": "NiziKit.Components.Rigidbody",
+          "bodyType": "kinematic",
+          "mass": 0,
+          "speculativeMargin": 0.1,
+          "sleepThreshold": 0.01
+        },
+        {
+          "type": "DZForestDemo.Script.PlayableCharacter",
+          "moveSpeed": 5,
+          "turnSpeed": 12,
+          "stoppingDistance": 0.2,
+          "crossFadeDuration": 0.15,
+          "groundAccelRate": 12,
+          "groundDecelRate": 18,
+          "airControlFactor": 0.3,
+          "airAccelRate": 4,
+          "jumpForce": 10,
+          "gravity": 20,
+          "fallGravityMultiplier": 2.5,
+          "lowJumpGravityMultiplier": 2,
+          "maxFallSpeed": 25,
+          "cameraDistance": 15,
+          "cameraHeight": 10,
+          "cameraSmoothSpeed": 5,
+          "cameraLookHeight": 1.5,
+          "cameraLookSmoothSpeed": 10,
+          "animIdle": "A_Idle_Standing_Femn",
+          "animWalk": "A_Walk_FwdStrafeF_Femn",
+          "animStrafeL": "A_Walk_FwdStrafeL_Femn",
+          "animStrafeR": "A_Walk_FwdStrafeR_Femn",
+          "animWalkBack": "A_Walk_BckStrafeB_Femn",
+          "animWalkFL": "A_Walk_FwdStrafeFL_Femn",
+          "animWalkFR": "A_Walk_FwdStrafeFR_Femn",
+          "animWalkBL": "A_Walk_BckStrafeBL_Femn",
+          "animWalkBR": "A_Walk_BckStrafeBR_Femn",
+          "animJump": "A_Jump_Idle_Femn",
+          "animJumpWalk": "A_Jump_Walking_Femn",
+          "animFall": "A_InAir_FallLarge_Femn",
+          "animLand": "A_Land_IdleHard_Femn",
+          "animCrouchIdle": "A_Idle_Crouching_Femn",
+          "animCrouchWalk": "A_POLY_BL_Crouch_FwdStrafeF_Femn",
+          "animTurnL": "A_Turn_Standing_180L_Femn",
+          "animTurnR": "A_Turn_Standing_180R_Femn",
+          "name": "My Character",
+          "isActive": true
         }
       ],
       "children": []
@@ -117,6 +243,82 @@
         {
           "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_01_B.dztex"
+        }
+      ],
+      "children": []
+    },
+    {
+      "name": "Crate 2",
+      "active": true,
+      "position": [-7.000039, 0.9997239, 2.9999216],
+      "rotation": [-1.4603179E-09, 25, 2.9182816E-09],
+      "scale": [1, 1, 1],
+      "components": [
+        {
+          "type": "NiziKit.Components.MeshComponent",
+          "mesh": "Synty/Models/FantasyKingdom/FBX/SM_Prop_Crate_Wood_01.nizimesh"
+        },
+        {
+          "type": "NiziKit.Components.SurfaceComponent",
+          "albedo": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_01_B.dztex"
+        },
+        {
+          "type": "NiziKit.Components.BoxCollider",
+          "size": [
+            1,
+            1,
+            1
+          ],
+          "isTrigger": false,
+          "center": [
+            0,
+            0.57142335,
+            0
+          ]
+        },
+        {
+          "type": "NiziKit.Components.Rigidbody",
+          "bodyType": "dynamic",
+          "mass": 5,
+          "speculativeMargin": 0.1,
+          "sleepThreshold": 0.01
+        }
+      ],
+      "children": []
+    },
+    {
+      "name": "Barrel 1",
+      "active": true,
+      "position": [-1.9999949, 0.99984145, -1.9999949],
+      "rotation": [-1.9169192E-06, -1.8221108E-07, 1.9209497E-06],
+      "scale": [1, 1, 1],
+      "components": [
+        {
+          "type": "NiziKit.Components.MeshComponent",
+          "mesh": "Synty/Models/FantasyKingdom/FBX/SM_Prop_Barrel_01.nizimesh"
+        },
+        {
+          "type": "NiziKit.Components.SurfaceComponent",
+          "albedo": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_01_B.dztex"
+        },
+        {
+          "type": "NiziKit.Components.CylinderCollider",
+          "radius": 0.4,
+          "height": 1,
+          "direction": "y",
+          "isTrigger": false,
+          "center": [
+            0,
+            0.4,
+            0
+          ]
+        },
+        {
+          "type": "NiziKit.Components.Rigidbody",
+          "bodyType": "dynamic",
+          "mass": 3,
+          "speculativeMargin": 0.1,
+          "sleepThreshold": 0.01
         }
       ],
       "children": []

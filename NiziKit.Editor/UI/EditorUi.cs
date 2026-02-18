@@ -12,11 +12,13 @@ public static class EditorUi
         using var header = ui.Panel(id)
             .Horizontal()
             .Background(T.SectionHeaderBg)
-            .Padding(10, 4)
+            .Padding(12, 7)
             .Gap(6)
             .AlignChildrenY(UiAlignY.Center)
             .GrowWidth()
             .FitHeight()
+            .Border(UiBorder.Horizontal(0, UiColor.Transparent)
+                with { Bottom = 1, Color = T.Border })
             .Open();
 
         ui.Icon(icon, T.Accent, T.IconSizeSmall);

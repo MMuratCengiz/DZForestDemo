@@ -9,6 +9,8 @@ public struct GpuBoneTransforms
 {
     public const int MaxBones = 256;
 
+    private static readonly GpuBoneTransforms CachedIdentity = CreateIdentity();
+
     [InlineArray(MaxBones)]
     public struct BoneArray
     {
@@ -17,7 +19,7 @@ public struct GpuBoneTransforms
 
     public BoneArray Bones;
 
-    public static GpuBoneTransforms Identity()
+    private static GpuBoneTransforms CreateIdentity()
     {
         var result = new GpuBoneTransforms();
         for (var i = 0; i < MaxBones; i++)
@@ -27,12 +29,16 @@ public struct GpuBoneTransforms
         return result;
     }
 
+    public static GpuBoneTransforms Identity() => CachedIdentity;
+
+    public void ResetToIdentity()
+    {
+        this = CachedIdentity;
+    }
+
     public void CopyFrom(ReadOnlySpan<Matrix4x4> source)
     {
         var count = Math.Min(source.Length, MaxBones);
-        for (var i = 0; i < count; i++)
-        {
-            Bones[i] = source[i];
-        }
+        source.Slice(0, count).CopyTo(MemoryMarshal.CreateSpan(ref Bones[0], MaxBones));
     }
 }

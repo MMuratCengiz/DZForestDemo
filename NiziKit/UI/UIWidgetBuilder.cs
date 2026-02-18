@@ -358,7 +358,8 @@ public ref struct WidgetBuilder(UiContext ctx, uint id)
         var desc = new ClayTextDesc
         {
             TextColor = (_isDisabled ? _style.DisabledColor : _style.TextColor).ToClayColor(),
-            FontSize = _style.FontSize
+            FontSize = _style.FontSize,
+            WrapMode = ClayTextWrapMode.None
         };
         ctx.Clay.Text(text, desc);
     }
@@ -369,7 +370,8 @@ public ref struct WidgetBuilder(UiContext ctx, uint id)
         var desc = new ClayTextDesc
         {
             TextColor = color.ToClayColor(),
-            FontSize = _style.FontSize
+            FontSize = _style.FontSize,
+            WrapMode = ClayTextWrapMode.None
         };
         ctx.Clay.Text(text, desc);
     }
@@ -398,7 +400,8 @@ public static class WidgetBuilderExtensions
         var desc = new ClayTextDesc
         {
             TextColor = style.TextColor.ToClayColor(),
-            FontSize = style.FontSize
+            FontSize = style.FontSize,
+            WrapMode = ClayTextWrapMode.None
         };
         ctx.Clay.Text(text, desc);
     }
@@ -409,7 +412,8 @@ public static class WidgetBuilderExtensions
         var desc = new ClayTextDesc
         {
             TextColor = color.ToClayColor(),
-            FontSize = fontSize
+            FontSize = fontSize,
+            WrapMode = ClayTextWrapMode.None
         };
         ctx.Clay.Text(text, desc);
     }

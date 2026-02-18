@@ -111,6 +111,24 @@ public ref struct UiListEditor
         return this;
     }
 
+    private string TruncateText(string text, float maxWidth)
+    {
+        if (maxWidth <= 0) return text;
+        var measured = _context.Clay.MeasureText(text, 0, _fontSize);
+        if (measured.Width <= maxWidth) return text;
+
+        const string ellipsis = "...";
+        var ellipsisDims = _context.Clay.MeasureText(ellipsis, 0, _fontSize);
+        var remaining = maxWidth - ellipsisDims.Width;
+        if (remaining <= 0) return ellipsis;
+
+        var fitChars = _context.Clay.GetCharIndexAtOffset(text, remaining, 0, _fontSize);
+        if (fitChars > 0 && fitChars < text.Length)
+            return text[..(int)fitChars] + ellipsis;
+
+        return ellipsis;
+    }
+
     public UiListEditorResult Show(string[] items, ref int selectedIndex)
     {
         var result = new UiListEditorResult();
@@ -242,22 +260,35 @@ public ref struct UiListEditor
                     itemDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
                     itemDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(_itemHeight);
                     itemDecl.Layout.Padding = new ClayPadding { Left = 8, Right = 8 };
+                    itemDecl.Layout.ChildGap = 4;
                     itemDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
                     itemDecl.BackgroundColor = itemBg.ToClayColor();
 
                     _context.OpenElement(itemDecl);
-                    _context.Clay.Text(items[i], new ClayTextDesc
-                    {
-                        TextColor = _textColor.ToClayColor(),
-                        FontSize = _fontSize
-                    });
 
                     if (_itemActionIcon != null)
                     {
-                        var spacerItemId = _context.StringCache.GetId("LEISpc", Id, (uint)i);
-                        var spacerItemDecl = new ClayElementDeclaration { Id = spacerItemId };
-                        spacerItemDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
-                        _context.OpenElement(spacerItemDecl);
+                        var displayText = items[i];
+                        var itemBbox = _context.Clay.GetElementBoundingBox(itemId);
+                        if (itemBbox.Width > 0)
+                        {
+                            var availTextWidth = itemBbox.Width - 16 - 20 - 4 - 6;
+                            displayText = TruncateText(displayText, availTextWidth);
+                        }
+
+                        var textWrapperId = _context.StringCache.GetId("LEITxt", Id, (uint)i);
+                        var textWrapperDecl = new ClayElementDeclaration { Id = textWrapperId };
+                        textWrapperDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
+                        textWrapperDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(0, float.MaxValue);
+                        textWrapperDecl.Layout.Padding = new ClayPadding { Right = 6 };
+                        textWrapperDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
+                        _context.OpenElement(textWrapperDecl);
+                        _context.Clay.Text(displayText, new ClayTextDesc
+                        {
+                            TextColor = _textColor.ToClayColor(),
+                            FontSize = _fontSize,
+                            WrapMode = ClayTextWrapMode.None
+                        });
                         _context.Clay.CloseElement();
 
                         var actionId = _context.StringCache.GetId("LEIAct", Id, (uint)i);
@@ -287,6 +318,15 @@ public ref struct UiListEditor
                             result.ActionClicked = true;
                             result.ActionClickedIndex = i;
                         }
+                    }
+                    else
+                    {
+                        _context.Clay.Text(items[i], new ClayTextDesc
+                        {
+                            TextColor = _textColor.ToClayColor(),
+                            FontSize = _fontSize,
+                            WrapMode = ClayTextWrapMode.None
+                        });
                     }
 
                     _context.Clay.CloseElement();

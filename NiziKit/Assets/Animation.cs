@@ -54,6 +54,31 @@ public class Animation : IDisposable
         Channels = channels;
     }
 
+    internal OzzContext CreateSamplingContext()
+    {
+        if (_skeleton?.OzzSkeleton == null || _animationData == null)
+        {
+            return default;
+        }
+
+        var context = _skeleton.OzzSkeleton.NewContext();
+        if (!_skeleton.OzzSkeleton.LoadAnimationFromBinaryContainer(_animationData, context))
+        {
+            _skeleton.OzzSkeleton.DestroyContext(context);
+            return default;
+        }
+
+        return context;
+    }
+
+    internal void DestroySamplingContext(OzzContext context)
+    {
+        if ((ulong)context != 0 && _skeleton?.OzzSkeleton?.IsValid() == true)
+        {
+            _skeleton.OzzSkeleton.DestroyContext(context);
+        }
+    }
+
     public void Dispose()
     {
         if ((ulong)OzzContext != 0 && _skeleton?.OzzSkeleton?.IsValid() == true)

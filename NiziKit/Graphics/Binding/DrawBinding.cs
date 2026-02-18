@@ -12,6 +12,7 @@ public class DrawBinding : ShaderBinding<GameObject>
     private readonly UniformBuffer<GpuInstanceData> _instanceBuffer;
     private readonly UniformBuffer<GpuBoneTransforms> _boneMatricesBuffer;
     private GpuBoneTransforms _boneData;
+    private bool _lastHadBones;
 
     public override BindGroupLayout Layout => GraphicsContext.BindGroupLayoutStore.Draw;
     public override bool RequiresCycling => true;
@@ -59,10 +60,16 @@ public class DrawBinding : ShaderBinding<GameObject>
         {
             _boneData.CopyFrom(animator.BoneMatrices);
             _boneMatricesBuffer.Write(in _boneData);
+            _lastHadBones = true;
             return;
         }
 
-        _boneData = GpuBoneTransforms.Identity();
+        if (_lastHadBones)
+        {
+            _boneData.ResetToIdentity();
+            _lastHadBones = false;
+        }
+
         _boneMatricesBuffer.Write(in _boneData);
     }
 }

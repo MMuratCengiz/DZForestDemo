@@ -364,7 +364,8 @@ public ref struct UiButton
             {
                 TextColor = _textColor.ToClayColor(),
                 FontSize = _fontSize,
-                TextAlignment = ClayTextAlignment.Center
+                TextAlignment = ClayTextAlignment.Center,
+                WrapMode = ClayTextWrapMode.None
             };
             _context.Clay.Text(_text, textDesc);
         }
@@ -835,7 +836,8 @@ public ref struct UiCheckbox
                 var textDesc = new ClayTextDesc
                 {
                     TextColor = _labelColor.ToClayColor(),
-                    FontSize = _fontSize
+                    FontSize = _fontSize,
+                    WrapMode = ClayTextWrapMode.None
                 };
                 _context.Clay.Text(_label, textDesc);
             }
