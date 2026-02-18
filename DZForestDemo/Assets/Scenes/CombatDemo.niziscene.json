@@ -158,6 +158,10 @@
             {
               "name": "A_Turn_Standing_180R_Femn",
               "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/Locomotion/Turn/A_Turn_Standing_180R_Femn.ozzanim"
+            },
+            {
+              "name": "A_Jump_Running_Femn",
+              "source": "Synty/Models/BaseLocomotion/Animations/Polygon/Feminine/InAir/A_Jump_Running_Femn.ozzanim"
             }
           ]
         },
@@ -188,7 +192,9 @@
         },
         {
           "type": "DZForestDemo.Script.PlayableCharacter",
-          "moveSpeed": 5,
+          "moveSpeed": 7,
+          "runSpeed": 12,
+          "runAnimSpeed": 1.7,
           "turnSpeed": 12,
           "stoppingDistance": 0.2,
           "crossFadeDuration": 0.15,
@@ -196,7 +202,7 @@
           "groundDecelRate": 18,
           "airControlFactor": 0.3,
           "airAccelRate": 4,
-          "jumpForce": 10,
+          "jumpForce": 12,
           "gravity": 20,
           "fallGravityMultiplier": 2.5,
           "lowJumpGravityMultiplier": 2,
@@ -217,6 +223,7 @@
           "animWalkBR": "A_Walk_BckStrafeBR_Femn",
           "animJump": "A_Jump_Idle_Femn",
           "animJumpWalk": "A_Jump_Walking_Femn",
+          "animJumpRun": "A_Jump_Running_Femn",
           "animFall": "A_InAir_FallLarge_Femn",
           "animLand": "A_Land_IdleHard_Femn",
           "animCrouchIdle": "A_Idle_Crouching_Femn",

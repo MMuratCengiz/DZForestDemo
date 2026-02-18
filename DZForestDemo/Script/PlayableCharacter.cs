@@ -14,8 +14,7 @@ namespace DZForestDemo.Script;
 /// <summary>
 /// State-machine character controller using a kinematic rigidbody.
 /// Fully manages its own gravity, ground detection, movement, rotation, and animations.
-/// Kinematic body means: no physics gravity, no position/rotation overwrite fight,
-/// still pushes dynamic objects (crates) and receives collision callbacks.
+/// Supports walk, run (Shift), crouch (C), 8-directional strafe, jumping, and click-to-move.
 /// </summary>
 public class PlayableCharacter : NiziComponent
 {
@@ -36,13 +35,21 @@ public class PlayableCharacter : NiziComponent
 
     private State _state = State.Idle;
     private string _currentAnim = "";
+    private float _currentAnimSpeed = 1f;
     private Vector3? _clickTarget;
     private bool _crouching;
+    private bool _sprinting;
     private float _landingTimer;
 
     private bool _isGrounded;
     private float _groundedBuffer;
     private float _groundY;
+
+    /// <summary>
+    /// Grace period after jump initiation during which ground detection is suppressed.
+    /// Prevents raycasts from immediately re-grounding the character before it rises.
+    /// </summary>
+    private float _jumpGraceTimer;
 
     private float _jumpBufferTimer;
     private bool _jumpHeld;
@@ -60,10 +67,14 @@ public class PlayableCharacter : NiziComponent
 
     private const float CoyoteTime = 0.15f;
     private const float JumpBufferTime = 0.15f;
+    private const float JumpGraceTime = 0.2f;
     private const float GroundProbeRadius = 0.35f;
-    private const float GroundProbeDepth = 1.0f;
+    private const float GroundProbeDepth = 1.2f;
+    private const float GroundSnapThreshold = 0.05f;
 
-    public float MoveSpeed { get; set; } = 5f;
+    public float MoveSpeed { get; set; } = 7f;
+    public float RunSpeed { get; set; } = 12f;
+    public float RunAnimSpeed { get; set; } = 1.7f;
     public float TurnSpeed { get; set; } = 12f;
     public float StoppingDistance { get; set; } = 0.2f;
     public float CrossFadeDuration { get; set; } = 0.15f;
@@ -72,7 +83,7 @@ public class PlayableCharacter : NiziComponent
     public float AirControlFactor { get; set; } = 0.3f;
     public float AirAccelRate { get; set; } = 4f;
 
-    public float JumpForce { get; set; } = 10f;
+    public float JumpForce { get; set; } = 12f;
     public float Gravity { get; set; } = 20f;
     public float FallGravityMultiplier { get; set; } = 2.5f;
     public float LowJumpGravityMultiplier { get; set; } = 2.0f;
@@ -95,6 +106,7 @@ public class PlayableCharacter : NiziComponent
     public string AnimWalkBR { get; set; } = "A_Walk_BckStrafeBR_Femn";
     public string AnimJump { get; set; } = "A_Jump_Idle_Femn";
     public string AnimJumpWalk { get; set; } = "A_Jump_Walking_Femn";
+    public string AnimJumpRun { get; set; } = "A_Jump_Running_Femn";
     public string AnimFall { get; set; } = "A_InAir_FallLarge_Femn";
     public string AnimLand { get; set; } = "A_Land_IdleHard_Femn";
     public string AnimCrouchIdle { get; set; } = "A_Idle_Crouching_Femn";
@@ -115,15 +127,15 @@ public class PlayableCharacter : NiziComponent
 
     public override void Update()
     {
-        if (_rigidbody == null)
+        if (_rigidbody == null || Owner == null)
         {
             return;
         }
 
         var dt = Time.DeltaTime;
 
-        UpdateGroundDetection();
-        UpdateJumpBuffer();
+        UpdateGroundDetection(dt);
+        UpdateJumpBuffer(dt);
 
         switch (_state)
         {
@@ -187,18 +199,20 @@ public class PlayableCharacter : NiziComponent
 
     /// <summary>
     /// Moves the kinematic body to the new position derived from the controller's
-    /// velocity. Clamps to ground surface when grounded to prevent sinking.
+    /// velocity. Sets LocalPosition directly for immediate visual feedback, and
+    /// also informs the physics engine via Move() for collision handling.
+    /// Clamps to ground surface when grounded to prevent hovering or sinking.
     /// </summary>
     private void ApplyMovement(float dt)
     {
-        if (_rigidbody == null)
+        if (_rigidbody == null || Owner == null)
         {
             return;
         }
 
         var newPos = LocalPosition + _velocity * dt;
 
-        if (_isGrounded && _state != State.Jumping && newPos.Y <= _groundY)
+        if (_isGrounded && _state != State.Jumping)
         {
             newPos.Y = _groundY;
             if (_velocity.Y < 0)
@@ -207,18 +221,27 @@ public class PlayableCharacter : NiziComponent
             }
         }
 
-        _rigidbody.MovePosition(newPos);
-        _rigidbody.MoveRotation(_targetRotation);
+        Owner.LocalPosition = newPos;
+        Owner.LocalRotation = _targetRotation;
+        _rigidbody.Move(newPos, _targetRotation);
     }
 
     /// <summary>
     /// Probes for ground using 4 offset raycasts arranged around the character,
     /// positioned just outside the capsule collider radius to avoid self-intersection.
+    /// Suppressed during the jump grace period so the character can cleanly leave the ground.
     /// Uses a coyote time buffer for stable ground state transitions.
-    /// Tracks the highest ground surface Y for position clamping.
     /// </summary>
-    private void UpdateGroundDetection()
+    private void UpdateGroundDetection(float dt)
     {
+        if (_jumpGraceTimer > 0)
+        {
+            _jumpGraceTimer -= dt;
+            _groundedBuffer -= dt;
+            _isGrounded = false;
+            return;
+        }
+
         var pos = LocalPosition;
         var down = -Vector3.UnitY;
         var originY = 0.15f;
@@ -247,12 +270,16 @@ public class PlayableCharacter : NiziComponent
 
         if (hitGround)
         {
-            _groundedBuffer = CoyoteTime;
-            _groundY = bestGroundY;
+            var distToGround = pos.Y - bestGroundY;
+            if (distToGround < GroundProbeDepth - originY)
+            {
+                _groundedBuffer = CoyoteTime;
+                _groundY = bestGroundY;
+            }
         }
         else
         {
-            _groundedBuffer -= Time.DeltaTime;
+            _groundedBuffer -= dt;
         }
 
         _isGrounded = _groundedBuffer > 0f;
@@ -262,7 +289,7 @@ public class PlayableCharacter : NiziComponent
     /// Tracks jump button press for input buffering. Allows the player to press
     /// jump slightly before landing and still have it register.
     /// </summary>
-    private void UpdateJumpBuffer()
+    private void UpdateJumpBuffer(float dt)
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
@@ -275,7 +302,7 @@ public class PlayableCharacter : NiziComponent
             _jumpHeld = false;
         }
 
-        _jumpBufferTimer -= Time.DeltaTime;
+        _jumpBufferTimer -= dt;
     }
 
     /// <summary>
@@ -324,6 +351,8 @@ public class PlayableCharacter : NiziComponent
 
     /// <summary>
     /// Handles input and state transitions for all grounded states.
+    /// Supports walk (WASD), run (Shift+WASD), crouch (C toggle), jump (Space),
+    /// strafe (RMB+WASD), and click-to-move (LMB).
     /// </summary>
     private void HandleGroundState(float dt)
     {
@@ -337,7 +366,13 @@ public class PlayableCharacter : NiziComponent
         if (Input.GetKeyDown(KeyCode.C))
         {
             _crouching = !_crouching;
+            if (_crouching)
+            {
+                _sprinting = false;
+            }
         }
+
+        _sprinting = !_crouching && Input.GetKey(KeyCode.Lshift);
 
         if (_jumpBufferTimer > 0 && !_crouching)
         {
@@ -347,8 +382,23 @@ public class PlayableCharacter : NiziComponent
             _groundedBuffer = 0f;
             _isGrounded = false;
             _jumpBufferTimer = 0f;
+            _jumpGraceTimer = JumpGraceTime;
             _state = State.Jumping;
-            SetAnimation(wasMoving ? AnimJumpWalk : AnimJump, LoopMode.Once);
+
+            string jumpAnim;
+            if (_sprinting && wasMoving)
+            {
+                jumpAnim = AnimJumpRun;
+            }
+            else if (wasMoving)
+            {
+                jumpAnim = AnimJumpWalk;
+            }
+            else
+            {
+                jumpAnim = AnimJump;
+            }
+            SetAnimation(jumpAnim, LoopMode.Once);
             return;
         }
 
@@ -403,7 +453,24 @@ public class PlayableCharacter : NiziComponent
 
         if (isMoving)
         {
-            var speed = _crouching ? MoveSpeed * 0.5f : MoveSpeed;
+            float speed;
+            float animSpeed;
+            if (_crouching)
+            {
+                speed = MoveSpeed * 0.5f;
+                animSpeed = 1f;
+            }
+            else if (_sprinting)
+            {
+                speed = RunSpeed;
+                animSpeed = RunAnimSpeed;
+            }
+            else
+            {
+                speed = MoveSpeed;
+                animSpeed = 1f;
+            }
+
             SmoothAccelerateXZ(moveDir, speed, GroundAccelRate, dt);
 
             if (strafing)
@@ -420,13 +487,13 @@ public class PlayableCharacter : NiziComponent
 
                 var strafeAnim = PickStrafeAnimation(moveDir);
                 _state = _crouching ? State.CrouchMoving : State.Moving;
-                SetAnimation(_crouching ? AnimCrouchWalk : strafeAnim);
+                SetAnimation(_crouching ? AnimCrouchWalk : strafeAnim, LoopMode.Loop, animSpeed);
             }
             else
             {
                 SmoothRotateToward(QuaternionFromDirection(moveDir), dt);
                 _state = _crouching ? State.CrouchMoving : State.Moving;
-                SetAnimation(_crouching ? AnimCrouchWalk : AnimWalk);
+                SetAnimation(_crouching ? AnimCrouchWalk : AnimWalk, LoopMode.Loop, animSpeed);
             }
         }
         else
@@ -465,7 +532,7 @@ public class PlayableCharacter : NiziComponent
         if (_isGrounded && _velocity.Y <= 0)
         {
             _state = State.Landing;
-            _landingTimer = 0.15f;
+            _landingTimer = 0.2f;
             SetAnimation(AnimLand, LoopMode.Once);
         }
     }
@@ -485,6 +552,7 @@ public class PlayableCharacter : NiziComponent
         {
             _state = State.Idle;
             _crouching = false;
+            _sprinting = false;
             SetAnimation(AnimIdle);
         }
     }
@@ -605,16 +673,27 @@ public class PlayableCharacter : NiziComponent
 
     /// <summary>
     /// Changes the current animation only if it differs from what's already playing,
-    /// preventing CrossFade restarts on repeated calls.
+    /// preventing CrossFade restarts on repeated calls. Also updates playback speed
+    /// without retriggering the animation when only speed changes.
     /// </summary>
-    private void SetAnimation(string anim, LoopMode loop = LoopMode.Loop)
+    private void SetAnimation(string anim, LoopMode loop = LoopMode.Loop, float speed = 1f)
     {
-        if (_currentAnim == anim)
+        if (_animator == null)
         {
             return;
         }
 
-        _currentAnim = anim;
-        _animator?.CrossFade(anim, CrossFadeDuration, loop);
+        if (_currentAnim != anim)
+        {
+            _currentAnim = anim;
+            _currentAnimSpeed = speed;
+            _animator.Speed = speed;
+            _animator.CrossFade(anim, CrossFadeDuration, loop);
+        }
+        else if (MathF.Abs(_currentAnimSpeed - speed) > 0.01f)
+        {
+            _currentAnimSpeed = speed;
+            _animator.Speed = speed;
+        }
     }
 }
