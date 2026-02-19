@@ -1,35 +1,48 @@
 using System.Runtime.InteropServices;
 using DenOfIz;
+using NiziKit.Graphics.Renderer.Pass;
 using Buffer = DenOfIz.Buffer;
 
 namespace NiziKit.Graphics.Buffers;
 
 public sealed class StagingBuffer : IDisposable
 {
-    public StagingBuffer(uint size, string? debugName = null)
+    private readonly Buffer[] _buffers;
+    private readonly IntPtr[] _mappedPtrs;
+    private readonly bool _cycled;
+
+    public StagingBuffer(uint numBytes, bool cycled = true, string? debugName = null)
     {
-        Size = size;
-        Buffer = GraphicsContext.Device.CreateBuffer(new BufferDesc
+        _cycled = cycled;
+        NumBytes = numBytes;
+        var numBuffers = cycled ? (int)GraphicsContext.NumFrames : 1;
+        _buffers = new Buffer[numBuffers];
+        _mappedPtrs = new IntPtr[numBuffers];
+
+        for (var i = 0; i < numBuffers; i++)
         {
-            NumBytes = size,
-            HeapType = HeapType.CpuGpu,
-            Usage = (uint)BufferUsageFlagBits.CopySrc,
-            DebugName = debugName != null ? StringView.Create(debugName) : null
-        });
-        MappedPtr = Buffer.MapMemory();
+            _buffers[i] = GraphicsContext.Device.CreateBuffer(new BufferDesc
+            {
+                NumBytes = numBytes,
+                HeapType = HeapType.CpuGpu,
+                Usage = (uint)BufferUsageFlagBits.CopySrc,
+                DebugName = debugName != null ? StringView.Create($"{debugName}_{i}") : null
+            });
+            _mappedPtrs[i] = _buffers[i].MapMemory();
+        }
     }
 
-    public Buffer Buffer { get; }
+    public Buffer Buffer => _buffers[Index];
+    public IntPtr MappedPtr => _mappedPtrs[Index];
+    public uint NumBytes { get; }
 
-    public uint Size { get; }
-
-    public IntPtr MappedPtr { get; }
+    private int Index => _cycled ? GraphicsContext.FrameIndex : 0;
 
     public void Write(ReadOnlySpan<byte> data)
     {
         unsafe
         {
-            data.CopyTo(new Span<byte>((void*)MappedPtr, (int)Size));
+            data.CopyTo(new Span<byte>((void*)MappedPtr, (int)NumBytes));
         }
     }
 
@@ -39,7 +52,7 @@ public sealed class StagingBuffer : IDisposable
         {
             fixed (T* ptr = &data)
             {
-                new Span<byte>(ptr, sizeof(T)).CopyTo(new Span<byte>((void*)MappedPtr, (int)Size));
+                new Span<byte>(ptr, sizeof(T)).CopyTo(new Span<byte>((void*)MappedPtr, (int)NumBytes));
             }
         }
     }
@@ -49,7 +62,7 @@ public sealed class StagingBuffer : IDisposable
         unsafe
         {
             var bytes = MemoryMarshal.AsBytes(data);
-            bytes.CopyTo(new Span<byte>((void*)MappedPtr, (int)Size));
+            bytes.CopyTo(new Span<byte>((void*)MappedPtr, (int)NumBytes));
         }
     }
 
@@ -57,7 +70,7 @@ public sealed class StagingBuffer : IDisposable
     {
         unsafe
         {
-            new Span<byte>((void*)MappedPtr, (int)Size).CopyTo(destination);
+            new Span<byte>((void*)MappedPtr, (int)NumBytes).CopyTo(destination);
         }
     }
 
@@ -69,9 +82,34 @@ public sealed class StagingBuffer : IDisposable
         }
     }
 
+    public void CopyTo(RenderPass pass, Buffer dstBuffer, ulong dstOffset = 0, ulong srcOffset = 0, ulong numBytes = 0)
+    {
+        pass.CopyBufferRegion(new CopyBufferRegionDesc
+        {
+            SrcBuffer = Buffer,
+            SrcOffset = srcOffset,
+            DstBuffer = dstBuffer,
+            DstOffset = dstOffset,
+            NumBytes = numBytes == 0 ? NumBytes : numBytes
+        });
+    }
+
+    public void CopyTo<T>(RenderPass pass, StructuredBuffer<T> dst) where T : unmanaged
+    {
+        CopyTo(pass, dst.Buffer);
+    }
+
+    public void CopyTo<T>(RenderPass pass, StorageBuffer<T> dst) where T : unmanaged
+    {
+        CopyTo(pass, dst.Buffer);
+    }
+
     public void Dispose()
     {
-        Buffer.UnmapMemory();
-        Buffer.Dispose();
+        foreach (var buffer in _buffers)
+        {
+            buffer.UnmapMemory();
+            buffer.Dispose();
+        }
     }
 }

@@ -103,5 +103,6 @@ exporter.Export(new ShadowCasterShader(shaderSourceDir), new Dictionary<string, 
 exporter.Export(new SkyboxShader(shaderSourceDir));
 exporter.Export(new GizmoShader(shaderSourceDir));
 exporter.Export(new GridShader(shaderSourceDir));
+exporter.Export(new ParticleSystemComputeShader(shaderSourceDir));
 
 return 0;
