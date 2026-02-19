@@ -48,3 +48,12 @@ public sealed class AnimationSelectorAttribute(string skeletonPropertyName) : At
 {
     public string SkeletonPropertyName { get; } = skeletonPropertyName;
 }
+
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
+public sealed class SceneObjectSelectorAttribute : Attribute;
+
+[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
+public sealed class BoneSelectorAttribute(string targetPropertyName) : Attribute
+{
+    public string TargetPropertyName { get; } = targetPropertyName;
+}

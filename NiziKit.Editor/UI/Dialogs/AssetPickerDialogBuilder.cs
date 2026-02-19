@@ -278,7 +278,7 @@ public static class AssetPickerDialogBuilder
 
         // Get grid area bounds from previous frame to clip interaction
         var gridId = ctx.GetElementId("AssetGrid");
-        var gridBounds = ctx.Clay.GetElementBoundingBox(gridId);
+        var gridBounds = ctx.GetElementBounds(gridId);
         var mouseInGrid = gridBounds.Width > 0 &&
                           ctx.MouseX >= gridBounds.X && ctx.MouseX <= gridBounds.X + gridBounds.Width &&
                           ctx.MouseY >= gridBounds.Y && ctx.MouseY <= gridBounds.Y + gridBounds.Height;

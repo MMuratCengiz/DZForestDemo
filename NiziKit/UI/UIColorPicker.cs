@@ -291,7 +291,7 @@ public ref struct UiColorPicker
         if (wheelInteraction.IsPressed && !_state.IsDraggingHue && !_state.IsDraggingSv
             && _context.ActiveDragWidgetId == 0)
         {
-            var bbox = _context.Clay.GetElementBoundingBox(wheelId);
+            var bbox = _context.GetElementBounds(wheelId);
             var scale = bbox.Width > 0 ? TexSize / bbox.Width : 1f;
             var centerX = bbox.X + bbox.Width / 2f;
             var centerY = bbox.Y + bbox.Height / 2f;
@@ -313,7 +313,7 @@ public ref struct UiColorPicker
 
         if (_state.IsDraggingHue)
         {
-            var bbox = _context.Clay.GetElementBoundingBox(wheelId);
+            var bbox = _context.GetElementBounds(wheelId);
             var centerX = bbox.X + bbox.Width / 2f;
             var centerY = bbox.Y + bbox.Height / 2f;
             var angle = MathF.Atan2(_context.MouseY - centerY, _context.MouseX - centerX);
@@ -332,7 +332,7 @@ public ref struct UiColorPicker
 
         if (_state.IsDraggingSv)
         {
-            var bbox = _context.Clay.GetElementBoundingBox(wheelId);
+            var bbox = _context.GetElementBounds(wheelId);
             var scale = bbox.Width > 0 ? TexSize / bbox.Width : 1f;
             var centerX = bbox.X + bbox.Width / 2f;
             var centerY = bbox.Y + bbox.Height / 2f;

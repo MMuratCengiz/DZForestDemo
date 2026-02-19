@@ -123,7 +123,7 @@ public ref struct UiSlider
 
         if (trackInteraction.WasClicked && !_state.IsDragging)
         {
-            var box = _context.Clay.GetElementBoundingBox(trackId);
+            var box = _context.GetElementBounds(trackId);
             if (box.Width > 0)
             {
                 var relX = (_context.MouseX - box.X) / box.Width;
@@ -144,7 +144,7 @@ public ref struct UiSlider
 
         if (_state.IsDragging)
         {
-            var box = _context.Clay.GetElementBoundingBox(trackId);
+            var box = _context.GetElementBounds(trackId);
             if (box.Width > 0)
             {
                 var relX = (_context.MouseX - box.X) / box.Width;

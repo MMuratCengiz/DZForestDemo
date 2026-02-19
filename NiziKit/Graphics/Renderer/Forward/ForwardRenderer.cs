@@ -7,6 +7,7 @@ using NiziKit.Core;
 using NiziKit.Graphics.Binding;
 using NiziKit.Graphics.Resources;
 using NiziKit.Light;
+using NiziKit.Particles;
 
 namespace NiziKit.Graphics.Renderer.Forward;
 
@@ -25,7 +26,9 @@ public class ForwardRenderer : IRenderer
     private readonly GpuShader _shadowCasterShader;
     private readonly GpuShader _shadowCasterSkinnedShader;
     private readonly SkyboxPass _skyboxPass;
+    private readonly ParticleSystemPass _particlePass;
     private readonly List<(GpuShader shader, SurfaceComponent surface, RenderBatch batch)> _drawList = new(256);
+    private readonly List<ParticleSystem> _activeParticleSystems = new(ParticleSystemPass.MaxSystems);
 
     private readonly CycledTexture _sceneColor;
     private readonly CycledTexture _sceneDepth;
@@ -54,6 +57,7 @@ public class ForwardRenderer : IRenderer
         _shadowCasterSkinnedShader = defaultShader.ShadowCasterSkinnedVariant;
 
         _skyboxPass = new SkyboxPass();
+        _particlePass = new ParticleSystemPass();
     }
 
     public CycledTexture Render(RenderFrame frame)
@@ -133,6 +137,35 @@ public class ForwardRenderer : IRenderer
 
         pass.End();
 
+        var particleCam = _viewData.Camera ?? scene.GetActiveCamera();
+        if (particleCam != null)
+        {
+            _activeParticleSystems.Clear();
+            foreach (var ps in scene.FindComponents<ParticleSystem>())
+            {
+                if (!ps.IsActive)
+                {
+                    continue;
+                }
+
+                _activeParticleSystems.Add(ps);
+                if (_activeParticleSystems.Count >= ParticleSystemPass.MaxSystems)
+                {
+                    break;
+                }
+            }
+
+            if (_activeParticleSystems.Count > 0)
+            {
+                var viewMatrix = particleCam.ViewMatrix;
+                var camRight = new Vector3(viewMatrix.M11, viewMatrix.M21, viewMatrix.M31);
+                var camUp = new Vector3(viewMatrix.M12, viewMatrix.M22, viewMatrix.M32);
+                _particlePass.Execute(frame, _sceneColor, _sceneDepth, _activeParticleSystems,
+                    particleCam.ViewProjectionMatrix, particleCam.WorldPosition, camRight, camUp,
+                    _viewData.DeltaTime, _viewData.TotalTime);
+            }
+        }
+
         return _sceneColor;
     }
 
@@ -176,6 +209,7 @@ public class ForwardRenderer : IRenderer
     {
         _shadowCasterList.Clear();
         var lightIndex = 0;
+        var cam = _viewData.Camera ?? scene.GetActiveCamera();
 
         foreach (var dl in scene.GetObjectsOfType<DirectionalLight>())
         {
@@ -263,6 +297,7 @@ public class ForwardRenderer : IRenderer
     public void Dispose()
     {
         _skyboxPass.Dispose();
+        _particlePass.Dispose();
         _sceneColor.Dispose();
         _sceneDepth.Dispose();
         _shadowDepth.Dispose();

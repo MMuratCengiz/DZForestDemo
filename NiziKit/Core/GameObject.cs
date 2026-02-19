@@ -154,7 +154,9 @@ public class GameObject(string name = "GameObject")
         var up = worldUp ?? Vector3.UnitY;
         var direction = target - WorldPosition;
         if (direction.LengthSquared() < 0.000001f)
+        {
             return;
+        }
 
         var forward = Vector3.Normalize(direction);
         var right = Vector3.Cross(up, forward);
@@ -188,7 +190,9 @@ public class GameObject(string name = "GameObject")
     public void SetParent(GameObject? newParent)
     {
         if (newParent == this || newParent == Parent)
+        {
             return;
+        }
 
         if (newParent == null)
         {
@@ -245,13 +249,19 @@ public class GameObject(string name = "GameObject")
     {
         foreach (var child in _children)
         {
-            if (child.Name == name) return child;
+            if (child.Name == name)
+            {
+                return child;
+            }
         }
 
         foreach (var child in _children)
         {
             var found = child.FindChild(name);
-            if (found != null) return found;
+            if (found != null)
+            {
+                return found;
+            }
         }
 
         return null;
@@ -294,7 +304,10 @@ public class GameObject(string name = "GameObject")
         var results = new List<T>();
         foreach (var component in _components)
         {
-            if (component is T typed) results.Add(typed);
+            if (component is T typed)
+            {
+                results.Add(typed);
+            }
         }
         return results;
     }
@@ -302,12 +315,18 @@ public class GameObject(string name = "GameObject")
     public T? GetComponentInChildren<T>() where T : NiziComponent
     {
         var result = GetComponent<T>();
-        if (result != null) return result;
+        if (result != null)
+        {
+            return result;
+        }
 
         foreach (var child in _children)
         {
             result = child.GetComponentInChildren<T>();
-            if (result != null) return result;
+            if (result != null)
+            {
+                return result;
+            }
         }
 
         return null;
@@ -324,7 +343,10 @@ public class GameObject(string name = "GameObject")
     {
         foreach (var component in _components)
         {
-            if (component is T typed) results.Add(typed);
+            if (component is T typed)
+            {
+                results.Add(typed);
+            }
         }
 
         foreach (var child in _children)
@@ -336,7 +358,11 @@ public class GameObject(string name = "GameObject")
     public T? GetComponentInParent<T>() where T : NiziComponent
     {
         var result = GetComponent<T>();
-        if (result != null) return result;
+        if (result != null)
+        {
+            return result;
+        }
+
         return Parent?.GetComponentInParent<T>();
     }
 

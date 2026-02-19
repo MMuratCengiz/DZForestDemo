@@ -51,7 +51,10 @@ public partial class FreeFlyController : NiziComponent
 
     public override void Initialize()
     {
-        if (Owner == null) return;
+        if (Owner == null)
+        {
+            return;
+        }
 
         _targetPosition = Owner.LocalPosition;
 

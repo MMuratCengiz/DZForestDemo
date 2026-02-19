@@ -3,8 +3,8 @@
   "cameras": [
     {
       "name": "Main Camera",
-      "position": [-0.92046964, 11.240527, -9.284252],
-      "rotation": [29.538757, -9.106916E-07, 0],
+      "position": [-0.92047, 10.5, -9.284246],
+      "rotation": [29.538776, 0, 0],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -74,8 +74,8 @@
     {
       "name": "My Character",
       "active": true,
-      "position": [-0.92047, 1.2405332, 5.7157536],
-      "rotation": [-180, 8.483199, -180],
+      "position": [-0.92047, 0.5, 5.7157536],
+      "rotation": [-179.99998, -8.483199, -179.99998],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -84,7 +84,8 @@
         },
         {
           "type": "NiziKit.Components.SurfaceComponent",
-          "albedo": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_01_B.dztex"
+          "albedo": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_01_B.dztex",
+          "normal": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_Normal_01.dztex"
         },
         {
           "type": "NiziKit.Animation.Animator",
@@ -212,6 +213,10 @@
           "cameraSmoothSpeed": 5,
           "cameraLookHeight": 1.5,
           "cameraLookSmoothSpeed": 10,
+          "isGrounded": true,
+          "isAirborne": false,
+          "isFalling": false,
+          "groundAngle": 0,
           "animIdle": "A_Idle_Standing_Femn",
           "animWalk": "A_Walk_FwdStrafeF_Femn",
           "animStrafeL": "A_Walk_FwdStrafeL_Femn",
@@ -234,7 +239,33 @@
           "isActive": true
         }
       ],
-      "children": []
+      "children": [
+        {
+          "name": "Bow",
+          "active": true,
+          "position": [-0.27535427, 0.6756979, 0.07664442],
+          "rotation": [-80.06197, 3.6497772, -8.33454],
+          "scale": [1, 1, 1],
+          "components": [
+            {
+              "type": "NiziKit.Components.MeshComponent",
+              "mesh": "Synty/Models/BowCombat/Models/Bows/Wep_Longbow_01.nizimesh"
+            },
+            {
+              "type": "NiziKit.Components.SurfaceComponent",
+              "albedo": "Synty/Textures/BowCombat/Textures/AnimationBowCombat_Texture_01_A.dztex"
+            },
+            {
+              "type": "NiziKit.Components.BoneAttachment",
+              "targetName": "My Character",
+              "boneName": "Hand_L",
+              "name": "Bow",
+              "isActive": true
+            }
+          ],
+          "children": []
+        }
+      ]
     },
     {
       "name": "Dummy Target",
@@ -257,8 +288,8 @@
     {
       "name": "Crate 2",
       "active": true,
-      "position": [-7.000039, 0.9997239, 2.9999216],
-      "rotation": [-1.4603179E-09, 25, 2.9182816E-09],
+      "position": [-7.000039, 0.9997239, 2.9999225],
+      "rotation": [-1.4846173E-09, 24.999996, -3.398524E-09],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -296,8 +327,8 @@
     {
       "name": "Barrel 1",
       "active": true,
-      "position": [-1.9999949, 0.99984145, -1.9999949],
-      "rotation": [-1.9169192E-06, -1.8221108E-07, 1.9209497E-06],
+      "position": [-1.0099126, 0.99984145, -3.54748],
+      "rotation": [-6.865833E-09, 21.631596, 3.6016667E-09],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -326,6 +357,97 @@
           "mass": 3,
           "speculativeMargin": 0.1,
           "sleepThreshold": 0.01
+        }
+      ],
+      "children": []
+    },
+    {
+      "name": "House",
+      "active": true,
+      "position": [3.0854166, 0.5155997, 3.0098886],
+      "rotation": [179.99791, -86.937904, -179.99779],
+      "scale": [1, 1, 1],
+      "components": [
+        {
+          "type": "NiziKit.Components.MeshComponent",
+          "mesh": "Synty/Models/FantasyKingdom/FBX/SM_Bld_House_Base_Wall_01.nizimesh"
+        },
+        {
+          "type": "NiziKit.Components.SurfaceComponent",
+          "albedo": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_01_A.dztex",
+          "normal": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_Normal_01.dztex"
+        }
+      ],
+      "children": []
+    },
+    {
+      "name": "Bonfire",
+      "active": true,
+      "position": [-4, 1, 0],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "components": [
+        {
+          "type": "NiziKit.Particles.ParticleSystem",
+          "maxParticles": 2048,
+          "emissionRate": 200,
+          "isEmitting": true,
+          "startLifetimeMin": 0.8,
+          "startLifetimeMax": 2,
+          "startSpeedMin": 1,
+          "startSpeedMax": 3,
+          "startSizeMin": 0.02,
+          "startSizeMax": 0.15,
+          "gravityModifier": -2,
+          "drag": 1.5,
+          "emitterRadius": 0.3,
+          "emitterAngle": 0.2,
+          "startColorR": 1,
+          "startColorG": 0.6,
+          "startColorB": 0.15,
+          "startColorA": 1,
+          "endColorR": 0.3,
+          "endColorG": 0.05,
+          "endColorB": 0,
+          "endColorA": 0,
+          "name": "Bonfire",
+          "isActive": true
+        }
+      ],
+      "children": []
+    },
+    {
+      "name": "Smoke",
+      "active": true,
+      "position": [-4.2246456, 4.17222, -3.5696507],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "components": [
+        {
+          "type": "NiziKit.Particles.ParticleSystem",
+          "maxParticles": 2048,
+          "emissionRate": 60,
+          "isEmitting": true,
+          "startLifetimeMin": 2,
+          "startLifetimeMax": 4,
+          "startSpeedMin": 0.3,
+          "startSpeedMax": 0.8,
+          "startSizeMin": 0.1,
+          "startSizeMax": 0.4,
+          "gravityModifier": -0.5,
+          "drag": 0.8,
+          "emitterRadius": 0.5,
+          "emitterAngle": 0.15,
+          "startColorR": 0.45,
+          "startColorG": 0.45,
+          "startColorB": 0.5,
+          "startColorA": 0.6,
+          "endColorR": 0.2,
+          "endColorG": 0.2,
+          "endColorB": 0.22,
+          "endColorA": 0,
+          "name": "Smoke",
+          "isActive": true
         }
       ],
       "children": []

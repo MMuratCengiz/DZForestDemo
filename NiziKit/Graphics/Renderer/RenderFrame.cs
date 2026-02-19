@@ -10,7 +10,7 @@ namespace NiziKit.Graphics.Renderer;
 
 public partial class RenderFrame : IDisposable
 {
-    private const int MaxPassesPerFrame = 8;
+    private const int MaxPassesPerFrame = 32;
     private const int MaxDependenciesPerPass = 8;
 
     private readonly Fence[] _frameFences;
@@ -116,7 +116,7 @@ public partial class RenderFrame : IDisposable
                 _graphicsPasses[frame][i] = new GraphicsPass(gfxCmd);
                 _graphicsSemaphores[frame][i] = gfxSem;
 
-                var (compCmd, compSem) = _commandListAllocator.GetCommandList(QueueType.Compute, (uint)frame);
+                var (compCmd, compSem) = _commandListAllocator.GetCommandList(QueueType.Graphics, (uint)frame);
                 _computePasses[frame][i] = new ComputePass(compCmd);
                 _computeSemaphores[frame][i] = compSem;
 

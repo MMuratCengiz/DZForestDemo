@@ -72,6 +72,18 @@ public sealed class UiContext : IDisposable
         Clay.SetViewportSize(width, height);
     }
 
+    /// <summary>
+    /// Returns the element bounding box in logical (DPI-scaled) coordinates,
+    /// consistent with <see cref="MouseX"/> and <see cref="MouseY"/>.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiBounds GetElementBounds(uint id)
+    {
+        var bbox = Clay.GetElementBoundingBox(id);
+        var dpi = Clay.GetDpiScale();
+        return new UiBounds(bbox.X / dpi, bbox.Y / dpi, bbox.Width / dpi, bbox.Height / dpi);
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void HandleEvent(Event ev)
     {
@@ -254,6 +266,14 @@ public sealed class UiContext : IDisposable
     {
         FrameEvents.Clear();
     }
+}
+
+public readonly struct UiBounds(float x, float y, float width, float height)
+{
+    public float X { get; } = x;
+    public float Y { get; } = y;
+    public float Width { get; } = width;
+    public float Height { get; } = height;
 }
 
 public struct UiContextDesc

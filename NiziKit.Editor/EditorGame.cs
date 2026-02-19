@@ -9,6 +9,7 @@ using NiziKit.Editor.UI;
 using NiziKit.Editor.ViewModels;
 using NiziKit.Graphics;
 using NiziKit.Graphics.Renderer;
+using NiziKit.Inputs;
 using NiziKit.Physics;
 using NiziKit.UI;
 
@@ -70,6 +71,9 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         {
             World.LoadScene(Editor.Desc.InitialScene);
         }
+
+        // Disable player input when running in Editor mode
+        Input.Player1.IsEnabled = false;
 
         _viewModel = new EditorViewModel();
         _viewModel.LoadFromCurrentScene();

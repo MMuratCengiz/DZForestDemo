@@ -8,6 +8,7 @@ public sealed class UiDropdownState
     public bool IsOpen { get; set; }
     public int SelectedIndex { get; set; } = -1;
     public int HoveredIndex { get; set; } = -1;
+    public string SearchText { get; set; } = "";
 
     public void Toggle()
     {
@@ -18,6 +19,7 @@ public sealed class UiDropdownState
     {
         IsOpen = false;
         HoveredIndex = -1;
+        SearchText = "";
     }
 
     public void Open()
@@ -42,12 +44,15 @@ public ref struct UiDropdown
     private float _itemHeight;
     private float _maxDropdownHeight;
     private string _placeholder;
+    private bool _searchable;
+    private string _idString;
 
     internal UiDropdown(UiContext ctx, string id, UiDropdownState state, string[] items)
     {
         _context = ctx;
         _state = state;
         _items = items;
+        _idString = id;
         Id = ctx.StringCache.GetId(id);
 
         _style = WidgetStyle.Default;
@@ -208,6 +213,13 @@ public ref struct UiDropdown
         return this;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiDropdown Searchable()
+    {
+        _searchable = true;
+        return this;
+    }
+
     public bool Show(ref int selectedIndex)
     {
         if (_state.SelectedIndex != selectedIndex)
@@ -258,18 +270,30 @@ public ref struct UiDropdown
 
     private string TruncateText(string text, float maxWidth)
     {
-        if (maxWidth <= 0) return text;
+        if (maxWidth <= 0)
+        {
+            return text;
+        }
+
         var measured = _context.Clay.MeasureText(text, 0, _style.FontSize);
-        if (measured.Width <= maxWidth) return text;
+        if (measured.Width <= maxWidth)
+        {
+            return text;
+        }
 
         const string ellipsis = "...";
         var ellipsisDims = _context.Clay.MeasureText(ellipsis, 0, _style.FontSize);
         var remaining = maxWidth - ellipsisDims.Width;
-        if (remaining <= 0) return ellipsis;
+        if (remaining <= 0)
+        {
+            return ellipsis;
+        }
 
         var fitChars = _context.Clay.GetCharIndexAtOffset(text, remaining, 0, _style.FontSize);
         if (fitChars > 0 && fitChars < text.Length)
+        {
             return text[..(int)fitChars] + ellipsis;
+        }
 
         return ellipsis;
     }
@@ -309,7 +333,10 @@ public ref struct UiDropdown
                 var displayText = SelectedItem ?? _placeholder;
                 var textBbox = _context.Clay.GetElementBoundingBox(textContainerId);
                 if (textBbox.Width > 0)
+                {
                     displayText = TruncateText(displayText, textBbox.Width);
+                }
+
                 var textColor = SelectedItem != null ? _style.TextColor : UiColor.Gray;
                 _context.Clay.Text(displayText, new ClayTextDesc
                 {
@@ -389,8 +416,31 @@ public ref struct UiDropdown
         _context.OpenElement(listDecl);
         _context.BeginPopupScope(listDecl.Id);
         {
+            if (_searchable)
+            {
+                var searchId = _idString + "_DDSearch";
+                var searchText = _state.SearchText;
+                Ui.TextField(_context, searchId, ref searchText)
+                    .BackgroundColor(UiColor.Rgb(30, 30, 35), UiColor.Rgb(40, 40, 48))
+                    .TextColor(_style.TextColor)
+                    .BorderColor(UiColor.Rgb(55, 55, 65), _style.FocusedBorderColor)
+                    .FontSize(_style.FontSize)
+                    .CornerRadius(0)
+                    .Padding(4, 3)
+                    .GrowWidth()
+                    .Placeholder("Search...")
+                    .Show(ref searchText);
+                _state.SearchText = searchText;
+            }
+
             for (var i = 0; i < _items.Length; i++)
             {
+                if (_searchable && !string.IsNullOrEmpty(_state.SearchText)
+                    && !_items[i].Contains(_state.SearchText, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
                 if (RenderItem(i))
                 {
                     _state.SelectedIndex = i;

@@ -44,7 +44,10 @@ public partial class OrbitController : NiziComponent
 
     public override void Initialize()
     {
-        if (Owner == null) return;
+        if (Owner == null)
+        {
+            return;
+        }
 
         var forward = Vector3.Transform(Vector3.UnitZ, Owner.LocalRotation);
         _currentYaw = MathF.Atan2(forward.X, forward.Z);

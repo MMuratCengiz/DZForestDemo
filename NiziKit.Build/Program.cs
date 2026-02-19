@@ -104,5 +104,6 @@ exporter.Export(new SkyboxShader(shaderSourceDir));
 exporter.Export(new GizmoShader(shaderSourceDir));
 exporter.Export(new GridShader(shaderSourceDir));
 exporter.Export(new ParticleSystemComputeShader(shaderSourceDir));
+exporter.Export(new ParticleSystemRasterShader(shaderSourceDir));
 
 return 0;

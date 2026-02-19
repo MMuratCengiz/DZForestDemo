@@ -5,6 +5,7 @@ using DenOfIz;
 using NiziKit.Animation;
 using NiziKit.Assets;
 using NiziKit.Components;
+using NiziKit.Core;
 using NiziKit.Editor.Services;
 using NiziKit.Editor.Theme;
 using NiziKit.Editor.ViewModels;
@@ -84,6 +85,18 @@ public static class PropertyEditorRenderer
         {
             RenderAssetRefEditor(ui, ctx, id, prop, instance, editorVm, onChanged);
         }
+        else if (propType == typeof(string) && prop.GetCustomAttribute<SceneObjectSelectorAttribute>() != null)
+        {
+            RenderSceneObjectSelectorEditor(ctx, id, prop, instance, editorVm, onChanged);
+        }
+        else if (propType == typeof(string) && prop.GetCustomAttribute<BoneSelectorAttribute>() != null)
+        {
+            RenderBoneSelectorEditor(ctx, id, prop, instance, editorVm, onChanged);
+        }
+        else if (propType == typeof(string) && prop.GetCustomAttribute<AnimationSelectorAttribute>() != null)
+        {
+            RenderAnimationSelectorEditor(ctx, id, prop, instance, editorVm, onChanged);
+        }
         else if (propType == typeof(string))
         {
             RenderStringEditor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
@@ -131,10 +144,6 @@ public static class PropertyEditorRenderer
         else if (propType.IsEnum)
         {
             RenderEnumEditor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
-        }
-        else if (prop.GetCustomAttribute<AnimationSelectorAttribute>() != null)
-        {
-            RenderAnimationSelectorEditor(ctx, id, prop, instance, editorVm, onChanged);
         }
         else if (prop.GetCustomAttribute<AssetRefAttribute>() != null)
         {
@@ -235,6 +244,198 @@ public static class PropertyEditorRenderer
                 editorVm.UndoSystem.Execute(
                     new PropertyChangeAction(instance, prop, oldValue, newValue),
                     $"Prop_AnimSel_{prop.Name}");
+                onChanged?.Invoke();
+            }
+        }
+    }
+
+    private static void CollectAllGameObjectNames(IReadOnlyList<GameObject> roots, List<string> names)
+    {
+        foreach (var go in roots)
+        {
+            if (!string.IsNullOrEmpty(go.Name))
+            {
+                names.Add(go.Name);
+            }
+
+            CollectAllGameObjectNames(go.Children, names);
+        }
+    }
+
+    private static GameObject? FindGameObjectByName(IReadOnlyList<GameObject> roots, string name)
+    {
+        foreach (var root in roots)
+        {
+            if (root.Name == name)
+            {
+                return root;
+            }
+
+            var found = root.FindChild(name);
+            if (found != null)
+            {
+                return found;
+            }
+        }
+
+        return null;
+    }
+
+    private static void RenderSceneObjectSelectorEditor(UiContext ctx, string id, PropertyInfo prop,
+        object instance, EditorViewModel editorVm, Action? onChanged)
+    {
+        var t = EditorTheme.Current;
+        var scene = World.CurrentScene;
+
+        if (scene == null)
+        {
+            var value = prop.GetValue(instance)?.ToString() ?? "(no scene)";
+            Ui.TextField(ctx, id, ref value)
+                .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
+                .TextColor(t.TextMuted)
+                .BorderColor(t.Border, t.Accent)
+                .FontSize(t.FontSizeCaption)
+                .CornerRadius(t.RadiusSmall)
+                .Padding(4, 3)
+                .GrowWidth()
+                .ReadOnly(true)
+                .Show(ref value);
+            return;
+        }
+
+        var nameList = new List<string>();
+        CollectAllGameObjectNames(scene.RootObjects, nameList);
+        var names = nameList.ToArray();
+
+        if (names.Length == 0)
+        {
+            var value = prop.GetValue(instance)?.ToString() ?? "(no objects)";
+            Ui.TextField(ctx, id, ref value)
+                .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
+                .TextColor(t.TextMuted)
+                .BorderColor(t.Border, t.Accent)
+                .FontSize(t.FontSizeCaption)
+                .CornerRadius(t.RadiusSmall)
+                .Padding(4, 3)
+                .GrowWidth()
+                .ReadOnly(true)
+                .Show(ref value);
+            return;
+        }
+
+        var oldValue = prop.GetValue(instance)?.ToString() ?? "";
+        var selectedIndex = Array.IndexOf(names, oldValue);
+        if (selectedIndex < 0)
+        {
+            selectedIndex = 0;
+        }
+
+        if (Ui.Dropdown(ctx, id, names)
+            .Background(t.SurfaceInset, t.Hover)
+            .TextColor(t.TextPrimary)
+            .FontSize(t.FontSizeCaption)
+            .CornerRadius(t.RadiusSmall)
+            .Padding(4, 3)
+            .GrowWidth()
+            .ItemHoverColor(t.Hover)
+            .DropdownBackground(t.PanelBackground)
+            .Placeholder("Select object...")
+            .Searchable()
+            .Show(ref selectedIndex))
+        {
+            var newValue = names[selectedIndex];
+            if (newValue != oldValue)
+            {
+                prop.SetValue(instance, newValue);
+                editorVm.UndoSystem.Execute(
+                    new PropertyChangeAction(instance, prop, oldValue, newValue),
+                    $"Prop_SceneObj_{prop.Name}");
+                onChanged?.Invoke();
+            }
+        }
+    }
+
+    private static void RenderBoneSelectorEditor(UiContext ctx, string id, PropertyInfo prop,
+        object instance, EditorViewModel editorVm, Action? onChanged)
+    {
+        var t = EditorTheme.Current;
+        var attr = prop.GetCustomAttribute<BoneSelectorAttribute>()!;
+
+        // Resolve the target property to get the target object name
+        var targetProp = instance.GetType().GetProperty(attr.TargetPropertyName,
+            BindingFlags.Public | BindingFlags.Instance);
+        var targetName = targetProp?.GetValue(instance) as string;
+
+        if (string.IsNullOrEmpty(targetName))
+        {
+            var value = prop.GetValue(instance)?.ToString() ?? "(select target first)";
+            Ui.TextField(ctx, id, ref value)
+                .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
+                .TextColor(t.TextMuted)
+                .BorderColor(t.Border, t.Accent)
+                .FontSize(t.FontSizeCaption)
+                .CornerRadius(t.RadiusSmall)
+                .Padding(4, 3)
+                .GrowWidth()
+                .ReadOnly(true)
+                .Show(ref value);
+            return;
+        }
+
+        var scene = World.CurrentScene;
+        var target = scene != null ? FindGameObjectByName(scene.RootObjects, targetName) : null;
+        var animator = target?.GetComponent<Animator>();
+        var jointNames = animator?.JointNames;
+
+        if (jointNames == null || jointNames.Count == 0)
+        {
+            var value = prop.GetValue(instance)?.ToString() ?? "(no bones)";
+            Ui.TextField(ctx, id, ref value)
+                .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
+                .TextColor(t.TextMuted)
+                .BorderColor(t.Border, t.Accent)
+                .FontSize(t.FontSizeCaption)
+                .CornerRadius(t.RadiusSmall)
+                .Padding(4, 3)
+                .GrowWidth()
+                .ReadOnly(true)
+                .Show(ref value);
+            return;
+        }
+
+        var names = new string[jointNames.Count];
+        for (var i = 0; i < jointNames.Count; i++)
+        {
+            names[i] = jointNames[i];
+        }
+
+        var oldValue = prop.GetValue(instance)?.ToString() ?? "";
+        var selectedIndex = Array.IndexOf(names, oldValue);
+        if (selectedIndex < 0)
+        {
+            selectedIndex = 0;
+        }
+
+        if (Ui.Dropdown(ctx, id, names)
+            .Background(t.SurfaceInset, t.Hover)
+            .TextColor(t.TextPrimary)
+            .FontSize(t.FontSizeCaption)
+            .CornerRadius(t.RadiusSmall)
+            .Padding(4, 3)
+            .GrowWidth()
+            .ItemHoverColor(t.Hover)
+            .DropdownBackground(t.PanelBackground)
+            .Placeholder("Select bone...")
+            .Searchable()
+            .Show(ref selectedIndex))
+        {
+            var newValue = names[selectedIndex];
+            if (newValue != oldValue)
+            {
+                prop.SetValue(instance, newValue);
+                editorVm.UndoSystem.Execute(
+                    new PropertyChangeAction(instance, prop, oldValue, newValue),
+                    $"Prop_BoneSel_{prop.Name}");
                 onChanged?.Invoke();
             }
         }

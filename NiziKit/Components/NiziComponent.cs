@@ -10,7 +10,11 @@ public abstract class NiziComponent
 
     [HideInInspector] public GameObject GameObject => Owner!;
     [HideInInspector] public string Name { get => Owner!.Name; set => Owner!.Name = value; }
-    [HideInInspector] public string? Tag { get => Owner?.Tag; set { if (Owner != null) Owner.Tag = value; } }
+    [HideInInspector] public string? Tag { get => Owner?.Tag; set { if (Owner != null)
+        {
+            Owner.Tag = value;
+        }
+    } }
     [HideInInspector] public bool IsActive => Owner?.IsActive ?? false;
 
     [HideInInspector] public Vector3 Position { get => Owner!.WorldPosition; set => Owner!.WorldPosition = value; }

@@ -113,18 +113,30 @@ public ref struct UiListEditor
 
     private string TruncateText(string text, float maxWidth)
     {
-        if (maxWidth <= 0) return text;
+        if (maxWidth <= 0)
+        {
+            return text;
+        }
+
         var measured = _context.Clay.MeasureText(text, 0, _fontSize);
-        if (measured.Width <= maxWidth) return text;
+        if (measured.Width <= maxWidth)
+        {
+            return text;
+        }
 
         const string ellipsis = "...";
         var ellipsisDims = _context.Clay.MeasureText(ellipsis, 0, _fontSize);
         var remaining = maxWidth - ellipsisDims.Width;
-        if (remaining <= 0) return ellipsis;
+        if (remaining <= 0)
+        {
+            return ellipsis;
+        }
 
         var fitChars = _context.Clay.GetCharIndexAtOffset(text, remaining, 0, _fontSize);
         if (fitChars > 0 && fitChars < text.Length)
+        {
             return text[..(int)fitChars] + ellipsis;
+        }
 
         return ellipsis;
     }
