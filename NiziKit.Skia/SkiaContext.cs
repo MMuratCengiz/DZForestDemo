@@ -247,7 +247,7 @@ public sealed class SkiaContext : IDisposable
         _grContext.PurgeResources();
     }
 
-    public void TransitionTextureForRendering(Texture texture, ResourceTracking resourceTracking)
+    public void TransitionTexture(Texture texture, ResourceTracking resourceTracking)
     {
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(texture);

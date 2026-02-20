@@ -68,7 +68,7 @@ public sealed class SkiaRenderTarget : IDisposable
         });
 
         _resourceTracking.TrackTexture(_texture, QueueType.Graphics);
-        SkiaContext.Instance.TransitionTextureForRendering(_texture, _resourceTracking);
+        SkiaContext.Instance.TransitionTexture(_texture, _resourceTracking);
 
         var nativeHandles = NativeInterop.GetNativeTextureHandles(_texture);
         _backendRenderTarget = CreateBackendRenderTarget(nativeHandles, TextureFormat, sampleCount);
