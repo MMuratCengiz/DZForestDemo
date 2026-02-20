@@ -203,6 +203,7 @@ public sealed class GraphicsContext : IDisposable
     {
         _logicalDevice.WaitIdle();
         _graphicsQueue.WaitIdle();
+        _computeQueue.WaitIdle();
     }
 
     public void Dispose()

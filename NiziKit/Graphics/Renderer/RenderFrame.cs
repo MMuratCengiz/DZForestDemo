@@ -11,6 +11,8 @@ namespace NiziKit.Graphics.Renderer;
 public partial class RenderFrame : IDisposable
 {
     private const int MaxPassesPerFrame = 32;
+    private const int MaxComputePassesPerFrame = 8;
+    private const int MaxRaytracingPassesPerFrame = 8;
     private const int MaxDependenciesPerPass = 8;
 
     private readonly Fence[] _frameFences;
@@ -43,6 +45,7 @@ public partial class RenderFrame : IDisposable
     {
         public RenderPass Pass;
         public Semaphore SignalSemaphore;
+        public QueueType QueueType;
         public int DependencyCount;
         public int Dep0, Dep1, Dep2, Dep3, Dep4, Dep5, Dep6, Dep7;
 
@@ -105,21 +108,27 @@ public partial class RenderFrame : IDisposable
         {
             _graphicsPasses[frame] = new GraphicsPass[MaxPassesPerFrame];
             _graphicsSemaphores[frame] = new Semaphore[MaxPassesPerFrame];
-            _computePasses[frame] = new ComputePass[MaxPassesPerFrame];
-            _computeSemaphores[frame] = new Semaphore[MaxPassesPerFrame];
-            _raytracingPasses[frame] = new RaytracingPass[MaxPassesPerFrame];
-            _raytracingSemaphores[frame] = new Semaphore[MaxPassesPerFrame];
+            _computePasses[frame] = new ComputePass[MaxComputePassesPerFrame];
+            _computeSemaphores[frame] = new Semaphore[MaxComputePassesPerFrame];
+            _raytracingPasses[frame] = new RaytracingPass[MaxRaytracingPassesPerFrame];
+            _raytracingSemaphores[frame] = new Semaphore[MaxRaytracingPassesPerFrame];
 
             for (var i = 0; i < MaxPassesPerFrame; i++)
             {
                 var (gfxCmd, gfxSem) = _commandListAllocator.GetCommandList(QueueType.Graphics, (uint)frame);
                 _graphicsPasses[frame][i] = new GraphicsPass(gfxCmd);
                 _graphicsSemaphores[frame][i] = gfxSem;
+            }
 
-                var (compCmd, compSem) = _commandListAllocator.GetCommandList(QueueType.Graphics, (uint)frame);
+            for (var i = 0; i < MaxComputePassesPerFrame; i++)
+            {
+                var (compCmd, compSem) = _commandListAllocator.GetCommandList(QueueType.Compute, (uint)frame);
                 _computePasses[frame][i] = new ComputePass(compCmd);
                 _computeSemaphores[frame][i] = compSem;
+            }
 
+            for (var i = 0; i < MaxRaytracingPassesPerFrame; i++)
+            {
                 var (rtCmd, rtSem) = _commandListAllocator.GetCommandList(QueueType.Graphics, (uint)frame);
                 _raytracingPasses[frame][i] = new RaytracingPass(rtCmd);
                 _raytracingSemaphores[frame][i] = rtSem;
@@ -211,6 +220,7 @@ public partial class RenderFrame : IDisposable
         ref var passData = ref _passes[_passCount];
         passData.Pass = pass;
         passData.SignalSemaphore = semaphore;
+        passData.QueueType = QueueType.Graphics;
         passData.DependencyCount = 0;
 
         for (var i = 0; i < _passCount && passData.DependencyCount < MaxDependenciesPerPass; i++)
@@ -233,6 +243,7 @@ public partial class RenderFrame : IDisposable
         ref var passData = ref _passes[_passCount];
         passData.Pass = pass;
         passData.SignalSemaphore = semaphore;
+        passData.QueueType = QueueType.Graphics;
         passData.DependencyCount = 0;
 
         if (dependencyIndex >= 0)
@@ -255,6 +266,7 @@ public partial class RenderFrame : IDisposable
         ref var passData = ref _passes[_passCount];
         passData.Pass = pass;
         passData.SignalSemaphore = semaphore;
+        passData.QueueType = QueueType.Compute;
         passData.DependencyCount = 0;
 
         if (dependencyIndex >= 0)
@@ -277,6 +289,7 @@ public partial class RenderFrame : IDisposable
         ref var passData = ref _passes[_passCount];
         passData.Pass = pass;
         passData.SignalSemaphore = semaphore;
+        passData.QueueType = QueueType.Graphics;
         passData.DependencyCount = 0;
 
         if (dependencyIndex >= 0)
@@ -327,7 +340,11 @@ public partial class RenderFrame : IDisposable
                 _submitWaitSemaphores[j] = _passes[depIndex].SignalSemaphore;
             }
 
-            GraphicsContext.GraphicsCommandQueue.ExecuteCommandLists(
+            var queue = passData.QueueType == QueueType.Compute
+                ? GraphicsContext.ComputeCommandQueue
+                : GraphicsContext.GraphicsCommandQueue;
+
+            queue.ExecuteCommandLists(
                 new ReadOnlySpan<CommandList>(_submitCommandLists, 0, 1),
                 null,
                 new ReadOnlySpan<Semaphore>(_submitWaitSemaphores, 0, passData.DependencyCount),
@@ -368,6 +385,7 @@ public partial class RenderFrame : IDisposable
     public void Dispose()
     {
         GraphicsContext.GraphicsCommandQueue.WaitIdle();
+        GraphicsContext.ComputeCommandQueue.WaitIdle();
 
         DisposeBlitResources();
         DisposeUi();
@@ -379,7 +397,15 @@ public partial class RenderFrame : IDisposable
             for (var i = 0; i < MaxPassesPerFrame; i++)
             {
                 _graphicsPasses[frame][i].Dispose();
+            }
+
+            for (var i = 0; i < MaxComputePassesPerFrame; i++)
+            {
                 _computePasses[frame][i].Dispose();
+            }
+
+            for (var i = 0; i < MaxRaytracingPassesPerFrame; i++)
+            {
                 _raytracingPasses[frame][i].Dispose();
             }
 
