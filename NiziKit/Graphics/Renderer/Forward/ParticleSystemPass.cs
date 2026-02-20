@@ -170,6 +170,9 @@ public class ParticleSystemPass : IDisposable
         };
         _rasterPipeline = GraphicsContext.Device.CreatePipeline(rasterPipelineDesc);
 
+        GraphicsContext.ResourceTracking.TrackBuffer(_particles.Buffer, QueueType.Compute);
+        GraphicsContext.ResourceTracking.TrackBuffer(_resolved.Buffer, QueueType.Compute);
+
         // --- Bind groups (one set, shared across all systems) ---
         _computeBindGroups = new BindGroup[numFrames];
         _rasterBindGroups = new BindGroup[numFrames];
@@ -307,6 +310,8 @@ public class ParticleSystemPass : IDisposable
         var totalActiveParticles = (uint)(numSystems * ParticlesPerSystem);
         var compute = frame.BeginComputePass();
         compute.Begin();
+        compute.TransitionBuffer(_particles.Buffer, (uint)ResourceUsageFlagBits.UnorderedAccess, QueueType.Compute);
+        compute.TransitionBuffer(_resolved.Buffer, (uint)ResourceUsageFlagBits.UnorderedAccess, QueueType.Compute);
         compute.BindPipeline(_computePipeline);
         compute.Bind(_computeBindGroups[frameIndex]);
         compute.Dispatch((totalActiveParticles + ThreadGroupSize - 1) / ThreadGroupSize, 1, 1);
@@ -318,6 +323,7 @@ public class ParticleSystemPass : IDisposable
         graphics.SetRenderTarget(0, sceneColor, LoadOp.Load);
         graphics.SetDepthTarget(sceneDepth, LoadOp.Load);
         graphics.Begin();
+        graphics.TransitionBuffer(_resolved.Buffer, (uint)ResourceUsageFlagBits.ShaderResource, QueueType.Graphics);
         graphics.BindPipeline(_rasterPipeline);
         graphics.Bind(_rasterBindGroups[frameIndex]);
         graphics.Draw(6, totalActiveParticles);

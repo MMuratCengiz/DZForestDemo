@@ -5,7 +5,8 @@ namespace NiziKit.Graphics.Renderer;
 
 public class CommandListAllocator : IDisposable
 {
-    private const int PoolSize = 64;
+    private const int GraphicsPoolSize = 64;
+    private const int ComputePoolSize = 8;
 
     public class CommandListBucket(CommandListPool pool, CommandList[] lists, Semaphore[] semaphores)
     {
@@ -15,10 +16,11 @@ public class CommandListAllocator : IDisposable
         public int FreeIndex = 0;
     }
 
-    public class CommandQueueData(QueueType type, CommandQueue queue)
+    public class CommandQueueData(QueueType type, CommandQueue queue, int poolSize)
     {
         public QueueType Type = type;
         public readonly CommandQueue Queue = queue;
+        public readonly int PoolSize = poolSize;
         public readonly List<CommandListBucket> Buckets = [];
         public int CurrentBucket;
     }
@@ -34,15 +36,15 @@ public class CommandListAllocator : IDisposable
 
         for (var i = 0; i < numFrames; i++)
         {
-            _graphicsQueueData[i] = CreateCommandQueueData(QueueType.Graphics, GraphicsContext.GraphicsCommandQueue);
-            _computeQueueData[i] = CreateCommandQueueData(QueueType.Compute, GraphicsContext.ComputeCommandQueue);
+            _graphicsQueueData[i] = CreateCommandQueueData(QueueType.Graphics, GraphicsContext.GraphicsCommandQueue, GraphicsPoolSize);
+            _computeQueueData[i] = CreateCommandQueueData(QueueType.Compute, GraphicsContext.ComputeCommandQueue, ComputePoolSize);
         }
 
         return;
 
-        CommandQueueData CreateCommandQueueData(QueueType type, CommandQueue commandQueue)
+        CommandQueueData CreateCommandQueueData(QueueType type, CommandQueue commandQueue, int poolSize)
         {
-            var queueData = new CommandQueueData(type, commandQueue);
+            var queueData = new CommandQueueData(type, commandQueue, poolSize);
             AddBucket(queueData);
             return queueData;
         }
@@ -93,16 +95,17 @@ public class CommandListAllocator : IDisposable
 
     private void AddBucket(CommandQueueData queueData)
     {
+        var poolSize = queueData.PoolSize;
         var commandListPoolDesc = new CommandListPoolDesc
         {
             CommandQueue = queueData.Queue,
-            NumCommandLists = PoolSize,
+            NumCommandLists = (uint)poolSize,
         };
         var commandListPool = GraphicsContext.Device.CreateCommandListPool(commandListPoolDesc);
         var lists = commandListPool.GetCommandLists().ToArray();
 
-        var semaphores = new Semaphore[PoolSize];
-        for (var i = 0; i < PoolSize; i++)
+        var semaphores = new Semaphore[poolSize];
+        for (var i = 0; i < poolSize; i++)
         {
             semaphores[i] = GraphicsContext.Device.CreateSemaphore();
         }
