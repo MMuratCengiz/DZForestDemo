@@ -116,7 +116,11 @@
       "WebFetch(domain:www.versluis.com)",
       "WebFetch(domain:www.motionforgepictures.com)",
       "WebFetch(domain:vortexbasis.com)",
-      "WebFetch(domain:alfredbaudisch.com)"
+      "WebFetch(domain:alfredbaudisch.com)",
+      "Bash(where:*)",
+      "Bash(cmd /c:*)",
+      "Bash(wsl ls:*)",
+      "Bash(timeout:*)"
     ]
   }
 }
