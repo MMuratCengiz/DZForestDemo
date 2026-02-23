@@ -21,6 +21,7 @@ public class Game : IDisposable
 
     public AppWindow Window { get; }
     public bool IsRunning { get; set; }
+    protected bool PhysicsPaused { get; set; }
 
     public static void Run<TGame>(GameDesc? desc = null) where TGame : Game
     {
@@ -116,11 +117,14 @@ public class Game : IDisposable
         World.CurrentScene?.ProcessGameObjectLifecycle();
 
         var fixedSteps = _fixedTimestep.Accumulate(Time.UnscaledDeltaTime);
-        for (var i = 0; i < fixedSteps; i++)
+        if (!PhysicsPaused)
         {
-            World.PhysicsWorld?.Step((float)_fixedTimestep.FixedDeltaTime);
-            World.CurrentScene?.PhysicsUpdateGameObjects();
-            FixedUpdate((float)_fixedTimestep.FixedDeltaTime);
+            for (var i = 0; i < fixedSteps; i++)
+            {
+                World.PhysicsWorld?.Step((float)_fixedTimestep.FixedDeltaTime);
+                World.CurrentScene?.PhysicsUpdateGameObjects();
+                FixedUpdate((float)_fixedTimestep.FixedDeltaTime);
+            }
         }
 
         World.CurrentScene?.UpdateGameObjects();

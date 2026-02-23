@@ -17,6 +17,9 @@ public partial class SurfaceComponent : NiziComponent
     [AssetRef(AssetRefType.Texture, "roughness")]
     public partial Texture2d? Roughness { get; set; }
 
+    [AssetRef(AssetRefType.Texture, "emissive")]
+    public partial Texture2d? Emissive { get; set; }
+
     public float MetallicValue { get; set; } = 0.0f;
     public float RoughnessValue { get; set; } = 0.5f;
     [Color] public Vector4 AlbedoColor { get; set; } = Vector4.One;

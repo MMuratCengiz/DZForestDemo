@@ -21,14 +21,28 @@ float4 PSMain(PSInput input) : SV_TARGET
                         ? AlbedoTexture.Sample(TextureSampler, uv) * AlbedoColor
                         : AlbedoColor;
 
-    float3 normal = NormalTexture.Sample(TextureSampler, uv).xyz;
-    if (length(normal) == 0.0)
+    float3 N = normalize(input.WorldNormal);
+    if (HasNormalTexture > 0.5)
     {
-        normal = normalize(input.WorldNormal);
+        float3 T = normalize(input.WorldTangent);
+        float3 B = normalize(input.WorldBitangent);
+        float3x3 TBN = float3x3(T, B, N);
+        float3 tangentNormal = NormalTexture.Sample(TextureSampler, uv).xyz * 2.0 - 1.0;
+        N = normalize(mul(tangentNormal, TBN));
     }
+    float3 normal = N;
 
-    float roughness = RoughnessTexture.Sample(TextureSampler, uv).r;
-    float metallic = MetallicTexture.Sample(TextureSampler, uv).r;
+    float roughness = HasRoughnessTexture > 0.5
+                        ? RoughnessTexture.Sample(TextureSampler, uv).r * RoughnessValue
+                        : RoughnessValue;
+
+    float metallic = HasMetallicTexture > 0.5
+                        ? MetallicTexture.Sample(TextureSampler, uv).r * MetallicValue
+                        : MetallicValue;
+
+    float3 emissive = HasEmissiveTexture > 0.5
+                        ? EmissiveTexture.Sample(TextureSampler, uv).rgb * EmissiveColor * EmissiveIntensity
+                        : EmissiveColor * EmissiveIntensity;
 
     float3 color = AmbientGroundColor * albedo.rgb;
     for (int i = 0; i < NumLights; i++)
@@ -44,5 +58,6 @@ float4 PSMain(PSInput input) : SV_TARGET
         }
     }
 
+    color += emissive;
     return float4(color, albedo.a);
 }

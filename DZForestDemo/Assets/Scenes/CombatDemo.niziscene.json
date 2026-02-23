@@ -29,7 +29,7 @@
     {
       "type": "directional",
       "name": "Directional Light",
-      "direction": [-0.6498308, -0.60697824, -0.45749024],
+      "direction": [0.13709155, -0.50498915, -0.852169],
       "color": [1, 1, 1],
       "intensity": 1,
       "castsShadows": true
@@ -84,7 +84,7 @@
       "name": "My Character",
       "active": true,
       "position": [-2.1819868, 0.5, -0.5354333],
-      "rotation": [-179.99998, -8.483199, -179.99998],
+      "rotation": [179.99998, 8.483199, 179.99998],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -94,7 +94,7 @@
         {
           "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_01_B.dztex",
-          "normal": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_Normal_01.dztex"
+          "normal": "Synty/Textures/DarkFantasy/Textures/Misc/PolygonDarkFantasy_Texture_01_Normals.dztex"
         },
         {
           "type": "NiziKit.Animation.Animator",
@@ -252,8 +252,8 @@
         {
           "name": "Bow",
           "active": true,
-          "position": [0.34852982, 0.78480023, 0.043151677],
-          "rotation": [-6.5138197, 15.778184, -83.20919],
+          "position": [0.34852982, 0.78480005, 0.043152064],
+          "rotation": [-6.5138235, 15.778185, -83.20919],
           "scale": [1, 1, 1],
           "components": [
             {
@@ -297,8 +297,8 @@
     {
       "name": "Crate 2",
       "active": true,
-      "position": [-7.6839075, -163350600, 5.586101],
-      "rotation": [-19.19624, 6.4981713, -12.984034],
+      "position": [-7.6839075, -164836670, 5.586101],
+      "rotation": [-19.34761, -6.015429, -10.857702],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -336,8 +336,8 @@
     {
       "name": "Barrel 1",
       "active": true,
-      "position": [-4.4763737, -163350480, -9.931981],
-      "rotation": [-5.41508, 19.973808, 0.007183753],
+      "position": [-4.4763737, -164836560, -9.931981],
+      "rotation": [-5.406809, 19.97596, 0.008537976],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -374,7 +374,7 @@
       "name": "House",
       "active": true,
       "position": [2.7758703, 0.6254746, 0.50601625],
-      "rotation": [6.3178773, -77.854324, 0.16616061],
+      "rotation": [7.567112E-23, -1.27222155E-14, -8.519813E-08],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -384,21 +384,8 @@
         {
           "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_01_A.dztex",
-          "normal": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_Normal_01.dztex"
-        },
-        {
-          "type": "NiziKit.Components.BoxCollider",
-          "size": [
-            2.500003,
-            1.2526441,
-            0.70305175
-          ],
-          "isTrigger": false,
-          "center": [
-            1.2500015,
-            0.62632203,
-            0
-          ]
+          "normal": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_Normal_01.dztex",
+          "roughness": "Synty/Textures/DarkFantasy/Textures/Misc/PolygonDarkFantasy_Stone_01.dztex"
         }
       ],
       "children": []

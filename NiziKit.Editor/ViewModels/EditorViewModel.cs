@@ -529,7 +529,7 @@ public class EditorViewModel
     public bool ShowStatistics { get; set; } = true;
     public float Fps { get; set; }
     public float FrameTime { get; set; }
-    public string GizmoModeText { get; set; } = "Move (W)";
+    public string GizmoModeText { get; set; } = "Move (W) · Local (X)";
 
     public bool SnapEnabled { get; set; }
     public bool ShowGrid { get; set; } = true;
@@ -605,15 +605,17 @@ public class EditorViewModel
         }
     }
 
-    public void UpdateGizmoModeText(GizmoMode mode)
+    public void UpdateGizmoModeText(GizmoMode mode, GizmoSpace space)
     {
-        GizmoModeText = mode switch
+        var modeText = mode switch
         {
             GizmoMode.Translate => "Move (W)",
             GizmoMode.Rotate => "Rotate (E)",
             GizmoMode.Scale => "Scale (R)",
             _ => "Move (W)"
         };
+        var spaceText = space == GizmoSpace.Local ? "Local" : "World";
+        GizmoModeText = $"{modeText} · {spaceText} (X)";
     }
 
     public void Toggle2DMode()

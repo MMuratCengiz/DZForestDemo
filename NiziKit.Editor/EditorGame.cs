@@ -252,6 +252,7 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         if (gizmoPass.Gizmo.BeginDrag(ray, _editorCamera))
         {
             _gizmoDragging = true;
+            PhysicsPaused = true;
 
             var selected = _viewModel.SelectedGameObject?.GameObject;
             if (selected != null)
@@ -286,6 +287,7 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         var gizmoPass = _renderer.EditorOverlayPass;
         gizmoPass?.Gizmo.EndDrag();
         _gizmoDragging = false;
+        PhysicsPaused = false;
 
         var selected = _viewModel.SelectedGameObject?.GameObject;
         if (selected != null)
@@ -312,6 +314,7 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         var gizmoPass = _renderer.EditorOverlayPass;
         gizmoPass?.Gizmo.CancelDrag();
         _gizmoDragging = false;
+        PhysicsPaused = false;
 
         var selected = _viewModel.SelectedGameObject?.GameObject;
         if (selected != null)
@@ -367,9 +370,14 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
             case KeyCode.R:
                 gizmoPass.Gizmo.Mode = GizmoMode.Scale;
                 break;
+            case KeyCode.X:
+                gizmoPass.Gizmo.Space = gizmoPass.Gizmo.Space == GizmoSpace.Local
+                    ? GizmoSpace.World
+                    : GizmoSpace.Local;
+                break;
         }
 
-        _viewModel.UpdateGizmoModeText(gizmoPass.Gizmo.Mode);
+        _viewModel.UpdateGizmoModeText(gizmoPass.Gizmo.Mode, gizmoPass.Gizmo.Space);
     }
 
     private void TrySelectMeshAtCursor()

@@ -8,7 +8,8 @@ public class GpuSurfaceLayout : ILayout
     public static readonly BindingSlot Normal = BindingSlot.ShaderResource(1);
     public static readonly BindingSlot Roughness = BindingSlot.ShaderResource(2);
     public static readonly BindingSlot Metallic = BindingSlot.ShaderResource(3);
-    public static readonly BindingSlot Constants = BindingSlot.ConstantBuffer(4);
+    public static readonly BindingSlot Emissive = BindingSlot.ShaderResource(4);
+    public static readonly BindingSlot Constants = BindingSlot.ConstantBuffer(5);
     public static readonly BindingSlot TextureSampler = BindingSlot.Sampler(0);
     public static readonly FrequencySpace FrequencySpace = FrequencySpace.Material;
 
@@ -22,6 +23,7 @@ public class GpuSurfaceLayout : ILayout
             TextureBindingDesc(Normal.Binding),
             TextureBindingDesc(Roughness.Binding),
             TextureBindingDesc(Metallic.Binding),
+            TextureBindingDesc(Emissive.Binding),
             new()
             {
                 ArraySize = 1,

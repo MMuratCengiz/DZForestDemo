@@ -15,4 +15,8 @@ public struct GpuSurfaceData
     public float RoughnessValue;
     public float EmissiveIntensity;
     public float HasAlbedoTexture;
+    public float HasNormalTexture;
+    public float HasRoughnessTexture;
+    public float HasMetallicTexture;
+    public float HasEmissiveTexture;
 }
