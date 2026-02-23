@@ -167,7 +167,7 @@ public static class AssetPickerDialogBuilder
                 .BorderColor(t.Border)
                 .Padding(6, 4)
                 .Overflow(UiTextOverflow.Scroll)
-                .Show(ref search))
+                .Show())
             {
                 state.CurrentPage = 0;
             }

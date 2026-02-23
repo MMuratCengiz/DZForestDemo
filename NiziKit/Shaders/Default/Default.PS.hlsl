@@ -24,7 +24,7 @@ float4 PSMain(PSInput input) : SV_TARGET
     float3 normal = NormalTexture.Sample(TextureSampler, uv).xyz;
     if (length(normal) == 0.0)
     {
-        // normal = input.WorldNormal;
+        normal = normalize(input.WorldNormal);
     }
 
     float roughness = RoughnessTexture.Sample(TextureSampler, uv).r;
@@ -36,9 +36,11 @@ float4 PSMain(PSInput input) : SV_TARGET
         Light light = Lights[i];
         if (light.Type == LIGHT_TYPE_DIRECTIONAL)
         {
-            // Normal to Light
-            float nl = dot(normal, light.SpotDirection);
-            color += light.Color * albedo.rgb * nl;
+            float3 L = normalize(-light.PositionOrDirection);
+
+            float NdotL = saturate(dot(normal, L));
+
+            color += light.Color * light.Intensity * NdotL * albedo.rgb;
         }
     }
 

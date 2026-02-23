@@ -295,7 +295,7 @@ public ref struct UiDraggableValue
                     _state.SelectAllOnNextRender = false;
                 }
 
-                tf.Show(ref editText);
+                tf.Show();
                 _state.EditText = editText;
             }
             else

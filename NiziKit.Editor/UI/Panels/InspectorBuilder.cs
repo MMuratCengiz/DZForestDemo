@@ -1,3 +1,4 @@
+using System.Numerics;
 using NiziKit.Assets;
 using NiziKit.Assets.Pack;
 using NiziKit.Components;
@@ -90,7 +91,7 @@ public static class InspectorBuilder
             .CornerRadius(t.RadiusSmall)
             .Padding(6, 4)
             .GrowWidth()
-            .Show(ref name))
+            .Show())
         {
             obj.Name = name;
             obj.Editor.MarkDirty();
@@ -145,6 +146,7 @@ public static class InspectorBuilder
         }
 
         BuildGridSettings(ui, ctx, vm);
+        BuildAmbientLightSettings(ui, ctx, vm);
         BuildSkyboxSettings(ui, ctx, vm);
     }
 
@@ -293,6 +295,101 @@ public static class InspectorBuilder
                 .Open())
             {
                 ui.Text(vm.AutoSaveStatus, new UiTextStyle { Color = t.TextMuted, FontSize = t.FontSizeCaption });
+            }
+        }
+    }
+
+    private static void BuildAmbientLightSettings(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    {
+        var t = EditorTheme.Current;
+        var scene = World.CurrentScene;
+        if (scene == null)
+        {
+            return;
+        }
+
+        using var section = Ui.CollapsibleSection(ctx, "AmbientLightSettings", "Ambient Light", false)
+            .HeaderBackground(t.SectionHeaderBg, t.Hover)
+            .HeaderTextColor(t.TextPrimary)
+            .BodyBackground(t.PanelBackground)
+            .ChevronColor(t.TextMuted)
+            .FontSize(t.FontSizeBody)
+            .Padding(8)
+            .Gap(4)
+            .Open();
+
+        if (!section.IsExpanded)
+        {
+            return;
+        }
+
+        using var grid = Ui.PropertyGrid(ctx, "AmbientLightGrid")
+            .LabelWidth(75)
+            .FontSize(t.FontSizeCaption)
+            .RowHeight(24)
+            .Gap(2)
+            .LabelColor(t.TextSecondary)
+            .Open();
+
+        {
+            using var row = grid.Row("Sky Color");
+            var color = scene.AmbientSkyColor;
+            var r = color.X;
+            var g = color.Y;
+            var b = color.Z;
+
+            if (Ui.ColorPicker(ctx, "AmbientSkyColor")
+                .FontSize(t.FontSizeCaption)
+                .CornerRadius(t.RadiusSmall)
+                .BorderColor(t.Border)
+                .PanelBackground(t.PanelBackground)
+                .LabelColor(t.TextSecondary)
+                .ValueTextColor(t.TextMuted)
+                .GrowWidth()
+                .Show(ref r, ref g, ref b))
+            {
+                scene.AmbientSkyColor = new Vector3(r, g, b);
+                vm.MarkDirty();
+            }
+        }
+
+        {
+            using var row = grid.Row("Ground");
+            var color = scene.AmbientGroundColor;
+            var r = color.X;
+            var g = color.Y;
+            var b = color.Z;
+
+            if (Ui.ColorPicker(ctx, "AmbientGroundColor")
+                .FontSize(t.FontSizeCaption)
+                .CornerRadius(t.RadiusSmall)
+                .BorderColor(t.Border)
+                .PanelBackground(t.PanelBackground)
+                .LabelColor(t.TextSecondary)
+                .ValueTextColor(t.TextMuted)
+                .GrowWidth()
+                .Show(ref r, ref g, ref b))
+            {
+                scene.AmbientGroundColor = new Vector3(r, g, b);
+                vm.MarkDirty();
+            }
+        }
+
+        {
+            using var row = grid.Row("Intensity");
+            var intensity = scene.AmbientIntensity;
+            if (Ui.DraggableValue(ctx, "AmbientIntensityVal")
+                .LabelWidth(0)
+                .Sensitivity(0.01f)
+                .Format("F2")
+                .FontSize(t.FontSizeCaption)
+                .Width(UiSizing.Grow())
+                .ValueColor(t.InputBackground)
+                .ValueTextColor(t.InputText)
+                .Show(ref intensity))
+            {
+                scene.AmbientIntensity = intensity;
+                vm.MarkDirty();
             }
         }
     }

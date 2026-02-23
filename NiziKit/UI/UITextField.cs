@@ -516,6 +516,7 @@ public ref struct UiTextField
 {
     private readonly UiContext _context;
     private readonly UiTextFieldState _state;
+    private ref string _textRef;
 
     private UiColor _backgroundColor;
     private UiColor _focusedBackgroundColor;
@@ -540,10 +541,11 @@ public ref struct UiTextField
     private float _cursorWidth;
     private UiTextOverflow _overflow;
 
-    internal UiTextField(UiContext ctx, string id, UiTextFieldState state)
+    internal UiTextField(UiContext ctx, string id, UiTextFieldState state, ref string text)
     {
         _context = ctx;
         _state = state;
+        _textRef = ref text;
         Id = ctx.StringCache.GetId(id);
 
         _backgroundColor = UiColor.Rgb(45, 45, 48);
@@ -759,13 +761,8 @@ public ref struct UiTextField
         return this;
     }
 
-    public bool Show(ref string text, float deltaTime = 0)
+    public bool Show(float deltaTime = 0)
     {
-        if (_state.Text != text)
-        {
-            _state.Text = text;
-        }
-
         var textChanged = false;
         var interaction = _context.GetInteraction(Id);
         var isFocused = _context.FocusedTextFieldId == Id;
@@ -806,15 +803,10 @@ public ref struct UiTextField
 
         if (textChanged)
         {
-            text = _state.Text;
+            _textRef = _state.Text;
         }
 
         return textChanged;
-    }
-
-    public bool Show(ref string text)
-    {
-        return Show(ref text, 0);
     }
 
     private void RenderTextField(bool isFocused)
@@ -1574,7 +1566,7 @@ public static partial class Ui
             state.Text = text;
         }
 
-        return new UiTextField(ctx, id, state);
+        return new UiTextField(ctx, id, state, ref text);
     }
 }
 

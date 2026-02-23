@@ -5,23 +5,23 @@ namespace NiziKit.UI;
 
 public readonly ref struct UiFrame
 {
-    private readonly UiContext _context;
+    public UiContext Context { get; }
 
     internal UiFrame(UiContext context)
     {
-        _context = context;
+        Context = context;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void End(uint frameIndex, float deltaTime, CommandList commandList)
     {
-        _context.EndFrame(frameIndex, deltaTime, commandList);
+        Context.EndFrame(frameIndex, deltaTime, commandList);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElement Root(string id = "Root")
     {
-        return new UiElement(_context, id)
+        return new UiElement(Context, id)
             .Width(UiSizing.Grow())
             .Height(UiSizing.Grow());
     }
@@ -29,19 +29,19 @@ public readonly ref struct UiFrame
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElement Panel(string id)
     {
-        return new UiElement(_context, id);
+        return new UiElement(Context, id);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElement Row(string id = "Row")
     {
-        return new UiElement(_context, id).Direction(UiDirection.Horizontal);
+        return new UiElement(Context, id).Direction(UiDirection.Horizontal);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElement Column(string id = "Column")
     {
-        return new UiElement(_context, id).Direction(UiDirection.Vertical);
+        return new UiElement(Context, id).Direction(UiDirection.Vertical);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -60,13 +60,13 @@ public readonly ref struct UiFrame
                 _ => ClayTextAlignment.Left
             }
         };
-        _context.Clay.Text(text, desc);
+        Context.Clay.Text(text, desc);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Image(Texture texture, uint width, uint height)
     {
-        _context.Clay.Texture(texture, width, height);
+        Context.Clay.Texture(texture, width, height);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -80,7 +80,7 @@ public readonly ref struct UiFrame
             WrapMode = ClayTextWrapMode.None,
             TextAlignment = ClayTextAlignment.Center
         };
-        _context.Clay.Text(icon, desc);
+        Context.Clay.Text(icon, desc);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -99,7 +99,7 @@ public readonly ref struct UiFrame
                 _ => ClayTextAlignment.Left
             }
         };
-        _context.Clay.Text(icon, desc);
+        Context.Clay.Text(icon, desc);
     }
 }
 

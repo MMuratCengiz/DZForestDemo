@@ -429,7 +429,7 @@ public ref struct UiDropdown
                     .Padding(4, 3)
                     .GrowWidth()
                     .Placeholder("Search...")
-                    .Show(ref searchText);
+                    .Show();
                 _state.SearchText = searchText;
             }
 

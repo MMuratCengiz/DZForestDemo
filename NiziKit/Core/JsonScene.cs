@@ -32,6 +32,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         LoadLights(sceneData.Lights);
         LoadObjects(sceneData.Objects);
         LoadSkybox(sceneData.Skybox);
+        LoadAmbientLight(sceneData);
     }
 
     public override async Task LoadAsync(CancellationToken ct = default)
@@ -50,6 +51,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         LoadLights(sceneData.Lights);
         LoadObjects(sceneData.Objects);
         LoadSkybox(sceneData.Skybox);
+        LoadAmbientLight(sceneData);
     }
 
     private HashSet<string> CollectAssetReferences(List<GameObjectJson>? objects, SkyboxJson? skybox)
@@ -770,6 +772,24 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             FrontRef = skyboxData.Front,
             BackRef = skyboxData.Back
         };
+    }
+
+    private void LoadAmbientLight(SceneJson sceneData)
+    {
+        if (sceneData.AmbientSkyColor is { Length: >= 3 })
+        {
+            AmbientSkyColor = new Vector3(sceneData.AmbientSkyColor[0], sceneData.AmbientSkyColor[1], sceneData.AmbientSkyColor[2]);
+        }
+
+        if (sceneData.AmbientGroundColor is { Length: >= 3 })
+        {
+            AmbientGroundColor = new Vector3(sceneData.AmbientGroundColor[0], sceneData.AmbientGroundColor[1], sceneData.AmbientGroundColor[2]);
+        }
+
+        if (sceneData.AmbientIntensity.HasValue)
+        {
+            AmbientIntensity = sceneData.AmbientIntensity.Value;
+        }
     }
 
     private static Texture2d? LoadSkyboxFace(string? path)

@@ -177,7 +177,7 @@ public static class PropertyEditorRenderer
             .Padding(4, 3)
             .GrowWidth()
             .ReadOnly(!canWrite)
-            .Show(ref value);
+            .Show();
 
         if (changed && canWrite)
         {
@@ -213,7 +213,7 @@ public static class PropertyEditorRenderer
                 .Padding(4, 3)
                 .GrowWidth()
                 .ReadOnly(true)
-                .Show(ref value);
+                .Show();
             return;
         }
 
@@ -304,7 +304,7 @@ public static class PropertyEditorRenderer
                 .Padding(4, 3)
                 .GrowWidth()
                 .ReadOnly(true)
-                .Show(ref value);
+                .Show();
             return;
         }
 
@@ -324,7 +324,7 @@ public static class PropertyEditorRenderer
                 .Padding(4, 3)
                 .GrowWidth()
                 .ReadOnly(true)
-                .Show(ref value);
+                .Show();
             return;
         }
 
@@ -383,7 +383,7 @@ public static class PropertyEditorRenderer
                 .Padding(4, 3)
                 .GrowWidth()
                 .ReadOnly(true)
-                .Show(ref value);
+                .Show();
             return;
         }
 
@@ -404,7 +404,7 @@ public static class PropertyEditorRenderer
                 .Padding(4, 3)
                 .GrowWidth()
                 .ReadOnly(true)
-                .Show(ref value);
+                .Show();
             return;
         }
 
@@ -1204,7 +1204,7 @@ public static class PropertyEditorRenderer
                         .CornerRadius(t.RadiusSmall)
                         .Padding(4, 2)
                         .Width(UiSizing.Percent(0.4f))
-                        .Show(ref keyVal);
+                        .Show();
 
                     if (keyChanged && keyVal != oldKey && !dict.Contains(keyVal))
                     {
@@ -1230,7 +1230,7 @@ public static class PropertyEditorRenderer
                         .CornerRadius(t.RadiusSmall)
                         .Padding(4, 2)
                         .GrowWidth()
-                        .Show(ref valVal);
+                        .Show();
 
                     if (valChanged && valVal != oldVal)
                     {

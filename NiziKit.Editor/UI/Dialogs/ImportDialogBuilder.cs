@@ -291,7 +291,7 @@ public static class ImportDialogBuilder
                     .CornerRadius(t.RadiusSmall)
                     .Padding(6, 4)
                     .GrowWidth()
-                    .Show(ref assetName))
+                    .Show())
                 {
                     item.AssetName = assetName;
                 }
@@ -309,7 +309,7 @@ public static class ImportDialogBuilder
                     .Padding(6, 4)
                     .GrowWidth()
                     .Placeholder("(root output)")
-                    .Show(ref outSubdir))
+                    .Show())
                 {
                     item.OutputSubdirectory = outSubdir;
                 }
@@ -448,7 +448,7 @@ public static class ImportDialogBuilder
                     .CornerRadius(t.RadiusSmall)
                     .Padding(6, 4)
                     .Width(UiSizing.Grow(120))
-                    .Show(ref exportName))
+                    .Show())
                 {
                     mesh.ExportName = exportName;
                 }
@@ -574,7 +574,7 @@ public static class ImportDialogBuilder
                     .CornerRadius(t.RadiusSmall)
                     .Padding(6, 4)
                     .Width(UiSizing.Grow(120))
-                    .Show(ref exportName))
+                    .Show())
                 {
                     anim.ExportName = exportName;
                 }
@@ -751,7 +751,7 @@ public static class ImportDialogBuilder
             .Padding(6, 4)
             .Width(UiSizing.Fixed(200))
             .Placeholder("Assets/...")
-            .Show(ref outDir))
+            .Show())
         {
             importVm.OutputDirectory = outDir;
         }

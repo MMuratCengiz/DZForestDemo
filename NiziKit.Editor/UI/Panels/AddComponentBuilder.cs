@@ -58,7 +58,7 @@ public static class AddComponentBuilder
             .Padding(6, 4)
             .GrowWidth()
             .Placeholder("Search components...")
-            .Show(ref searchText);
+            .Show();
         state.SearchText = searchText;
 
         using (ui.Panel("AddCompDiv").GrowWidth().Height(1).Background(t.Border).Open()) { }

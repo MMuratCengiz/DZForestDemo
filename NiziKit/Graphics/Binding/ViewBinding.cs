@@ -183,9 +183,9 @@ public class ViewBinding : ShaderBinding<ViewData>
 
         var result = new LightConstants
         {
-            AmbientSkyColor = new Vector3(0.4f, 0.5f, 0.6f),
-            AmbientGroundColor = new Vector3(0.2f, 0.18f, 0.15f),
-            AmbientIntensity = 0.3f,
+            AmbientSkyColor = scene.AmbientSkyColor,
+            AmbientGroundColor = scene.AmbientGroundColor,
+            AmbientIntensity = scene.AmbientIntensity,
             NumLights = (uint)lightIndex,
             NumShadows = (uint)shadowCasters.Length
         };

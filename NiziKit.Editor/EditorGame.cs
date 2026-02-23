@@ -108,7 +108,6 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
 
         renderFrame.Submit();
         renderFrame.Present(sceneColor);
-        renderFrame.UiContext.ClearFrameEvents();
     }
 
     private void UpdateGizmoHover()
@@ -141,8 +140,6 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
             _lastMouseY = ev.MouseMotion.Y;
 
             renderFrame.HandleUiEvent(ev);
-            renderFrame.UiContext.RecordEvent(ev);
-
             UpdateMouseOverUi();
 
             if (_gizmoDragging)
@@ -153,7 +150,6 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         else if (ev.Type == EventType.MouseButtonDown)
         {
             renderFrame.HandleUiEvent(ev);
-            renderFrame.UiContext.RecordEvent(ev);
             UpdateMouseOverUi();
 
             if (!_mouseOverUi && ev.MouseButton.Button == MouseButton.Left)
@@ -169,7 +165,6 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         else if (ev.Type == EventType.MouseButtonUp)
         {
             renderFrame.HandleUiEvent(ev);
-            renderFrame.UiContext.RecordEvent(ev);
             UpdateMouseOverUi();
 
             if (ev.MouseButton.Button == MouseButton.Left && _gizmoDragging)
@@ -180,12 +175,10 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         else if (ev.Type == EventType.MouseWheel)
         {
             renderFrame.HandleUiEvent(ev);
-            renderFrame.UiContext.RecordEvent(ev);
         }
         else if (ev.Type == EventType.KeyDown)
         {
             renderFrame.HandleUiEvent(ev);
-            renderFrame.UiContext.RecordEvent(ev);
 
             if (ev.Key.KeyCode == KeyCode.Lshift || ev.Key.KeyCode == KeyCode.Rshift)
             {
@@ -220,7 +213,6 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         else if (ev.Type == EventType.KeyUp)
         {
             renderFrame.HandleUiEvent(ev);
-            renderFrame.UiContext.RecordEvent(ev);
 
             if (ev.Key.KeyCode == KeyCode.Lshift || ev.Key.KeyCode == KeyCode.Rshift)
             {
@@ -237,7 +229,6 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         else if (ev.Type == EventType.TextInput)
         {
             renderFrame.HandleUiEvent(ev);
-            renderFrame.UiContext.RecordEvent(ev);
         }
         else if (ev is { Type: EventType.WindowEvent, Window.Event: WindowEventType.SizeChanged })
         {

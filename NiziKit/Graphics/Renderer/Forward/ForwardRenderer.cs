@@ -20,10 +20,11 @@ public class ForwardRenderer : IRenderer
 
     private readonly ViewData _viewData;
     private readonly ViewData _shadowViewData;
-    private readonly GpuShader _defaultShader;
-    private readonly GpuShader _skinnedShader;
-    private readonly GpuShader _shadowCasterShader;
-    private readonly GpuShader _shadowCasterSkinnedShader;
+    private readonly DefaultShader _defaultShaderSet;
+    private GpuShader _defaultShader;
+    private GpuShader _skinnedShader;
+    private GpuShader _shadowCasterShader;
+    private GpuShader _shadowCasterSkinnedShader;
     private readonly SkyboxPass _skyboxPass;
     private readonly List<(GpuShader shader, SurfaceComponent surface, RenderBatch batch)> _drawList = new(256);
 
@@ -47,11 +48,13 @@ public class ForwardRenderer : IRenderer
         _sceneDepth = CycledTexture.DepthAttachment("SceneDepth");
         _shadowDepth = CycledTexture.DepthAttachment("ShadowDepth", ShadowMapSize, ShadowMapSize);
 
-        var defaultShader = new DefaultShader();
-        _defaultShader = defaultShader.StaticVariant;
-        _skinnedShader = defaultShader.SkinnedVariant;
-        _shadowCasterShader = defaultShader.ShadowCasterVariant;
-        _shadowCasterSkinnedShader = defaultShader.ShadowCasterSkinnedVariant;
+        _defaultShaderSet = new DefaultShader();
+        _defaultShader = _defaultShaderSet.StaticVariant;
+        _skinnedShader = _defaultShaderSet.SkinnedVariant;
+        _shadowCasterShader = _defaultShaderSet.ShadowCasterVariant;
+        _shadowCasterSkinnedShader = _defaultShaderSet.ShadowCasterSkinnedVariant;
+
+        ShaderHotReload.OnShadersReloaded += OnShadersReloaded;
 
         _skyboxPass = new SkyboxPass();
     }
@@ -256,12 +259,27 @@ public class ForwardRenderer : IRenderer
         return _shadowCasterShader;
     }
 
+    private void OnShadersReloaded()
+    {
+        if (!_defaultShaderSet.Rebuild())
+        {
+            return;
+        }
+
+        _defaultShader = _defaultShaderSet.StaticVariant;
+        _skinnedShader = _defaultShaderSet.SkinnedVariant;
+        _shadowCasterShader = _defaultShaderSet.ShadowCasterVariant;
+        _shadowCasterSkinnedShader = _defaultShaderSet.ShadowCasterSkinnedVariant;
+    }
+
     public void OnResize(uint width, uint height)
     {
     }
 
     public void Dispose()
     {
+        ShaderHotReload.OnShadersReloaded -= OnShadersReloaded;
+        _defaultShaderSet.Dispose();
         _skyboxPass.Dispose();
         _sceneColor.Dispose();
         _sceneDepth.Dispose();

@@ -55,7 +55,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
     protected override void OnEvent(ref Event ev)
     {
         _renderFrame.HandleUiEvent(ev);
-        _renderFrame.UiContext.RecordEvent(ev);
     }
 
     protected override void Update(float dt)
@@ -70,7 +69,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
         _renderFrame.Submit();
         _renderFrame.Present(debugOverlay);
 
-        _renderFrame.UiContext.ClearFrameEvents();
     }
 
     private void BuildUi(UiFrame ui)
@@ -280,7 +278,7 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
                     .Width(UiSizing.Grow())
                     .FontSize(14)
                     .Placeholder("Type here...")
-                    .Show(ref _textFieldValue, Time.DeltaTime);
+                    .Show(Time.DeltaTime);
             }
 
             ui.Text("Multi-line:", UiTextStyle.Default.WithSize(14));
@@ -290,7 +288,7 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
                 .FontSize(14)
                 .Multiline()
                 .Placeholder("Multi-line input...")
-                .Show(ref _multilineText, Time.DeltaTime);
+                .Show(Time.DeltaTime);
         }
 
         Ui.VerticalSpacer(ctx, 12);

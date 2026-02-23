@@ -1,3 +1,4 @@
+using DenOfIz;
 using NiziKit.Application;
 using NiziKit.Core;
 using NiziKit.Graphics.Renderer;
@@ -10,6 +11,7 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 {
     private IRenderer _renderer = null!;
     private RenderFrame _renderFrame = null!;
+    private string _currentChatText = "";
 
     public override Type RendererType => typeof(ForwardRenderer);
 
@@ -23,20 +25,31 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
         World.LoadScene("Scenes/CombatDemo.niziscene.json");
     }
 
-    private static void RenderUi(UiFrame ui)
+    private void RenderUi(UiFrame ui)
     {
-        var uiTextStyle = new UiTextStyle
+        using (ui.Panel("ChatBox")
+                   .GrowHeight()
+                   .FitWidth(300)
+                   .Background(UiColor.Rgba(255, 255, 255, 0))
+                   .AlignChildren(UiAlignX.Left, UiAlignY.Bottom)
+                   .Open())
         {
-            Color = new UiColor(255, 255, 255),
-            FontSize = 24
-        };
-        ui.Text("Hi!", uiTextStyle);
+            var uiTextStyle = new UiTextStyle
+            {
+                Color = new UiColor(255, 255, 255),
+                FontSize = 24
+            };
+            ui.Text(_currentChatText, uiTextStyle);
+            Ui.TextField(ui.Context, "ChatInput", ref _currentChatText)
+                .BackgroundColor(UiColor.Rgb(255, 255, 255))
+                .TextColor(UiColor.Rgb(0, 0, 0))
+                .Show();
+        }
+
     }
 
     protected override void Update(float dt)
     {
-        HandleInput();
-
         _renderFrame.BeginFrame();
         var sceneTexture = _renderer.Render(_renderFrame);
 
@@ -50,9 +63,9 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
         _renderFrame.Present(sceneTexture);
     }
 
-    private void HandleInput()
+    protected override void OnEvent(ref Event ev)
     {
-
+        _renderFrame.HandleUiEvent(ev);
     }
 
     protected override void FixedUpdate(float fixedDt)

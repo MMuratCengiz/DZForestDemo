@@ -3,8 +3,8 @@
   "cameras": [
     {
       "name": "Main Camera",
-      "position": [-2.1819859, 10.5, -15.535429],
-      "rotation": [29.538788, -1.8213842E-06, -5.0888872E-14],
+      "position": [-2.1819868, 10.5, -15.535433],
+      "rotation": [29.538776, 0, 0],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -22,6 +22,9 @@
     "front": "SkyBox/Textures/LearnOpenGL/front.dztex",
     "back": "SkyBox/Textures/LearnOpenGL/back.dztex"
   },
+  "ambientSkyColor": [0.4, 0.5, 0.6],
+  "ambientGroundColor": [0.2, 0.18, 0.15],
+  "ambientIntensity": 0.3,
   "lights": [
     {
       "type": "directional",
@@ -249,8 +252,8 @@
         {
           "name": "Bow",
           "active": true,
-          "position": [0.3552413, 0.7899156, 0.05753374],
-          "rotation": [-5.540684, 14.72508, -82.47674],
+          "position": [0.34852982, 0.78480023, 0.043151677],
+          "rotation": [-6.5138197, 15.778184, -83.20919],
           "scale": [1, 1, 1],
           "components": [
             {
@@ -294,8 +297,8 @@
     {
       "name": "Crate 2",
       "active": true,
-      "position": [-7.6839075, -94160.26, 5.586101],
-      "rotation": [-14.274281, 14.482731, -13.707042],
+      "position": [-7.6839075, -163350600, 5.586101],
+      "rotation": [-19.19624, 6.4981713, -12.984034],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -333,8 +336,8 @@
     {
       "name": "Barrel 1",
       "active": true,
-      "position": [-4.4763737, -94054.76, -9.931981],
-      "rotation": [-5.4198513, 19.972567, 0.0064026914],
+      "position": [-4.4763737, -163350480, -9.931981],
+      "rotation": [-5.41508, 19.973808, 0.007183753],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -370,8 +373,8 @@
     {
       "name": "House",
       "active": true,
-      "position": [2.849579, 0.62749815, 2.2047408],
-      "rotation": [169.46063, -84.543465, -171.67186],
+      "position": [2.7758703, 0.6254746, 0.50601625],
+      "rotation": [6.3178773, -77.854324, 0.16616061],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -382,6 +385,20 @@
           "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_01_A.dztex",
           "normal": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_Normal_01.dztex"
+        },
+        {
+          "type": "NiziKit.Components.BoxCollider",
+          "size": [
+            2.500003,
+            1.2526441,
+            0.70305175
+          ],
+          "isTrigger": false,
+          "center": [
+            1.2500015,
+            0.62632203,
+            0
+          ]
         }
       ],
       "children": []
