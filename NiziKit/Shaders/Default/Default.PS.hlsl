@@ -18,12 +18,29 @@ float4 PSMain(PSInput input) : SV_TARGET
     float2 uv = input.TexCoord;
 
     float4 albedo = HasAlbedoTexture > 0.5
-        ? AlbedoTexture.Sample(TextureSampler, uv) * AlbedoColor
-        : AlbedoColor;
+                        ? AlbedoTexture.Sample(TextureSampler, uv) * AlbedoColor
+                        : AlbedoColor;
 
-    float3 normalSample = NormalTexture.Sample(TextureSampler, uv).xyz;
+    float3 normal = NormalTexture.Sample(TextureSampler, uv).xyz;
+    if (length(normal) == 0.0)
+    {
+        // normal = input.WorldNormal;
+    }
+
     float roughness = RoughnessTexture.Sample(TextureSampler, uv).r;
     float metallic = MetallicTexture.Sample(TextureSampler, uv).r;
 
-    return albedo;
+    float3 color = AmbientGroundColor * albedo.rgb;
+    for (int i = 0; i < NumLights; i++)
+    {
+        Light light = Lights[i];
+        if (light.Type == LIGHT_TYPE_DIRECTIONAL)
+        {
+            // Normal to Light
+            float nl = dot(normal, light.SpotDirection);
+            color += light.Color * albedo.rgb * nl;
+        }
+    }
+
+    return float4(color, albedo.a);
 }

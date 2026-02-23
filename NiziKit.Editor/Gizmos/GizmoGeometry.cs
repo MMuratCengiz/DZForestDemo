@@ -391,6 +391,7 @@ public static class GizmoGeometry
     public static readonly Vector4 DirectionalLightIconColor = new(1.0f, 0.95f, 0.4f, 1f);
     public static readonly Vector4 PointLightIconColor = new(1.0f, 0.7f, 0.2f, 1f);
     public static readonly Vector4 SpotLightIconColor = new(0.9f, 0.6f, 0.2f, 1f);
+    public static readonly Vector4 AmbientLightIconColor = new(0.6f, 0.7f, 0.9f, 1f);
 
     public static void BuildCameraIcon(List<GizmoVertex> vertices, Vector3 position, Quaternion rotation, float scale,
         Vector4 color)
@@ -578,6 +579,35 @@ public static class GizmoGeometry
         vertices.Add(new GizmoVertex(bottom, color));
         vertices.Add(new GizmoVertex(front, color));
         vertices.Add(new GizmoVertex(left, color));
+    }
+
+    public static void BuildAmbientLightIcon(List<GizmoVertex> vertices, Vector3 position, float scale, Vector4 color)
+    {
+        var size = 0.25f * scale;
+        const int segments = 8;
+
+        // Build a sphere-like shape using 3 orthogonal rings
+        BuildRing(vertices, position, Vector3.UnitX, Vector3.UnitY, size, segments, color);
+        BuildRing(vertices, position, Vector3.UnitY, Vector3.UnitZ, size, segments, color);
+        BuildRing(vertices, position, Vector3.UnitZ, Vector3.UnitX, size, segments, color);
+    }
+
+    private static void BuildRing(List<GizmoVertex> vertices, Vector3 center, Vector3 axis1, Vector3 axis2,
+        float radius, int segments, Vector4 color)
+    {
+        var angleStep = MathF.PI * 2f / segments;
+        for (var i = 0; i < segments; i++)
+        {
+            var a0 = angleStep * i;
+            var a1 = angleStep * (i + 1);
+            var p0 = center + axis1 * (MathF.Cos(a0) * radius) + axis2 * (MathF.Sin(a0) * radius);
+            var p1 = center + axis1 * (MathF.Cos(a1) * radius) + axis2 * (MathF.Sin(a1) * radius);
+
+            // Build a thin triangle for each segment (line approximation)
+            vertices.Add(new GizmoVertex(center, color));
+            vertices.Add(new GizmoVertex(p0, color));
+            vertices.Add(new GizmoVertex(p1, color));
+        }
     }
 
     public static void BuildSpotLightIcon(List<GizmoVertex> vertices, Vector3 position, Vector3 direction,

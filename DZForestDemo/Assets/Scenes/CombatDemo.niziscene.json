@@ -3,8 +3,8 @@
   "cameras": [
     {
       "name": "Main Camera",
-      "position": [-0.92047, 10.5, -9.284246],
-      "rotation": [29.538776, 0, 0],
+      "position": [-2.1819859, 10.5, -15.535429],
+      "rotation": [29.538788, -1.8213842E-06, -5.0888872E-14],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
       "farPlane": 1000,
@@ -45,7 +45,13 @@
           "mesh": "geometry:box:1:1:1"
         },
         {
-          "type": "NiziKit.Components.SurfaceComponent"
+          "type": "NiziKit.Components.SurfaceComponent",
+          "albedoColor": [
+            0.6922252,
+            0.6922252,
+            0.6922252,
+            1
+          ]
         },
         {
           "type": "NiziKit.Components.BoxCollider",
@@ -74,7 +80,7 @@
     {
       "name": "My Character",
       "active": true,
-      "position": [-0.92047, 0.5, 5.7157536],
+      "position": [-2.1819868, 0.5, -0.5354333],
       "rotation": [-179.99998, -8.483199, -179.99998],
       "scale": [1, 1, 1],
       "components": [
@@ -243,8 +249,8 @@
         {
           "name": "Bow",
           "active": true,
-          "position": [-0.27535427, 0.6756979, 0.07664442],
-          "rotation": [-80.06197, 3.6497772, -8.33454],
+          "position": [0.3552413, 0.7899156, 0.05753374],
+          "rotation": [-5.540684, 14.72508, -82.47674],
           "scale": [1, 1, 1],
           "components": [
             {
@@ -288,8 +294,8 @@
     {
       "name": "Crate 2",
       "active": true,
-      "position": [-7.000039, 0.9997239, 2.9999225],
-      "rotation": [-1.4846173E-09, 24.999996, -3.398524E-09],
+      "position": [-7.6839075, -94160.26, 5.586101],
+      "rotation": [-14.274281, 14.482731, -13.707042],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -327,8 +333,8 @@
     {
       "name": "Barrel 1",
       "active": true,
-      "position": [-1.0099126, 0.99984145, -3.54748],
-      "rotation": [-6.865833E-09, 21.631596, 3.6016667E-09],
+      "position": [-4.4763737, -94054.76, -9.931981],
+      "rotation": [-5.4198513, 19.972567, 0.0064026914],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -364,8 +370,8 @@
     {
       "name": "House",
       "active": true,
-      "position": [3.0854166, 0.5155997, 3.0098886],
-      "rotation": [179.99791, -86.937904, -179.99779],
+      "position": [2.849579, 0.62749815, 2.2047408],
+      "rotation": [169.46063, -84.543465, -171.67186],
       "scale": [1, 1, 1],
       "components": [
         {

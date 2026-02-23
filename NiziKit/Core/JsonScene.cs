@@ -641,12 +641,6 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             return;
         }
 
-        if (ComponentRegistry.TryCreate(data.Type, data.Properties, this, out var component) && component != null)
-        {
-            obj.AddComponent(component);
-            return;
-        }
-
         var typeNameLower = data.Type.ToLowerInvariant();
         if (typeNameLower.Contains('.'))
         {
@@ -742,6 +736,13 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
                     {
                         surfaceComp.UVOffset = new Vector2(uvOffset[0], uvOffset[1]);
                     }
+                }
+                break;
+
+            default:
+                if (ComponentRegistry.TryCreate(data.Type, data.Properties, this, out var component) && component != null)
+                {
+                    obj.AddComponent(component);
                 }
                 break;
         }

@@ -18,7 +18,12 @@ public static class PropertyEditorRenderer
     private static readonly HashSet<string> SkippedProperties =
     [
         "Owner", "IsEnabled", "IsActive", "Transform",
-        "gameObject", "GameObject", "enabled"
+        "gameObject", "GameObject", "enabled",
+        // GameObject base properties (shown in header/transform section or internal)
+        "Id", "Name", "Tag", "Parent", "Scene",
+        "LocalPosition", "LocalRotation", "LocalScale",
+        "WorldMatrix", "WorldPosition", "WorldRotation",
+        "Forward", "Right", "Up"
     ];
 
     public static void RenderProperties(UiFrame ui, UiContext ctx, string prefix,

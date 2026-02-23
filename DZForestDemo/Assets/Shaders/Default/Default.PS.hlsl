@@ -47,14 +47,21 @@ float4 PSMain(PSInput input) : SV_TARGET
     float3 F0 = lerp(float3(0.04, 0.04, 0.04), albedo.rgb, metallic);
     float3 diffuseColor = albedo.rgb * (1.0 - metallic);
 
-    float hemisphereBlend = N.y * 0.5 + 0.5;
-    float3 ambient = lerp(AmbientGroundColor, AmbientSkyColor, hemisphereBlend) * AmbientIntensity * diffuseColor;
-
     float3 Lo = float3(0, 0, 0);
 
     for (uint i = 0; i < NumLights; i++)
     {
         Light light = Lights[i];
+
+        if (light.Type == LIGHT_TYPE_AMBIENT)
+        {
+            float hemisphereBlend = N.y * 0.5 + 0.5;
+            float3 ambientSky = light.Color;
+            float3 ambientGround = light.PositionOrDirection;
+            Lo += lerp(ambientGround, ambientSky, hemisphereBlend) * light.Intensity * diffuseColor;
+            continue;
+        }
+
         float3 L;
         float attenuation = 1.0;
 
@@ -109,7 +116,7 @@ float4 PSMain(PSInput input) : SV_TARGET
     }
 
     float3 emissive = EmissiveColor * EmissiveIntensity;
-    float3 color = ambient + Lo + emissive;
+    float3 color = Lo + emissive;
     color = pow(max(color, 0.0), 1.0 / 2.2);
 
     return float4(color, albedo.a);
