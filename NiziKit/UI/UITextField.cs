@@ -50,6 +50,8 @@ public sealed class UiTextFieldState
     private string _cachedLineSelected = "";
     private string _cachedLineAfterSel = "";
 
+    public bool IsFocused { get; set; }
+    public bool SubmittedThisFrame { get; set; }
     public float LastMouseX { get; set; }
     public float LastMouseY { get; set; }
     public bool IsDragging { get; set; }
@@ -573,6 +575,7 @@ public ref struct UiTextField
     public uint Id { get; }
 
     public bool IsFocused => NiziUi.Ctx.FocusedTextFieldId == Id;
+    public bool SubmittedThisFrame => _state.SubmittedThisFrame;
 
     private float GetLineHeight()
     {
@@ -764,6 +767,7 @@ public ref struct UiTextField
         var textChanged = false;
         var interaction = NiziUi.Ctx.GetInteraction(Id);
         var isFocused = NiziUi.Ctx.FocusedTextFieldId == Id;
+        _state.SubmittedThisFrame = false;
 
         if (interaction.WasClicked)
         {
@@ -1267,6 +1271,8 @@ public ref struct UiTextField
                 else
                 {
                     NiziUi.Ctx.FocusedTextFieldId = 0;
+                    _state.IsFocused = false;
+                    _state.SubmittedThisFrame = true;
                     InputSystem.StopTextInput();
                 }
                 _state.ResetCursorBlink();

@@ -1,4 +1,5 @@
 using DenOfIz;
+using DZForestDemo.UI;
 using NiziKit.Application;
 using NiziKit.Core;
 using NiziKit.Graphics.Renderer;
@@ -11,7 +12,7 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 {
     private IRenderer _renderer = null!;
     private RenderFrame _renderFrame = null!;
-    private string _currentChatText = "";
+    private DemoGameUi _ui = new();
 
     public override Type RendererType => typeof(ForwardRenderer);
 
@@ -27,34 +28,7 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 
     private void RenderUi()
     {
-        NiziUi.VerticalSpacer(Window.Height / 2.0f);
-        using (NiziUi.Panel("ChatBox")
-                   .GrowHeight()
-                   .FitWidth(300)
-                   .Padding(15)
-                   .Background(UiColor.Rgba(255, 255, 255, 20))
-                   .AlignChildren(UiAlignX.Left, UiAlignY.Bottom)
-                   .Open())
-        {
-            var uiTextStyle = new UiTextStyle
-            {
-                Color = new UiColor(255, 255, 255),
-                FontSize = 24
-            };
-
-            using (NiziUi.Row("Text").Open())
-            {
-                NiziUi.Text(_currentChatText, uiTextStyle);
-            }
-
-            using (NiziUi.Row("Input").Open())
-            {
-                NiziUi.TextField("ChatInput", ref _currentChatText)
-                    .BackgroundColor(UiColor.Rgb(255, 255, 255))
-                    .TextColor(UiColor.Rgb(0, 0, 0))
-                    .Show();
-            }
-        }
+        _ui.Render();
     }
 
     protected override void Update(float dt)

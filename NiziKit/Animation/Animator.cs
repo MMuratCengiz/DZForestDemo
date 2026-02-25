@@ -595,7 +595,7 @@ public partial class Animator : NiziComponent, IDisposable
 
     private void SampleLayerRetargeted(Layer layer)
     {
-        var destMatrices = _ozzTransforms!.Value.AsSpan().Slice(0, BoneCount);
+        var destMatrices = _ozzTransforms!.Value.AsSpan()[..BoneCount];
 
         if (layer is { IsBlending: true, BlendDuration: > 0 } &&
             layer.PreviousAnimation != null && layer.CurrentAnimation != null)
