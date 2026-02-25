@@ -7,10 +7,10 @@ using NiziKit.Graphics;
 
 namespace NiziKit.Assets;
 
-public sealed class Assets : IDisposable
+public sealed class NiziAssets : IDisposable
 {
-    private static Assets? _instance;
-    private static Assets Instance => _instance ?? throw new InvalidOperationException("Assets not initialized");
+    private static NiziAssets? _instance;
+    private static NiziAssets Instance => _instance ?? throw new InvalidOperationException("Assets not initialized");
 
     private readonly BufferPool _vertexPool;
     private readonly BufferPool _indexPool;
@@ -25,7 +25,7 @@ public sealed class Assets : IDisposable
     private readonly Lock _listLock = new();
     private readonly SemaphoreSlim _shaderLoadSemaphore = new(1, 1);
 
-    public Assets()
+    public NiziAssets()
     {
         _vertexPool = new BufferPool(GraphicsContext.Device,
             (uint)(BufferUsageFlagBits.Vertex | BufferUsageFlagBits.CopyDst));

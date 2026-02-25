@@ -83,7 +83,7 @@ public class Mesh : IDisposable
         return _formatVariants.GetOrAdd(format.Name, _ =>
         {
             var packed = VertexPacker.Pack(SourceAttributes, format);
-            return Assets.UploadVertices(packed, format);
+            return NiziAssets.UploadVertices(packed, format);
         });
     }
 

@@ -235,7 +235,7 @@ public sealed class AssetPack : IDisposable
         var bytes = _provider.ReadBytes(path);
         mesh = Mesh.Load(bytes);
         mesh.AssetPath = path;
-        Assets.Register(mesh, path);
+        NiziAssets.Register(mesh, path);
         return _meshes.GetOrAdd(path, mesh);
     }
 
@@ -327,7 +327,7 @@ public sealed class AssetPack : IDisposable
             var bytes = _provider!.ReadBytes(path);
             var mesh = Mesh.Load(bytes);
             mesh.AssetPath = path;
-            Assets.Register(mesh, path);
+            NiziAssets.Register(mesh, path);
             _meshes[path] = mesh;
         });
     }
@@ -339,7 +339,7 @@ public sealed class AssetPack : IDisposable
             var bytes = await _provider!.ReadBytesAsync(path, ct);
             var mesh = Mesh.Load(bytes);
             mesh.AssetPath = path;
-            Assets.Register(mesh, path);
+            NiziAssets.Register(mesh, path);
             return (path, mesh);
         });
 
