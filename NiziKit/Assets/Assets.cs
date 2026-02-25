@@ -19,7 +19,6 @@ public sealed class Assets : IDisposable
     private readonly ConcurrentDictionary<string, Skeleton> _skeletonCache = new();
     private readonly ConcurrentDictionary<string, Mesh> _meshCache = new();
     private readonly ShaderStore _shaderStore = new();
-    private readonly ShaderBuilder _shaderBuilder = new();
 
     private readonly List<Mesh> _meshList = [];
     private readonly List<Texture2d> _textureList = [];
@@ -49,13 +48,6 @@ public sealed class Assets : IDisposable
     public static GpuShader? GetShader(string name) => Instance._GetShader(name);
     public static GpuShader? GetShader(string name, ReadOnlySpan<string> variants) => Instance._GetShader(name, variants);
     public static ShaderProgram? GetShaderProgram(string name) => Instance._GetShaderProgram(name);
-    public static void RegisterShaderProgram(string name, ShaderProgram program) => Instance._RegisterShaderProgram(name, program);
-    public static ShaderProgram LoadShaderProgram(string vertexPath, string pixelPath, Dictionary<string, string?>? defines = null) => Instance._LoadShaderProgram(vertexPath, pixelPath, defines);
-    public static Task<ShaderProgram> LoadShaderProgramAsync(string vertexPath, string pixelPath, Dictionary<string, string?>? defines = null, CancellationToken ct = default) => Instance._LoadShaderProgramAsync(vertexPath, pixelPath, defines, ct);
-    public static ShaderProgram LoadComputeProgram(string computePath, Dictionary<string, string?>? defines = null) => Instance._LoadComputeProgram(computePath, defines);
-    public static Task<ShaderProgram> LoadComputeProgramAsync(string computePath, Dictionary<string, string?>? defines = null, CancellationToken ct = default) => Instance._LoadComputeProgramAsync(computePath, defines, ct);
-    public static GpuShader LoadShader(string vertexPath, string pixelPath, GraphicsPipelineDesc pipelineDesc, Dictionary<string, string?>? defines = null) => Instance._LoadShader(vertexPath, pixelPath, pipelineDesc, defines);
-    public static async Task<GpuShader> LoadShaderAsync(string vertexPath, string pixelPath, GraphicsPipelineDesc pipelineDesc, Dictionary<string, string?>? defines = null, CancellationToken ct = default) => GpuShader.Graphics(await Instance._LoadShaderProgramAsync(vertexPath, pixelPath, defines, ct), pipelineDesc, ownsProgram: false);
     public static void ClearShaderCache() => Instance._shaderStore.ClearDiskCache();
     public static Mesh CreateBox(float width, float height, float depth) => Instance._CreateBox(width, height, depth);
     public static Mesh CreateSphere(float diameter, uint tessellation = 16) => Instance._CreateSphere(diameter, tessellation);
@@ -282,156 +274,6 @@ public sealed class Assets : IDisposable
     {
         return _shaderStore.GetProgram(name);
     }
-
-    private void _RegisterShaderProgram(string name, ShaderProgram program)
-    {
-        _shaderStore.RegisterProgram(name, program);
-    }
-
-    private ShaderProgram _LoadShaderProgram(string vertexPath, string pixelPath, Dictionary<string, string?>? defines)
-    {
-        var vsFullPath = Path.IsPathRooted(vertexPath) ? vertexPath : Content.ResolvePath(vertexPath);
-        var psFullPath = Path.IsPathRooted(pixelPath) ? pixelPath : Content.ResolvePath(pixelPath);
-
-        var cacheKey = _shaderStore.ComputeCacheKey([vsFullPath, psFullPath], defines);
-
-        var cached = _shaderStore.GetProgram(cacheKey);
-        if (cached != null)
-        {
-            return cached;
-        }
-
-        var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
-        if (diskCached != null)
-        {
-            _shaderStore.RegisterProgram(cacheKey, diskCached);
-            return diskCached;
-        }
-
-        var program = _shaderBuilder.CompileGraphics(vsFullPath, psFullPath, defines: defines);
-
-        _shaderStore.SaveToDisk(cacheKey, program);
-        _shaderStore.RegisterProgram(cacheKey, program);
-
-        return program;
-    }
-
-    private ShaderProgram _LoadComputeProgram(string computePath, Dictionary<string, string?>? defines)
-    {
-        var csFullPath = Path.IsPathRooted(computePath) ? computePath : Content.ResolvePath(computePath);
-
-        var cacheKey = _shaderStore.ComputeCacheKey([csFullPath], defines);
-
-        var cached = _shaderStore.GetProgram(cacheKey);
-        if (cached != null)
-        {
-            return cached;
-        }
-
-        var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
-        if (diskCached != null)
-        {
-            _shaderStore.RegisterProgram(cacheKey, diskCached);
-            return diskCached;
-        }
-
-        var program = _shaderBuilder.CompileCompute(csFullPath, defines: defines);
-
-        _shaderStore.SaveToDisk(cacheKey, program);
-        _shaderStore.RegisterProgram(cacheKey, program);
-
-        return program;
-    }
-
-    private GpuShader _LoadShader(string vertexPath, string pixelPath, GraphicsPipelineDesc pipelineDesc, Dictionary<string, string?>? defines)
-    {
-        var program = _LoadShaderProgram(vertexPath, pixelPath, defines);
-        return GpuShader.Graphics(program, pipelineDesc, ownsProgram: false);
-    }
-
-    private async Task<ShaderProgram> _LoadShaderProgramAsync(string vertexPath, string pixelPath, Dictionary<string, string?>? defines, CancellationToken ct)
-    {
-        var vsFullPath = Path.IsPathRooted(vertexPath) ? vertexPath : Content.ResolvePath(vertexPath);
-        var psFullPath = Path.IsPathRooted(pixelPath) ? pixelPath : Content.ResolvePath(pixelPath);
-
-        var cacheKey = _shaderStore.ComputeCacheKey([vsFullPath, psFullPath], defines);
-
-        var cached = _shaderStore.GetProgram(cacheKey);
-        if (cached != null)
-        {
-            return cached;
-        }
-
-        await _shaderLoadSemaphore.WaitAsync(ct);
-        try
-        {
-            cached = _shaderStore.GetProgram(cacheKey);
-            if (cached != null)
-            {
-                return cached;
-            }
-
-            var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
-            if (diskCached != null)
-            {
-                _shaderStore.RegisterProgram(cacheKey, diskCached);
-                return diskCached;
-            }
-
-            var program = await _shaderBuilder.CompileGraphicsAsync(vsFullPath, psFullPath, defines: defines, ct: ct);
-
-            _shaderStore.SaveToDisk(cacheKey, program);
-            _shaderStore.RegisterProgram(cacheKey, program);
-
-            return program;
-        }
-        finally
-        {
-            _shaderLoadSemaphore.Release();
-        }
-    }
-
-    private async Task<ShaderProgram> _LoadComputeProgramAsync(string computePath, Dictionary<string, string?>? defines, CancellationToken ct)
-    {
-        var csFullPath = Path.IsPathRooted(computePath) ? computePath : Content.ResolvePath(computePath);
-
-        var cacheKey = _shaderStore.ComputeCacheKey([csFullPath], defines);
-
-        var cached = _shaderStore.GetProgram(cacheKey);
-        if (cached != null)
-        {
-            return cached;
-        }
-
-        await _shaderLoadSemaphore.WaitAsync(ct);
-        try
-        {
-            cached = _shaderStore.GetProgram(cacheKey);
-            if (cached != null)
-            {
-                return cached;
-            }
-
-            var diskCached = _shaderStore.TryLoadFromDisk(cacheKey);
-            if (diskCached != null)
-            {
-                _shaderStore.RegisterProgram(cacheKey, diskCached);
-                return diskCached;
-            }
-
-            var program = await _shaderBuilder.CompileComputeAsync(csFullPath, defines: defines, ct: ct);
-
-            _shaderStore.SaveToDisk(cacheKey, program);
-            _shaderStore.RegisterProgram(cacheKey, program);
-
-            return program;
-        }
-        finally
-        {
-            _shaderLoadSemaphore.Release();
-        }
-    }
-
 
     private Mesh _CreateBox(float width, float height, float depth)
     {
