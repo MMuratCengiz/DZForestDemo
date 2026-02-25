@@ -213,13 +213,6 @@ public ref struct UiButton
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Content(Action content)
-    {
-        using var _ = Open();
-        content();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Show()
     {
         var interaction = NiziUi.Ctx.GetInteraction(Id);
@@ -382,13 +375,6 @@ public ref struct UiCard
         var decl = CreateDeclaration();
         NiziUi.Ctx.OpenElement(decl);
         return new UiElementScope();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Content(Action content)
-    {
-        using var _ = Open();
-        content();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

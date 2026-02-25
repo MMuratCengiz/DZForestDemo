@@ -346,20 +346,6 @@ public ref struct UiElement
         NiziUi.Ctx.OpenElement(_decl);
         return new UiElementScope();
     }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Begin()
-    {
-        NiziUi.Ctx.OpenElement(_decl);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Content(Action content)
-    {
-        NiziUi.Ctx.OpenElement(_decl);
-        content();
-        NiziUi.Ctx.Clay.CloseElement();
-    }
 }
 
 public readonly ref struct UiElementScope
