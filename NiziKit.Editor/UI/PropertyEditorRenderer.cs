@@ -26,7 +26,7 @@ public static class PropertyEditorRenderer
         "Forward", "Right", "Up"
     ];
 
-    public static void RenderProperties(UiFrame ui, UiContext ctx, string prefix,
+    public static void RenderProperties(string prefix,
         object instance, EditorViewModel editorVm, Action? onChanged = null)
     {
         var t = EditorTheme.Current;
@@ -37,7 +37,7 @@ public static class PropertyEditorRenderer
             .OrderBy(p => p.MetadataToken)
             .ToArray();
 
-        using (var grid = Ui.PropertyGrid(ctx, prefix + "_PropGrid")
+        using (var grid = NiziUi.PropertyGrid(prefix + "_PropGrid")
             .LabelWidth(95)
             .FontSize(t.FontSizeCaption)
             .RowHeight(24)
@@ -53,7 +53,7 @@ public static class PropertyEditorRenderer
                 }
 
                 var propId = prefix + "_" + prop.Name;
-                RenderProperty(ui, ctx, grid, propId, prop, instance, editorVm, onChanged);
+                RenderProperty(grid, propId, prop, instance, editorVm, onChanged);
             }
         }
 
@@ -67,16 +67,16 @@ public static class PropertyEditorRenderer
             var propId = prefix + "_" + prop.Name;
             if (IsDictionary(prop.PropertyType))
             {
-                RenderDictionaryEditor(ui, ctx, propId, prop, instance, editorVm, onChanged);
+                RenderDictionaryEditor(propId, prop, instance, editorVm, onChanged);
             }
             else
             {
-                RenderListEditor(ui, ctx, propId, prop, instance, editorVm, onChanged);
+                RenderListEditor(propId, prop, instance, editorVm, onChanged);
             }
         }
     }
 
-    private static void RenderProperty(UiFrame ui, UiContext ctx, UiPropertyGridScope grid,
+    private static void RenderProperty(UiPropertyGridScope grid,
         string id, PropertyInfo prop, object instance, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
@@ -88,87 +88,87 @@ public static class PropertyEditorRenderer
 
         if (propType == typeof(string) && prop.GetCustomAttribute<AssetRefAttribute>() != null)
         {
-            RenderAssetRefEditor(ui, ctx, id, prop, instance, editorVm, onChanged);
+            RenderAssetRefEditor(id, prop, instance, editorVm, onChanged);
         }
         else if (propType == typeof(string) && prop.GetCustomAttribute<SceneObjectSelectorAttribute>() != null)
         {
-            RenderSceneObjectSelectorEditor(ctx, id, prop, instance, editorVm, onChanged);
+            RenderSceneObjectSelectorEditor(id, prop, instance, editorVm, onChanged);
         }
         else if (propType == typeof(string) && prop.GetCustomAttribute<BoneSelectorAttribute>() != null)
         {
-            RenderBoneSelectorEditor(ctx, id, prop, instance, editorVm, onChanged);
+            RenderBoneSelectorEditor(id, prop, instance, editorVm, onChanged);
         }
         else if (propType == typeof(string) && prop.GetCustomAttribute<AnimationSelectorAttribute>() != null)
         {
-            RenderAnimationSelectorEditor(ctx, id, prop, instance, editorVm, onChanged);
+            RenderAnimationSelectorEditor(id, prop, instance, editorVm, onChanged);
         }
         else if (propType == typeof(string))
         {
-            RenderStringEditor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
+            RenderStringEditor(id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType == typeof(float))
         {
-            RenderFloatEditor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
+            RenderFloatEditor(id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType == typeof(double))
         {
-            RenderDoubleEditor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
+            RenderDoubleEditor(id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType == typeof(int))
         {
-            RenderIntEditor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
+            RenderIntEditor(id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType == typeof(uint))
         {
-            RenderUIntEditor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
+            RenderUIntEditor(id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType == typeof(bool))
         {
-            RenderBoolEditor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
+            RenderBoolEditor(id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType == typeof(Vector2))
         {
-            RenderVector2Editor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
+            RenderVector2Editor(id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType == typeof(Vector3) && prop.GetCustomAttribute<ColorAttribute>() != null)
         {
-            RenderColor3Editor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
+            RenderColor3Editor(id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType == typeof(Vector4) && prop.GetCustomAttribute<ColorAttribute>() != null)
         {
-            RenderColor4Editor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
+            RenderColor4Editor(id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType == typeof(Vector3))
         {
-            RenderVector3Editor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
+            RenderVector3Editor(id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType == typeof(Vector4))
         {
-            RenderVector4Editor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
+            RenderVector4Editor(id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (propType.IsEnum)
         {
-            RenderEnumEditor(ctx, id, prop, instance, canWrite, editorVm, onChanged);
+            RenderEnumEditor(id, prop, instance, canWrite, editorVm, onChanged);
         }
         else if (prop.GetCustomAttribute<AssetRefAttribute>() != null)
         {
-            RenderAssetRefEditor(ui, ctx, id, prop, instance, editorVm, onChanged);
+            RenderAssetRefEditor(id, prop, instance, editorVm, onChanged);
         }
         else
         {
             var value = prop.GetValue(instance);
-            ui.Text(value?.ToString() ?? "(null)", new UiTextStyle { Color = t.TextMuted, FontSize = t.FontSizeCaption });
+            NiziUi.Text(value?.ToString() ?? "(null)", new UiTextStyle { Color = t.TextMuted, FontSize = t.FontSizeCaption });
         }
     }
 
-    private static void RenderStringEditor(UiContext ctx, string id, PropertyInfo prop,
+    private static void RenderStringEditor(string id, PropertyInfo prop,
         object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
         var oldValue = prop.GetValue(instance)?.ToString() ?? "";
         var value = oldValue;
 
-        var changed = Ui.TextField(ctx, id, ref value)
+        var changed = NiziUi.TextField(id, ref value)
             .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
             .TextColor(t.TextPrimary)
             .BorderColor(t.Border, t.Accent)
@@ -189,7 +189,7 @@ public static class PropertyEditorRenderer
         }
     }
 
-    private static void RenderAnimationSelectorEditor(UiContext ctx, string id, PropertyInfo prop,
+    private static void RenderAnimationSelectorEditor(string id, PropertyInfo prop,
         object instance, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
@@ -204,7 +204,7 @@ public static class PropertyEditorRenderer
         if (animNames == null || animNames.Count == 0)
         {
             var value = prop.GetValue(instance)?.ToString() ?? "(no skeleton)";
-            Ui.TextField(ctx, id, ref value)
+            NiziUi.TextField(id, ref value)
                 .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
                 .TextColor(t.TextMuted)
                 .BorderColor(t.Border, t.Accent)
@@ -230,7 +230,7 @@ public static class PropertyEditorRenderer
             selectedIndex = 0;
         }
 
-        if (Ui.Dropdown(ctx, id, names)
+        if (NiziUi.Dropdown(id, names)
             .Background(t.SurfaceInset, t.Hover)
             .TextColor(t.TextPrimary)
             .FontSize(t.FontSizeCaption)
@@ -286,7 +286,7 @@ public static class PropertyEditorRenderer
         return null;
     }
 
-    private static void RenderSceneObjectSelectorEditor(UiContext ctx, string id, PropertyInfo prop,
+    private static void RenderSceneObjectSelectorEditor(string id, PropertyInfo prop,
         object instance, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
@@ -295,7 +295,7 @@ public static class PropertyEditorRenderer
         if (scene == null)
         {
             var value = prop.GetValue(instance)?.ToString() ?? "(no scene)";
-            Ui.TextField(ctx, id, ref value)
+            NiziUi.TextField(id, ref value)
                 .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
                 .TextColor(t.TextMuted)
                 .BorderColor(t.Border, t.Accent)
@@ -315,7 +315,7 @@ public static class PropertyEditorRenderer
         if (names.Length == 0)
         {
             var value = prop.GetValue(instance)?.ToString() ?? "(no objects)";
-            Ui.TextField(ctx, id, ref value)
+            NiziUi.TextField(id, ref value)
                 .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
                 .TextColor(t.TextMuted)
                 .BorderColor(t.Border, t.Accent)
@@ -335,7 +335,7 @@ public static class PropertyEditorRenderer
             selectedIndex = 0;
         }
 
-        if (Ui.Dropdown(ctx, id, names)
+        if (NiziUi.Dropdown(id, names)
             .Background(t.SurfaceInset, t.Hover)
             .TextColor(t.TextPrimary)
             .FontSize(t.FontSizeCaption)
@@ -360,7 +360,7 @@ public static class PropertyEditorRenderer
         }
     }
 
-    private static void RenderBoneSelectorEditor(UiContext ctx, string id, PropertyInfo prop,
+    private static void RenderBoneSelectorEditor(string id, PropertyInfo prop,
         object instance, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
@@ -374,7 +374,7 @@ public static class PropertyEditorRenderer
         if (string.IsNullOrEmpty(targetName))
         {
             var value = prop.GetValue(instance)?.ToString() ?? "(select target first)";
-            Ui.TextField(ctx, id, ref value)
+            NiziUi.TextField(id, ref value)
                 .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
                 .TextColor(t.TextMuted)
                 .BorderColor(t.Border, t.Accent)
@@ -395,7 +395,7 @@ public static class PropertyEditorRenderer
         if (jointNames == null || jointNames.Count == 0)
         {
             var value = prop.GetValue(instance)?.ToString() ?? "(no bones)";
-            Ui.TextField(ctx, id, ref value)
+            NiziUi.TextField(id, ref value)
                 .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
                 .TextColor(t.TextMuted)
                 .BorderColor(t.Border, t.Accent)
@@ -421,7 +421,7 @@ public static class PropertyEditorRenderer
             selectedIndex = 0;
         }
 
-        if (Ui.Dropdown(ctx, id, names)
+        if (NiziUi.Dropdown(id, names)
             .Background(t.SurfaceInset, t.Hover)
             .TextColor(t.TextPrimary)
             .FontSize(t.FontSizeCaption)
@@ -446,7 +446,7 @@ public static class PropertyEditorRenderer
         }
     }
 
-    private static void RenderFloatEditor(UiContext ctx, string id, PropertyInfo prop,
+    private static void RenderFloatEditor(string id, PropertyInfo prop,
         object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
@@ -457,7 +457,7 @@ public static class PropertyEditorRenderer
         bool changed;
         if (rangeAttr != null)
         {
-            changed = Ui.Slider(ctx, id)
+            changed = NiziUi.Slider(id)
                 .Range(rangeAttr.Min, rangeAttr.Max)
                 .TrackColor(t.SurfaceInset)
                 .FillColor(t.Accent)
@@ -470,7 +470,7 @@ public static class PropertyEditorRenderer
         }
         else
         {
-            changed = Ui.DraggableValue(ctx, id)
+            changed = NiziUi.DraggableValue(id)
                 .LabelWidth(0)
                 .Sensitivity(0.01f)
                 .Format("F3")
@@ -491,14 +491,14 @@ public static class PropertyEditorRenderer
         }
     }
 
-    private static void RenderDoubleEditor(UiContext ctx, string id, PropertyInfo prop,
+    private static void RenderDoubleEditor(string id, PropertyInfo prop,
         object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
         var oldValue = prop.GetValue(instance) ?? 0.0;
         var floatValue = (float)(double)oldValue;
 
-        var changed = Ui.DraggableValue(ctx, id)
+        var changed = NiziUi.DraggableValue(id)
             .LabelWidth(0)
             .Sensitivity(0.01f)
             .Format("F3")
@@ -519,14 +519,14 @@ public static class PropertyEditorRenderer
         }
     }
 
-    private static void RenderIntEditor(UiContext ctx, string id, PropertyInfo prop,
+    private static void RenderIntEditor(string id, PropertyInfo prop,
         object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
         var oldValue = prop.GetValue(instance) ?? 0;
         var floatValue = (float)(int)oldValue;
 
-        var changed = Ui.DraggableValue(ctx, id)
+        var changed = NiziUi.DraggableValue(id)
             .LabelWidth(0)
             .Sensitivity(1f)
             .Format("F0")
@@ -547,14 +547,14 @@ public static class PropertyEditorRenderer
         }
     }
 
-    private static void RenderUIntEditor(UiContext ctx, string id, PropertyInfo prop,
+    private static void RenderUIntEditor(string id, PropertyInfo prop,
         object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
         var oldValue = prop.GetValue(instance) ?? 0u;
         var floatValue = (float)(uint)oldValue;
 
-        var changed = Ui.DraggableValue(ctx, id)
+        var changed = NiziUi.DraggableValue(id)
             .LabelWidth(0)
             .Sensitivity(1f)
             .Format("F0")
@@ -575,7 +575,7 @@ public static class PropertyEditorRenderer
         }
     }
 
-    private static void RenderBoolEditor(UiContext ctx, string id, PropertyInfo prop,
+    private static void RenderBoolEditor(string id, PropertyInfo prop,
         object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
@@ -583,7 +583,7 @@ public static class PropertyEditorRenderer
 
         var checkColor = canWrite ? t.Accent : t.TextDisabled;
         var boxHover = canWrite ? t.Hover : t.SurfaceInset;
-        var newValue = Ui.Checkbox(ctx, id, "", value)
+        var newValue = NiziUi.Checkbox(id, "", value)
             .BoxColor(t.SurfaceInset, boxHover)
             .CheckColor(checkColor)
             .BorderColor(t.Border)
@@ -600,7 +600,7 @@ public static class PropertyEditorRenderer
         }
     }
 
-    private static void RenderVector2Editor(UiContext ctx, string id, PropertyInfo prop,
+    private static void RenderVector2Editor(string id, PropertyInfo prop,
         object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
@@ -609,7 +609,7 @@ public static class PropertyEditorRenderer
         var x = value.X;
         var y = value.Y;
 
-        if (Ui.Vec2Editor(ctx, id, ref x, ref y, 0.1f, "F2",
+        if (NiziUi.Vec2Editor(id, ref x, ref y, 0.1f, "F2",
             t.AxisX, t.AxisY, t.InputBackground, t.InputBackgroundFocused, t.InputText) && canWrite)
         {
             var newValue = new Vector2(x, y);
@@ -621,7 +621,7 @@ public static class PropertyEditorRenderer
         }
     }
 
-    private static void RenderVector3Editor(UiContext ctx, string id, PropertyInfo prop,
+    private static void RenderVector3Editor(string id, PropertyInfo prop,
         object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
@@ -631,7 +631,7 @@ public static class PropertyEditorRenderer
         var y = value.Y;
         var z = value.Z;
 
-        if (Ui.Vec3Editor(ctx, id, ref x, ref y, ref z, 0.1f, "F2",
+        if (NiziUi.Vec3Editor(id, ref x, ref y, ref z, 0.1f, "F2",
             t.AxisX, t.AxisY, t.AxisZ, t.InputBackground, t.InputBackgroundFocused, t.InputText) && canWrite)
         {
             var newValue = new Vector3(x, y, z);
@@ -643,7 +643,7 @@ public static class PropertyEditorRenderer
         }
     }
 
-    private static void RenderVector4Editor(UiContext ctx, string id, PropertyInfo prop,
+    private static void RenderVector4Editor(string id, PropertyInfo prop,
         object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
@@ -654,7 +654,7 @@ public static class PropertyEditorRenderer
         var z = value.Z;
         var w = value.W;
 
-        if (Ui.Vec4Editor(ctx, id, ref x, ref y, ref z, ref w, 0.1f, "F2",
+        if (NiziUi.Vec4Editor(id, ref x, ref y, ref z, ref w, 0.1f, "F2",
             t.AxisX, t.AxisY, t.AxisZ, UiColor.Rgb(200, 180, 50),
             t.InputBackground, t.InputBackgroundFocused, t.InputText) && canWrite)
         {
@@ -667,7 +667,7 @@ public static class PropertyEditorRenderer
         }
     }
 
-    private static void RenderColor3Editor(UiContext ctx, string id, PropertyInfo prop,
+    private static void RenderColor3Editor(string id, PropertyInfo prop,
         object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
@@ -677,7 +677,7 @@ public static class PropertyEditorRenderer
         var g = value.Y;
         var b = value.Z;
 
-        var changed = Ui.ColorPicker(ctx, id)
+        var changed = NiziUi.ColorPicker(id)
             .FontSize(t.FontSizeCaption)
             .CornerRadius(t.RadiusSmall)
             .BorderColor(t.Border)
@@ -698,7 +698,7 @@ public static class PropertyEditorRenderer
         }
     }
 
-    private static void RenderColor4Editor(UiContext ctx, string id, PropertyInfo prop,
+    private static void RenderColor4Editor(string id, PropertyInfo prop,
         object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
@@ -709,7 +709,7 @@ public static class PropertyEditorRenderer
         var b = value.Z;
         var a = value.W;
 
-        var changed = Ui.ColorPicker(ctx, id)
+        var changed = NiziUi.ColorPicker(id)
             .HasAlpha(true)
             .FontSize(t.FontSizeCaption)
             .CornerRadius(t.RadiusSmall)
@@ -731,7 +731,7 @@ public static class PropertyEditorRenderer
         }
     }
 
-    private static void RenderEnumEditor(UiContext ctx, string id, PropertyInfo prop,
+    private static void RenderEnumEditor(string id, PropertyInfo prop,
         object instance, bool canWrite, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
@@ -740,7 +740,7 @@ public static class PropertyEditorRenderer
         var oldValue = prop.GetValue(instance);
         var selectedIndex = oldValue != null ? Array.IndexOf(Enum.GetValues(propType), oldValue) : 0;
 
-        if (Ui.Dropdown(ctx, id, names)
+        if (NiziUi.Dropdown(id, names)
             .Background(t.SurfaceInset, t.Hover)
             .TextColor(t.TextPrimary)
             .FontSize(t.FontSizeCaption)
@@ -760,7 +760,7 @@ public static class PropertyEditorRenderer
         }
     }
 
-    private static void RenderAssetRefEditor(UiFrame ui, UiContext ctx, string id,
+    private static void RenderAssetRefEditor(string id,
         PropertyInfo prop, object instance, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
@@ -770,12 +770,12 @@ public static class PropertyEditorRenderer
         var hasAsset = !string.IsNullOrEmpty(assetPath);
         var rawText = hasAsset ? assetPath! : "(none)";
 
-        var buttonId = ctx.GetElementId(id);
-        var bbox = ctx.Clay.GetElementBoundingBox(buttonId);
+        var buttonId = NiziUi.GetElementId(id);
+        var bbox = NiziUi.GetElementBoundingBox(buttonId);
         var availWidth = bbox.Width > 12 ? bbox.Width - 12 : 120;
-        var displayText = TruncateToFit(ctx.Clay, rawText, t.FontSizeCaption, availWidth);
+        var displayText = TruncateToFit(rawText, t.FontSizeCaption, availWidth);
 
-        if (Ui.Button(ctx, id, displayText)
+        if (NiziUi.Button(id, displayText)
             .Color(t.SurfaceInset, t.Hover, t.Active)
             .TextColor(t.TextPrimary)
             .FontSize(t.FontSizeCaption)
@@ -812,7 +812,7 @@ public static class PropertyEditorRenderer
 
         if (hasAsset && prop.CanWrite)
         {
-            if (EditorUi.IconButton(ctx, id + "_Clear", FontAwesome.Xmark))
+            if (EditorUi.IconButton(id + "_Clear", FontAwesome.Xmark))
             {
                 var oldAssetValue = prop.GetValue(instance);
                 prop.SetValue(instance, null);
@@ -951,7 +951,7 @@ public static class PropertyEditorRenderer
         return null;
     }
 
-    private static void RenderListEditor(UiFrame ui, UiContext ctx, string id,
+    private static void RenderListEditor(string id,
         PropertyInfo prop, object instance, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
@@ -981,7 +981,7 @@ public static class PropertyEditorRenderer
         var contentHeight = 32 + count * 26;
         var listHeight = Math.Clamp(contentHeight, 60, 200);
 
-        var editor = Ui.ListEditor(ctx, listId)
+        var editor = NiziUi.ListEditor(listId)
             .Title(title)
             .Background(t.SurfaceInset)
             .SelectedColor(UiColor.Rgb(50, 80, 120))
@@ -1088,7 +1088,7 @@ public static class PropertyEditorRenderer
         return snapshot;
     }
 
-    private static void RenderDictionaryEditor(UiFrame ui, UiContext ctx, string id,
+    private static void RenderDictionaryEditor(string id,
         PropertyInfo prop, object instance, EditorViewModel editorVm, Action? onChanged)
     {
         var t = EditorTheme.Current;
@@ -1112,7 +1112,7 @@ public static class PropertyEditorRenderer
 
         var count = entryKeys.Length;
 
-        using (ui.Panel(id + "_DictC")
+        using (NiziUi.Panel(id + "_DictC")
             .Vertical()
             .GrowWidth()
             .FitHeight()
@@ -1121,7 +1121,7 @@ public static class PropertyEditorRenderer
             .CornerRadius(4)
             .Open())
         {
-            using (ui.Panel(id + "_DictH")
+            using (NiziUi.Panel(id + "_DictH")
                 .Horizontal()
                 .GrowWidth()
                 .FixedHeight(30)
@@ -1131,11 +1131,11 @@ public static class PropertyEditorRenderer
                 .Background(UiColor.Rgb(40, 40, 45))
                 .Open())
             {
-                ui.Text(title, new UiTextStyle { Color = t.TextPrimary, FontSize = t.FontSizeCaption });
+                NiziUi.Text(title, new UiTextStyle { Color = t.TextPrimary, FontSize = t.FontSizeCaption });
 
-                using (ui.Panel(id + "_DictSpc").GrowWidth().Open()) { }
+                using (NiziUi.Panel(id + "_DictSpc").GrowWidth().Open()) { }
 
-                var addBtn = ui.Panel(id + "_DictAdd")
+                var addBtn = NiziUi.Panel(id + "_DictAdd")
                     .FixedWidth(22)
                     .FixedHeight(22)
                     .CenterChildren()
@@ -1148,7 +1148,7 @@ public static class PropertyEditorRenderer
 
                 using (addBtn.Open())
                 {
-                    ui.Icon(FontAwesome.Plus, UiColor.Rgb(100, 200, 100), 12);
+                    NiziUi.Icon(FontAwesome.Plus, UiColor.Rgb(100, 200, 100), 12);
                 }
 
                 if (addBtn.WasClicked())
@@ -1183,7 +1183,7 @@ public static class PropertyEditorRenderer
 
             for (var i = 0; i < count; i++)
             {
-                using (ui.Panel(id + "_DR" + i)
+                using (NiziUi.Panel(id + "_DR" + i)
                     .Horizontal()
                     .GrowWidth()
                     .FixedHeight(26)
@@ -1196,7 +1196,7 @@ public static class PropertyEditorRenderer
                     var keyVal = entryKeys[i];
                     var oldKey = keyVal;
 
-                    var keyChanged = Ui.TextField(ctx, keyFieldId, ref keyVal)
+                    var keyChanged = NiziUi.TextField(keyFieldId, ref keyVal)
                         .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
                         .TextColor(t.TextPrimary)
                         .BorderColor(t.Border, t.Accent)
@@ -1222,7 +1222,7 @@ public static class PropertyEditorRenderer
                     var valVal = entryValues[i];
                     var oldVal = valVal;
 
-                    var valChanged = Ui.TextField(ctx, valFieldId, ref valVal)
+                    var valChanged = NiziUi.TextField(valFieldId, ref valVal)
                         .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
                         .TextColor(t.TextPrimary)
                         .BorderColor(t.Border, t.Accent)
@@ -1242,7 +1242,7 @@ public static class PropertyEditorRenderer
                         onChanged?.Invoke();
                     }
 
-                    var removeBtn = ui.Panel(id + "_DRm" + i)
+                    var removeBtn = NiziUi.Panel(id + "_DRm" + i)
                         .FixedWidth(20)
                         .FixedHeight(20)
                         .CenterChildren()
@@ -1255,7 +1255,7 @@ public static class PropertyEditorRenderer
 
                     using (removeBtn.Open())
                     {
-                        ui.Icon(FontAwesome.Minus, UiColor.Rgb(200, 100, 100), 12);
+                        NiziUi.Icon(FontAwesome.Minus, UiColor.Rgb(200, 100, 100), 12);
                     }
 
                     if (removeBtn.WasClicked())
@@ -1394,9 +1394,9 @@ public static class PropertyEditorRenderer
         return result.ToString();
     }
 
-    private static string TruncateToFit(Clay clay, string text, ushort fontSize, float maxWidth)
+    private static string TruncateToFit(string text, ushort fontSize, float maxWidth)
     {
-        var measured = clay.MeasureText(text, 0, fontSize);
+        var measured = NiziUi.MeasureText(text, 0, fontSize);
         if (measured.Width <= maxWidth)
         {
             return text;
@@ -1406,7 +1406,7 @@ public static class PropertyEditorRenderer
         if (lastSlash >= 0)
         {
             var filename = text[(lastSlash + 1)..];
-            var fileDims = clay.MeasureText(filename, 0, fontSize);
+            var fileDims = NiziUi.MeasureText(filename, 0, fontSize);
             if (fileDims.Width <= maxWidth)
             {
                 return filename;
@@ -1416,14 +1416,14 @@ public static class PropertyEditorRenderer
         }
 
         var ellipsis = "...";
-        var ellipsisDims = clay.MeasureText(ellipsis, 0, fontSize);
+        var ellipsisDims = NiziUi.MeasureText(ellipsis, 0, fontSize);
         var remaining = maxWidth - ellipsisDims.Width;
         if (remaining <= 0)
         {
             return ellipsis;
         }
 
-        var fitChars = clay.GetCharIndexAtOffset(text, remaining, 0, fontSize);
+        var fitChars = NiziUi.GetCharIndexAtOffset(text, remaining, 0, fontSize);
         if (fitChars > 0 && fitChars < text.Length)
         {
             return text[..(int)fitChars] + ellipsis;

@@ -4,12 +4,14 @@ namespace NiziKit.UI;
 
 public static partial class Ui
 {
+    [Obsolete("Use NiziUi static methods instead")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Vec2Editor(UiContext ctx, string id, ref float x, ref float y,
         float sensitivity = 0.5f, string format = "F2")
         => Vec2Editor(ctx, id, ref x, ref y, sensitivity, format,
             UiColor.Rgb(200, 70, 70), UiColor.Rgb(70, 180, 70), null, null, null);
 
+    [Obsolete("Use NiziUi static methods instead")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Vec2Editor(UiContext ctx, string id, ref float x, ref float y,
         float sensitivity, string format,
@@ -82,6 +84,7 @@ public static partial class Ui
         return changed;
     }
 
+    [Obsolete("Use NiziUi static methods instead")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Vec3Editor(UiContext ctx, string id, ref float x, ref float y, ref float z,
         float sensitivity = 0.5f, string format = "F2")
@@ -89,6 +92,7 @@ public static partial class Ui
             UiColor.Rgb(200, 70, 70), UiColor.Rgb(70, 180, 70), UiColor.Rgb(70, 120, 220),
             null, null, null);
 
+    [Obsolete("Use NiziUi static methods instead")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Vec3Editor(UiContext ctx, string id, ref float x, ref float y, ref float z,
         float sensitivity, string format,
@@ -186,6 +190,7 @@ public static partial class Ui
         return changed;
     }
 
+    [Obsolete("Use NiziUi static methods instead")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Vec4Editor(UiContext ctx, string id, ref float x, ref float y, ref float z, ref float w,
         float sensitivity = 0.5f, string format = "F2")
@@ -193,6 +198,7 @@ public static partial class Ui
             UiColor.Rgb(200, 70, 70), UiColor.Rgb(70, 180, 70), UiColor.Rgb(70, 120, 220), UiColor.Rgb(200, 180, 50),
             null, null, null);
 
+    [Obsolete("Use NiziUi static methods instead")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool Vec4Editor(UiContext ctx, string id, ref float x, ref float y, ref float z, ref float w,
         float sensitivity, string format,

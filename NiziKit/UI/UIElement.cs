@@ -5,19 +5,16 @@ namespace NiziKit.UI;
 
 public ref struct UiElement
 {
-    private readonly UiContext _context;
     private ClayElementDeclaration _decl;
 
     internal UiElement(UiContext context, string name)
     {
-        _context = context;
         Id = context.StringCache.GetId(name);
         _decl = new ClayElementDeclaration { Id = Id };
     }
 
     internal UiElement(UiContext context, string name, uint index)
     {
-        _context = context;
         Id = context.StringCache.GetId(name, index);
         _decl = new ClayElementDeclaration { Id = Id };
     }
@@ -328,213 +325,48 @@ public ref struct UiElement
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiInteraction GetInteraction()
     {
-        return _context.GetInteraction(Id);
+        return NiziUi.Ctx.GetInteraction(Id);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsHovered()
     {
-        return _context.IsHovered(Id);
+        return NiziUi.Ctx.IsHovered(Id);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool WasClicked()
     {
-        return _context.IsHovered(Id) && _context.MouseJustReleased;
+        return NiziUi.Ctx.IsHovered(Id) && NiziUi.Ctx.MouseJustReleased;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElementScope Open()
     {
-        _context.OpenElement(_decl);
-        return new UiElementScope(_context);
+        NiziUi.Ctx.OpenElement(_decl);
+        return new UiElementScope();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Begin()
     {
-        _context.OpenElement(_decl);
+        NiziUi.Ctx.OpenElement(_decl);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Content(Action content)
     {
-        _context.OpenElement(_decl);
+        NiziUi.Ctx.OpenElement(_decl);
         content();
-        _context.Clay.CloseElement();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Panel(string id)
-    {
-        return new UiElement(_context, id);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Row(string id = "Row")
-    {
-        return new UiElement(_context, id).Horizontal();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Column(string id = "Column")
-    {
-        return new UiElement(_context, id).Vertical();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Text(string text, UiTextStyle style = default)
-    {
-        var desc = new ClayTextDesc
-        {
-            TextColor = style.Color.ToClayColor(),
-            FontSize = style.FontSize > 0 ? style.FontSize : (ushort)14,
-            FontId = style.FontId,
-            WrapMode = ClayTextWrapMode.None,
-            TextAlignment = style.Alignment switch
-            {
-                UiTextAlign.Center => ClayTextAlignment.Center,
-                UiTextAlign.Right => ClayTextAlignment.Right,
-                _ => ClayTextAlignment.Left
-            }
-        };
-        _context.Clay.Text(text, desc);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Image(Texture texture, uint width, uint height)
-    {
-        _context.Clay.Texture(texture, width, height);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Icon(string icon, UiColor color, ushort size = 14)
-    {
-        var desc = new ClayTextDesc
-        {
-            TextColor = color.ToClayColor(),
-            FontSize = size,
-            FontId = FontAwesome.FontId,
-            WrapMode = ClayTextWrapMode.None,
-            TextAlignment = ClayTextAlignment.Center
-        };
-        _context.Clay.Text(icon, desc);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Icon(string icon, UiTextStyle style)
-    {
-        var desc = new ClayTextDesc
-        {
-            TextColor = style.Color.ToClayColor(),
-            FontSize = style.FontSize > 0 ? style.FontSize : (ushort)14,
-            FontId = FontAwesome.FontId,
-            WrapMode = ClayTextWrapMode.None,
-            TextAlignment = style.Alignment switch
-            {
-                UiTextAlign.Center => ClayTextAlignment.Center,
-                UiTextAlign.Right => ClayTextAlignment.Right,
-                _ => ClayTextAlignment.Left
-            }
-        };
-        _context.Clay.Text(icon, desc);
+        NiziUi.Ctx.Clay.CloseElement();
     }
 }
 
 public readonly ref struct UiElementScope
 {
-    private readonly UiContext _context;
-
-    internal UiElementScope(UiContext context)
-    {
-        _context = context;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Panel(string id)
-    {
-        return new UiElement(_context, id);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Panel(string id, uint index)
-    {
-        return new UiElement(_context, id, index);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Row(string id = "Row")
-    {
-        return new UiElement(_context, id).Horizontal();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Column(string id = "Column")
-    {
-        return new UiElement(_context, id).Vertical();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Text(string text, UiTextStyle style = default)
-    {
-        var desc = new ClayTextDesc
-        {
-            TextColor = style.Color.ToClayColor(),
-            FontSize = style.FontSize > 0 ? style.FontSize : (ushort)14,
-            FontId = style.FontId,
-            WrapMode = ClayTextWrapMode.None,
-            TextAlignment = style.Alignment switch
-            {
-                UiTextAlign.Center => ClayTextAlignment.Center,
-                UiTextAlign.Right => ClayTextAlignment.Right,
-                _ => ClayTextAlignment.Left
-            }
-        };
-        _context.Clay.Text(text, desc);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Image(Texture texture, uint width, uint height)
-    {
-        _context.Clay.Texture(texture, width, height);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Icon(string icon, UiColor color, ushort size = 14)
-    {
-        var desc = new ClayTextDesc
-        {
-            TextColor = color.ToClayColor(),
-            FontSize = size,
-            FontId = FontAwesome.FontId,
-            WrapMode = ClayTextWrapMode.None,
-            TextAlignment = ClayTextAlignment.Center
-        };
-        _context.Clay.Text(icon, desc);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Icon(string icon, UiTextStyle style)
-    {
-        var desc = new ClayTextDesc
-        {
-            TextColor = style.Color.ToClayColor(),
-            FontSize = style.FontSize > 0 ? style.FontSize : (ushort)14,
-            FontId = FontAwesome.FontId,
-            WrapMode = ClayTextWrapMode.None,
-            TextAlignment = style.Alignment switch
-            {
-                UiTextAlign.Center => ClayTextAlignment.Center,
-                UiTextAlign.Right => ClayTextAlignment.Right,
-                _ => ClayTextAlignment.Left
-            }
-        };
-        _context.Clay.Text(icon, desc);
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose()
     {
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
     }
 }

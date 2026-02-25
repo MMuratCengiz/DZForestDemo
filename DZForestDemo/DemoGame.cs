@@ -65,7 +65,6 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 
     protected override void OnEvent(ref Event ev)
     {
-        _renderFrame.HandleUiEvent(ev);
     }
 
     protected override void FixedUpdate(float fixedDt)

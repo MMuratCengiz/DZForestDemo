@@ -6,26 +6,26 @@ namespace NiziKit.Editor.UI.Dialogs;
 
 public static class SavePromptDialogBuilder
 {
-    public static void Build(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    public static void Build(EditorViewModel vm)
     {
         var t = EditorTheme.Current;
 
-        using var overlay = EditorUi.DialogOverlay(ui, "SavePromptOverlay");
-        using var dialog = EditorUi.DialogContainer(ui, ctx, "SavePromptDialog", "Unsaved Changes", 450, 200);
+        using var overlay = EditorUi.DialogOverlay("SavePromptOverlay");
+        using var dialog = EditorUi.DialogContainer("SavePromptDialog", "Unsaved Changes", 450, 200);
 
-        using (ui.Panel("SavePromptBody")
+        using (NiziUi.Panel("SavePromptBody")
             .Vertical()
             .Padding(20, 12)
             .Gap(10)
             .Grow()
             .Open())
         {
-            ui.Icon(FontAwesome.TriangleExclamation, t.Warning, t.IconSizeMedium);
-            ui.Text("You have unsaved changes. What would you like to do?",
+            NiziUi.Icon(FontAwesome.TriangleExclamation, t.Warning, t.IconSizeMedium);
+            NiziUi.Text("You have unsaved changes. What would you like to do?",
                 new UiTextStyle { Color = t.TextPrimary, FontSize = t.FontSizeBody });
         }
 
-        using (ui.Panel("SavePromptButtons")
+        using (NiziUi.Panel("SavePromptButtons")
             .Horizontal()
             .Padding(16, 10)
             .Gap(8)
@@ -36,17 +36,17 @@ public static class SavePromptDialogBuilder
             .Background(t.PanelElevated)
             .Open())
         {
-            if (EditorUi.GhostButton(ctx, "SavePromptCancel", "Cancel"))
+            if (EditorUi.GhostButton("SavePromptCancel", "Cancel"))
             {
                 vm.SavePromptCancel();
             }
 
-            if (EditorUi.DangerButton(ctx, "SavePromptDiscard", "Discard"))
+            if (EditorUi.DangerButton("SavePromptDiscard", "Discard"))
             {
                 vm.SavePromptDiscard();
             }
 
-            if (EditorUi.AccentButton(ctx, "SavePromptSave", "Save"))
+            if (EditorUi.AccentButton("SavePromptSave", "Save"))
             {
                 vm.SavePromptSave();
             }

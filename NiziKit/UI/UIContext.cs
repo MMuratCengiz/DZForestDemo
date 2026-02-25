@@ -85,7 +85,7 @@ public sealed class UiContext : IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void HandleEvent(Event ev)
+    public void OnEvent(in Event ev)
     {
         if (ev is { Type: EventType.MouseButtonDown, MouseButton.Button: MouseButton.Left })
         {

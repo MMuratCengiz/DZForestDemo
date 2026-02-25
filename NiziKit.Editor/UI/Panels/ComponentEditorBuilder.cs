@@ -7,12 +7,12 @@ namespace NiziKit.Editor.UI.Panels;
 
 public static class ComponentEditorBuilder
 {
-    public static void Build(UiFrame ui, UiContext ctx, ComponentViewModel componentVm, EditorViewModel editorVm, int componentIndex)
+    public static void Build(ComponentViewModel componentVm, EditorViewModel editorVm, int componentIndex)
     {
         var t = EditorTheme.Current;
         var sectionId = "Comp_" + componentIndex + "_" + componentVm.TypeName;
 
-        var section = Ui.CollapsibleSection(ctx, sectionId, componentVm.DisplayName, componentVm.IsExpanded)
+        var section = NiziUi.CollapsibleSection(sectionId, componentVm.DisplayName, componentVm.IsExpanded)
             .HeaderBackground(t.ComponentAccent, t.Hover)
             .HeaderTextColor(t.TextPrimary)
             .BodyBackground(t.PanelBackground)
@@ -39,7 +39,7 @@ public static class ComponentEditorBuilder
             return;
         }
 
-        PropertyEditorRenderer.RenderProperties(ui, ctx, sectionId, componentVm.Component, editorVm, () =>
+        PropertyEditorRenderer.RenderProperties(sectionId, componentVm.Component, editorVm, () =>
         {
             componentVm.NotifyChanged();
             editorVm.MarkDirty();
@@ -48,8 +48,8 @@ public static class ComponentEditorBuilder
         // Render custom playback controls for Animator components
         if (componentVm.Component is Animator animator)
         {
-            Ui.VerticalSpacer(ctx, 4);
-            AnimatorEditorBuilder.BuildPlaybackControls(ui, ctx, animator, editorVm, sectionId);
+            NiziUi.VerticalSpacer(4);
+            AnimatorEditorBuilder.BuildPlaybackControls(animator, editorVm, sectionId);
         }
     }
 }

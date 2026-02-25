@@ -46,6 +46,10 @@
       <ClCompile Include="Shaders\Particles\Compute.hlsl" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="UI\Theming\" />
+    </ItemGroup>
+
     <Target Name="CompileBuiltInShaders" BeforeTargets="BeforeBuild">
       <Exec Command="dotnet run --project $(MSBuildThisFileDirectory)..\NiziKit.Build\NiziKit.Build.csproj" />
     </Target>

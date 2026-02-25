@@ -13,18 +13,18 @@ namespace NiziKit.Editor.UI.Panels;
 
 public static class InspectorBuilder
 {
-    public static void Build(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    public static void Build(EditorViewModel vm)
     {
         var t = EditorTheme.Current;
         var selected = vm.SelectedGameObject;
 
         if (selected == null)
         {
-            BuildSceneSettings(ui, ctx, vm);
+            BuildSceneSettings(vm);
             return;
         }
 
-        using var scroll = ui.Panel("InspectorScroll")
+        using var scroll = NiziUi.Panel("InspectorScroll")
             .Vertical()
             .GrowWidth()
             .GrowHeight()
@@ -32,18 +32,18 @@ public static class InspectorBuilder
             .Gap(2)
             .Open();
 
-        BuildObjectHeader(ui, ctx, selected);
+        BuildObjectHeader(selected);
 
-        TransformSectionBuilder.Build(ui, ctx, selected);
+        TransformSectionBuilder.Build(selected);
 
         for (var i = 0; i < selected.Components.Count; i++)
         {
-            ComponentEditorBuilder.Build(ui, ctx, selected.Components[i], vm, i);
+            ComponentEditorBuilder.Build(selected.Components[i], vm, i);
         }
 
         if (!selected.IsAddingComponent)
         {
-            using (ui.Panel("AddCompBtnRow")
+            using (NiziUi.Panel("AddCompBtnRow")
                 .Horizontal()
                 .GrowWidth()
                 .FitHeight()
@@ -51,7 +51,7 @@ public static class InspectorBuilder
                 .AlignChildrenX(UiAlignX.Center)
                 .Open())
             {
-                if (EditorUi.AccentButton(ctx, "AddCompBtn", "+ Add Component"))
+                if (EditorUi.AccentButton("AddCompBtn", "+ Add Component"))
                 {
                     selected.ToggleAddComponentPanel();
                 }
@@ -59,15 +59,15 @@ public static class InspectorBuilder
         }
         else
         {
-            AddComponentBuilder.Build(ui, ctx, selected);
+            AddComponentBuilder.Build(selected);
         }
     }
 
-    private static void BuildObjectHeader(UiFrame ui, UiContext ctx, GameObjectViewModel obj)
+    private static void BuildObjectHeader(GameObjectViewModel obj)
     {
         var t = EditorTheme.Current;
 
-        using var header = ui.Panel("ObjHeader")
+        using var header = NiziUi.Panel("ObjHeader")
             .Horizontal()
             .Background(t.PanelElevated)
             .Padding(12, 8)
@@ -79,11 +79,11 @@ public static class InspectorBuilder
                 with { Bottom = 1, Color = t.Border })
             .Open();
 
-        ui.Icon(obj.TypeIcon, obj.TypeIconColor, t.IconSizeSmall);
+        NiziUi.Icon(obj.TypeIcon, obj.TypeIconColor, t.IconSizeSmall);
 
         var oldName = obj.Name;
         var name = oldName;
-        if (Ui.TextField(ctx, "ObjName", ref name)
+        if (NiziUi.TextField("ObjName", ref name)
             .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
             .TextColor(t.TextPrimary)
             .BorderColor(t.Border, t.Accent)
@@ -101,7 +101,7 @@ public static class InspectorBuilder
         }
 
         var isActive = obj.IsActive;
-        var newActive = Ui.Checkbox(ctx, "ObjActive", "", isActive)
+        var newActive = NiziUi.Checkbox("ObjActive", "", isActive)
             .BoxColor(t.SurfaceInset, t.Hover)
             .CheckColor(t.Accent)
             .BorderColor(t.Border)
@@ -117,11 +117,11 @@ public static class InspectorBuilder
         }
     }
 
-    private static void BuildSceneSettings(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    private static void BuildSceneSettings(EditorViewModel vm)
     {
         var t = EditorTheme.Current;
 
-        using var scroll = ui.Panel("SceneSettingsScroll")
+        using var scroll = NiziUi.Panel("SceneSettingsScroll")
             .Vertical()
             .GrowWidth()
             .GrowHeight()
@@ -129,7 +129,7 @@ public static class InspectorBuilder
             .Gap(0)
             .Open();
 
-        using (ui.Panel("SceneHeader")
+        using (NiziUi.Panel("SceneHeader")
             .Horizontal()
             .Background(t.PanelElevated)
             .Padding(12, 8)
@@ -141,20 +141,20 @@ public static class InspectorBuilder
                 with { Bottom = 1, Color = t.Border })
             .Open())
         {
-            ui.Icon(FontAwesome.Film, t.Accent, t.IconSizeSmall);
-            ui.Text(vm.SceneDisplayName, new UiTextStyle { Color = t.TextPrimary, FontSize = t.FontSizeBody });
+            NiziUi.Icon(FontAwesome.Film, t.Accent, t.IconSizeSmall);
+            NiziUi.Text(vm.SceneDisplayName, new UiTextStyle { Color = t.TextPrimary, FontSize = t.FontSizeBody });
         }
 
-        BuildGridSettings(ui, ctx, vm);
-        BuildAmbientLightSettings(ui, ctx, vm);
-        BuildSkyboxSettings(ui, ctx, vm);
+        BuildGridSettings(vm);
+        BuildAmbientLightSettings(vm);
+        BuildSkyboxSettings(vm);
     }
 
-    private static void BuildGridSettings(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    private static void BuildGridSettings(EditorViewModel vm)
     {
         var t = EditorTheme.Current;
 
-        using var section = Ui.CollapsibleSection(ctx, "GridSettings", "Grid Settings", true)
+        using var section = NiziUi.CollapsibleSection("GridSettings", "Grid Settings", true)
             .HeaderBackground(t.SectionHeaderBg, t.Hover)
             .HeaderTextColor(t.TextPrimary)
             .BodyBackground(t.PanelBackground)
@@ -169,7 +169,7 @@ public static class InspectorBuilder
             return;
         }
 
-        using var grid = Ui.PropertyGrid(ctx, "GridSettingsGrid")
+        using var grid = NiziUi.PropertyGrid("GridSettingsGrid")
             .LabelWidth(75)
             .FontSize(t.FontSizeCaption)
             .RowHeight(24)
@@ -180,7 +180,7 @@ public static class InspectorBuilder
         {
             using var row = grid.Row("Show Grid");
             var showGrid = vm.ShowGrid;
-            var newShowGrid = Ui.Checkbox(ctx, "ShowGridCb", "", showGrid)
+            var newShowGrid = NiziUi.Checkbox("ShowGridCb", "", showGrid)
                 .BoxColor(t.SurfaceInset, t.Hover)
                 .CheckColor(t.Accent)
                 .BorderColor(t.Border)
@@ -198,7 +198,7 @@ public static class InspectorBuilder
         {
             using var row = grid.Row("Grid Size");
             var gridSize = vm.GridSize;
-            if (Ui.DraggableValue(ctx, "GridSizeVal")
+            if (NiziUi.DraggableValue("GridSizeVal")
                 .LabelWidth(0)
                 .Sensitivity(1f)
                 .Format("F0")
@@ -216,7 +216,7 @@ public static class InspectorBuilder
         {
             using var row = grid.Row("Spacing");
             var spacing = vm.GridSpacing;
-            if (Ui.DraggableValue(ctx, "GridSpacingVal")
+            if (NiziUi.DraggableValue("GridSpacingVal")
                 .LabelWidth(0)
                 .Sensitivity(0.1f)
                 .Format("F1")
@@ -234,7 +234,7 @@ public static class InspectorBuilder
         {
             using var row = grid.Row("Snap");
             var snapEnabled = vm.SnapEnabled;
-            var newSnap = Ui.Checkbox(ctx, "SnapEnabledCb", "", snapEnabled)
+            var newSnap = NiziUi.Checkbox("SnapEnabledCb", "", snapEnabled)
                 .BoxColor(t.SurfaceInset, t.Hover)
                 .CheckColor(t.Accent)
                 .BorderColor(t.Border)
@@ -252,7 +252,7 @@ public static class InspectorBuilder
         {
             using var row = grid.Row("Pos Snap");
             var posSnap = vm.PositionSnapIncrement;
-            if (Ui.DraggableValue(ctx, "PosSnapVal")
+            if (NiziUi.DraggableValue("PosSnapVal")
                 .LabelWidth(0)
                 .Sensitivity(0.1f)
                 .Format("F1")
@@ -270,7 +270,7 @@ public static class InspectorBuilder
         {
             using var row = grid.Row("Rot Snap");
             var rotSnap = vm.RotationSnapIncrement;
-            if (Ui.DraggableValue(ctx, "RotSnapVal")
+            if (NiziUi.DraggableValue("RotSnapVal")
                 .LabelWidth(0)
                 .Sensitivity(1f)
                 .Format("F0")
@@ -287,19 +287,19 @@ public static class InspectorBuilder
 
         if (!string.IsNullOrEmpty(vm.AutoSaveStatus))
         {
-            using (ui.Panel("AutoSaveRow")
+            using (NiziUi.Panel("AutoSaveRow")
                 .Horizontal()
                 .GrowWidth()
                 .FitHeight()
                 .Padding(8, 4)
                 .Open())
             {
-                ui.Text(vm.AutoSaveStatus, new UiTextStyle { Color = t.TextMuted, FontSize = t.FontSizeCaption });
+                NiziUi.Text(vm.AutoSaveStatus, new UiTextStyle { Color = t.TextMuted, FontSize = t.FontSizeCaption });
             }
         }
     }
 
-    private static void BuildAmbientLightSettings(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    private static void BuildAmbientLightSettings(EditorViewModel vm)
     {
         var t = EditorTheme.Current;
         var scene = World.CurrentScene;
@@ -308,7 +308,7 @@ public static class InspectorBuilder
             return;
         }
 
-        using var section = Ui.CollapsibleSection(ctx, "AmbientLightSettings", "Ambient Light", false)
+        using var section = NiziUi.CollapsibleSection("AmbientLightSettings", "Ambient Light", false)
             .HeaderBackground(t.SectionHeaderBg, t.Hover)
             .HeaderTextColor(t.TextPrimary)
             .BodyBackground(t.PanelBackground)
@@ -323,7 +323,7 @@ public static class InspectorBuilder
             return;
         }
 
-        using var grid = Ui.PropertyGrid(ctx, "AmbientLightGrid")
+        using var grid = NiziUi.PropertyGrid("AmbientLightGrid")
             .LabelWidth(75)
             .FontSize(t.FontSizeCaption)
             .RowHeight(24)
@@ -338,7 +338,7 @@ public static class InspectorBuilder
             var g = color.Y;
             var b = color.Z;
 
-            if (Ui.ColorPicker(ctx, "AmbientSkyColor")
+            if (NiziUi.ColorPicker("AmbientSkyColor")
                 .FontSize(t.FontSizeCaption)
                 .CornerRadius(t.RadiusSmall)
                 .BorderColor(t.Border)
@@ -360,7 +360,7 @@ public static class InspectorBuilder
             var g = color.Y;
             var b = color.Z;
 
-            if (Ui.ColorPicker(ctx, "AmbientGroundColor")
+            if (NiziUi.ColorPicker("AmbientGroundColor")
                 .FontSize(t.FontSizeCaption)
                 .CornerRadius(t.RadiusSmall)
                 .BorderColor(t.Border)
@@ -378,7 +378,7 @@ public static class InspectorBuilder
         {
             using var row = grid.Row("Intensity");
             var intensity = scene.AmbientIntensity;
-            if (Ui.DraggableValue(ctx, "AmbientIntensityVal")
+            if (NiziUi.DraggableValue("AmbientIntensityVal")
                 .LabelWidth(0)
                 .Sensitivity(0.01f)
                 .Format("F2")
@@ -394,7 +394,7 @@ public static class InspectorBuilder
         }
     }
 
-    private static void BuildSkyboxSettings(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    private static void BuildSkyboxSettings(EditorViewModel vm)
     {
         var t = EditorTheme.Current;
         var scene = World.CurrentScene;
@@ -403,7 +403,7 @@ public static class InspectorBuilder
             return;
         }
 
-        using var section = Ui.CollapsibleSection(ctx, "SkyboxSettings", "Skybox Settings", false)
+        using var section = NiziUi.CollapsibleSection("SkyboxSettings", "Skybox Settings", false)
             .HeaderBackground(t.SectionHeaderBg, t.Hover)
             .HeaderTextColor(t.TextPrimary)
             .BodyBackground(t.PanelBackground)
@@ -420,7 +420,7 @@ public static class InspectorBuilder
 
         scene.Skybox ??= new SkyboxData();
 
-        using var grid = Ui.PropertyGrid(ctx, "SkyboxGrid")
+        using var grid = NiziUi.PropertyGrid("SkyboxGrid")
             .LabelWidth(65)
             .FontSize(t.FontSizeCaption)
             .RowHeight(24)
@@ -428,44 +428,44 @@ public static class InspectorBuilder
             .LabelColor(t.TextSecondary)
             .Open();
 
-        RenderSkyboxFaceEditor(ui, ctx, grid, "Right", scene.Skybox.RightRef, vm, (tex, path) =>
+        RenderSkyboxFaceEditor(grid, "Right", scene.Skybox.RightRef, vm, (tex, path) =>
         {
             scene.Skybox.Right = tex;
             scene.Skybox.RightRef = path;
         });
 
-        RenderSkyboxFaceEditor(ui, ctx, grid, "Left", scene.Skybox.LeftRef, vm, (tex, path) =>
+        RenderSkyboxFaceEditor(grid, "Left", scene.Skybox.LeftRef, vm, (tex, path) =>
         {
             scene.Skybox.Left = tex;
             scene.Skybox.LeftRef = path;
         });
 
-        RenderSkyboxFaceEditor(ui, ctx, grid, "Up", scene.Skybox.UpRef, vm, (tex, path) =>
+        RenderSkyboxFaceEditor(grid, "Up", scene.Skybox.UpRef, vm, (tex, path) =>
         {
             scene.Skybox.Up = tex;
             scene.Skybox.UpRef = path;
         });
 
-        RenderSkyboxFaceEditor(ui, ctx, grid, "Down", scene.Skybox.DownRef, vm, (tex, path) =>
+        RenderSkyboxFaceEditor(grid, "Down", scene.Skybox.DownRef, vm, (tex, path) =>
         {
             scene.Skybox.Down = tex;
             scene.Skybox.DownRef = path;
         });
 
-        RenderSkyboxFaceEditor(ui, ctx, grid, "Front", scene.Skybox.FrontRef, vm, (tex, path) =>
+        RenderSkyboxFaceEditor(grid, "Front", scene.Skybox.FrontRef, vm, (tex, path) =>
         {
             scene.Skybox.Front = tex;
             scene.Skybox.FrontRef = path;
         });
 
-        RenderSkyboxFaceEditor(ui, ctx, grid, "Back", scene.Skybox.BackRef, vm, (tex, path) =>
+        RenderSkyboxFaceEditor(grid, "Back", scene.Skybox.BackRef, vm, (tex, path) =>
         {
             scene.Skybox.Back = tex;
             scene.Skybox.BackRef = path;
         });
     }
 
-    private static void RenderSkyboxFaceEditor(UiFrame ui, UiContext ctx, UiPropertyGridScope grid,
+    private static void RenderSkyboxFaceEditor(UiPropertyGridScope grid,
         string label, string? currentPath, EditorViewModel vm, Action<Texture2d?, string?> onChanged)
     {
         var t = EditorTheme.Current;
@@ -474,7 +474,7 @@ public static class InspectorBuilder
 
         var displayText = string.IsNullOrEmpty(currentPath) ? "(none)" : Path.GetFileName(currentPath);
 
-        if (Ui.Button(ctx, $"Skybox{label}Btn", displayText)
+        if (NiziUi.Button($"Skybox{label}Btn", displayText)
             .Color(t.SurfaceInset, t.Hover, t.Active)
             .TextColor(t.TextPrimary)
             .FontSize(t.FontSizeCaption)

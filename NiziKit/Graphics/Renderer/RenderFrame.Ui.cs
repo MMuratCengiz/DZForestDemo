@@ -10,41 +10,54 @@ public delegate void UiBuildCallback(UiFrame frame);
 
 public partial class RenderFrame
 {
-    private UiContext? _uiContext;
     private CycledTexture? _uiRenderTarget;
     private CycledTexture? _uiDepthTarget;
 
-    public UiContext UiContext => _uiContext ?? throw new InvalidOperationException("UI not enabled. Call EnableUi first.");
+    public UiContext UiContext => NiziUi.Ctx;
 
     public void EnableUi(UiContextDesc desc)
     {
-        _uiContext?.Dispose();
-        _uiContext = new UiContext(desc);
+        NiziUi.Initialize(desc);
         _uiRenderTarget = CycledTexture.ColorAttachment("UIRT");
         _uiDepthTarget = CycledTexture.DepthAttachment("UIDepth");
-        GraphicsContext.OnResize += OnUiResize;
     }
 
-    private void OnUiResize(uint width, uint height)
+    public CycledTexture RenderUi(Action buildCallback)
     {
-        // _uiContext?.SetViewportSize(width, height);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void HandleUiEvent(Event ev)
-    {
-        _uiContext?.HandleEvent(ev);
-    }
-
-    public CycledTexture RenderUi(UiBuildCallback buildCallback)
-    {
-        if (_uiContext == null || _uiRenderTarget == null || _uiDepthTarget == null)
+        if (_uiRenderTarget == null || _uiDepthTarget == null)
         {
             throw new InvalidOperationException("UI not enabled. Call EnableUi first.");
         }
 
-        _uiContext.UpdateScroll(Time.DeltaTime);
-        var uiFrame = _uiContext.BeginFrame();
+        var ctx = NiziUi.Ctx;
+        ctx.UpdateScroll(Time.DeltaTime);
+        var uiFrame = ctx.BeginFrame();
+        using (NiziUi.Root("__UiRoot").Vertical().Gap(0).Open())
+        {
+            buildCallback();
+        }
+
+        var pass = BeginGraphicsPass();
+        pass.SetRenderTarget(0, _uiRenderTarget, LoadOp.Clear);
+        pass.SetDepthTarget(_uiDepthTarget!, LoadOp.Clear);
+
+        pass.Begin();
+        uiFrame.End((uint)_currentFrame, Time.DeltaTime, pass.CommandList);
+        pass.End();
+
+        return _uiRenderTarget;
+    }
+
+    public CycledTexture RenderUi(UiBuildCallback buildCallback)
+    {
+        if (_uiRenderTarget == null || _uiDepthTarget == null)
+        {
+            throw new InvalidOperationException("UI not enabled. Call EnableUi first.");
+        }
+
+        var ctx = NiziUi.Ctx;
+        ctx.UpdateScroll(Time.DeltaTime);
+        var uiFrame = ctx.BeginFrame();
         using (uiFrame.Root("__UiRoot").Vertical().Gap(0).Open())
         {
             buildCallback(uiFrame);
@@ -67,12 +80,10 @@ public partial class RenderFrame
 
     private void DisposeUi()
     {
-        GraphicsContext.OnResize -= OnUiResize;
         _uiDepthTarget?.Dispose();
         _uiDepthTarget = null;
         _uiRenderTarget?.Dispose();
         _uiRenderTarget = null;
-        _uiContext?.Dispose();
-        _uiContext = null;
+        NiziUi.Shutdown();
     }
 }

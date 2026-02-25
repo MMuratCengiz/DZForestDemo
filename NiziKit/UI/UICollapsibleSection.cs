@@ -10,7 +10,6 @@ public sealed class UiCollapsibleSectionState
 
 public ref struct UiCollapsibleSection
 {
-    private readonly UiContext _context;
     private readonly UiCollapsibleSectionState _state;
     private readonly string _title;
 
@@ -32,7 +31,6 @@ public ref struct UiCollapsibleSection
 
     internal UiCollapsibleSection(UiContext ctx, string id, UiCollapsibleSectionState state, string title)
     {
-        _context = ctx;
         _state = state;
         _title = title;
         Id = ctx.StringCache.GetId(id);
@@ -148,8 +146,8 @@ public ref struct UiCollapsibleSection
 
     public UiCollapsibleSectionScope Open()
     {
-        var headerId = _context.StringCache.GetId("CSHeader", Id);
-        var interaction = _context.GetInteraction(headerId);
+        var headerId = NiziUi.Ctx.StringCache.GetId("CSHeader", Id);
+        var interaction = NiziUi.Ctx.GetInteraction(headerId);
 
         var containerDecl = new ClayElementDeclaration { Id = Id };
         containerDecl.Layout.LayoutDirection = ClayLayoutDirection.TopToBottom;
@@ -164,7 +162,7 @@ public ref struct UiCollapsibleSection
                 Color = _borderColor.ToClayColor()
             };
         }
-        _context.OpenElement(containerDecl);
+        NiziUi.Ctx.OpenElement(containerDecl);
 
         var headerBg = interaction.IsHovered ? _headerHoverColor : _headerBgColor;
         var headerDecl = new ClayElementDeclaration { Id = headerId };
@@ -179,10 +177,10 @@ public ref struct UiCollapsibleSection
             ? new ClayBorderRadius { TopLeft = _cornerRadius, TopRight = _cornerRadius }
             : ClayBorderRadius.CreateUniform(_cornerRadius);
 
-        _context.OpenElement(headerDecl);
+        NiziUi.Ctx.OpenElement(headerDecl);
         {
             var chevronIcon = _state.IsExpanded ? FontAwesome.ChevronDown : FontAwesome.ChevronRight;
-            _context.Clay.Text(chevronIcon, new ClayTextDesc
+            NiziUi.Ctx.Clay.Text(chevronIcon, new ClayTextDesc
             {
                 TextColor = _chevronColor.ToClayColor(),
                 FontSize = (ushort)(_fontSize - 2),
@@ -190,7 +188,7 @@ public ref struct UiCollapsibleSection
                 TextAlignment = ClayTextAlignment.Center
             });
 
-            _context.Clay.Text(_title, new ClayTextDesc
+            NiziUi.Ctx.Clay.Text(_title, new ClayTextDesc
             {
                 TextColor = _headerTextColor.ToClayColor(),
                 FontSize = _fontSize,
@@ -200,50 +198,50 @@ public ref struct UiCollapsibleSection
             // Spacer to push badge/action to the right
             if (!string.IsNullOrEmpty(_badge) || _headerActionIcon != null)
             {
-                var spacerDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("CSSpacer", Id) };
+                var spacerDecl = new ClayElementDeclaration { Id = NiziUi.Ctx.StringCache.GetId("CSSpacer", Id) };
                 spacerDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
-                _context.OpenElement(spacerDecl);
-                _context.Clay.CloseElement();
+                NiziUi.Ctx.OpenElement(spacerDecl);
+                NiziUi.Ctx.Clay.CloseElement();
             }
 
             if (!string.IsNullOrEmpty(_badge))
             {
-                var badgeDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("CSBadge", Id) };
+                var badgeDecl = new ClayElementDeclaration { Id = NiziUi.Ctx.StringCache.GetId("CSBadge", Id) };
                 badgeDecl.Layout.Padding = new ClayPadding { Left = 6, Right = 6, Top = 2, Bottom = 2 };
                 badgeDecl.BackgroundColor = UiColor.Rgb(60, 60, 65).ToClayColor();
                 badgeDecl.BorderRadius = ClayBorderRadius.CreateUniform(3);
-                _context.OpenElement(badgeDecl);
-                _context.Clay.Text(_badge, new ClayTextDesc
+                NiziUi.Ctx.OpenElement(badgeDecl);
+                NiziUi.Ctx.Clay.Text(_badge, new ClayTextDesc
                 {
                     TextColor = UiColor.Gray.ToClayColor(),
                     FontSize = (ushort)(_fontSize - 2)
                 });
-                _context.Clay.CloseElement();
+                NiziUi.Ctx.Clay.CloseElement();
             }
 
             if (_headerActionIcon != null)
             {
-                var actionId = _context.StringCache.GetId("CSAction", Id);
-                var actionInteraction = _context.GetInteraction(actionId);
+                var actionId = NiziUi.Ctx.StringCache.GetId("CSAction", Id);
+                var actionInteraction = NiziUi.Ctx.GetInteraction(actionId);
                 var actionColor = actionInteraction.IsHovered ? _headerActionHoverColor : _headerActionColor;
 
                 var actionDecl = new ClayElementDeclaration { Id = actionId };
                 actionDecl.Layout.Padding = new ClayPadding { Left = 4, Right = 4, Top = 2, Bottom = 2 };
                 actionDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
-                _context.OpenElement(actionDecl);
-                _context.Clay.Text(_headerActionIcon, new ClayTextDesc
+                NiziUi.Ctx.OpenElement(actionDecl);
+                NiziUi.Ctx.Clay.Text(_headerActionIcon, new ClayTextDesc
                 {
                     TextColor = actionColor.ToClayColor(),
                     FontSize = (ushort)(_fontSize - 2),
                     FontId = FontAwesome.FontId,
                     TextAlignment = ClayTextAlignment.Center
                 });
-                _context.Clay.CloseElement();
+                NiziUi.Ctx.Clay.CloseElement();
 
                 HeaderActionClicked = actionInteraction.WasClicked;
             }
         }
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
 
         if (interaction.WasClicked && !HeaderActionClicked)
         {
@@ -252,7 +250,7 @@ public ref struct UiCollapsibleSection
 
         if (_state.IsExpanded)
         {
-            var bodyDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("CSBody", Id) };
+            var bodyDecl = new ClayElementDeclaration { Id = NiziUi.Ctx.StringCache.GetId("CSBody", Id) };
             bodyDecl.Layout.LayoutDirection = ClayLayoutDirection.TopToBottom;
             bodyDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
             bodyDecl.Layout.Padding = UiPadding.All(_padding).ToClayPadding();
@@ -263,12 +261,12 @@ public ref struct UiCollapsibleSection
                 BottomLeft = _cornerRadius,
                 BottomRight = _cornerRadius
             };
-            _context.OpenElement(bodyDecl);
-            return new UiCollapsibleSectionScope(_context, true);
+            NiziUi.Ctx.OpenElement(bodyDecl);
+            return new UiCollapsibleSectionScope(true);
         }
 
-        _context.Clay.CloseElement();
-        return new UiCollapsibleSectionScope(_context, false);
+        NiziUi.Ctx.Clay.CloseElement();
+        return new UiCollapsibleSectionScope(false);
     }
 
     public bool IsExpanded => _state.IsExpanded;
@@ -276,25 +274,23 @@ public ref struct UiCollapsibleSection
 
 public readonly ref struct UiCollapsibleSectionScope
 {
-    private readonly UiContext _context;
     private readonly bool _isExpanded;
 
-    internal UiCollapsibleSectionScope(UiContext context, bool isExpanded)
+    internal UiCollapsibleSectionScope(bool isExpanded)
     {
-        _context = context;
         _isExpanded = isExpanded;
     }
 
     public bool IsExpanded => _isExpanded;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Panel(string id) => new(_context, id);
+    public UiElement Panel(string id) => new(NiziUi.Ctx, id);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Row(string id = "Row") => new UiElement(_context, id).Horizontal();
+    public UiElement Row(string id = "Row") => new UiElement(NiziUi.Ctx, id).Horizontal();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiElement Column(string id = "Column") => new UiElement(_context, id).Vertical();
+    public UiElement Column(string id = "Column") => new UiElement(NiziUi.Ctx, id).Vertical();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Text(string text, UiTextStyle style = default)
@@ -311,13 +307,13 @@ public readonly ref struct UiCollapsibleSectionScope
                 _ => ClayTextAlignment.Left
             }
         };
-        _context.Clay.Text(text, desc);
+        NiziUi.Ctx.Clay.Text(text, desc);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Icon(string icon, UiColor color, ushort size = 14)
     {
-        _context.Clay.Text(icon, new ClayTextDesc
+        NiziUi.Ctx.Clay.Text(icon, new ClayTextDesc
         {
             TextColor = color.ToClayColor(),
             FontSize = size,
@@ -331,14 +327,15 @@ public readonly ref struct UiCollapsibleSectionScope
     {
         if (_isExpanded)
         {
-            _context.Clay.CloseElement();
-            _context.Clay.CloseElement();
+            NiziUi.Ctx.Clay.CloseElement();
+            NiziUi.Ctx.Clay.CloseElement();
         }
     }
 }
 
 public static partial class Ui
 {
+    [Obsolete("Use NiziUi static methods instead")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static UiCollapsibleSection CollapsibleSection(UiContext ctx, string id, string title)
     {
@@ -347,20 +344,12 @@ public static partial class Ui
         return new UiCollapsibleSection(ctx, id, state, title);
     }
 
+    [Obsolete("Use NiziUi static methods instead")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static UiCollapsibleSection CollapsibleSection(UiContext ctx, string id, string title, bool initialExpanded)
     {
         var elementId = ctx.StringCache.GetId(id);
         var state = ctx.GetOrCreateState(() => new UiCollapsibleSectionState { IsExpanded = initialExpanded }, elementId);
         return new UiCollapsibleSection(ctx, id, state, title);
-    }
-}
-
-public static partial class UiElementScopeExtensions
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiCollapsibleSection CollapsibleSection(this ref UiElementScope scope, UiContext ctx, string id, string title)
-    {
-        return Ui.CollapsibleSection(ctx, id, title);
     }
 }

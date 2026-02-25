@@ -514,7 +514,6 @@ public sealed class UiTextFieldState
 
 public ref struct UiTextField
 {
-    private readonly UiContext _context;
     private readonly UiTextFieldState _state;
     private ref string _textRef;
 
@@ -543,7 +542,6 @@ public ref struct UiTextField
 
     internal UiTextField(UiContext ctx, string id, UiTextFieldState state, ref string text)
     {
-        _context = ctx;
         _state = state;
         _textRef = ref text;
         Id = ctx.StringCache.GetId(id);
@@ -574,7 +572,7 @@ public ref struct UiTextField
 
     public uint Id { get; }
 
-    public bool IsFocused => _context.FocusedTextFieldId == Id;
+    public bool IsFocused => NiziUi.Ctx.FocusedTextFieldId == Id;
 
     private float GetLineHeight()
     {
@@ -764,14 +762,14 @@ public ref struct UiTextField
     public bool Show(float deltaTime = 0)
     {
         var textChanged = false;
-        var interaction = _context.GetInteraction(Id);
-        var isFocused = _context.FocusedTextFieldId == Id;
+        var interaction = NiziUi.Ctx.GetInteraction(Id);
+        var isFocused = NiziUi.Ctx.FocusedTextFieldId == Id;
 
         if (interaction.WasClicked)
         {
             if (!isFocused)
             {
-                _context.FocusedTextFieldId = Id;
+                NiziUi.Ctx.FocusedTextFieldId = Id;
                 isFocused = true;
                 _state.ResetCursorBlink();
                 InputSystem.StartTextInput();
@@ -780,7 +778,7 @@ public ref struct UiTextField
 
         if (isFocused)
         {
-            foreach (var ev in _context.FrameEvents)
+            foreach (var ev in NiziUi.Ctx.FrameEvents)
             {
                 if (ProcessEvent(ev))
                 {
@@ -845,7 +843,7 @@ public ref struct UiTextField
             };
         }
 
-        _context.OpenElement(decl);
+        NiziUi.Ctx.OpenElement(decl);
         {
             var text = _state.Text;
             var isEmpty = string.IsNullOrEmpty(text);
@@ -863,16 +861,16 @@ public ref struct UiTextField
                 RenderSingleLineText(isFocused, lineHeight);
             }
         }
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
 
-        var boundingBox = _context.Clay.GetElementBoundingBox(Id);
+        var boundingBox = NiziUi.Ctx.Clay.GetElementBoundingBox(Id);
         _state.BoundingBoxX = boundingBox.X;
         _state.BoundingBoxY = boundingBox.Y;
         _state.BoundingBoxWidth = boundingBox.Width;
         _state.BoundingBoxHeight = boundingBox.Height;
 
-        var contentId = _context.StringCache.GetId("TFContent", Id);
-        var contentBox = _context.Clay.GetElementBoundingBox(contentId);
+        var contentId = NiziUi.Ctx.StringCache.GetId("TFContent", Id);
+        var contentBox = NiziUi.Ctx.Clay.GetElementBoundingBox(contentId);
         _state.ContentBoundingBoxX = contentBox.X;
         _state.ContentBoundingBoxY = contentBox.Y;
         _state.ContentBoundingBoxWidth = contentBox.Width;
@@ -881,20 +879,20 @@ public ref struct UiTextField
 
     private void RenderPlaceholder(float lineHeight)
     {
-        var contentId = _context.StringCache.GetId("TFContent", Id);
+        var contentId = NiziUi.Ctx.StringCache.GetId("TFContent", Id);
         var wrapperDecl = new ClayElementDeclaration { Id = contentId };
         wrapperDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
         wrapperDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(lineHeight, float.MaxValue);
         wrapperDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
-        _context.OpenElement(wrapperDecl);
+        NiziUi.Ctx.OpenElement(wrapperDecl);
         {
             if (!string.IsNullOrEmpty(_placeholder))
             {
-                _context.Clay.Text(_placeholder,
+                NiziUi.Ctx.Clay.Text(_placeholder,
                     new ClayTextDesc { TextColor = _placeholderColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
             }
         }
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
     }
 
     private void RenderSingleLineText(bool isFocused, float lineHeight)
@@ -903,7 +901,7 @@ public ref struct UiTextField
         var cursorPos = _state.CursorPosition;
         var hasSelection = _state.HasSelection && isFocused;
 
-        var contentId = _context.StringCache.GetId("TFContent", Id);
+        var contentId = NiziUi.Ctx.StringCache.GetId("TFContent", Id);
         var contentDecl = new ClayElementDeclaration { Id = contentId };
         contentDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
         contentDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
@@ -915,7 +913,7 @@ public ref struct UiTextField
             contentDecl.Scroll.Horizontal = true;
         }
 
-        _context.OpenElement(contentDecl);
+        NiziUi.Ctx.OpenElement(contentDecl);
 
         if (hasSelection)
         {
@@ -923,7 +921,7 @@ public ref struct UiTextField
         }
         else if (!string.IsNullOrEmpty(text))
         {
-            _context.Clay.Text(text,
+            NiziUi.Ctx.Clay.Text(text,
                 new ClayTextDesc { TextColor = _textColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
         }
 
@@ -932,7 +930,7 @@ public ref struct UiTextField
             RenderCursor(text, cursorPos, lineHeight);
         }
 
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
     }
 
     private void RenderTextWithSelection(string text)
@@ -949,36 +947,36 @@ public ref struct UiTextField
 
         if (!string.IsNullOrEmpty(beforeSel))
         {
-            _context.Clay.Text(beforeSel,
+            NiziUi.Ctx.Clay.Text(beforeSel,
                 new ClayTextDesc { TextColor = _textColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
         }
 
         if (!string.IsNullOrEmpty(selected))
         {
-            var selDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("TFSelBox", Id) };
+            var selDecl = new ClayElementDeclaration { Id = NiziUi.Ctx.StringCache.GetId("TFSelBox", Id) };
             selDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
             selDecl.BackgroundColor = _selectionColor.ToClayColor();
-            _context.OpenElement(selDecl);
-            _context.Clay.Text(selected,
+            NiziUi.Ctx.OpenElement(selDecl);
+            NiziUi.Ctx.Clay.Text(selected,
                 new ClayTextDesc { TextColor = _selectionTextColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
-            _context.Clay.CloseElement();
+            NiziUi.Ctx.Clay.CloseElement();
         }
 
         if (!string.IsNullOrEmpty(afterSel))
         {
-            _context.Clay.Text(afterSel,
+            NiziUi.Ctx.Clay.Text(afterSel,
                 new ClayTextDesc { TextColor = _textColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
         }
     }
 
     private void RenderCursor(string text, int cursorPos, float lineHeight)
     {
-        var cursorPixelX = _context.Clay.GetCursorOffsetAtIndex(text ?? "", (uint)cursorPos, 0, _fontSize);
-        var cursorOffsetX = _context.Clay.PixelsToPoints(cursorPixelX);
+        var cursorPixelX = NiziUi.Ctx.Clay.GetCursorOffsetAtIndex(text ?? "", (uint)cursorPos, 0, _fontSize);
+        var cursorOffsetX = NiziUi.Ctx.Clay.PixelsToPoints(cursorPixelX);
 
         var cursorColor = _state.CursorVisible ? _cursorColor : UiColor.Transparent;
 
-        var cursorDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("TFCursor", Id) };
+        var cursorDecl = new ClayElementDeclaration { Id = NiziUi.Ctx.StringCache.GetId("TFCursor", Id) };
         cursorDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(_cursorWidth);
         cursorDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(lineHeight);
         cursorDecl.BackgroundColor = cursorColor.ToClayColor();
@@ -991,8 +989,8 @@ public ref struct UiTextField
             ZIndex = 100
         };
 
-        _context.OpenElement(cursorDecl);
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.OpenElement(cursorDecl);
+        NiziUi.Ctx.Clay.CloseElement();
     }
 
     private void RenderMultilineText(bool isFocused, float lineHeight)
@@ -1004,12 +1002,12 @@ public ref struct UiTextField
         var selEnd = _state.SelectionEnd;
         var lineCount = Math.Max(1, _state.LineCount);
 
-        var contentId = _context.StringCache.GetId("TFContent", Id);
+        var contentId = NiziUi.Ctx.StringCache.GetId("TFContent", Id);
         var contentDecl = new ClayElementDeclaration { Id = contentId };
         contentDecl.Layout.LayoutDirection = ClayLayoutDirection.TopToBottom;
         contentDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
         contentDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(0, float.MaxValue);
-        _context.OpenElement(contentDecl);
+        NiziUi.Ctx.OpenElement(contentDecl);
 
         for (var lineIdx = 0; lineIdx < lineCount; lineIdx++)
         {
@@ -1020,13 +1018,13 @@ public ref struct UiTextField
             var cursorOnThisLine = cursorLine == lineIdx && isFocused;
             var selectionOnThisLine = hasSelection && selStart <= lineEnd && selEnd >= lineStart;
 
-            var lineId = _context.StringCache.GetId("TFLine", Id, (uint)lineIdx);
+            var lineId = NiziUi.Ctx.StringCache.GetId("TFLine", Id, (uint)lineIdx);
             var lineDecl = new ClayElementDeclaration { Id = lineId };
             lineDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
             lineDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
             lineDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(lineHeight, float.MaxValue);
             lineDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
-            _context.OpenElement(lineDecl);
+            NiziUi.Ctx.OpenElement(lineDecl);
 
             if (selectionOnThisLine)
             {
@@ -1036,11 +1034,11 @@ public ref struct UiTextField
             }
             else if (!string.IsNullOrEmpty(lineStr))
             {
-                _context.Clay.Text(lineStr,
+                NiziUi.Ctx.Clay.Text(lineStr,
                     new ClayTextDesc { TextColor = _textColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
             }
 
-            _context.Clay.CloseElement();
+            NiziUi.Ctx.Clay.CloseElement();
 
             if (cursorOnThisLine)
             {
@@ -1048,16 +1046,16 @@ public ref struct UiTextField
             }
         }
 
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
     }
 
     private void RenderFloatingLineCursor(uint lineId, string lineStr, int cursorCol, float lineHeight, int lineIdx)
     {
-        var cursorPixelX = _context.Clay.GetCursorOffsetAtIndex(lineStr ?? "", (uint)cursorCol, 0, _fontSize);
-        var cursorOffsetX = _context.Clay.PixelsToPoints(cursorPixelX);
+        var cursorPixelX = NiziUi.Ctx.Clay.GetCursorOffsetAtIndex(lineStr ?? "", (uint)cursorCol, 0, _fontSize);
+        var cursorOffsetX = NiziUi.Ctx.Clay.PixelsToPoints(cursorPixelX);
         var cursorColor = _state.CursorVisible ? _cursorColor : UiColor.Transparent;
 
-        var cursorDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("TFLineCur", Id, (uint)lineIdx) };
+        var cursorDecl = new ClayElementDeclaration { Id = NiziUi.Ctx.StringCache.GetId("TFLineCur", Id, (uint)lineIdx) };
         cursorDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(_cursorWidth);
         cursorDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(lineHeight);
         cursorDecl.BackgroundColor = cursorColor.ToClayColor();
@@ -1071,8 +1069,8 @@ public ref struct UiTextField
             ZIndex = 100
         };
 
-        _context.OpenElement(cursorDecl);
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.OpenElement(cursorDecl);
+        NiziUi.Ctx.Clay.CloseElement();
     }
 
     private void RenderLineWithInlineSelection(string lineStr, int selStart, int selEnd, int lineIdx)
@@ -1081,24 +1079,24 @@ public ref struct UiTextField
 
         if (!string.IsNullOrEmpty(beforeSel))
         {
-            _context.Clay.Text(beforeSel,
+            NiziUi.Ctx.Clay.Text(beforeSel,
                 new ClayTextDesc { TextColor = _textColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
         }
 
         if (!string.IsNullOrEmpty(selected))
         {
-            var selDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("TFLineSelBox", Id, (uint)lineIdx) };
+            var selDecl = new ClayElementDeclaration { Id = NiziUi.Ctx.StringCache.GetId("TFLineSelBox", Id, (uint)lineIdx) };
             selDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
             selDecl.BackgroundColor = _selectionColor.ToClayColor();
-            _context.OpenElement(selDecl);
-            _context.Clay.Text(selected,
+            NiziUi.Ctx.OpenElement(selDecl);
+            NiziUi.Ctx.Clay.Text(selected,
                 new ClayTextDesc { TextColor = _selectionTextColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
-            _context.Clay.CloseElement();
+            NiziUi.Ctx.Clay.CloseElement();
         }
 
         if (!string.IsNullOrEmpty(afterSel))
         {
-            _context.Clay.Text(afterSel,
+            NiziUi.Ctx.Clay.Text(afterSel,
                 new ClayTextDesc { TextColor = _textColor.ToClayColor(), FontSize = _fontSize, WrapMode = ClayTextWrapMode.None });
         }
     }
@@ -1146,7 +1144,7 @@ public ref struct UiTextField
 
     private bool HandleMouseDown(Event ev)
     {
-        var isOverTextField = _context.Clay.PointerOver(Id);
+        var isOverTextField = NiziUi.Ctx.Clay.PointerOver(Id);
 
         if (isOverTextField)
         {
@@ -1172,7 +1170,7 @@ public ref struct UiTextField
             return false;
         }
 
-        _context.FocusedTextFieldId = 0;
+        NiziUi.Ctx.FocusedTextFieldId = 0;
         _state.ClearSelection();
         _state.IsDragging = false;
         InputSystem.StopTextInput();
@@ -1268,7 +1266,7 @@ public ref struct UiTextField
                 }
                 else
                 {
-                    _context.FocusedTextFieldId = 0;
+                    NiziUi.Ctx.FocusedTextFieldId = 0;
                     InputSystem.StopTextInput();
                 }
                 _state.ResetCursorBlink();
@@ -1281,7 +1279,7 @@ public ref struct UiTextField
                 break;
 
             case KeyCode.Escape:
-                _context.FocusedTextFieldId = 0;
+                NiziUi.Ctx.FocusedTextFieldId = 0;
                 _state.ClearSelection();
                 InputSystem.StopTextInput();
                 break;
@@ -1527,8 +1525,8 @@ public ref struct UiTextField
 
         if (contentX == 0 && contentY == 0)
         {
-            var scaledPaddingLeft = _context.Clay.PointsToPixels(_padding.Left);
-            var scaledPaddingTop = _context.Clay.PointsToPixels(_padding.Top);
+            var scaledPaddingLeft = NiziUi.Ctx.Clay.PointsToPixels(_padding.Left);
+            var scaledPaddingTop = NiziUi.Ctx.Clay.PointsToPixels(_padding.Top);
             contentX = _state.BoundingBoxX + scaledPaddingLeft;
             contentY = _state.BoundingBoxY + scaledPaddingTop;
         }
@@ -1538,24 +1536,25 @@ public ref struct UiTextField
 
         if (_multiline)
         {
-            var scaledLineHeight = _context.Clay.PointsToPixels(GetLineHeight());
+            var scaledLineHeight = NiziUi.Ctx.Clay.PointsToPixels(GetLineHeight());
             var lineIdx = Math.Max(0, (int)(clickY / scaledLineHeight));
             lineIdx = Math.Min(lineIdx, Math.Max(0, _state.LineCount - 1));
 
             var lineStr = _state.GetLineString(lineIdx);
-            var col = (int)_context.Clay.GetCharIndexAtOffset(lineStr ?? "", clickX, 0, _fontSize);
+            var col = (int)NiziUi.Ctx.Clay.GetCharIndexAtOffset(lineStr ?? "", clickX, 0, _fontSize);
             return _state.GetPositionFromLineColumn(lineIdx, col);
         }
         else
         {
             var text = _state.Text;
-            return (int)_context.Clay.GetCharIndexAtOffset(text ?? "", clickX, 0, _fontSize);
+            return (int)NiziUi.Ctx.Clay.GetCharIndexAtOffset(text ?? "", clickX, 0, _fontSize);
         }
     }
 }
 
 public static partial class Ui
 {
+    [Obsolete("Use NiziUi static methods instead")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static UiTextField TextField(UiContext ctx, string id, ref string text)
     {
@@ -1570,11 +1569,3 @@ public static partial class Ui
     }
 }
 
-public static partial class UiElementScopeExtensions
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiTextField TextField(this ref UiElementScope scope, UiContext ctx, string id, ref string text)
-    {
-        return Ui.TextField(ctx, id, ref text);
-    }
-}

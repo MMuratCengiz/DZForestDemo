@@ -17,7 +17,6 @@ public sealed class UiDraggableValueState
 
 public ref struct UiDraggableValue
 {
-    private readonly UiContext _context;
     private readonly UiDraggableValueState _state;
 
     private string _label;
@@ -39,7 +38,6 @@ public ref struct UiDraggableValue
 
     internal UiDraggableValue(UiContext ctx, string id, UiDraggableValueState state)
     {
-        _context = ctx;
         _state = state;
         Id = ctx.StringCache.GetId(id);
 
@@ -107,14 +105,14 @@ public ref struct UiDraggableValue
     public bool Show(ref float value)
     {
         var changed = false;
-        var labelId = _context.StringCache.GetId("DVLabel", Id);
-        var valueId = _context.StringCache.GetId("DVValue", Id);
-        var labelInteraction = _context.GetInteraction(labelId);
-        var valueInteraction = _context.GetInteraction(valueId);
+        var labelId = NiziUi.Ctx.StringCache.GetId("DVLabel", Id);
+        var valueId = NiziUi.Ctx.StringCache.GetId("DVValue", Id);
+        var labelInteraction = NiziUi.Ctx.GetInteraction(labelId);
+        var valueInteraction = NiziUi.Ctx.GetInteraction(valueId);
         var textFieldIdStr = _state.TextFieldId!;
-        var textFieldId = _context.StringCache.GetId(textFieldIdStr);
+        var textFieldId = NiziUi.Ctx.StringCache.GetId(textFieldIdStr);
 
-        if (_state.IsEditing && _context.FocusedTextFieldId != textFieldId)
+        if (_state.IsEditing && NiziUi.Ctx.FocusedTextFieldId != textFieldId)
         {
             if (float.TryParse(_state.EditText, out var parsed))
             {
@@ -127,62 +125,62 @@ public ref struct UiDraggableValue
             _state.IsEditing = false;
         }
 
-        if (labelInteraction.IsPressed && !_state.IsDragging && !_state.IsEditing && _context.ActiveDragWidgetId == 0)
+        if (labelInteraction.IsPressed && !_state.IsDragging && !_state.IsEditing && NiziUi.Ctx.ActiveDragWidgetId == 0)
         {
             _state.IsDragging = true;
             _state.DragStartValue = value;
-            _state.DragStartMouseX = _context.MouseX;
-            _context.ActiveDragWidgetId = Id;
+            _state.DragStartMouseX = NiziUi.Ctx.MouseX;
+            NiziUi.Ctx.ActiveDragWidgetId = Id;
         }
 
         if (valueInteraction.IsPressed && !_state.IsDragging && !_state.IsEditing
-            && !_state.ValueMouseDown && _context.ActiveDragWidgetId == 0)
+            && !_state.ValueMouseDown && NiziUi.Ctx.ActiveDragWidgetId == 0)
         {
             _state.ValueMouseDown = true;
             _state.DragStartValue = value;
-            _state.DragStartMouseX = _context.MouseX;
+            _state.DragStartMouseX = NiziUi.Ctx.MouseX;
         }
 
         if (_state.ValueMouseDown && !_state.IsDragging)
         {
-            if (!_context.MousePressed)
+            if (!NiziUi.Ctx.MousePressed)
             {
                 _state.ValueMouseDown = false;
-                var delta = Math.Abs(_context.MouseX - _state.DragStartMouseX);
+                var delta = Math.Abs(NiziUi.Ctx.MouseX - _state.DragStartMouseX);
                 if (delta < _dragThreshold)
                 {
                     _state.IsEditing = true;
                     _state.EditText = value.ToString(_format);
                     _state.SelectAllOnNextRender = true;
-                    _context.FocusedTextFieldId = textFieldId;
+                    NiziUi.Ctx.FocusedTextFieldId = textFieldId;
                     InputSystem.StartTextInput();
                 }
             }
             else
             {
-                var delta = Math.Abs(_context.MouseX - _state.DragStartMouseX);
+                var delta = Math.Abs(NiziUi.Ctx.MouseX - _state.DragStartMouseX);
                 if (delta >= _dragThreshold)
                 {
                     _state.IsDragging = true;
                     _state.ValueMouseDown = false;
-                    _context.ActiveDragWidgetId = Id;
+                    NiziUi.Ctx.ActiveDragWidgetId = Id;
                 }
             }
         }
 
         if (_state.IsDragging)
         {
-            if (!_context.MousePressed)
+            if (!NiziUi.Ctx.MousePressed)
             {
                 _state.IsDragging = false;
-                if (_context.ActiveDragWidgetId == Id)
+                if (NiziUi.Ctx.ActiveDragWidgetId == Id)
                 {
-                    _context.ActiveDragWidgetId = 0;
+                    NiziUi.Ctx.ActiveDragWidgetId = 0;
                 }
             }
             else
             {
-                var delta = (_context.MouseX - _state.DragStartMouseX) * _sensitivity;
+                var delta = (NiziUi.Ctx.MouseX - _state.DragStartMouseX) * _sensitivity;
                 var newVal = _state.DragStartValue + delta;
                 if (Math.Abs(newVal - value) > float.Epsilon)
                 {
@@ -199,7 +197,7 @@ public ref struct UiDraggableValue
             : _width > 0 ? ClaySizingAxis.Fixed(_width) : ClaySizingAxis.Grow(0, float.MaxValue);
         containerDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(0, float.MaxValue);
 
-        _context.OpenElement(containerDecl);
+        NiziUi.Ctx.OpenElement(containerDecl);
         {
             var hasLabel = _labelWidth > 0;
 
@@ -236,14 +234,14 @@ public ref struct UiDraggableValue
                     };
                 }
 
-                _context.OpenElement(labelDecl);
-                _context.Clay.Text(_label, new ClayTextDesc
+                NiziUi.Ctx.OpenElement(labelDecl);
+                NiziUi.Ctx.Clay.Text(_label, new ClayTextDesc
                 {
                     TextColor = effectiveLabelText.ToClayColor(),
                     FontSize = _fontSize,
                     TextAlignment = ClayTextAlignment.Center
                 });
-                _context.Clay.CloseElement();
+                NiziUi.Ctx.Clay.CloseElement();
             }
 
             var valueBg = _state.IsEditing ? _valueEditColor : _valueColor;
@@ -264,11 +262,11 @@ public ref struct UiDraggableValue
                 valueDecl.Layout.Padding = new ClayPadding { Left = 6, Right = 6, Top = 4, Bottom = 4 };
             }
 
-            _context.OpenElement(valueDecl);
+            NiziUi.Ctx.OpenElement(valueDecl);
 
             if (_prefix != null)
             {
-                _context.Clay.Text(_prefix, new ClayTextDesc
+                NiziUi.Ctx.Clay.Text(_prefix, new ClayTextDesc
                 {
                     TextColor = _prefixColor.ToClayColor(),
                     FontSize = _fontSize
@@ -278,7 +276,7 @@ public ref struct UiDraggableValue
             if (_state.IsEditing)
             {
                 var editText = _state.EditText;
-                var tf = Ui.TextField(_context, textFieldIdStr, ref editText)
+                var tf = NiziUi.TextField(textFieldIdStr, ref editText)
                     .BackgroundColor(UiColor.Transparent, UiColor.Transparent)
                     .TextColor(_valueTextColor)
                     .BorderColor(UiColor.Transparent, UiColor.Transparent)
@@ -290,7 +288,7 @@ public ref struct UiDraggableValue
 
                 if (_state.SelectAllOnNextRender)
                 {
-                    var tfState = _context.GetOrCreateState<UiTextFieldState>(textFieldIdStr);
+                    var tfState = NiziUi.Ctx.GetOrCreateState<UiTextFieldState>(textFieldIdStr);
                     tfState.SelectAll();
                     _state.SelectAllOnNextRender = false;
                 }
@@ -300,16 +298,16 @@ public ref struct UiDraggableValue
             }
             else
             {
-                _context.Clay.Text(value.ToString(_format), new ClayTextDesc
+                NiziUi.Ctx.Clay.Text(value.ToString(_format), new ClayTextDesc
                 {
                     TextColor = _valueTextColor.ToClayColor(),
                     FontSize = _fontSize
                 });
             }
 
-            _context.Clay.CloseElement();
+            NiziUi.Ctx.Clay.CloseElement();
         }
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
 
         return changed;
     }
@@ -317,6 +315,7 @@ public ref struct UiDraggableValue
 
 public static partial class Ui
 {
+    [Obsolete("Use NiziUi static methods instead")]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static UiDraggableValue DraggableValue(UiContext ctx, string id)
     {
@@ -327,14 +326,5 @@ public static partial class Ui
             state.TextFieldId = id + "_EditTF";
         }
         return new UiDraggableValue(ctx, id, state);
-    }
-}
-
-public static partial class UiElementScopeExtensions
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiDraggableValue DraggableValue(this ref UiElementScope scope, UiContext ctx, string id)
-    {
-        return Ui.DraggableValue(ctx, id);
     }
 }

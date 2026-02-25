@@ -1,12 +1,11 @@
 using DenOfIz;
 using NiziKit.Application.Timing;
-using NiziKit.Core;
 using NiziKit.Graphics;
 using NiziKit.Graphics.Binding;
 using NiziKit.Inputs;
 using Pure.DI;
 
-namespace NiziKit.Services;
+namespace NiziKit.Core;
 
 public partial class GameComposition
 {

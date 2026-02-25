@@ -24,7 +24,6 @@ public sealed class Assets : IDisposable
     private readonly List<Mesh> _meshList = [];
     private readonly List<Texture2d> _textureList = [];
     private readonly Lock _listLock = new();
-    private readonly Lock _shaderLoadLock = new();
     private readonly SemaphoreSlim _shaderLoadSemaphore = new(1, 1);
 
     public Assets()

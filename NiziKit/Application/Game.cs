@@ -6,7 +6,8 @@ using NiziKit.Core;
 using NiziKit.Graphics;
 using NiziKit.Graphics.Renderer.Forward;
 using NiziKit.Inputs;
-using NiziKit.Services;
+using NiziKit.UI;
+using GameComposition = NiziKit.Core.GameComposition;
 
 namespace NiziKit.Application;
 
@@ -162,6 +163,7 @@ public class Game : IDisposable
             }
 
             World.CurrentScene?.HandleCameraEvent(in ev);
+            NiziUi.OnEvent(in ev);
             OnEvent(ref ev);
         }
     }
