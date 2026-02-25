@@ -1552,20 +1552,3 @@ public ref struct UiTextField
     }
 }
 
-public static partial class Ui
-{
-    [Obsolete("Use NiziUi static methods instead")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiTextField TextField(UiContext ctx, string id, ref string text)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        var state = ctx.GetOrCreateState<UiTextFieldState>(elementId);
-        if (state.Text != text)
-        {
-            state.Text = text;
-        }
-
-        return new UiTextField(ctx, id, state, ref text);
-    }
-}
-

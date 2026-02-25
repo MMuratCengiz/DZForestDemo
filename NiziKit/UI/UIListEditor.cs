@@ -355,15 +355,3 @@ public ref struct UiListEditor
         return result;
     }
 }
-
-public static partial class Ui
-{
-    [Obsolete("Use NiziUi static methods instead")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiListEditor ListEditor(UiContext ctx, string id)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        var state = ctx.GetOrCreateState<UiListEditorState>(elementId);
-        return new UiListEditor(ctx, id, state);
-    }
-}

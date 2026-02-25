@@ -312,19 +312,3 @@ public ref struct UiDraggableValue
         return changed;
     }
 }
-
-public static partial class Ui
-{
-    [Obsolete("Use NiziUi static methods instead")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiDraggableValue DraggableValue(UiContext ctx, string id)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        var state = ctx.GetOrCreateState<UiDraggableValueState>(elementId);
-        if (state.TextFieldId == null)
-        {
-            state.TextFieldId = id + "_EditTF";
-        }
-        return new UiDraggableValue(ctx, id, state);
-    }
-}

@@ -728,15 +728,3 @@ public ref struct UiColorPicker
         b = b1 + m;
     }
 }
-
-public static partial class Ui
-{
-    [Obsolete("Use NiziUi static methods instead")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiColorPicker ColorPicker(UiContext ctx, string id)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        var state = ctx.GetOrCreateState<UiColorPickerState>(elementId);
-        return new UiColorPicker(ctx, id, state);
-    }
-}

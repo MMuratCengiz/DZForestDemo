@@ -307,15 +307,3 @@ public ref struct UiTreeView
         return changed;
     }
 }
-
-public static partial class Ui
-{
-    [Obsolete("Use NiziUi static methods instead")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiTreeView TreeView(UiContext ctx, string id, List<UiTreeNode> roots)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        var state = ctx.GetOrCreateState<UiTreeViewState>(elementId);
-        return new UiTreeView(ctx, id, state, roots);
-    }
-}

@@ -148,13 +148,3 @@ public readonly ref struct UiPropertyRowScope
         NiziUi.Ctx.Clay.CloseElement();
     }
 }
-
-public static partial class Ui
-{
-    [Obsolete("Use NiziUi static methods instead")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiPropertyGrid PropertyGrid(UiContext ctx, string id)
-    {
-        return new UiPropertyGrid(ctx, id);
-    }
-}

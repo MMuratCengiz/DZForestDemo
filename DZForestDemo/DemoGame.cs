@@ -25,12 +25,14 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
         World.LoadScene("Scenes/CombatDemo.niziscene.json");
     }
 
-    private void RenderUi(UiFrame ui)
+    private void RenderUi()
     {
-        using (ui.Panel("ChatBox")
+        NiziUi.VerticalSpacer(Window.Height / 2.0f);
+        using (NiziUi.Panel("ChatBox")
                    .GrowHeight()
                    .FitWidth(300)
-                   .Background(UiColor.Rgba(255, 255, 255, 0))
+                   .Padding(15)
+                   .Background(UiColor.Rgba(255, 255, 255, 20))
                    .AlignChildren(UiAlignX.Left, UiAlignY.Bottom)
                    .Open())
         {
@@ -39,13 +41,20 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
                 Color = new UiColor(255, 255, 255),
                 FontSize = 24
             };
-            ui.Text(_currentChatText, uiTextStyle);
-            Ui.TextField(ui.Context, "ChatInput", ref _currentChatText)
-                .BackgroundColor(UiColor.Rgb(255, 255, 255))
-                .TextColor(UiColor.Rgb(0, 0, 0))
-                .Show();
-        }
 
+            using (NiziUi.Row("Text").Open())
+            {
+                NiziUi.Text(_currentChatText, uiTextStyle);
+            }
+
+            using (NiziUi.Row("Input").Open())
+            {
+                NiziUi.TextField("ChatInput", ref _currentChatText)
+                    .BackgroundColor(UiColor.Rgb(255, 255, 255))
+                    .TextColor(UiColor.Rgb(0, 0, 0))
+                    .Show();
+            }
+        }
     }
 
     protected override void Update(float dt)

@@ -223,15 +223,3 @@ public ref struct UiSlider
     }
 }
 
-public static partial class Ui
-{
-    [Obsolete("Use NiziUi static methods instead")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiSlider Slider(UiContext ctx, string id)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        var state = ctx.GetOrCreateState<UiSliderState>(elementId);
-        return new UiSlider(ctx, id, state);
-    }
-}
-

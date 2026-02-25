@@ -3,64 +3,6 @@ using DenOfIz;
 
 namespace NiziKit.UI;
 
-[Obsolete("Use NiziUi static methods instead")]
-public static partial class Ui
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiButton Button(UiContext ctx, string id, string text)
-    {
-        return new UiButton(ctx, id, text);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiCard Card(UiContext ctx, string id)
-    {
-        return new UiCard(ctx, id);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiCheckbox Checkbox(UiContext ctx, string id, string label, bool isChecked)
-    {
-        return new UiCheckbox(ctx, id, label, isChecked);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Spacer(UiContext ctx, float size)
-    {
-        NiziUi.Spacer(size);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void HorizontalSpacer(UiContext ctx, float width)
-    {
-        NiziUi.HorizontalSpacer(width);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void VerticalSpacer(UiContext ctx, float height)
-    {
-        NiziUi.VerticalSpacer(height);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void FlexSpacer(UiContext ctx)
-    {
-        NiziUi.FlexSpacer();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Divider(UiContext ctx, UiColor color, float thickness = 1)
-    {
-        NiziUi.Divider(color, thickness);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void VerticalDivider(UiContext ctx, UiColor color, float thickness = 1)
-    {
-        NiziUi.VerticalDivider(color, thickness);
-    }
-}
-
 public ref struct UiButton
 {
     private readonly string _text;

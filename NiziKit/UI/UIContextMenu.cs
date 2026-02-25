@@ -321,23 +321,3 @@ public ref struct UiContextMenu
         return clickedIndex;
     }
 }
-
-public static partial class Ui
-{
-    [Obsolete("Use NiziUi static methods instead")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiContextMenu ContextMenu(UiContext ctx, string id, UiContextMenuItem[] items)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        var state = ctx.GetOrCreateState<UiContextMenuState>(elementId);
-        return new UiContextMenu(ctx, id, state, items);
-    }
-
-    [Obsolete("Use NiziUi static methods instead")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiContextMenuState GetContextMenuState(UiContext ctx, string id)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        return ctx.GetOrCreateState<UiContextMenuState>(elementId);
-    }
-}

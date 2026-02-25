@@ -332,24 +332,3 @@ public readonly ref struct UiCollapsibleSectionScope
         }
     }
 }
-
-public static partial class Ui
-{
-    [Obsolete("Use NiziUi static methods instead")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiCollapsibleSection CollapsibleSection(UiContext ctx, string id, string title)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        var state = ctx.GetOrCreateState<UiCollapsibleSectionState>(elementId);
-        return new UiCollapsibleSection(ctx, id, state, title);
-    }
-
-    [Obsolete("Use NiziUi static methods instead")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiCollapsibleSection CollapsibleSection(UiContext ctx, string id, string title, bool initialExpanded)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        var state = ctx.GetOrCreateState(() => new UiCollapsibleSectionState { IsExpanded = initialExpanded }, elementId);
-        return new UiCollapsibleSection(ctx, id, state, title);
-    }
-}

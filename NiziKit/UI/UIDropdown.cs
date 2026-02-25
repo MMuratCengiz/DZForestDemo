@@ -485,24 +485,3 @@ public ref struct UiDropdown
     }
 }
 
-public static partial class Ui
-{
-    [Obsolete("Use NiziUi static methods instead")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiDropdown Dropdown(UiContext ctx, string id, string[] items)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        var state = ctx.GetOrCreateState<UiDropdownState>(elementId);
-        return new UiDropdown(ctx, id, state, items);
-    }
-
-    [Obsolete("Use NiziUi static methods instead")]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiDropdown Dropdown(UiContext ctx, string id, string[] items, int initialSelectedIndex)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        var state = ctx.GetOrCreateState(() => new UiDropdownState { SelectedIndex = initialSelectedIndex }, elementId);
-        return new UiDropdown(ctx, id, state, items);
-    }
-}
-
