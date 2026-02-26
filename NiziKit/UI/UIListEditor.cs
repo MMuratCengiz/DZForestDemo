@@ -26,7 +26,7 @@ public ref struct UiListEditor
     private UiColor _selectedColor;
     private UiColor _hoverColor;
     private UiColor _textColor;
-    private UiColor _headerBgColor;
+    private readonly UiColor _headerBgColor;
     private bool _showAdd;
     private bool _showRemove;
     private ushort _fontSize;

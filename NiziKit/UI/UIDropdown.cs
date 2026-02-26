@@ -44,7 +44,7 @@ public ref struct UiDropdown
     private float _maxDropdownHeight;
     private string _placeholder;
     private bool _searchable;
-    private string _idString;
+    private readonly string _idString;
 
     internal UiDropdown(UiContext ctx, string id, UiDropdownState state, string[] items)
     {

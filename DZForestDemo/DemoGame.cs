@@ -12,7 +12,7 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 {
     private IRenderer _renderer = null!;
     private RenderFrame _renderFrame = null!;
-    private DemoGameUi _ui = new();
+    private readonly DemoGameUi _ui = new();
 
     public override Type RendererType => typeof(ForwardRenderer);
 

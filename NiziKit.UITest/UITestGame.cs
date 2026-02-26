@@ -39,7 +39,7 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
     private float _propFloat = 3.14f;
     private float _propR = 1.0f, _propG = 0.5f, _propB = 0.0f;
     private int _listSelectedIndex;
-    private List<string> _listItems = ["Item Alpha", "Item Beta", "Item Gamma", "Item Delta"];
+    private readonly List<string> _listItems = ["Item Alpha", "Item Beta", "Item Gamma", "Item Delta"];
 
     public override Type RendererType => typeof(ForwardRenderer);
 

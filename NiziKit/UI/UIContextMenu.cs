@@ -69,7 +69,7 @@ public ref struct UiContextMenu
     private UiColor _bgColor;
     private UiColor _hoverColor;
     private UiColor _textColor;
-    private UiColor _disabledTextColor;
+    private readonly UiColor _disabledTextColor;
     private UiColor _iconColor;
     private UiColor _separatorColor;
     private ushort _fontSize;

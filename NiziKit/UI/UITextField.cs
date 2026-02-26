@@ -517,7 +517,7 @@ public sealed class UiTextFieldState
 public ref struct UiTextField
 {
     private readonly UiTextFieldState _state;
-    private ref string _textRef;
+    private readonly ref string _textRef;
 
     private UiColor _backgroundColor;
     private UiColor _focusedBackgroundColor;
