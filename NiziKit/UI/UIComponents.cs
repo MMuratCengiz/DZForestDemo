@@ -3,108 +3,8 @@ using DenOfIz;
 
 namespace NiziKit.UI;
 
-public static partial class Ui
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiButton Button(UiContext ctx, string id, string text)
-    {
-        return new UiButton(ctx, id, text);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiCard Card(UiContext ctx, string id)
-    {
-        return new UiCard(ctx, id);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiCheckbox Checkbox(UiContext ctx, string id, string label, bool isChecked)
-    {
-        return new UiCheckbox(ctx, id, label, isChecked);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Spacer(UiContext ctx, float size)
-    {
-        var decl = new ClayElementDeclaration
-        {
-            Id = ctx.StringCache.GetId("Spacer", ctx.NextElementIndex())
-        };
-        decl.Layout.Sizing.Width = ClaySizingAxis.Fixed(size);
-        decl.Layout.Sizing.Height = ClaySizingAxis.Fixed(size);
-        ctx.OpenElement(decl);
-        ctx.Clay.CloseElement();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void HorizontalSpacer(UiContext ctx, float width)
-    {
-        var decl = new ClayElementDeclaration
-        {
-            Id = ctx.StringCache.GetId("HSpacer", ctx.NextElementIndex())
-        };
-        decl.Layout.Sizing.Width = ClaySizingAxis.Fixed(width);
-        ctx.OpenElement(decl);
-        ctx.Clay.CloseElement();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void VerticalSpacer(UiContext ctx, float height)
-    {
-        var decl = new ClayElementDeclaration
-        {
-            Id = ctx.StringCache.GetId("VSpacer", ctx.NextElementIndex())
-        };
-        decl.Layout.Sizing.Height = ClaySizingAxis.Fixed(height);
-        ctx.OpenElement(decl);
-        ctx.Clay.CloseElement();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void FlexSpacer(UiContext ctx)
-    {
-        var decl = new ClayElementDeclaration
-        {
-            Id = ctx.StringCache.GetId("FlexSpacer", ctx.NextElementIndex())
-        };
-        decl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
-        decl.Layout.Sizing.Height = ClaySizingAxis.Grow(0, float.MaxValue);
-        ctx.OpenElement(decl);
-        ctx.Clay.CloseElement();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Divider(UiContext ctx, UiColor color, float thickness = 1)
-    {
-        var decl = new ClayElementDeclaration
-        {
-            Id = ctx.StringCache.GetId("Divider", ctx.NextElementIndex())
-        };
-        decl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
-        decl.Layout.Sizing.Height = ClaySizingAxis.Fixed(thickness);
-        decl.BackgroundColor = color.ToClayColor();
-        ctx.OpenElement(decl);
-        ctx.Clay.CloseElement();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void VerticalDivider(UiContext ctx, UiColor color, float thickness = 1)
-    {
-        var decl = new ClayElementDeclaration
-        {
-            Id = ctx.StringCache.GetId("VDivider", ctx.NextElementIndex())
-        };
-        decl.Layout.Sizing.Width = ClaySizingAxis.Fixed(thickness);
-        decl.Layout.Sizing.Height = ClaySizingAxis.Grow(0, float.MaxValue);
-        decl.BackgroundColor = color.ToClayColor();
-        ctx.OpenElement(decl);
-        ctx.Clay.CloseElement();
-    }
-}
-
 public ref struct UiButton
 {
-    private readonly UiContext _context;
     private readonly string _text;
 
     private UiColor _normalColor;
@@ -123,7 +23,6 @@ public ref struct UiButton
 
     internal UiButton(UiContext ctx, string id, string text)
     {
-        _context = ctx;
         _text = text;
         Id = ctx.StringCache.GetId(id);
 
@@ -173,192 +72,95 @@ public ref struct UiButton
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton TextColor(UiColor color)
-    {
-        _textColor = color;
-        return this;
-    }
+    public UiButton TextColor(UiColor color) { _textColor = color; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton FontSize(ushort size)
-    {
-        _fontSize = size;
-        return this;
-    }
+    public UiButton FontSize(ushort size) { _fontSize = size; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton Size(float width, float height)
-    {
-        _width = UiSizing.Fixed(width);
-        _height = UiSizing.Fixed(height);
-        return this;
-    }
+    public UiButton Size(float width, float height) { _width = UiSizing.Fixed(width); _height = UiSizing.Fixed(height); return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton Size(UiSizing width, UiSizing height)
-    {
-        _width = width;
-        _height = height;
-        return this;
-    }
+    public UiButton Size(UiSizing width, UiSizing height) { _width = width; _height = height; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton Width(float width)
-    {
-        _width = UiSizing.Fixed(width);
-        return this;
-    }
+    public UiButton Width(float width) { _width = UiSizing.Fixed(width); return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton Width(UiSizing sizing)
-    {
-        _width = sizing;
-        return this;
-    }
+    public UiButton Width(UiSizing sizing) { _width = sizing; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton Height(float height)
-    {
-        _height = UiSizing.Fixed(height);
-        return this;
-    }
+    public UiButton Height(float height) { _height = UiSizing.Fixed(height); return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton Height(UiSizing sizing)
-    {
-        _height = sizing;
-        return this;
-    }
+    public UiButton Height(UiSizing sizing) { _height = sizing; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton GrowWidth()
-    {
-        _width = UiSizing.Grow();
-        return this;
-    }
+    public UiButton GrowWidth() { _width = UiSizing.Grow(); return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton GrowHeight()
-    {
-        _height = UiSizing.Grow();
-        return this;
-    }
+    public UiButton GrowHeight() { _height = UiSizing.Grow(); return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton Direction(UiDirection dir)
-    {
-        _direction = dir;
-        return this;
-    }
+    public UiButton Direction(UiDirection dir) { _direction = dir; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton Horizontal()
-    {
-        _direction = UiDirection.Horizontal;
-        return this;
-    }
+    public UiButton Horizontal() { _direction = UiDirection.Horizontal; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton Vertical()
-    {
-        _direction = UiDirection.Vertical;
-        return this;
-    }
+    public UiButton Vertical() { _direction = UiDirection.Vertical; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton Gap(float gap)
-    {
-        _gap = gap;
-        return this;
-    }
+    public UiButton Gap(float gap) { _gap = gap; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton CornerRadius(float radius)
-    {
-        _cornerRadius = radius;
-        return this;
-    }
+    public UiButton CornerRadius(float radius) { _cornerRadius = radius; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton Border(float width, UiColor color)
-    {
-        _border = UiBorder.All(width, color);
-        _hasBorder = true;
-        return this;
-    }
+    public UiButton Border(float width, UiColor color) { _border = UiBorder.All(width, color); _hasBorder = true; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton Border(UiBorder border)
-    {
-        _border = border;
-        _hasBorder = true;
-        return this;
-    }
+    public UiButton Border(UiBorder border) { _border = border; _hasBorder = true; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton Padding(float all)
-    {
-        _padding = UiPadding.All(all);
-        return this;
-    }
+    public UiButton Padding(float all) { _padding = UiPadding.All(all); return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton Padding(float horizontal, float vertical)
-    {
-        _padding = UiPadding.Symmetric(horizontal, vertical);
-        return this;
-    }
+    public UiButton Padding(float horizontal, float vertical) { _padding = UiPadding.Symmetric(horizontal, vertical); return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiButton Padding(UiPadding padding)
-    {
-        _padding = padding;
-        return this;
-    }
+    public UiButton Padding(UiPadding padding) { _padding = padding; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private UiColor GetCurrentColor()
     {
-        var interaction = _context.GetInteraction(Id);
+        var interaction = NiziUi.Ctx.GetInteraction(Id);
         return interaction.IsPressed ? _pressedColor
             : interaction.IsHovered ? _hoverColor
             : _normalColor;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiInteraction GetInteraction()
-    {
-        return _context.GetInteraction(Id);
-    }
+    public UiInteraction GetInteraction() => NiziUi.Ctx.GetInteraction(Id);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool WasClicked()
-    {
-        return _context.GetInteraction(Id).WasClicked;
-    }
+    public bool WasClicked() => NiziUi.Ctx.GetInteraction(Id).WasClicked;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElementScope Open()
     {
         var decl = CreateDeclaration();
-        _context.OpenElement(decl);
-        return new UiElementScope(_context);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Content(Action content)
-    {
-        using var _ = Open();
-        content();
+        NiziUi.Ctx.OpenElement(decl);
+        return new UiElementScope();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Show()
     {
-        var interaction = _context.GetInteraction(Id);
+        var interaction = NiziUi.Ctx.GetInteraction(Id);
         var decl = CreateDeclaration();
 
-        _context.OpenElement(decl);
+        NiziUi.Ctx.OpenElement(decl);
         {
             var textDesc = new ClayTextDesc
             {
@@ -367,9 +169,9 @@ public ref struct UiButton
                 TextAlignment = ClayTextAlignment.Center,
                 WrapMode = ClayTextWrapMode.None
             };
-            _context.Clay.Text(_text, textDesc);
+            NiziUi.Ctx.Clay.Text(_text, textDesc);
         }
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
 
         return interaction.WasClicked;
     }
@@ -410,8 +212,6 @@ public ref struct UiButton
 
 public ref struct UiCard
 {
-    private readonly UiContext _context;
-
     private UiColor _backgroundColor;
     private UiColor _borderColor;
     private float _borderWidth;
@@ -426,7 +226,6 @@ public ref struct UiCard
 
     internal UiCard(UiContext ctx, string id)
     {
-        _context = ctx;
         Id = ctx.StringCache.GetId(id);
         _backgroundColor = UiColor.White;
         _borderColor = UiColor.LightGray;
@@ -444,186 +243,80 @@ public ref struct UiCard
     public uint Id { get; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard Background(UiColor color)
-    {
-        _backgroundColor = color;
-        return this;
-    }
+    public UiCard Background(UiColor color) { _backgroundColor = color; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard Border(float width, UiColor color)
-    {
-        _borderWidth = width;
-        _borderColor = color;
-        return this;
-    }
+    public UiCard Border(float width, UiColor color) { _borderWidth = width; _borderColor = color; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard Border(UiBorder border)
-    {
-        _borderWidth = border.Left;
-        _borderColor = border.Color;
-        return this;
-    }
+    public UiCard Border(UiBorder border) { _borderWidth = border.Left; _borderColor = border.Color; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard NoBorder()
-    {
-        _borderWidth = 0;
-        return this;
-    }
+    public UiCard NoBorder() { _borderWidth = 0; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard CornerRadius(float radius)
-    {
-        _cornerRadius = radius;
-        return this;
-    }
+    public UiCard CornerRadius(float radius) { _cornerRadius = radius; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard Padding(float all)
-    {
-        _padding = UiPadding.All(all);
-        return this;
-    }
+    public UiCard Padding(float all) { _padding = UiPadding.All(all); return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard Padding(float horizontal, float vertical)
-    {
-        _padding = UiPadding.Symmetric(horizontal, vertical);
-        return this;
-    }
+    public UiCard Padding(float horizontal, float vertical) { _padding = UiPadding.Symmetric(horizontal, vertical); return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard Padding(UiPadding padding)
-    {
-        _padding = padding;
-        return this;
-    }
+    public UiCard Padding(UiPadding padding) { _padding = padding; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard Gap(float gap)
-    {
-        _gap = gap;
-        return this;
-    }
+    public UiCard Gap(float gap) { _gap = gap; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard Direction(UiDirection dir)
-    {
-        _direction = dir;
-        return this;
-    }
+    public UiCard Direction(UiDirection dir) { _direction = dir; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard Horizontal()
-    {
-        _direction = UiDirection.Horizontal;
-        return this;
-    }
+    public UiCard Horizontal() { _direction = UiDirection.Horizontal; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard Vertical()
-    {
-        _direction = UiDirection.Vertical;
-        return this;
-    }
+    public UiCard Vertical() { _direction = UiDirection.Vertical; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard AlignChildren(UiAlignX x, UiAlignY y)
-    {
-        _alignX = x;
-        _alignY = y;
-        return this;
-    }
+    public UiCard AlignChildren(UiAlignX x, UiAlignY y) { _alignX = x; _alignY = y; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard CenterChildren()
-    {
-        _alignX = UiAlignX.Center;
-        _alignY = UiAlignY.Center;
-        return this;
-    }
+    public UiCard CenterChildren() { _alignX = UiAlignX.Center; _alignY = UiAlignY.Center; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard Size(float width, float height)
-    {
-        _width = UiSizing.Fixed(width);
-        _height = UiSizing.Fixed(height);
-        return this;
-    }
+    public UiCard Size(float width, float height) { _width = UiSizing.Fixed(width); _height = UiSizing.Fixed(height); return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard Size(UiSizing width, UiSizing height)
-    {
-        _width = width;
-        _height = height;
-        return this;
-    }
+    public UiCard Size(UiSizing width, UiSizing height) { _width = width; _height = height; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard Width(float width)
-    {
-        _width = UiSizing.Fixed(width);
-        return this;
-    }
+    public UiCard Width(float width) { _width = UiSizing.Fixed(width); return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard Width(UiSizing sizing)
-    {
-        _width = sizing;
-        return this;
-    }
+    public UiCard Width(UiSizing sizing) { _width = sizing; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard Height(float height)
-    {
-        _height = UiSizing.Fixed(height);
-        return this;
-    }
+    public UiCard Height(float height) { _height = UiSizing.Fixed(height); return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard Height(UiSizing sizing)
-    {
-        _height = sizing;
-        return this;
-    }
+    public UiCard Height(UiSizing sizing) { _height = sizing; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard GrowWidth()
-    {
-        _width = UiSizing.Grow();
-        return this;
-    }
+    public UiCard GrowWidth() { _width = UiSizing.Grow(); return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard GrowHeight()
-    {
-        _height = UiSizing.Grow();
-        return this;
-    }
+    public UiCard GrowHeight() { _height = UiSizing.Grow(); return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCard Grow()
-    {
-        _width = UiSizing.Grow();
-        _height = UiSizing.Grow();
-        return this;
-    }
+    public UiCard Grow() { _width = UiSizing.Grow(); _height = UiSizing.Grow(); return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElementScope Open()
     {
         var decl = CreateDeclaration();
-        _context.OpenElement(decl);
-        return new UiElementScope(_context);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Content(Action content)
-    {
-        using var _ = Open();
-        content();
+        NiziUi.Ctx.OpenElement(decl);
+        return new UiElementScope();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -667,7 +360,6 @@ public ref struct UiCard
 
 public ref struct UiCheckbox
 {
-    private readonly UiContext _context;
     private readonly string _label;
     private readonly bool _isChecked;
 
@@ -684,7 +376,6 @@ public ref struct UiCheckbox
 
     internal UiCheckbox(UiContext ctx, string id, string label, bool isChecked)
     {
-        _context = ctx;
         _label = label;
         Id = ctx.StringCache.GetId(id);
         _isChecked = isChecked;
@@ -704,93 +395,46 @@ public ref struct UiCheckbox
     public uint Id { get; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCheckbox BoxColor(UiColor color)
-    {
-        _boxColor = color;
-        return this;
-    }
+    public UiCheckbox BoxColor(UiColor color) { _boxColor = color; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCheckbox BoxColor(UiColor normal, UiColor hover)
-    {
-        _boxColor = normal;
-        _boxHoverColor = hover;
-        return this;
-    }
+    public UiCheckbox BoxColor(UiColor normal, UiColor hover) { _boxColor = normal; _boxHoverColor = hover; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCheckbox CheckColor(UiColor color)
-    {
-        _checkColor = color;
-        return this;
-    }
+    public UiCheckbox CheckColor(UiColor color) { _checkColor = color; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCheckbox LabelColor(UiColor color)
-    {
-        _labelColor = color;
-        return this;
-    }
+    public UiCheckbox LabelColor(UiColor color) { _labelColor = color; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCheckbox BorderColor(UiColor color)
-    {
-        _borderColor = color;
-        return this;
-    }
+    public UiCheckbox BorderColor(UiColor color) { _borderColor = color; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCheckbox BoxSize(float size)
-    {
-        _boxSize = size;
-        return this;
-    }
+    public UiCheckbox BoxSize(float size) { _boxSize = size; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCheckbox FontSize(ushort size)
-    {
-        _fontSize = size;
-        return this;
-    }
+    public UiCheckbox FontSize(ushort size) { _fontSize = size; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCheckbox Gap(float gap)
-    {
-        _gap = gap;
-        return this;
-    }
+    public UiCheckbox Gap(float gap) { _gap = gap; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCheckbox CornerRadius(float radius)
-    {
-        _cornerRadius = radius;
-        return this;
-    }
+    public UiCheckbox CornerRadius(float radius) { _cornerRadius = radius; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiCheckbox Border(float width, UiColor color)
-    {
-        _borderWidth = width;
-        _borderColor = color;
-        return this;
-    }
+    public UiCheckbox Border(float width, UiColor color) { _borderWidth = width; _borderColor = color; return this; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public UiInteraction GetInteraction()
-    {
-        return _context.GetInteraction(Id);
-    }
+    public UiInteraction GetInteraction() => NiziUi.Ctx.GetInteraction(Id);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool WasClicked()
-    {
-        return _context.GetInteraction(Id).WasClicked;
-    }
+    public bool WasClicked() => NiziUi.Ctx.GetInteraction(Id).WasClicked;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Show()
     {
-        var interaction = _context.GetInteraction(Id);
+        var ctx = NiziUi.Ctx;
+        var interaction = ctx.GetInteraction(Id);
 
         var containerDecl = new ClayElementDeclaration { Id = Id };
         containerDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
@@ -799,10 +443,10 @@ public ref struct UiCheckbox
         containerDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
         containerDecl.Layout.ChildGap = (ushort)_gap;
 
-        _context.OpenElement(containerDecl);
+        ctx.OpenElement(containerDecl);
         {
             var boxColor = interaction.IsHovered ? _boxHoverColor : _boxColor;
-            var boxId = _context.StringCache.GetId("ChkBox", Id);
+            var boxId = ctx.StringCache.GetId("ChkBox", Id);
             var boxDecl = new ClayElementDeclaration { Id = boxId };
             boxDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(_boxSize);
             boxDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(_boxSize);
@@ -816,21 +460,21 @@ public ref struct UiCheckbox
                 Color = _borderColor.ToClayColor()
             };
 
-            _context.OpenElement(boxDecl);
+            ctx.OpenElement(boxDecl);
             {
                 if (_isChecked)
                 {
                     var checkSize = _boxSize * 0.6f;
-                    var checkDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("ChkMark", Id) };
+                    var checkDecl = new ClayElementDeclaration { Id = ctx.StringCache.GetId("ChkMark", Id) };
                     checkDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(checkSize);
                     checkDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(checkSize);
                     checkDecl.BackgroundColor = _checkColor.ToClayColor();
                     checkDecl.BorderRadius = ClayBorderRadius.CreateUniform(_cornerRadius * 0.5f);
-                    _context.OpenElement(checkDecl);
-                    _context.Clay.CloseElement();
+                    ctx.OpenElement(checkDecl);
+                    ctx.Clay.CloseElement();
                 }
             }
-            _context.Clay.CloseElement();
+            ctx.Clay.CloseElement();
             if (!string.IsNullOrEmpty(_label))
             {
                 var textDesc = new ClayTextDesc
@@ -839,10 +483,10 @@ public ref struct UiCheckbox
                     FontSize = _fontSize,
                     WrapMode = ClayTextWrapMode.None
                 };
-                _context.Clay.Text(_label, textDesc);
+                ctx.Clay.Text(_label, textDesc);
             }
         }
-        _context.Clay.CloseElement();
+        ctx.Clay.CloseElement();
 
         return interaction.WasClicked ? !_isChecked : _isChecked;
     }
@@ -853,62 +497,4 @@ public ref struct UiCheckbox
         FontSize = _fontSize,
         Alignment = UiTextAlign.Left
     };
-}
-
-public static partial class UiElementScopeExtensions
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiButton Button(this ref UiElementScope scope, UiContext ctx, string id, string text)
-    {
-        return new UiButton(ctx, id, text);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiCard Card(this ref UiElementScope scope, UiContext ctx, string id)
-    {
-        return new UiCard(ctx, id);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiCheckbox Checkbox(this ref UiElementScope scope, UiContext ctx, string id, string label,
-        bool isChecked)
-    {
-        return new UiCheckbox(ctx, id, label, isChecked);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Spacer(this ref UiElementScope scope, UiContext ctx, float size)
-    {
-        Ui.Spacer(ctx, size);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void HorizontalSpacer(this ref UiElementScope scope, UiContext ctx, float width)
-    {
-        Ui.HorizontalSpacer(ctx, width);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void VerticalSpacer(this ref UiElementScope scope, UiContext ctx, float height)
-    {
-        Ui.VerticalSpacer(ctx, height);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void FlexSpacer(this ref UiElementScope scope, UiContext ctx)
-    {
-        Ui.FlexSpacer(ctx);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void Divider(this ref UiElementScope scope, UiContext ctx, UiColor color, float thickness = 1)
-    {
-        Ui.Divider(ctx, color, thickness);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void VerticalDivider(this ref UiElementScope scope, UiContext ctx, UiColor color, float thickness = 1)
-    {
-        Ui.VerticalDivider(ctx, color, thickness);
-    }
 }

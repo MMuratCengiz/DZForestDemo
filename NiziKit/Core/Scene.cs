@@ -1,3 +1,4 @@
+using System.Numerics;
 using NiziKit.Components;
 using NiziKit.Graphics.Renderer.Forward;
 
@@ -8,6 +9,10 @@ public abstract class Scene(string name = "Scene") : IDisposable
     public string Name { get; set; } = name;
     public string? SourcePath { get; set; }
     public SkyboxData? Skybox { get; set; }
+
+    public Vector3 AmbientSkyColor { get; set; } = new(0.4f, 0.5f, 0.6f);
+    public Vector3 AmbientGroundColor { get; set; } = new(0.2f, 0.18f, 0.15f);
+    public float AmbientIntensity { get; set; } = 0.3f;
     protected World World => World.Instance;
 
     private readonly List<GameObject> _rootObjects = [];

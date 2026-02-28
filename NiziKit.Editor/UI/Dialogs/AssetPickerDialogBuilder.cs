@@ -37,10 +37,10 @@ public static class AssetPickerDialogBuilder
     private const float SearchBarHeight = 40;
     private const float FolderIconWidth = 16;
 
-    public static void Build(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    public static void Build(EditorViewModel vm)
     {
         var t = EditorTheme.Current;
-        var state = ctx.GetOrCreateState<AssetPickerState>("AssetPickerDialog");
+        var state = NiziUi.GetOrCreateState<AssetPickerState>("AssetPickerDialog");
 
         if (state.CachedAssetType != vm.AssetPickerAssetType)
         {
@@ -52,7 +52,7 @@ public static class AssetPickerDialogBuilder
             state.CurrentPage = 0;
         }
 
-        var overlayEl = ui.Panel("AssetPickerOverlay")
+        var overlayEl = NiziUi.Panel("AssetPickerOverlay")
             .Background(t.DialogOverlay)
             .FloatingRoot(900)
             .Grow()
@@ -61,7 +61,7 @@ public static class AssetPickerDialogBuilder
 
         using (overlayEl.Open())
         {
-            var dialogEl = ui.Panel("AssetPickerDialog")
+            var dialogEl = NiziUi.Panel("AssetPickerDialog")
                 .Background(t.PanelBackground)
                 .Border(1, t.Border)
                 .CornerRadius(t.RadiusLarge)
@@ -72,21 +72,21 @@ public static class AssetPickerDialogBuilder
 
             using (dialogEl.Open())
             {
-                RenderHeader(ui, ctx, vm, t);
-                using (ui.Panel("AssetPickerDialog_div").GrowWidth().Height(1).Background(t.Border).Open()) { }
-                RenderSearchBar(ui, ctx, state, t);
+                RenderHeader(vm, t);
+                using (NiziUi.Panel("AssetPickerDialog_div").GrowWidth().Height(1).Background(t.Border).Open()) { }
+                RenderSearchBar(state, t);
 
-                using (ui.Panel("AssetPickerContent")
+                using (NiziUi.Panel("AssetPickerContent")
                     .Horizontal()
                     .Grow()
                     .Open())
                 {
-                    RenderFolderPanel(ui, ctx, state, t);
-                    Ui.VerticalDivider(ctx, t.Border);
-                    RenderAssetGrid(ui, ctx, vm, state, t);
+                    RenderFolderPanel(state, t);
+                    NiziUi.VerticalDivider(t.Border);
+                    RenderAssetGrid(vm, state, t);
                 }
 
-                RenderFooter(ui, ctx, vm, state, t);
+                RenderFooter(vm, state, t);
             }
 
             if (overlayClicked && !dialogHovered)
@@ -96,9 +96,9 @@ public static class AssetPickerDialogBuilder
         }
     }
 
-    private static void RenderHeader(UiFrame ui, UiContext ctx, EditorViewModel vm, IEditorTheme t)
+    private static void RenderHeader(EditorViewModel vm, IEditorTheme t)
     {
-        using (ui.Panel("AssetPickerDialog_header")
+        using (NiziUi.Panel("AssetPickerDialog_header")
             .Background(t.Accent)
             .Padding(20, 10)
             .GrowWidth()
@@ -107,12 +107,12 @@ public static class AssetPickerDialogBuilder
             .AlignChildrenY(UiAlignY.Center)
             .Open())
         {
-            ui.Text("Select " + vm.AssetPickerAssetType,
+            NiziUi.Text("Select " + vm.AssetPickerAssetType,
                 new UiTextStyle { Color = UiColor.White, FontSize = t.FontSizeSubtitle });
 
-            Ui.FlexSpacer(ctx);
+            NiziUi.FlexSpacer();
 
-            var closeEl = ui.Panel("AssetPickerClose")
+            var closeEl = NiziUi.Panel("AssetPickerClose")
                 .Width(24)
                 .Height(24)
                 .AlignChildren(UiAlignX.Center, UiAlignY.Center)
@@ -123,7 +123,7 @@ public static class AssetPickerDialogBuilder
 
             using (closeEl.Open())
             {
-                ui.Icon(FontAwesome.Xmark, UiColor.White, t.IconSizeSmall);
+                NiziUi.Icon(FontAwesome.Xmark, UiColor.White, t.IconSizeSmall);
             }
 
             if (closeEl.WasClicked())
@@ -133,9 +133,9 @@ public static class AssetPickerDialogBuilder
         }
     }
 
-    private static void RenderSearchBar(UiFrame ui, UiContext ctx, AssetPickerState state, IEditorTheme t)
+    private static void RenderSearchBar(AssetPickerState state, IEditorTheme t)
     {
-        using (ui.Panel("SearchBarPanel")
+        using (NiziUi.Panel("SearchBarPanel")
             .Horizontal()
             .GrowWidth()
             .Height(SearchBarHeight)
@@ -145,17 +145,17 @@ public static class AssetPickerDialogBuilder
             .Background(t.PanelBackground)
             .Open())
         {
-            using (ui.Panel("SearchIcon")
+            using (NiziUi.Panel("SearchIcon")
                 .Width(t.IconSizeSmall)
                 .Height(t.IconSizeSmall)
                 .AlignChildren(UiAlignX.Center, UiAlignY.Center)
                 .Open())
             {
-                ui.Icon(FontAwesome.Search, t.TextMuted, t.IconSizeSmall);
+                NiziUi.Icon(FontAwesome.Search, t.TextMuted, t.IconSizeSmall);
             }
 
             var search = state.SearchText;
-            if (Ui.TextField(ctx, "AssetSearchField", ref search)
+            if (NiziUi.TextField("AssetSearchField", ref search)
                 .BackgroundColor(t.SurfaceInset)
                 .TextColor(t.TextPrimary)
                 .PlaceholderColor(t.TextMuted)
@@ -167,19 +167,19 @@ public static class AssetPickerDialogBuilder
                 .BorderColor(t.Border)
                 .Padding(6, 4)
                 .Overflow(UiTextOverflow.Scroll)
-                .Show(ref search))
+                .Show())
             {
                 state.CurrentPage = 0;
             }
             state.SearchText = search;
         }
 
-        using (ui.Panel("SearchDivider").GrowWidth().Height(1).Background(t.Border).Open()) { }
+        using (NiziUi.Panel("SearchDivider").GrowWidth().Height(1).Background(t.Border).Open()) { }
     }
 
-    private static void RenderFolderPanel(UiFrame ui, UiContext ctx, AssetPickerState state, IEditorTheme t)
+    private static void RenderFolderPanel(AssetPickerState state, IEditorTheme t)
     {
-        using (ui.Panel("AssetFolderTree")
+        using (NiziUi.Panel("AssetFolderTree")
             .Vertical()
             .Width(UiSizing.Fixed(200))
             .GrowHeight()
@@ -191,7 +191,7 @@ public static class AssetPickerDialogBuilder
             .Open())
         {
             var allSelected = state.SelectedFolder == null;
-            var allEl = ui.Panel("FolderAll")
+            var allEl = NiziUi.Panel("FolderAll")
                 .Horizontal()
                 .GrowWidth()
                 .Height(24)
@@ -207,7 +207,7 @@ public static class AssetPickerDialogBuilder
             using (allEl.Open())
             {
                 var leftWidth = FolderChevronWidth + FolderIconWidth + 2;
-                using (ui.Panel("FolderAllLeft")
+                using (NiziUi.Panel("FolderAllLeft")
                     .Horizontal()
                     .Width(leftWidth)
                     .Height(24)
@@ -215,26 +215,26 @@ public static class AssetPickerDialogBuilder
                     .Gap(2)
                     .Open())
                 {
-                    Ui.HorizontalSpacer(ctx, FolderChevronWidth);
+                    NiziUi.HorizontalSpacer(FolderChevronWidth);
 
-                    using (ui.Panel("FolderAllIcon")
+                    using (NiziUi.Panel("FolderAllIcon")
                         .Width(FolderIconWidth)
                         .Height(FolderIconWidth)
                         .AlignChildren(UiAlignX.Center, UiAlignY.Center)
                         .Open())
                     {
-                        ui.Icon(FontAwesome.FolderOpen,
+                        NiziUi.Icon(FontAwesome.FolderOpen,
                             allSelected ? t.AccentLight : t.TextMuted, t.IconSizeSmall);
                     }
                 }
 
-                using (ui.Panel("FolderAllText")
+                using (NiziUi.Panel("FolderAllText")
                     .GrowWidth()
                     .Height(24)
                     .AlignChildrenY(UiAlignY.Center)
                     .Open())
                 {
-                    ui.Text("All Assets", new UiTextStyle
+                    NiziUi.Text("All Assets", new UiTextStyle
                     {
                         Color = allSelected ? UiColor.White : t.TextPrimary,
                         FontSize = t.FontSizeCaption
@@ -248,17 +248,17 @@ public static class AssetPickerDialogBuilder
                 state.CurrentPage = 0;
             }
 
-            Ui.VerticalSpacer(ctx, 2);
+            NiziUi.VerticalSpacer(2);
 
             if (state.RootFolder != null)
             {
                 state.FolderNodeIndex = 0;
-                RenderFolderNode(ui, ctx, state, state.RootFolder, 0, t);
+                RenderFolderNode(state, state.RootFolder, 0, t);
             }
         }
     }
 
-    private static void RenderAssetGrid(UiFrame ui, UiContext ctx, EditorViewModel vm,
+    private static void RenderAssetGrid(EditorViewModel vm,
         AssetPickerState state, IEditorTheme t)
     {
         var filteredAssets = GetFilteredAssets(state.CachedAssets, state.SelectedFolder, state.SearchText);
@@ -277,13 +277,13 @@ public static class AssetPickerDialogBuilder
         state.HoveredAssetPath = null;
 
         // Get grid area bounds from previous frame to clip interaction
-        var gridId = ctx.GetElementId("AssetGrid");
-        var gridBounds = ctx.GetElementBounds(gridId);
+        var gridId = NiziUi.GetElementId("AssetGrid");
+        var gridBounds = NiziUi.GetElementBounds(gridId);
         var mouseInGrid = gridBounds.Width > 0 &&
-                          ctx.MouseX >= gridBounds.X && ctx.MouseX <= gridBounds.X + gridBounds.Width &&
-                          ctx.MouseY >= gridBounds.Y && ctx.MouseY <= gridBounds.Y + gridBounds.Height;
+                          NiziUi.MouseX >= gridBounds.X && NiziUi.MouseX <= gridBounds.X + gridBounds.Width &&
+                          NiziUi.MouseY >= gridBounds.Y && NiziUi.MouseY <= gridBounds.Y + gridBounds.Height;
 
-        using (ui.Panel("AssetGrid")
+        using (NiziUi.Panel("AssetGrid")
             .Vertical()
             .Grow()
             .ScrollVertical()
@@ -293,15 +293,15 @@ public static class AssetPickerDialogBuilder
         {
             if (filteredAssets.Count == 0)
             {
-                using (ui.Panel("EmptyState")
+                using (NiziUi.Panel("EmptyState")
                     .Vertical()
                     .Grow()
                     .AlignChildren(UiAlignX.Center, UiAlignY.Center)
                     .Gap(t.SpacingSM)
                     .Open())
                 {
-                    ui.Icon(FontAwesome.Search, t.TextDisabled, t.IconSizeXL);
-                    ui.Text("No assets found", new UiTextStyle
+                    NiziUi.Icon(FontAwesome.Search, t.TextDisabled, t.IconSizeXL);
+                    NiziUi.Text("No assets found", new UiTextStyle
                     {
                         Color = t.TextMuted,
                         FontSize = t.FontSizeBody
@@ -315,7 +315,7 @@ public static class AssetPickerDialogBuilder
 
                 for (var row = 0; row < rows; row++)
                 {
-                    using (ui.Panel("GR_" + row)
+                    using (NiziUi.Panel("GR_" + row)
                         .Horizontal()
                         .GrowWidth()
                         .FitHeight()
@@ -327,12 +327,12 @@ public static class AssetPickerDialogBuilder
                             var itemIdx = startIdx + row * GridColumns + col;
                             if (itemIdx < endIdx)
                             {
-                                RenderGridItem(ui, ctx, vm, state, filteredAssets[itemIdx], itemIdx, t,
+                                RenderGridItem(vm, state, filteredAssets[itemIdx], itemIdx, t,
                                     labelMaxWidth, mouseInGrid);
                             }
                             else
                             {
-                                using (ui.Panel("GE_" + row + "_" + col)
+                                using (NiziUi.Panel("GE_" + row + "_" + col)
                                     .GrowWidth()
                                     .Height(ItemHeight)
                                     .Open()) { }
@@ -352,14 +352,14 @@ public static class AssetPickerDialogBuilder
     private const float TileGap = 4;
     private const float ItemHeight = TilePaddingV * 2 + IconAreaHeight + TileGap + LabelAreaHeight;
 
-    private static void RenderGridItem(UiFrame ui, UiContext ctx, EditorViewModel vm,
+    private static void RenderGridItem(EditorViewModel vm,
         AssetPickerState state, AssetInfo asset, int index, IEditorTheme t, float labelMaxWidth,
         bool mouseInGrid)
     {
         var isSelected = vm.AssetPickerCurrentAssetPath == asset.Path;
         var bg = isSelected ? t.Selected : t.SurfaceInset;
 
-        var btn = Ui.Button(ctx, "AI_" + index, "")
+        var btn = NiziUi.Button("AI_" + index, "")
             .Color(bg, mouseInGrid ? t.Hover : bg, mouseInGrid ? t.Active : bg)
             .Border(isSelected ? 1 : 0, isSelected ? t.SelectedBorder : UiColor.Transparent)
             .CornerRadius(t.RadiusMedium)
@@ -371,17 +371,17 @@ public static class AssetPickerDialogBuilder
 
         using var scope = btn.Open();
 
-        using (ui.Panel("AIcon_" + index)
+        using (NiziUi.Panel("AIcon_" + index)
             .GrowWidth()
             .Height(IconAreaHeight)
             .AlignChildren(UiAlignX.Center, UiAlignY.Center)
             .Open())
         {
-            ui.Icon(GetAssetIcon(vm.AssetPickerAssetType),
+            NiziUi.Icon(GetAssetIcon(vm.AssetPickerAssetType),
                 isSelected ? UiColor.White : t.Accent, t.IconSizeLarge);
         }
 
-        var lines = SplitTileLabel(ctx, asset.Name, t.FontSizeCaption, labelMaxWidth);
+        var lines = SplitTileLabel(asset.Name, t.FontSizeCaption, labelMaxWidth);
         var labelColor = isSelected ? UiColor.White : t.TextSecondary;
         var labelStyle = new UiTextStyle
         {
@@ -390,7 +390,7 @@ public static class AssetPickerDialogBuilder
             Alignment = UiTextAlign.Center
         };
 
-        using (ui.Panel("ALabel_" + index)
+        using (NiziUi.Panel("ALabel_" + index)
             .Vertical()
             .GrowWidth()
             .Height(LabelAreaHeight)
@@ -400,14 +400,14 @@ public static class AssetPickerDialogBuilder
         {
             for (var i = 0; i < lines.Length; i++)
             {
-                using (ui.Panel("ALn_" + index + "_" + i)
+                using (NiziUi.Panel("ALn_" + index + "_" + i)
                     .GrowWidth()
                     .Height(LabelLineHeight)
                     .AlignChildrenX(UiAlignX.Center)
                     .AlignChildrenY(UiAlignY.Center)
                     .Open())
                 {
-                    ui.Text(lines[i], labelStyle);
+                    NiziUi.Text(lines[i], labelStyle);
                 }
             }
         }
@@ -416,26 +416,26 @@ public static class AssetPickerDialogBuilder
         {
             vm.OnAssetPickerSelected(asset);
         }
-        else if (mouseInGrid && ctx.Clay.PointerOver(btn.Id))
+        else if (mouseInGrid && NiziUi.PointerOver(btn.Id))
         {
             state.HoveredAssetPath = asset.Path;
         }
     }
 
-    private static string[] SplitTileLabel(UiContext ctx, string text, ushort fontSize, float maxWidth)
+    private static string[] SplitTileLabel(string text, ushort fontSize, float maxWidth)
     {
         if (maxWidth <= 0)
         {
             return [text];
         }
 
-        var measured = ctx.Clay.MeasureText(text, 0, fontSize);
+        var measured = NiziUi.MeasureText(text, 0, fontSize);
         if (measured.Width <= maxWidth)
         {
             return [text];
         }
 
-        var line1Chars = (int)ctx.Clay.GetCharIndexAtOffset(text, maxWidth, 0, fontSize);
+        var line1Chars = (int)NiziUi.GetCharIndexAtOffset(text, maxWidth, 0, fontSize);
         if (line1Chars <= 0)
         {
             line1Chars = 1;
@@ -449,21 +449,21 @@ public static class AssetPickerDialogBuilder
         var line1 = text[..line1Chars];
         var line2Full = text[line1Chars..];
 
-        var line2Measured = ctx.Clay.MeasureText(line2Full, 0, fontSize);
+        var line2Measured = NiziUi.MeasureText(line2Full, 0, fontSize);
         if (line2Measured.Width <= maxWidth)
         {
             return [line1, line2Full];
         }
 
         const string ellipsis = "...";
-        var ellipsisWidth = ctx.Clay.MeasureText(ellipsis, 0, fontSize).Width;
+        var ellipsisWidth = NiziUi.MeasureText(ellipsis, 0, fontSize).Width;
         var remaining = maxWidth - ellipsisWidth;
         if (remaining <= 0)
         {
             return [line1, ellipsis];
         }
 
-        var fitChars = (int)ctx.Clay.GetCharIndexAtOffset(line2Full, remaining, 0, fontSize);
+        var fitChars = (int)NiziUi.GetCharIndexAtOffset(line2Full, remaining, 0, fontSize);
         if (fitChars > 0 && fitChars < line2Full.Length)
         {
             return [line1, line2Full[..fitChars] + ellipsis];
@@ -472,10 +472,10 @@ public static class AssetPickerDialogBuilder
         return [line1, ellipsis];
     }
 
-    private static void RenderFooter(UiFrame ui, UiContext ctx, EditorViewModel vm,
+    private static void RenderFooter(EditorViewModel vm,
         AssetPickerState state, IEditorTheme t)
     {
-        using (ui.Panel("AssetPickerFooter")
+        using (NiziUi.Panel("AssetPickerFooter")
             .Horizontal()
             .Padding(t.SpacingMD, t.SpacingSM)
             .Gap(t.SpacingSM)
@@ -489,16 +489,16 @@ public static class AssetPickerDialogBuilder
             var infoPath = state.HoveredAssetPath ?? vm.AssetPickerCurrentAssetPath;
             if (!string.IsNullOrEmpty(infoPath))
             {
-                ui.Text(infoPath, new UiTextStyle
+                NiziUi.Text(infoPath, new UiTextStyle
                 {
                     Color = t.TextMuted,
                     FontSize = t.FontSizeCaption
                 });
             }
 
-            Ui.FlexSpacer(ctx);
+            NiziUi.FlexSpacer();
 
-            ui.Text(state.FilteredAssetCount + " items", new UiTextStyle
+            NiziUi.Text(state.FilteredAssetCount + " items", new UiTextStyle
             {
                 Color = t.TextMuted,
                 FontSize = t.FontSizeCaption
@@ -508,14 +508,14 @@ public static class AssetPickerDialogBuilder
             {
                 var canPrev = state.CurrentPage > 0;
                 {
-                    var prevBtn = Ui.Button(ctx, "PrevPage", "")
+                    var prevBtn = NiziUi.Button("PrevPage", "")
                         .Color(UiColor.Transparent, t.Hover, t.Active)
                         .Padding(6, 4)
                         .CornerRadius(t.RadiusSmall)
                         .Border(0, UiColor.Transparent);
 
                     using var prevScope = prevBtn.Open();
-                    prevScope.Icon(FontAwesome.ChevronLeft,
+                    NiziUi.Icon(FontAwesome.ChevronLeft,
                         canPrev ? t.TextPrimary : t.TextDisabled, t.IconSizeSmall);
 
                     if (prevBtn.WasClicked() && canPrev)
@@ -524,13 +524,13 @@ public static class AssetPickerDialogBuilder
                     }
                 }
 
-                using (ui.Panel("PagPageInd")
+                using (NiziUi.Panel("PagPageInd")
                     .Width(UiSizing.Fit(40))
                     .FitHeight()
                     .AlignChildrenX(UiAlignX.Center)
                     .Open())
                 {
-                    ui.Text($"{state.CurrentPage + 1} / {state.TotalPages}", new UiTextStyle
+                    NiziUi.Text($"{state.CurrentPage + 1} / {state.TotalPages}", new UiTextStyle
                     {
                         Color = t.TextSecondary,
                         FontSize = t.FontSizeCaption
@@ -539,14 +539,14 @@ public static class AssetPickerDialogBuilder
 
                 var canNext = state.CurrentPage < state.TotalPages - 1;
                 {
-                    var nextBtn = Ui.Button(ctx, "NextPage", "")
+                    var nextBtn = NiziUi.Button("NextPage", "")
                         .Color(UiColor.Transparent, t.Hover, t.Active)
                         .Padding(6, 4)
                         .CornerRadius(t.RadiusSmall)
                         .Border(0, UiColor.Transparent);
 
                     using var nextScope = nextBtn.Open();
-                    nextScope.Icon(FontAwesome.ChevronRight,
+                    NiziUi.Icon(FontAwesome.ChevronRight,
                         canNext ? t.TextPrimary : t.TextDisabled, t.IconSizeSmall);
 
                     if (nextBtn.WasClicked() && canNext)
@@ -561,7 +561,7 @@ public static class AssetPickerDialogBuilder
     private const float FolderIndentSize = 10;
     private const float FolderChevronWidth = 20;
 
-    private static void RenderFolderNode(UiFrame ui, UiContext ctx,
+    private static void RenderFolderNode(
         AssetPickerState state, FolderNode node, int depth, IEditorTheme t)
     {
         var guideColor = t.Border.WithAlpha(80);
@@ -572,7 +572,7 @@ public static class AssetPickerDialogBuilder
             var isSelected = state.SelectedFolder == child.FullPath;
             var idx = state.FolderNodeIndex++;
 
-            var rowEl = ui.Panel("FR_" + idx)
+            var rowEl = NiziUi.Panel("FR_" + idx)
                 .Horizontal()
                 .GrowWidth()
                 .Height(24)
@@ -590,7 +590,7 @@ public static class AssetPickerDialogBuilder
             using (rowEl.Open())
             {
                 var leftWidth = depth * FolderIndentSize + FolderChevronWidth + FolderIconWidth + 2;
-                using (ui.Panel("FLeft_" + idx)
+                using (NiziUi.Panel("FLeft_" + idx)
                     .Horizontal()
                     .Width(leftWidth)
                     .Height(24)
@@ -600,7 +600,7 @@ public static class AssetPickerDialogBuilder
                 {
                     if (depth > 0)
                     {
-                        using (ui.Panel("FGs_" + idx)
+                        using (NiziUi.Panel("FGs_" + idx)
                             .Horizontal()
                             .Width(depth * FolderIndentSize)
                             .Height(24)
@@ -608,13 +608,13 @@ public static class AssetPickerDialogBuilder
                         {
                             for (var i = 0; i < depth; i++)
                             {
-                                using (ui.Panel("FG_" + idx + "_" + i)
+                                using (NiziUi.Panel("FG_" + idx + "_" + i)
                                     .Width(FolderIndentSize)
                                     .Height(24)
                                     .AlignChildren(UiAlignX.Center, UiAlignY.Center)
                                     .Open())
                                 {
-                                    using (ui.Panel("FL_" + idx + "_" + i)
+                                    using (NiziUi.Panel("FL_" + idx + "_" + i)
                                         .Width(1)
                                         .Height(24)
                                         .Background(guideColor)
@@ -626,7 +626,7 @@ public static class AssetPickerDialogBuilder
 
                     if (hasChildren)
                     {
-                        var chevEl = ui.Panel("FE_" + idx)
+                        var chevEl = NiziUi.Panel("FE_" + idx)
                             .Width(FolderChevronWidth)
                             .Height(24)
                             .AlignChildren(UiAlignX.Center, UiAlignY.Center);
@@ -634,7 +634,7 @@ public static class AssetPickerDialogBuilder
                         using (chevEl.Open())
                         {
                             var chevIcon = child.IsExpanded ? FontAwesome.ChevronDown : FontAwesome.ChevronRight;
-                            ui.Icon(chevIcon, t.TextSecondary, t.IconSizeSmall);
+                            NiziUi.Icon(chevIcon, t.TextSecondary, t.IconSizeSmall);
                         }
 
                         if (chevEl.WasClicked())
@@ -645,27 +645,27 @@ public static class AssetPickerDialogBuilder
                     }
                     else
                     {
-                        Ui.HorizontalSpacer(ctx, FolderChevronWidth);
+                        NiziUi.HorizontalSpacer(FolderChevronWidth);
                     }
 
-                    using (ui.Panel("FI_" + idx)
+                    using (NiziUi.Panel("FI_" + idx)
                         .Width(FolderIconWidth)
                         .Height(FolderIconWidth)
                         .AlignChildren(UiAlignX.Center, UiAlignY.Center)
                         .Open())
                     {
-                        ui.Icon(FontAwesome.Folder,
+                        NiziUi.Icon(FontAwesome.Folder,
                             isSelected ? t.AccentLight : t.TextMuted, t.IconSizeSmall);
                     }
                 }
 
-                using (ui.Panel("FT_" + idx)
+                using (NiziUi.Panel("FT_" + idx)
                     .GrowWidth()
                     .Height(24)
                     .AlignChildrenY(UiAlignY.Center)
                     .Open())
                 {
-                    ui.Text(child.Name, new UiTextStyle
+                    NiziUi.Text(child.Name, new UiTextStyle
                     {
                         Color = isSelected ? UiColor.White : t.TextPrimary,
                         FontSize = t.FontSizeCaption
@@ -681,7 +681,7 @@ public static class AssetPickerDialogBuilder
 
             if (hasChildren && child.IsExpanded)
             {
-                RenderFolderNode(ui, ctx, state, child, depth + 1, t);
+                RenderFolderNode(state, child, depth + 1, t);
             }
         }
     }

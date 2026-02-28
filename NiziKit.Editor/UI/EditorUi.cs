@@ -7,9 +7,9 @@ public static class EditorUi
 {
     private static IEditorTheme T => EditorTheme.Current;
 
-    public static void SectionHeader(UiFrame ui, UiContext ctx, string id, string icon, string title)
+    public static void SectionHeader(string id, string icon, string title)
     {
-        using var header = ui.Panel(id)
+        using var header = NiziUi.Panel(id)
             .Horizontal()
             .Background(T.SectionHeaderBg)
             .Padding(12, 7)
@@ -21,13 +21,13 @@ public static class EditorUi
                 with { Bottom = 1, Color = T.Border })
             .Open();
 
-        ui.Icon(icon, T.Accent, T.IconSizeSmall);
-        ui.Text(title, new UiTextStyle { Color = T.TextPrimary, FontSize = T.FontSizeBody });
+        NiziUi.Icon(icon, T.Accent, T.IconSizeSmall);
+        NiziUi.Text(title, new UiTextStyle { Color = T.TextPrimary, FontSize = T.FontSizeBody });
     }
 
-    public static bool AccentButton(UiContext ctx, string id, string text)
+    public static bool AccentButton(string id, string text)
     {
-        return Ui.Button(ctx, id, text)
+        return NiziUi.Button(id, text)
             .Color(T.Accent, T.AccentLight, T.AccentDark)
             .TextColor(UiColor.White)
             .FontSize(T.FontSizeBody)
@@ -36,9 +36,9 @@ public static class EditorUi
             .Show();
     }
 
-    public static bool GhostButton(UiContext ctx, string id, string text)
+    public static bool GhostButton(string id, string text)
     {
-        return Ui.Button(ctx, id, text)
+        return NiziUi.Button(id, text)
             .Color(UiColor.Transparent, T.Hover, T.Active)
             .TextColor(T.TextPrimary)
             .FontSize(T.FontSizeBody)
@@ -48,9 +48,9 @@ public static class EditorUi
             .Show();
     }
 
-    public static bool DangerButton(UiContext ctx, string id, string text)
+    public static bool DangerButton(string id, string text)
     {
-        return Ui.Button(ctx, id, text)
+        return NiziUi.Button(id, text)
             .Color(T.Error, T.Error.WithAlpha(220), T.Error.WithAlpha(180))
             .TextColor(UiColor.Rgb(0x11, 0x11, 0x1B))
             .FontSize(T.FontSizeBody)
@@ -60,26 +60,26 @@ public static class EditorUi
             .Show();
     }
 
-    public static bool IconButton(UiContext ctx, string id, string icon)
+    public static bool IconButton(string id, string icon)
     {
-        var btn = Ui.Button(ctx, id, "")
+        var btn = NiziUi.Button(id, "")
             .Color(UiColor.Transparent, T.Hover, T.Active)
             .CornerRadius(T.RadiusMedium)
             .Padding(4, 4)
             .Border(0, UiColor.Transparent);
 
         using var scope = btn.Open();
-        scope.Icon(icon, T.TextSecondary, T.IconSizeSmall);
+        NiziUi.Icon(icon, T.TextSecondary, T.IconSizeSmall);
         return btn.WasClicked();
     }
 
-    public static bool ToolbarToggle(UiContext ctx, string id, string icon, string label, bool active)
+    public static bool ToolbarToggle(string id, string icon, string label, bool active)
     {
         var bg = active ? T.Accent : UiColor.Transparent;
         var hoverBg = active ? T.AccentLight : T.Hover;
         var textColor = active ? UiColor.White : T.TextSecondary;
 
-        var btn = Ui.Button(ctx, id, "")
+        var btn = NiziUi.Button(id, "")
             .Color(bg, hoverBg, T.Active)
             .CornerRadius(T.RadiusMedium)
             .Padding(6, 4)
@@ -88,19 +88,19 @@ public static class EditorUi
             .Border(0, UiColor.Transparent);
 
         using var scope = btn.Open();
-        scope.Icon(icon, textColor, T.IconSizeXS);
-        scope.Text(label, new UiTextStyle { Color = textColor, FontSize = T.FontSizeCaption });
+        NiziUi.Icon(icon, textColor, T.IconSizeXS);
+        NiziUi.Text(label, new UiTextStyle { Color = textColor, FontSize = T.FontSizeCaption });
         return btn.WasClicked();
     }
 
-    public static void ThemedDivider(UiContext ctx)
+    public static void ThemedDivider()
     {
-        Ui.Divider(ctx, T.Border);
+        NiziUi.Divider(T.Border);
     }
 
-    public static UiElementScope DialogOverlay(UiFrame ui, string id)
+    public static UiElementScope DialogOverlay(string id)
     {
-        return ui.Panel(id)
+        return NiziUi.Panel(id)
             .Background(T.DialogOverlay)
             .FloatingRoot(900)
             .Grow()
@@ -108,9 +108,9 @@ public static class EditorUi
             .Open();
     }
 
-    public static UiElementScope DialogContainer(UiFrame ui, UiContext ctx, string id, string title, float width, float height)
+    public static UiElementScope DialogContainer(string id, string title, float width, float height)
     {
-        var container = ui.Panel(id)
+        var container = NiziUi.Panel(id)
             .Background(T.PanelBackground)
             .Border(1, T.Border)
             .CornerRadius(T.RadiusLarge)
@@ -119,7 +119,7 @@ public static class EditorUi
             .Vertical()
             .Open();
 
-        using (ui.Panel(id + "_header")
+        using (NiziUi.Panel(id + "_header")
             .Background(T.Accent)
             .Padding(20, 10)
             .GrowWidth()
@@ -128,16 +128,16 @@ public static class EditorUi
             .AlignChildrenY(UiAlignY.Center)
             .Open())
         {
-            ui.Text(title, new UiTextStyle { Color = UiColor.White, FontSize = T.FontSizeSubtitle });
+            NiziUi.Text(title, new UiTextStyle { Color = UiColor.White, FontSize = T.FontSizeSubtitle });
         }
 
-        using (ui.Panel(id + "_div").GrowWidth().Height(1).Background(T.Border).Open()) { }
+        using (NiziUi.Panel(id + "_div").GrowWidth().Height(1).Background(T.Border).Open()) { }
         return container;
     }
 
-    public static void MenuButton(UiContext ctx, string id, string label, out bool clicked, out UiContextMenuState menuState)
+    public static void MenuButton(string id, string label, out bool clicked, out UiContextMenuState menuState)
     {
-        var btn = Ui.Button(ctx, id, label)
+        var btn = NiziUi.Button(id, label)
             .Color(UiColor.Transparent, T.Hover, T.Active)
             .TextColor(T.TextPrimary)
             .FontSize(T.FontSizeBody)
@@ -146,12 +146,12 @@ public static class EditorUi
             .Border(0, UiColor.Transparent);
 
         clicked = btn.Show();
-        menuState = Ui.GetContextMenuState(ctx, id + "_menu");
+        menuState = NiziUi.GetContextMenuState(id + "_menu");
     }
 
-    public static void Badge(UiFrame ui, string text)
+    public static void Badge(string text)
     {
-        using (ui.Panel("badge_" + text)
+        using (NiziUi.Panel("badge_" + text)
             .Background(T.PanelElevated)
             .CornerRadius(T.RadiusSmall)
             .Padding(6, 3)
@@ -159,7 +159,7 @@ public static class EditorUi
             .FitHeight()
             .Open())
         {
-            ui.Text(text, new UiTextStyle { Color = T.TextSecondary, FontSize = T.FontSizeCaption });
+            NiziUi.Text(text, new UiTextStyle { Color = T.TextSecondary, FontSize = T.FontSizeCaption });
         }
     }
 }

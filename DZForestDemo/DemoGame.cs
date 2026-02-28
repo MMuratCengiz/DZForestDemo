@@ -1,3 +1,5 @@
+using DenOfIz;
+using DZForestDemo.UI;
 using NiziKit.Application;
 using NiziKit.Core;
 using NiziKit.Graphics.Renderer;
@@ -10,6 +12,7 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
 {
     private IRenderer _renderer = null!;
     private RenderFrame _renderFrame = null!;
+    private readonly DemoGameUi _ui = new();
 
     public override Type RendererType => typeof(ForwardRenderer);
 
@@ -23,20 +26,13 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
         World.LoadScene("Scenes/CombatDemo.niziscene.json");
     }
 
-    private static void RenderUi(UiFrame ui)
+    private void RenderUi()
     {
-        var uiTextStyle = new UiTextStyle
-        {
-            Color = new UiColor(255, 255, 255),
-            FontSize = 24
-        };
-        ui.Text("Hi!", uiTextStyle);
+        _ui.Render();
     }
 
     protected override void Update(float dt)
     {
-        HandleInput();
-
         _renderFrame.BeginFrame();
         var sceneTexture = _renderer.Render(_renderFrame);
 
@@ -50,9 +46,8 @@ public sealed class DemoGame(GameDesc? desc = null) : Game(desc)
         _renderFrame.Present(sceneTexture);
     }
 
-    private void HandleInput()
+    protected override void OnEvent(ref Event ev)
     {
-
     }
 
     protected override void FixedUpdate(float fixedDt)

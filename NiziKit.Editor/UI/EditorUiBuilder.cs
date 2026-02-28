@@ -8,19 +8,19 @@ namespace NiziKit.Editor.UI;
 
 public static class EditorUiBuilder
 {
-    public static void Build(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    public static void Build(EditorViewModel vm)
     {
         var t = EditorTheme.Current;
 
-        using var root = ui.Root()
+        using var root = NiziUi.Root()
             .Vertical()
             .Background(UiColor.Transparent)
             .Open();
 
-        MenuBarBuilder.Build(ui, ctx, vm);
-        using (ui.Panel("MainRow").Horizontal().Grow().Open())
+        MenuBarBuilder.Build(vm);
+        using (NiziUi.Panel("MainRow").Horizontal().Grow().Open())
         {
-            using (ui.Panel("LeftPanel")
+            using (NiziUi.Panel("LeftPanel")
                 .Vertical()
                 .Background(t.PanelBackground)
                 .Border(UiBorder.Horizontal(0, UiColor.Transparent)
@@ -29,29 +29,29 @@ public static class EditorUiBuilder
                 .GrowHeight()
                 .Open())
             {
-                EditorUi.SectionHeader(ui, ctx, "HierarchyHeader", FontAwesome.LayerGroup, "Hierarchy");
-                SceneHierarchyBuilder.Build(ui, ctx, vm);
+                EditorUi.SectionHeader("HierarchyHeader", FontAwesome.LayerGroup, "Hierarchy");
+                SceneHierarchyBuilder.Build(vm);
             }
 
-            using (ui.Panel("CenterColumn")
+            using (NiziUi.Panel("CenterColumn")
                 .Vertical()
                 .Background(UiColor.Transparent)
                 .Grow()
                 .Open())
             {
-                using (ui.Panel("ToolbarWrap")
+                using (NiziUi.Panel("ToolbarWrap")
                     .Padding(6, 6, 4, 0)
                     .GrowWidth()
                     .FitHeight()
                     .Open())
                 {
-                    ViewportToolbarBuilder.Build(ui, ctx, vm);
+                    ViewportToolbarBuilder.Build(vm);
                 }
 
-                using (ui.Panel("ViewportFill").Grow().Open()) { }
+                using (NiziUi.Panel("ViewportFill").Grow().Open()) { }
             }
 
-            using (ui.Panel("RightPanel")
+            using (NiziUi.Panel("RightPanel")
                 .Vertical()
                 .Background(t.PanelBackground)
                 .Border(UiBorder.Horizontal(0, UiColor.Transparent)
@@ -60,31 +60,31 @@ public static class EditorUiBuilder
                 .GrowHeight()
                 .Open())
             {
-                EditorUi.SectionHeader(ui, ctx, "InspectorHeader", FontAwesome.Gear, "Inspector");
-                InspectorBuilder.Build(ui, ctx, vm);
+                EditorUi.SectionHeader("InspectorHeader", FontAwesome.Gear, "Inspector");
+                InspectorBuilder.Build(vm);
             }
         }
 
-        SceneHierarchyBuilder.BuildContextMenu(ui, ctx, vm);
+        SceneHierarchyBuilder.BuildContextMenu(vm);
 
         if (vm.IsSavePromptOpen)
         {
-            SavePromptDialogBuilder.Build(ui, ctx, vm);
+            SavePromptDialogBuilder.Build(vm);
         }
 
         if (vm.IsOpenSceneDialogOpen)
         {
-            OpenSceneDialogBuilder.Build(ui, ctx, vm);
+            OpenSceneDialogBuilder.Build(vm);
         }
 
         if (vm.IsImportPanelOpen)
         {
-            ImportDialogBuilder.Build(ui, ctx, vm);
+            ImportDialogBuilder.Build(vm);
         }
 
         if (vm.IsAssetPickerOpen)
         {
-            AssetPickerDialogBuilder.Build(ui, ctx, vm);
+            AssetPickerDialogBuilder.Build(vm);
         }
     }
 }

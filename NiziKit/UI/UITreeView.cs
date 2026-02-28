@@ -20,7 +20,6 @@ public sealed class UiTreeViewState
 
 public ref struct UiTreeView
 {
-    private readonly UiContext _context;
     private readonly UiTreeViewState _state;
     private readonly List<UiTreeNode> _roots;
 
@@ -41,7 +40,6 @@ public ref struct UiTreeView
 
     internal UiTreeView(UiContext ctx, string id, UiTreeViewState state, List<UiTreeNode> roots)
     {
-        _context = ctx;
         _state = state;
         _roots = roots;
         Id = ctx.StringCache.GetId(id);
@@ -128,7 +126,7 @@ public ref struct UiTreeView
         containerDecl.BorderRadius = ClayBorderRadius.CreateUniform(4);
         containerDecl.Scroll.Vertical = true;
 
-        _context.OpenElement(containerDecl);
+        NiziUi.Ctx.OpenElement(containerDecl);
         {
             foreach (var node in _roots)
             {
@@ -138,7 +136,7 @@ public ref struct UiTreeView
                 }
             }
         }
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
 
         return changed;
     }
@@ -151,8 +149,8 @@ public ref struct UiTreeView
         var isSelected = _state.SelectedNodeId == node.Id;
 
         var nodeIdx = _nodeIndex++;
-        var rowId = _context.StringCache.GetId("TVRow", Id, nodeIdx);
-        var interaction = _context.GetInteraction(rowId);
+        var rowId = NiziUi.Ctx.StringCache.GetId("TVRow", Id, nodeIdx);
+        var interaction = NiziUi.Ctx.GetInteraction(rowId);
 
         var bgColor = isSelected ? _selectedColor
             : interaction.IsHovered ? _hoverColor
@@ -167,59 +165,59 @@ public ref struct UiTreeView
         rowDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
         rowDecl.BackgroundColor = bgColor.ToClayColor();
 
-        _context.OpenElement(rowDecl);
+        NiziUi.Ctx.OpenElement(rowDecl);
         {
             if (depth > 0)
             {
                 if (_showGuides)
                 {
-                    var guidesId = _context.StringCache.GetId("TVGs", Id, nodeIdx);
+                    var guidesId = NiziUi.Ctx.StringCache.GetId("TVGs", Id, nodeIdx);
                     var guidesDecl = new ClayElementDeclaration { Id = guidesId };
                     guidesDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
                     guidesDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(depth * _indentSize);
                     guidesDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(_itemHeight);
                     guidesDecl.Layout.ChildGap = 0;
 
-                    _context.OpenElement(guidesDecl);
+                    NiziUi.Ctx.OpenElement(guidesDecl);
                     {
                         for (var i = 0; i < depth; i++)
                         {
-                            var guideId = _context.StringCache.GetId("TVG", Id, nodeIdx * 32 + (uint)i);
+                            var guideId = NiziUi.Ctx.StringCache.GetId("TVG", Id, nodeIdx * 32 + (uint)i);
                             var guideDecl = new ClayElementDeclaration { Id = guideId };
                             guideDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(_indentSize);
                             guideDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(_itemHeight);
                             guideDecl.Layout.ChildAlignment.X = ClayAlignmentX.Center;
                             guideDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
 
-                            _context.OpenElement(guideDecl);
+                            NiziUi.Ctx.OpenElement(guideDecl);
                             {
-                                var lineId = _context.StringCache.GetId("TVL", Id, nodeIdx * 32 + (uint)i);
+                                var lineId = NiziUi.Ctx.StringCache.GetId("TVL", Id, nodeIdx * 32 + (uint)i);
                                 var lineDecl = new ClayElementDeclaration { Id = lineId };
                                 lineDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(1);
                                 lineDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(_itemHeight);
                                 lineDecl.BackgroundColor = _guideColor.ToClayColor();
-                                _context.OpenElement(lineDecl);
-                                _context.Clay.CloseElement();
+                                NiziUi.Ctx.OpenElement(lineDecl);
+                                NiziUi.Ctx.Clay.CloseElement();
                             }
-                            _context.Clay.CloseElement();
+                            NiziUi.Ctx.Clay.CloseElement();
                         }
                     }
-                    _context.Clay.CloseElement();
+                    NiziUi.Ctx.Clay.CloseElement();
                 }
                 else
                 {
-                    var spacerId = _context.StringCache.GetId("TVInd", Id, nodeIdx);
+                    var spacerId = NiziUi.Ctx.StringCache.GetId("TVInd", Id, nodeIdx);
                     var spacerDecl = new ClayElementDeclaration { Id = spacerId };
                     spacerDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(depth * _indentSize);
-                    _context.OpenElement(spacerDecl);
-                    _context.Clay.CloseElement();
+                    NiziUi.Ctx.OpenElement(spacerDecl);
+                    NiziUi.Ctx.Clay.CloseElement();
                 }
             }
 
             if (hasChildren)
             {
-                var chevronId = _context.StringCache.GetId("TVChev", Id, nodeIdx);
-                var chevronInteraction = _context.GetInteraction(chevronId);
+                var chevronId = NiziUi.Ctx.StringCache.GetId("TVChev", Id, nodeIdx);
+                var chevronInteraction = NiziUi.Ctx.GetInteraction(chevronId);
                 var chevronIcon = isExpanded ? FontAwesome.ChevronDown : FontAwesome.ChevronRight;
 
                 var chevronDecl = new ClayElementDeclaration { Id = chevronId };
@@ -228,15 +226,15 @@ public ref struct UiTreeView
                 chevronDecl.Layout.ChildAlignment.X = ClayAlignmentX.Center;
                 chevronDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
 
-                _context.OpenElement(chevronDecl);
-                _context.Clay.Text(chevronIcon, new ClayTextDesc
+                NiziUi.Ctx.OpenElement(chevronDecl);
+                NiziUi.Ctx.Clay.Text(chevronIcon, new ClayTextDesc
                 {
                     TextColor = _chevronColor.ToClayColor(),
                     FontSize = 10,
                     FontId = FontAwesome.FontId,
                     TextAlignment = ClayTextAlignment.Center
                 });
-                _context.Clay.CloseElement();
+                NiziUi.Ctx.Clay.CloseElement();
 
                 if (chevronInteraction.WasClicked)
                 {
@@ -252,41 +250,41 @@ public ref struct UiTreeView
             }
             else
             {
-                var spacerId = _context.StringCache.GetId("TVSpc", Id, nodeIdx);
+                var spacerId = NiziUi.Ctx.StringCache.GetId("TVSpc", Id, nodeIdx);
                 var spacerDecl = new ClayElementDeclaration { Id = spacerId };
                 spacerDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(14);
-                _context.OpenElement(spacerDecl);
-                _context.Clay.CloseElement();
+                NiziUi.Ctx.OpenElement(spacerDecl);
+                NiziUi.Ctx.Clay.CloseElement();
             }
 
             if (!string.IsNullOrEmpty(node.Icon))
             {
-                var iconId = _context.StringCache.GetId("TVIco", Id, nodeIdx);
+                var iconId = NiziUi.Ctx.StringCache.GetId("TVIco", Id, nodeIdx);
                 var iconDecl = new ClayElementDeclaration { Id = iconId };
                 iconDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(16);
                 iconDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(_itemHeight);
                 iconDecl.Layout.ChildAlignment.X = ClayAlignmentX.Center;
                 iconDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
 
-                _context.OpenElement(iconDecl);
-                _context.Clay.Text(node.Icon, new ClayTextDesc
+                NiziUi.Ctx.OpenElement(iconDecl);
+                NiziUi.Ctx.Clay.Text(node.Icon, new ClayTextDesc
                 {
                     TextColor = _iconColor.ToClayColor(),
                     FontSize = (ushort)(_fontSize - 1),
                     FontId = FontAwesome.FontId,
                     TextAlignment = ClayTextAlignment.Center
                 });
-                _context.Clay.CloseElement();
+                NiziUi.Ctx.Clay.CloseElement();
             }
 
-            _context.Clay.Text(node.Label, new ClayTextDesc
+            NiziUi.Ctx.Clay.Text(node.Label, new ClayTextDesc
             {
                 TextColor = _textColor.ToClayColor(),
                 FontSize = _fontSize,
                 WrapMode = ClayTextWrapMode.None
             });
         }
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
 
         if (interaction.WasClicked)
         {
@@ -307,25 +305,5 @@ public ref struct UiTreeView
         }
 
         return changed;
-    }
-}
-
-public static partial class Ui
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiTreeView TreeView(UiContext ctx, string id, List<UiTreeNode> roots)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        var state = ctx.GetOrCreateState<UiTreeViewState>(elementId);
-        return new UiTreeView(ctx, id, state, roots);
-    }
-}
-
-public static partial class UiElementScopeExtensions
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiTreeView TreeView(this ref UiElementScope scope, UiContext ctx, string id, List<UiTreeNode> roots)
-    {
-        return Ui.TreeView(ctx, id, roots);
     }
 }

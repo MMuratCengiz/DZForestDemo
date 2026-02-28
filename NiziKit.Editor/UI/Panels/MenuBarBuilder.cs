@@ -6,11 +6,11 @@ namespace NiziKit.Editor.UI.Panels;
 
 public static class MenuBarBuilder
 {
-    public static void Build(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    public static void Build(EditorViewModel vm)
     {
         var t = EditorTheme.Current;
 
-        using var bar = ui.Panel("MenuBar")
+        using var bar = NiziUi.Panel("MenuBar")
             .Horizontal()
             .Background(t.PanelBackground)
             .Border(UiBorder.Vertical(0, UiColor.Transparent)
@@ -22,35 +22,35 @@ public static class MenuBarBuilder
             .Gap(2)
             .Open();
 
-        BuildFileMenu(ui, ctx, vm);
-        BuildEditMenu(ui, ctx, vm);
-        BuildAssetsMenu(ui, ctx, vm);
-        Ui.FlexSpacer(ctx);
+        BuildFileMenu(vm);
+        BuildEditMenu(vm);
+        BuildAssetsMenu(vm);
+        NiziUi.FlexSpacer();
 
         if (vm.IsDirty)
         {
-            ui.Text("Modified", new UiTextStyle { Color = t.Warning, FontSize = t.FontSizeCaption });
+            NiziUi.Text("Modified", new UiTextStyle { Color = t.Warning, FontSize = t.FontSizeCaption });
         }
 
-        using (ui.Panel("EditorBadge")
+        using (NiziUi.Panel("EditorBadge")
             .Background(t.Accent)
             .Padding(10, 4)
             .FitWidth()
             .FitHeight()
             .Open())
         {
-            ui.Text("NiziKit Editor", new UiTextStyle { Color = UiColor.White, FontSize = t.FontSizeCaption });
+            NiziUi.Text("NiziKit Editor", new UiTextStyle { Color = UiColor.White, FontSize = t.FontSizeCaption });
         }
     }
 
-    private static void BuildFileMenu(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    private static void BuildFileMenu(EditorViewModel vm)
     {
         var t = EditorTheme.Current;
 
-        EditorUi.MenuButton(ctx, "FileMenu", "File", out var fileClicked, out var fileMenuState);
+        EditorUi.MenuButton("FileMenu", "File", out var fileClicked, out var fileMenuState);
         if (fileClicked)
         {
-            fileMenuState.OpenBelow(ctx.GetElementId("FileMenu"));
+            fileMenuState.OpenBelow(NiziUi.GetElementId("FileMenu"));
         }
 
         var fileItems = new[]
@@ -59,7 +59,7 @@ public static class MenuBarBuilder
             UiContextMenuItem.Item("Save Scene", FontAwesome.Save, "Ctrl+S"),
         };
 
-        var fileResult = Ui.ContextMenu(ctx, "FileMenu_menu", fileItems)
+        var fileResult = NiziUi.ContextMenu("FileMenu_menu", fileItems)
             .Background(t.PanelBackground)
             .HoverColor(t.Hover)
             .TextColor(t.TextPrimary)
@@ -77,14 +77,14 @@ public static class MenuBarBuilder
         }
     }
 
-    private static void BuildEditMenu(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    private static void BuildEditMenu(EditorViewModel vm)
     {
         var t = EditorTheme.Current;
 
-        EditorUi.MenuButton(ctx, "EditMenu", "Edit", out var editClicked, out var editMenuState);
+        EditorUi.MenuButton("EditMenu", "Edit", out var editClicked, out var editMenuState);
         if (editClicked)
         {
-            editMenuState.OpenBelow(ctx.GetElementId("EditMenu"));
+            editMenuState.OpenBelow(NiziUi.GetElementId("EditMenu"));
         }
 
         var undoItem = UiContextMenuItem.Item("Undo", FontAwesome.Undo, "Ctrl+Z");
@@ -104,7 +104,7 @@ public static class MenuBarBuilder
             UiContextMenuItem.Item("Delete", FontAwesome.Trash, "Del"),
         };
 
-        var editResult = Ui.ContextMenu(ctx, "EditMenu_menu", editItems)
+        var editResult = NiziUi.ContextMenu("EditMenu_menu", editItems)
             .Background(t.PanelBackground)
             .HoverColor(t.Hover)
             .TextColor(t.TextPrimary)
@@ -138,14 +138,14 @@ public static class MenuBarBuilder
         }
     }
 
-    private static void BuildAssetsMenu(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    private static void BuildAssetsMenu(EditorViewModel vm)
     {
         var t = EditorTheme.Current;
 
-        EditorUi.MenuButton(ctx, "AssetsMenu", "Assets", out var assetsClicked, out var assetsMenuState);
+        EditorUi.MenuButton("AssetsMenu", "Assets", out var assetsClicked, out var assetsMenuState);
         if (assetsClicked)
         {
-            assetsMenuState.OpenBelow(ctx.GetElementId("AssetsMenu"));
+            assetsMenuState.OpenBelow(NiziUi.GetElementId("AssetsMenu"));
         }
 
         var assetsItems = new[]
@@ -155,7 +155,7 @@ public static class MenuBarBuilder
             UiContextMenuItem.Item("Refresh", FontAwesome.Refresh),
         };
 
-        var assetsResult = Ui.ContextMenu(ctx, "AssetsMenu_menu", assetsItems)
+        var assetsResult = NiziUi.ContextMenu("AssetsMenu_menu", assetsItems)
             .Background(t.PanelBackground)
             .HoverColor(t.Hover)
             .TextColor(t.TextPrimary)

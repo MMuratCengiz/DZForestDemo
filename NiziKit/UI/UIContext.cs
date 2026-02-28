@@ -85,7 +85,7 @@ public sealed class UiContext : IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void HandleEvent(Event ev)
+    public void OnEvent(in Event ev)
     {
         if (ev is { Type: EventType.MouseButtonDown, MouseButton.Button: MouseButton.Left })
         {
@@ -127,6 +127,7 @@ public sealed class UiContext : IDisposable
         }
 
         Clay.HandleEvent(ev);
+        FrameEvents.Add(ev);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -162,6 +163,7 @@ public sealed class UiContext : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void EndFrame(uint frameIndex, float deltaTime, CommandList commandList)
     {
+        FrameEvents.Clear();
         Clay.EndLayout(frameIndex, deltaTime, commandList);
         MouseJustReleased = false;
         _mouseJustPressed = false;
@@ -257,15 +259,6 @@ public sealed class UiContext : IDisposable
         return GetOrCreateState(id, factory);
     }
 
-    public void RecordEvent(Event ev)
-    {
-        FrameEvents.Add(ev);
-    }
-
-    public void ClearFrameEvents()
-    {
-        FrameEvents.Clear();
-    }
 }
 
 public readonly struct UiBounds(float x, float y, float width, float height)

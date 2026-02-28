@@ -9,11 +9,11 @@ namespace NiziKit.Editor.UI.Panels;
 
 public static class TransformSectionBuilder
 {
-    public static void Build(UiFrame ui, UiContext ctx, GameObjectViewModel obj)
+    public static void Build(GameObjectViewModel obj)
     {
         var t = EditorTheme.Current;
 
-        using var section = Ui.CollapsibleSection(ctx, "TransformSection", "Transform", true)
+        using var section = NiziUi.CollapsibleSection("TransformSection", "Transform", true)
             .HeaderBackground(t.SectionHeaderBg, t.Hover)
             .HeaderTextColor(t.TextPrimary)
             .BodyBackground(t.PanelBackground)
@@ -28,7 +28,7 @@ public static class TransformSectionBuilder
             return;
         }
 
-        using var grid = Ui.PropertyGrid(ctx, "TransformGrid")
+        using var grid = NiziUi.PropertyGrid("TransformGrid")
             .LabelWidth(68)
             .FontSize(t.FontSizeCaption)
             .RowHeight(24)
@@ -47,7 +47,7 @@ public static class TransformSectionBuilder
             var py = obj.PositionY;
             var pz = obj.PositionZ;
 
-            if (Ui.Vec3Editor(ctx, "Pos", ref px, ref py, ref pz, 0.1f, "F2",
+            if (NiziUi.Vec3Editor("Pos", ref px, ref py, ref pz, 0.1f, "F2",
                 t.AxisX, t.AxisY, t.AxisZ, t.InputBackground, t.InputBackgroundFocused, t.InputText))
             {
                 obj.PositionX = px;
@@ -70,7 +70,7 @@ public static class TransformSectionBuilder
             var ry = obj.RotationY;
             var rz = obj.RotationZ;
 
-            if (Ui.Vec3Editor(ctx, "Rot", ref rx, ref ry, ref rz, 0.5f, "F2",
+            if (NiziUi.Vec3Editor("Rot", ref rx, ref ry, ref rz, 0.5f, "F2",
                 t.AxisX, t.AxisY, t.AxisZ, t.InputBackground, t.InputBackgroundFocused, t.InputText))
             {
                 obj.RotationX = rx;
@@ -93,7 +93,7 @@ public static class TransformSectionBuilder
             var sy = obj.ScaleY;
             var sz = obj.ScaleZ;
 
-            if (Ui.Vec3Editor(ctx, "Scl", ref sx, ref sy, ref sz, 0.01f, "F2",
+            if (NiziUi.Vec3Editor("Scl", ref sx, ref sy, ref sz, 0.01f, "F2",
                 t.AxisX, t.AxisY, t.AxisZ, t.InputBackground, t.InputBackgroundFocused, t.InputText))
             {
                 obj.ScaleX = sx;

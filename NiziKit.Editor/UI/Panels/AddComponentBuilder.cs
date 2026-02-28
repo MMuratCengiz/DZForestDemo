@@ -11,12 +11,12 @@ public class AddComponentPanelState
 
 public static class AddComponentBuilder
 {
-    public static void Build(UiFrame ui, UiContext ctx, GameObjectViewModel obj)
+    public static void Build(GameObjectViewModel obj)
     {
         var t = EditorTheme.Current;
-        var state = ctx.GetOrCreateState<AddComponentPanelState>("AddComponentPanel");
+        var state = NiziUi.GetOrCreateState<AddComponentPanelState>("AddComponentPanel");
 
-        using var panel = ui.Panel("AddComponentPanel")
+        using var panel = NiziUi.Panel("AddComponentPanel")
             .Vertical()
             .Background(t.PanelElevated)
             .Border(1, t.Border)
@@ -27,7 +27,7 @@ public static class AddComponentBuilder
             .Height(UiSizing.Fit(0, 260))
             .Open();
 
-        using (ui.Panel("AddCompHeader")
+        using (NiziUi.Panel("AddCompHeader")
             .Horizontal()
             .GrowWidth()
             .FitHeight()
@@ -35,12 +35,12 @@ public static class AddComponentBuilder
             .Gap(6)
             .Open())
         {
-            ui.Icon(FontAwesome.Plus, t.Accent, t.IconSizeSmall);
-            ui.Text("Add Component", new UiTextStyle { Color = t.TextPrimary, FontSize = t.FontSizeBody });
+            NiziUi.Icon(FontAwesome.Plus, t.Accent, t.IconSizeSmall);
+            NiziUi.Text("Add Component", new UiTextStyle { Color = t.TextPrimary, FontSize = t.FontSizeBody });
 
-            Ui.FlexSpacer(ctx);
+            NiziUi.FlexSpacer();
 
-            if (EditorUi.IconButton(ctx, "CloseAddComp", FontAwesome.Xmark))
+            if (EditorUi.IconButton("CloseAddComp", FontAwesome.Xmark))
             {
                 obj.IsAddingComponent = false;
                 state.SearchText = "";
@@ -48,7 +48,7 @@ public static class AddComponentBuilder
         }
 
         var searchText = state.SearchText;
-        Ui.TextField(ctx, "CompSearch", ref searchText)
+        NiziUi.TextField("CompSearch", ref searchText)
             .BackgroundColor(t.SurfaceInset, t.PanelBackground)
             .TextColor(t.TextPrimary)
             .PlaceholderColor(t.TextMuted)
@@ -58,11 +58,11 @@ public static class AddComponentBuilder
             .Padding(6, 4)
             .GrowWidth()
             .Placeholder("Search components...")
-            .Show(ref searchText);
+            .Show();
         state.SearchText = searchText;
 
-        using (ui.Panel("AddCompDiv").GrowWidth().Height(1).Background(t.Border).Open()) { }
-        using var list = ui.Panel("CompList")
+        using (NiziUi.Panel("AddCompDiv").GrowWidth().Height(1).Background(t.Border).Open()) { }
+        using var list = NiziUi.Panel("CompList")
             .Vertical()
             .GrowWidth()
             .Height(UiSizing.Grow())
@@ -84,7 +84,7 @@ public static class AddComponentBuilder
                 continue;
             }
 
-            if (Ui.Button(ctx, "AddComp_" + index, displayName)
+            if (NiziUi.Button("AddComp_" + index, displayName)
                 .Color(UiColor.Transparent, t.Hover, t.Active)
                 .TextColor(t.TextPrimary)
                 .FontSize(t.FontSizeCaption)

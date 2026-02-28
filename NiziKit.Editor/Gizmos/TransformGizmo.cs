@@ -40,7 +40,7 @@ public class TransformGizmo
     private const float RotateRingRadius = 1.0f;
     private const float RotateRingThickness = 0.1f;
     private const float CenterBoxSize = 0.15f;
-    private const float MinGizmoScale = 0.05f;
+    private const float MinGizmoScale = 0.5f;
     private const float MaxGizmoScale = 5f;
 
     public GizmoMode Mode { get; set; } = GizmoMode.Translate;

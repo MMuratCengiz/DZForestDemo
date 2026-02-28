@@ -6,7 +6,7 @@ namespace NiziKit.Editor.UI.Dialogs;
 
 public static class OpenSceneDialogBuilder
 {
-    public static void Build(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    public static void Build(EditorViewModel vm)
     {
         var t = EditorTheme.Current;
         var browser = vm.SceneBrowserViewModel;
@@ -15,10 +15,10 @@ public static class OpenSceneDialogBuilder
             return;
         }
 
-        using var overlay = EditorUi.DialogOverlay(ui, "OpenSceneOverlay");
-        using var dialog = EditorUi.DialogContainer(ui, ctx, "OpenSceneDialog", "Open Scene", 600, 500);
+        using var overlay = EditorUi.DialogOverlay("OpenSceneOverlay");
+        using var dialog = EditorUi.DialogContainer("OpenSceneDialog", "Open Scene", 600, 500);
 
-        using (ui.Panel("SceneBreadcrumb")
+        using (NiziUi.Panel("SceneBreadcrumb")
             .Horizontal()
             .Background(t.PanelElevated)
             .Padding(12, 8)
@@ -30,7 +30,7 @@ public static class OpenSceneDialogBuilder
         {
             if (browser.CanNavigateUp)
             {
-                if (EditorUi.IconButton(ctx, "SceneNavUp", FontAwesome.ArrowUp))
+                if (EditorUi.IconButton("SceneNavUp", FontAwesome.ArrowUp))
                 {
                     browser.NavigateUp();
                 }
@@ -42,10 +42,10 @@ public static class OpenSceneDialogBuilder
                 var part = parts[i];
                 if (i > 0)
                 {
-                    ui.Text("/", new UiTextStyle { Color = t.TextMuted, FontSize = t.FontSizeCaption });
+                    NiziUi.Text("/", new UiTextStyle { Color = t.TextMuted, FontSize = t.FontSizeCaption });
                 }
 
-                if (Ui.Button(ctx, "SceneBc_" + i, part.Name)
+                if (NiziUi.Button("SceneBc_" + i, part.Name)
                     .Color(UiColor.Transparent, t.Hover, t.Active)
                     .TextColor(t.TextSecondary)
                     .FontSize(t.FontSizeCaption)
@@ -59,7 +59,7 @@ public static class OpenSceneDialogBuilder
             }
         }
 
-        using (ui.Panel("SceneFileList")
+        using (NiziUi.Panel("SceneFileList")
             .Vertical()
             .Grow()
             .ScrollVertical()
@@ -74,7 +74,7 @@ public static class OpenSceneDialogBuilder
                 var icon = entry.IsDirectory ? FontAwesome.Folder : FontAwesome.Film;
                 var iconColor = entry.IsDirectory ? t.Warning : t.Accent;
 
-                var btn = Ui.Button(ctx, "SceneEntry_" + i, "")
+                var btn = NiziUi.Button("SceneEntry_" + i, "")
                     .Color(bg, t.Hover, t.Active)
                     .Padding(8, 6)
                     .CornerRadius(0)
@@ -83,8 +83,8 @@ public static class OpenSceneDialogBuilder
                     .Gap(8);
 
                 using var scope = btn.Open();
-                scope.Icon(icon, iconColor, t.IconSizeSmall);
-                scope.Text(entry.Name, new UiTextStyle { Color = t.TextPrimary, FontSize = t.FontSizeBody });
+                NiziUi.Icon(icon, iconColor, t.IconSizeSmall);
+                NiziUi.Text(entry.Name, new UiTextStyle { Color = t.TextPrimary, FontSize = t.FontSizeBody });
 
                 if (btn.WasClicked())
                 {
@@ -100,7 +100,7 @@ public static class OpenSceneDialogBuilder
             }
         }
 
-        using (ui.Panel("SceneDialogFooter")
+        using (NiziUi.Panel("SceneDialogFooter")
             .Horizontal()
             .Padding(12, 8)
             .Gap(8)
@@ -111,14 +111,14 @@ public static class OpenSceneDialogBuilder
             .Background(t.PanelElevated)
             .Open())
         {
-            if (EditorUi.GhostButton(ctx, "SceneCancel", "Cancel"))
+            if (EditorUi.GhostButton("SceneCancel", "Cancel"))
             {
                 vm.CloseOpenSceneDialog();
             }
 
             if (browser.SelectedEntry != null && !browser.SelectedEntry.IsDirectory)
             {
-                if (EditorUi.AccentButton(ctx, "SceneOpen", "Open"))
+                if (EditorUi.AccentButton("SceneOpen", "Open"))
                 {
                     vm.OnSceneFileSelected(browser.SelectedEntry.FullPath);
                 }

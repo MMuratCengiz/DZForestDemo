@@ -33,6 +33,13 @@ public static class Editor
 
         Content.Initialize(assetsDir);
 
+        var engineShaderDir = FindEngineShaderDirectory(gameProjectDir);
+        if (engineShaderDir != null)
+        {
+            var gameShaderDir = Path.Combine(assetsDir, "Shaders");
+            ShaderHotReload.Enable(engineShaderDir, gameShaderDir);
+        }
+
         var desc = new GameDesc
         {
             Title = Desc.Title,
@@ -52,6 +59,29 @@ public static class Editor
         };
 
         Game.Run<EditorGame>(desc);
+    }
+
+    private static string? FindEngineShaderDirectory(string startDir)
+    {
+        var dir = startDir;
+        for (var i = 0; i < 5; i++)
+        {
+            var candidate = Path.Combine(dir, "NiziKit", "Shaders");
+            if (Directory.Exists(candidate))
+            {
+                return Path.GetFullPath(candidate);
+            }
+
+            var parent = Path.GetDirectoryName(dir);
+            if (parent == null || parent == dir)
+            {
+                break;
+            }
+
+            dir = parent;
+        }
+
+        return null;
     }
 
     private static void LoadAssembliesFromBaseDirectory()

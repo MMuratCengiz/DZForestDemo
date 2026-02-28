@@ -8,7 +8,7 @@ public static class SceneHierarchyBuilder
 {
     private static string _selectedNodeId = "";
 
-    public static void Build(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    public static void Build(EditorViewModel vm)
     {
         var t = EditorTheme.Current;
 
@@ -27,7 +27,7 @@ public static class SceneHierarchyBuilder
             _selectedNodeId = "";
         }
 
-        var treeView = Ui.TreeView(ctx, "SceneTree", roots)
+        var treeView = NiziUi.TreeView("SceneTree", roots)
             .Background(UiColor.Transparent)
             .SelectedColor(t.Selected)
             .HoverColor(t.Hover)
@@ -49,10 +49,10 @@ public static class SceneHierarchyBuilder
         }
 
         // Detect right-click on tree view to open context menu
-        if (ctx.WasRightClicked(treeView.Id))
+        if (NiziUi.WasRightClicked(treeView.Id))
         {
-            var menuState = Ui.GetContextMenuState(ctx, "HierarchyCtx_menu");
-            menuState.OpenAt(ctx.MouseX, ctx.MouseY);
+            var menuState = NiziUi.GetContextMenuState("HierarchyCtx_menu");
+            menuState.OpenAt(NiziUi.MouseX, NiziUi.MouseY);
         }
     }
 
@@ -75,11 +75,11 @@ public static class SceneHierarchyBuilder
         return node;
     }
 
-    public static void BuildContextMenu(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    public static void BuildContextMenu(EditorViewModel vm)
     {
         var t = EditorTheme.Current;
 
-        var menuState = Ui.GetContextMenuState(ctx, "HierarchyCtx_menu");
+        var menuState = NiziUi.GetContextMenuState("HierarchyCtx_menu");
 
         var items = new[]
         {
@@ -94,7 +94,7 @@ public static class SceneHierarchyBuilder
             UiContextMenuItem.Item("Delete", FontAwesome.Trash),
         };
 
-        var result = Ui.ContextMenu(ctx, "HierarchyCtx_menu", items)
+        var result = NiziUi.ContextMenu("HierarchyCtx_menu", items)
             .Background(t.PanelBackground)
             .HoverColor(t.Hover)
             .TextColor(t.TextPrimary)

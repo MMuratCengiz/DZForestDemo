@@ -22,39 +22,43 @@ float4 PSMain(PSInput input) : SV_TARGET
         : AlbedoColor;
 
     float3 N = normalize(input.WorldNormal);
-    float3 T = normalize(input.WorldTangent);
-    float3 B = normalize(input.WorldBitangent);
-    float3x3 TBN = float3x3(T, B, N);
-
-    float3 normalSample = NormalTexture.Sample(TextureSampler, uv).xyz;
-    float normalLen = dot(normalSample, normalSample);
-    if (normalLen > 0.01 && normalLen < 2.9)
+    if (HasNormalTexture > 0.5)
     {
-        float3 tangentNormal = normalSample * 2.0 - 1.0;
+        float3 T = normalize(input.WorldTangent);
+        float3 B = normalize(input.WorldBitangent);
+        float3x3 TBN = float3x3(T, B, N);
+        float3 tangentNormal = NormalTexture.Sample(TextureSampler, uv).xyz * 2.0 - 1.0;
         N = normalize(mul(tangentNormal, TBN));
     }
 
-    float roughness = RoughnessTexture.Sample(TextureSampler, uv).r;
-    roughness = roughness > 0.001 ? roughness * RoughnessValue : RoughnessValue;
-    roughness = clamp(roughness, 0.04, 1.0);
+    float roughness = HasRoughnessTexture > 0.5
+        ? clamp(RoughnessTexture.Sample(TextureSampler, uv).r * RoughnessValue, 0.04, 1.0)
+        : clamp(RoughnessValue, 0.04, 1.0);
 
-    float metallic = MetallicTexture.Sample(TextureSampler, uv).r;
-    metallic = metallic > 0.001 ? metallic * MetallicValue : MetallicValue;
-    metallic = saturate(metallic);
+    float metallic = HasMetallicTexture > 0.5
+        ? saturate(MetallicTexture.Sample(TextureSampler, uv).r * MetallicValue)
+        : saturate(MetallicValue);
 
     float3 V = normalize(CameraPosition - input.WorldPos);
 
     float3 F0 = lerp(float3(0.04, 0.04, 0.04), albedo.rgb, metallic);
     float3 diffuseColor = albedo.rgb * (1.0 - metallic);
 
-    float hemisphereBlend = N.y * 0.5 + 0.5;
-    float3 ambient = lerp(AmbientGroundColor, AmbientSkyColor, hemisphereBlend) * AmbientIntensity * diffuseColor;
-
     float3 Lo = float3(0, 0, 0);
 
     for (uint i = 0; i < NumLights; i++)
     {
         Light light = Lights[i];
+
+        if (light.Type == LIGHT_TYPE_AMBIENT)
+        {
+            float hemisphereBlend = N.y * 0.5 + 0.5;
+            float3 ambientSky = light.Color;
+            float3 ambientGround = light.PositionOrDirection;
+            Lo += lerp(ambientGround, ambientSky, hemisphereBlend) * light.Intensity * diffuseColor;
+            continue;
+        }
+
         float3 L;
         float attenuation = 1.0;
 
@@ -108,8 +112,10 @@ float4 PSMain(PSInput input) : SV_TARGET
         Lo += (kD * diffuseColor / 3.14159265 + specular) * radiance * NdotL * shadow;
     }
 
-    float3 emissive = EmissiveColor * EmissiveIntensity;
-    float3 color = ambient + Lo + emissive;
+    float3 emissive = HasEmissiveTexture > 0.5
+        ? EmissiveTexture.Sample(TextureSampler, uv).rgb * EmissiveColor * EmissiveIntensity
+        : EmissiveColor * EmissiveIntensity;
+    float3 color = Lo + emissive;
     color = pow(max(color, 0.0), 1.0 / 2.2);
 
     return float4(color, albedo.a);

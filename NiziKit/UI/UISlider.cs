@@ -10,7 +10,6 @@ public sealed class UiSliderState
 
 public ref struct UiSlider
 {
-    private readonly UiContext _context;
     private readonly UiSliderState _state;
 
     private float _min;
@@ -30,7 +29,6 @@ public ref struct UiSlider
 
     internal UiSlider(UiContext ctx, string id, UiSliderState state)
     {
-        _context = ctx;
         _state = state;
         Id = ctx.StringCache.GetId(id);
 
@@ -105,28 +103,28 @@ public ref struct UiSlider
 
         var normalized = Math.Clamp((value - _min) / range, 0f, 1f);
 
-        var trackId = _context.StringCache.GetId("SlTrack", Id);
-        var thumbId = _context.StringCache.GetId("SlThumb", Id);
-        var trackInteraction = _context.GetInteraction(trackId);
-        var thumbInteraction = _context.GetInteraction(thumbId);
+        var trackId = NiziUi.Ctx.StringCache.GetId("SlTrack", Id);
+        var thumbId = NiziUi.Ctx.StringCache.GetId("SlThumb", Id);
+        var trackInteraction = NiziUi.Ctx.GetInteraction(trackId);
+        var thumbInteraction = NiziUi.Ctx.GetInteraction(thumbId);
 
-        if (thumbInteraction.IsPressed && !_state.IsDragging && _context.ActiveDragWidgetId == 0)
+        if (thumbInteraction.IsPressed && !_state.IsDragging && NiziUi.Ctx.ActiveDragWidgetId == 0)
         {
             _state.IsDragging = true;
-            _context.ActiveDragWidgetId = Id;
+            NiziUi.Ctx.ActiveDragWidgetId = Id;
         }
 
-        if (_state.IsDragging && !_context.MousePressed)
+        if (_state.IsDragging && !NiziUi.Ctx.MousePressed)
         {
             _state.IsDragging = false;
         }
 
         if (trackInteraction.WasClicked && !_state.IsDragging)
         {
-            var box = _context.GetElementBounds(trackId);
+            var box = NiziUi.Ctx.GetElementBounds(trackId);
             if (box.Width > 0)
             {
-                var relX = (_context.MouseX - box.X) / box.Width;
+                var relX = (NiziUi.Ctx.MouseX - box.X) / box.Width;
                 var newVal = _min + Math.Clamp(relX, 0f, 1f) * range;
                 if (_step > 0)
                 {
@@ -144,10 +142,10 @@ public ref struct UiSlider
 
         if (_state.IsDragging)
         {
-            var box = _context.GetElementBounds(trackId);
+            var box = NiziUi.Ctx.GetElementBounds(trackId);
             if (box.Width > 0)
             {
-                var relX = (_context.MouseX - box.X) / box.Width;
+                var relX = (NiziUi.Ctx.MouseX - box.X) / box.Width;
                 var newVal = _min + Math.Clamp(relX, 0f, 1f) * range;
                 if (_step > 0)
                 {
@@ -171,7 +169,7 @@ public ref struct UiSlider
         containerDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
         containerDecl.Layout.ChildGap = 8;
 
-        _context.OpenElement(containerDecl);
+        NiziUi.Ctx.OpenElement(containerDecl);
         {
             var trackDecl = new ClayElementDeclaration { Id = trackId };
             trackDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
@@ -179,16 +177,16 @@ public ref struct UiSlider
             trackDecl.BackgroundColor = _trackColor.ToClayColor();
             trackDecl.BorderRadius = ClayBorderRadius.CreateUniform(_trackHeight / 2);
 
-            _context.OpenElement(trackDecl);
+            NiziUi.Ctx.OpenElement(trackDecl);
             {
-                var fillId = _context.StringCache.GetId("SlFill", Id);
+                var fillId = NiziUi.Ctx.StringCache.GetId("SlFill", Id);
                 var fillDecl = new ClayElementDeclaration { Id = fillId };
                 fillDecl.Layout.Sizing.Width = ClaySizingAxis.Percent(normalized);
                 fillDecl.Layout.Sizing.Height = ClaySizingAxis.Grow(0, float.MaxValue);
                 fillDecl.BackgroundColor = _fillColor.ToClayColor();
                 fillDecl.BorderRadius = ClayBorderRadius.CreateUniform(_trackHeight / 2);
-                _context.OpenElement(fillDecl);
-                _context.Clay.CloseElement();
+                NiziUi.Ctx.OpenElement(fillDecl);
+                NiziUi.Ctx.Clay.CloseElement();
 
                 var thumbSize = _thumbRadius * 2;
                 var isThumbHovered = thumbInteraction.IsHovered || _state.IsDragging;
@@ -205,42 +203,23 @@ public ref struct UiSlider
                     ElementAttachPoint = ClayFloatingAttachPoint.CenterCenter,
                     ZIndex = 100
                 };
-                _context.OpenElement(thumbDecl);
-                _context.Clay.CloseElement();
+                NiziUi.Ctx.OpenElement(thumbDecl);
+                NiziUi.Ctx.Clay.CloseElement();
             }
-            _context.Clay.CloseElement();
+            NiziUi.Ctx.Clay.CloseElement();
 
             if (_showValue)
             {
-                _context.Clay.Text(value.ToString(_format), new ClayTextDesc
+                NiziUi.Ctx.Clay.Text(value.ToString(_format), new ClayTextDesc
                 {
                     TextColor = _valueColor.ToClayColor(),
                     FontSize = _fontSize
                 });
             }
         }
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
 
         return changed;
     }
 }
 
-public static partial class Ui
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiSlider Slider(UiContext ctx, string id)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        var state = ctx.GetOrCreateState<UiSliderState>(elementId);
-        return new UiSlider(ctx, id, state);
-    }
-}
-
-public static partial class UiElementScopeExtensions
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiSlider Slider(this ref UiElementScope scope, UiContext ctx, string id)
-    {
-        return Ui.Slider(ctx, id);
-    }
-}

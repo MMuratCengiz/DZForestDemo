@@ -1,21 +1,3 @@
-/*
-Den Of Iz - Game/Game Engine
-Copyright (c) 2020-2024 Muhammed Murat Cengiz
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <https://www.gnu.org/licenses/>.
-*/
-
 using System.Runtime.InteropServices;
 using DenOfIz;
 
@@ -250,90 +232,7 @@ public static class FontAwesome
     public const string DiagramProject = "\uf542";
     public const string PuzzlePiece = "\uf12e";
 
-    public static void Initialize(Clay clay, string fontPath, ushort fontId = FontId)
-    {
-        if (_isInitialized)
-        {
-            return;
-        }
-
-        _fontLibrary = new FontLibrary();
-        _font = _fontLibrary.LoadFontFromPath(StringView.Create(fontPath));
-        clay.AddFont(fontId, _font);
-        _isInitialized = true;
-    }
-
-    public static void InitializeWithImport(
-        Clay clay,
-        string fontPath,
-        string outputDirectory,
-        ushort fontId = FontId,
-        uint fontSize = 32)
-    {
-        if (_isInitialized)
-        {
-            return;
-        }
-
-        using var importer = new FontImporter();
-
-        var ranges = new UnicodeRange[]
-        {
-            new() { Start = 0xE000, End = 0xE0FF },
-            new() { Start = 0xF000, End = 0xF8FF }
-        };
-
-        var rangesHandle = GCHandle.Alloc(ranges, GCHandleType.Pinned);
-        try
-        {
-            var importDesc = new FontImportDesc
-            {
-                SourceFilePath = StringView.Create(fontPath),
-                TargetDirectory = StringView.Create(outputDirectory),
-                AssetNamePrefix = StringView.Create("fa"),
-                InitialFontSize = fontSize,
-                AtlasWidth = 0,
-                AtlasHeight = 0,
-                CustomRanges = new UnicodeRangeArray
-                {
-                    Elements = rangesHandle.AddrOfPinnedObject(),
-                    NumElements = (ulong)ranges.Length
-                }
-            };
-
-            var result = importer.Import(importDesc);
-            if (result.ResultCode != ImporterResultCode.Success)
-            {
-                throw new InvalidOperationException(
-                    $"Failed to import FontAwesome: {result.ErrorMessage}");
-            }
-
-            _fontLibrary = new FontLibrary();
-            _font = _fontLibrary.LoadFontFromPath(StringView.Create(fontPath));
-            clay.AddFont(fontId, _font);
-            _isInitialized = true;
-        }
-        finally
-        {
-            rangesHandle.Free();
-        }
-    }
-
-    public static void InitializeFromAsset(Clay clay, FontAsset fontAsset, ushort fontId = FontId)
-    {
-        if (_isInitialized)
-        {
-            return;
-        }
-
-        _fontLibrary = new FontLibrary();
-        var fontDesc = new FontDesc { FontAsset = fontAsset };
-        _font = _fontLibrary.LoadFontFromDesc(fontDesc);
-        clay.AddFont(fontId, _font);
-        _isInitialized = true;
-    }
-
-    public static void InitializeEmbedded(Clay clay, ushort fontId = FontId)
+    public static void Initialize(Clay clay, ushort fontId = FontId)
     {
         if (_isInitialized)
         {
@@ -376,41 +275,6 @@ public static class FontAwesome
         clay.AddFont(fontId, _font);
         _isInitialized = true;
     }
-
-    public static void InitializeFromDzFont(Clay clay, string dzfontPath, ushort fontId = FontId)
-    {
-        if (_isInitialized)
-        {
-            return;
-        }
-
-        var fontData = System.IO.File.ReadAllBytes(dzfontPath);
-
-        _fontDataHandle = GCHandle.Alloc(fontData, GCHandleType.Pinned);
-
-        var dataView = new ByteArrayView
-        {
-            Elements = _fontDataHandle.AddrOfPinnedObject(),
-            NumElements = (ulong)fontData.Length
-        };
-
-        using var binaryReader = DenOfIz.BinaryReader.CreateFromData(dataView, new BinaryReaderDesc { NumBytes = 0 });
-
-        var fontAssetReaderDesc = new FontAssetReaderDesc { Reader = binaryReader };
-        using var fontAssetReader = new FontAssetReader(fontAssetReaderDesc);
-
-        _fontAsset = fontAssetReader.Read();
-        _fontLibrary = new FontLibrary();
-
-        var fontDesc = new FontDesc { FontAsset = _fontAsset };
-        _font = _fontLibrary.LoadFontFromDesc(fontDesc);
-        clay.AddFont(fontId, _font);
-        _isInitialized = true;
-    }
-
-    public static bool IsInitialized => _isInitialized;
-
-    public static Font? Font => _font;
 
     public static UiTextStyle Style(UiColor color, ushort size = 14)
     {

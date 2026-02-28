@@ -39,6 +39,6 @@ public struct GpuBoneTransforms
     public void CopyFrom(ReadOnlySpan<Matrix4x4> source)
     {
         var count = Math.Min(source.Length, MaxBones);
-        source.Slice(0, count).CopyTo(MemoryMarshal.CreateSpan(ref Bones[0], MaxBones));
+        source[..count].CopyTo(MemoryMarshal.CreateSpan(ref Bones[0], MaxBones));
     }
 }

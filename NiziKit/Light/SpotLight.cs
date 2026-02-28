@@ -1,11 +1,12 @@
 using System.Numerics;
+using NiziKit.Components;
 using NiziKit.Core;
 
 namespace NiziKit.Light;
 
 public class SpotLight(string name) : GameObject(name)
 {
-    public Vector3 Color { get; set; } = new(1.0f, 1.0f, 1.0f);
+    [Color] public Vector3 Color { get; set; } = new(1.0f, 1.0f, 1.0f);
     public float Intensity { get; set; } = 1.0f;
     public float Range { get; set; } = 10.0f;
     public float InnerConeAngle { get; set; } = 0.3f;
@@ -15,7 +16,7 @@ public class SpotLight(string name) : GameObject(name)
     /// <summary>
     /// Direction is derived from the object's forward vector (rotation).
     /// </summary>
-    public Vector3 Direction
+    [HideInInspector] public Vector3 Direction
     {
         get
         {

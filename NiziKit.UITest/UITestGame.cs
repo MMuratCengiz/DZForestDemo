@@ -39,7 +39,7 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
     private float _propFloat = 3.14f;
     private float _propR = 1.0f, _propG = 0.5f, _propB = 0.0f;
     private int _listSelectedIndex;
-    private List<string> _listItems = ["Item Alpha", "Item Beta", "Item Gamma", "Item Delta"];
+    private readonly List<string> _listItems = ["Item Alpha", "Item Beta", "Item Gamma", "Item Delta"];
 
     public override Type RendererType => typeof(ForwardRenderer);
 
@@ -48,14 +48,10 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
         _renderFrame = new RenderFrame();
         _renderFrame.EnableDebugOverlay(DebugOverlayConfig.Default);
         _renderFrame.EnableUi(UiContextDesc.Default);
-
-        FontAwesome.InitializeEmbedded(_renderFrame.UiContext.Clay);
     }
 
     protected override void OnEvent(ref Event ev)
     {
-        _renderFrame.HandleUiEvent(ev);
-        _renderFrame.UiContext.RecordEvent(ev);
     }
 
     protected override void Update(float dt)
@@ -70,21 +66,18 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
         _renderFrame.Submit();
         _renderFrame.Present(debugOverlay);
 
-        _renderFrame.UiContext.ClearFrameEvents();
     }
 
-    private void BuildUi(UiFrame ui)
+    private void BuildUi()
     {
-        var ctx = _renderFrame.UiContext;
-
-        using var root = ui.Root()
+        using var root = NiziUi.Root()
             .Background(UiColor.Rgb(30, 30, 34))
             .Vertical()
             .Padding(0)
             .Gap(0)
             .Open();
 
-        using (ui.Panel("TitleBar")
+        using (NiziUi.Panel("TitleBar")
                    .Horizontal()
                    .GrowWidth()
                    .FitHeight()
@@ -94,28 +87,28 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
                    .Gap(12)
                    .Open())
         {
-            root.Icon(FontAwesome.Cubes, UiColor.Rgb(100, 200, 130), 20);
+            NiziUi.Icon(FontAwesome.Cubes, UiColor.Rgb(100, 200, 130), 20);
 
-            root.Text("NiziKit UI Test", new UiTextStyle
+            NiziUi.Text("NiziKit UI Test", new UiTextStyle
             {
                 Color = UiColor.Rgb(100, 200, 130),
                 FontSize = 20,
                 Alignment = UiTextAlign.Left
             });
 
-            Ui.FlexSpacer(ctx);
+            NiziUi.FlexSpacer();
 
-            root.Icon(FontAwesome.Clock, UiColor.Rgb(180, 180, 180), 14);
-            root.Text($"FPS: {Time.FramesPerSecond:F0}", new UiTextStyle
+            NiziUi.Icon(FontAwesome.Clock, UiColor.Rgb(180, 180, 180), 14);
+            NiziUi.Text($"FPS: {Time.FramesPerSecond:F0}", new UiTextStyle
             {
                 Color = UiColor.Rgb(180, 180, 180),
                 FontSize = 14,
             });
 
-            root.Icon(FontAwesome.Gear, UiColor.Rgb(150, 150, 150), 16);
+            NiziUi.Icon(FontAwesome.Gear, UiColor.Rgb(150, 150, 150), 16);
         }
 
-        using (ui.Panel("TabBar")
+        using (NiziUi.Panel("TabBar")
                    .Horizontal()
                    .GrowWidth()
                    .FitHeight()
@@ -128,7 +121,7 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
             {
                 var isActive = i == _activeTab;
                 var tabColor = isActive ? UiColor.Rgb(64, 128, 96) : UiColor.Rgb(45, 45, 50);
-                var tabBtn = Ui.Button(ctx, $"Tab{i}", _tabs[i])
+                var tabBtn = NiziUi.Button($"Tab{i}", _tabs[i])
                     .Color(tabColor)
                     .FontSize(14)
                     .Padding(12, 6)
@@ -141,7 +134,7 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
             }
         }
 
-        using (ui.Panel("Content")
+        using (NiziUi.Panel("Content")
                    .Grow()
                    .Padding(16)
                    .Gap(12)
@@ -152,81 +145,81 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
             switch (_activeTab)
             {
                 case 0:
-                    BuildWidgetsTab(ui, ctx);
+                    BuildWidgetsTab();
                     break;
                 case 1:
-                    BuildLayoutTab(ui, ctx);
+                    BuildLayoutTab();
                     break;
                 case 2:
-                    BuildStressTestTab(ui, ctx);
+                    BuildStressTestTab();
                     break;
                 case 3:
-                    BuildNewWidgetsTab(ui, ctx);
+                    BuildNewWidgetsTab();
                     break;
             }
         }
     }
 
-    private void BuildWidgetsTab(UiFrame ui, UiContext ctx)
+    private void BuildWidgetsTab()
     {
-        SectionHeader(ui, "FontAwesome Icons");
+        SectionHeader("FontAwesome Icons");
 
-        using (ui.Row("IconsRow").Gap(16).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
+        using (NiziUi.Row("IconsRow").Gap(16).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
         {
-            ui.Icon(FontAwesome.Home, UiColor.Rgb(100, 200, 130), 20);
-            ui.Icon(FontAwesome.User, UiColor.Rgb(100, 149, 237), 20);
-            ui.Icon(FontAwesome.Gear, UiColor.Rgb(200, 150, 100), 20);
-            ui.Icon(FontAwesome.Search, UiColor.Rgb(180, 100, 180), 20);
-            ui.Icon(FontAwesome.Bell, UiColor.Rgb(200, 200, 100), 20);
-            ui.Icon(FontAwesome.Heart, UiColor.Rgb(220, 80, 80), 20);
-            ui.Icon(FontAwesome.Star, UiColor.Rgb(255, 200, 50), 20);
-            ui.Icon(FontAwesome.Check, UiColor.Rgb(100, 200, 100), 20);
-            ui.Icon(FontAwesome.Xmark, UiColor.Rgb(200, 80, 80), 20);
-            ui.Icon(FontAwesome.Plus, UiColor.Rgb(100, 180, 220), 20);
-            ui.Icon(FontAwesome.Folder, UiColor.Rgb(220, 180, 80), 20);
-            ui.Icon(FontAwesome.File, UiColor.Rgb(180, 180, 180), 20);
+            NiziUi.Icon(FontAwesome.Home, UiColor.Rgb(100, 200, 130), 20);
+            NiziUi.Icon(FontAwesome.User, UiColor.Rgb(100, 149, 237), 20);
+            NiziUi.Icon(FontAwesome.Gear, UiColor.Rgb(200, 150, 100), 20);
+            NiziUi.Icon(FontAwesome.Search, UiColor.Rgb(180, 100, 180), 20);
+            NiziUi.Icon(FontAwesome.Bell, UiColor.Rgb(200, 200, 100), 20);
+            NiziUi.Icon(FontAwesome.Heart, UiColor.Rgb(220, 80, 80), 20);
+            NiziUi.Icon(FontAwesome.Star, UiColor.Rgb(255, 200, 50), 20);
+            NiziUi.Icon(FontAwesome.Check, UiColor.Rgb(100, 200, 100), 20);
+            NiziUi.Icon(FontAwesome.Xmark, UiColor.Rgb(200, 80, 80), 20);
+            NiziUi.Icon(FontAwesome.Plus, UiColor.Rgb(100, 180, 220), 20);
+            NiziUi.Icon(FontAwesome.Folder, UiColor.Rgb(220, 180, 80), 20);
+            NiziUi.Icon(FontAwesome.File, UiColor.Rgb(180, 180, 180), 20);
         }
 
-        Ui.VerticalSpacer(ctx, 12);
+        NiziUi.VerticalSpacer(12);
 
-        SectionHeader(ui, "Buttons");
+        SectionHeader("Buttons");
 
-        using (ui.Row("ButtonRow").Gap(8).FitHeight().GrowWidth().Open())
+        using (NiziUi.Row("ButtonRow").Gap(8).FitHeight().GrowWidth().Open())
         {
-            if (Ui.Button(ctx, "BtnDefault", "Default").Show())
+            if (NiziUi.Button("BtnDefault", "Default").Show())
             {
                 _clickCount++;
             }
 
-            if (Ui.Button(ctx, "BtnPrimary", "Primary")
+            if (NiziUi.Button("BtnPrimary", "Primary")
                 .Color(UiColor.Rgb(60, 130, 200))
                 .Show())
             {
                 _clickCount++;
             }
 
-            if (Ui.Button(ctx, "BtnDanger", "Danger")
+            if (NiziUi.Button("BtnDanger", "Danger")
                 .Color(UiColor.Rgb(200, 60, 60))
                 .Show())
             {
                 _clickCount++;
             }
 
-            Ui.Button(ctx, "BtnGhost", "Ghost")
+            NiziUi.Button("BtnGhost", "Ghost")
                 .Color(UiColor.Transparent, UiColor.Rgba(255, 255, 255, 20), UiColor.Rgba(255, 255, 255, 10))
                 .Border(1, UiColor.Rgb(70, 70, 75))
                 .Show();
 
-            Ui.HorizontalSpacer(ctx, 16);
+            NiziUi.HorizontalSpacer(16);
 
-            ui.Text($"Clicks: {_clickCount}", UiTextStyle.Default.WithColor(UiColor.Rgb(180, 180, 180)));
+            NiziUi.Text($"Clicks: {_clickCount}", UiTextStyle.Default.WithColor(UiColor.Rgb(180, 180, 180)));
         }
 
-        Ui.VerticalSpacer(ctx, 8);
+        NiziUi.VerticalSpacer(8);
 
-        using (ui.Row("CustomBtnRow").Gap(8).FitHeight().GrowWidth().Open())
+        using (NiziUi.Row("CustomBtnRow").Gap(8).FitHeight().GrowWidth().Open())
         {
-            if (Ui.Button(ctx, "BtnLarge", "Large Button")
+            if (NiziUi.Button("BtnLarge", "Large Button")
                     .Color(UiColor.Rgb(64, 128, 96))
                     .FontSize(18)
                     .Padding(24, 12)
@@ -236,7 +229,7 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
                 _clickCount++;
             }
 
-            if (Ui.Button(ctx, "BtnSmall", "Small")
+            if (NiziUi.Button("BtnSmall", "Small")
                     .FontSize(11)
                     .Padding(8, 4)
                     .CornerRadius(3)
@@ -246,75 +239,75 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
             }
         }
 
-        Ui.VerticalSpacer(ctx, 12);
+        NiziUi.VerticalSpacer(12);
 
-        SectionHeader(ui, "Checkboxes");
+        SectionHeader("Checkboxes");
 
-        using (ui.Row("CheckboxRow").Gap(16).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
+        using (NiziUi.Row("CheckboxRow").Gap(16).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
         {
-            _checkboxA = Ui.Checkbox(ctx, "ChkA", "Enable feature A", _checkboxA)
+            _checkboxA = NiziUi.Checkbox("ChkA", "Enable feature A", _checkboxA)
                 .FontSize(14)
                 .BoxSize(18)
                 .CheckColor(UiColor.Rgb(64, 128, 96))
                 .Show();
 
-            _checkboxB = Ui.Checkbox(ctx, "ChkB", "Enable feature B", _checkboxB)
+            _checkboxB = NiziUi.Checkbox("ChkB", "Enable feature B", _checkboxB)
                 .FontSize(14)
                 .BoxSize(18)
                 .CheckColor(UiColor.Rgb(60, 130, 200))
                 .Show();
 
-            ui.Text($"A={_checkboxA}, B={_checkboxB}", UiTextStyle.Default.WithColor(UiColor.Gray).WithSize(12));
+            NiziUi.Text($"A={_checkboxA}, B={_checkboxB}", UiTextStyle.Default.WithColor(UiColor.Gray).WithSize(12));
         }
 
-        Ui.VerticalSpacer(ctx, 12);
+        NiziUi.VerticalSpacer(12);
 
-        SectionHeader(ui, "Text Fields");
+        SectionHeader("Text Fields");
 
-        using (ui.Column("TextFieldCol").Gap(8).FitHeight().GrowWidth().Open())
+        using (NiziUi.Column("TextFieldCol").Gap(8).FitHeight().GrowWidth().Open())
         {
-            using (ui.Row("TFRow1").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
+            using (NiziUi.Row("TFRow1").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
             {
-                ui.Text("Single line:", UiTextStyle.Default.WithSize(14));
-                Ui.TextField(ctx, "TF1", ref _textFieldValue)
+                NiziUi.Text("Single line:", UiTextStyle.Default.WithSize(14));
+                NiziUi.TextField("TF1", ref _textFieldValue)
                     .Width(UiSizing.Grow())
                     .FontSize(14)
                     .Placeholder("Type here...")
-                    .Show(ref _textFieldValue, Time.DeltaTime);
+                    .Show(Time.DeltaTime);
             }
 
-            ui.Text("Multi-line:", UiTextStyle.Default.WithSize(14));
-            Ui.TextField(ctx, "TFMulti", ref _multilineText)
+            NiziUi.Text("Multi-line:", UiTextStyle.Default.WithSize(14));
+            NiziUi.TextField("TFMulti", ref _multilineText)
                 .Width(UiSizing.Grow())
                 .Height(100)
                 .FontSize(14)
                 .Multiline()
                 .Placeholder("Multi-line input...")
-                .Show(ref _multilineText, Time.DeltaTime);
+                .Show(Time.DeltaTime);
         }
 
-        Ui.VerticalSpacer(ctx, 12);
+        NiziUi.VerticalSpacer(12);
 
-        SectionHeader(ui, "Dropdown");
+        SectionHeader("Dropdown");
 
-        using (ui.Row("DropdownRow").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
+        using (NiziUi.Row("DropdownRow").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
         {
-            ui.Text("Selection:", UiTextStyle.Default.WithSize(14));
-            Ui.Dropdown(ctx, "DD1", _dropdownItems)
+            NiziUi.Text("Selection:", UiTextStyle.Default.WithSize(14));
+            NiziUi.Dropdown("DD1", _dropdownItems)
                 .Width(200)
                 .FontSize(14)
                 .Show(ref _dropdownIndex);
 
-            ui.Text($"Selected: {_dropdownItems[Math.Max(0, _dropdownIndex)]}", UiTextStyle.Default.WithColor(UiColor.Gray).WithSize(12));
+            NiziUi.Text($"Selected: {_dropdownItems[Math.Max(0, _dropdownIndex)]}", UiTextStyle.Default.WithColor(UiColor.Gray).WithSize(12));
         }
 
-        Ui.VerticalSpacer(ctx, 12);
+        NiziUi.VerticalSpacer(12);
 
-        SectionHeader(ui, "Cards");
+        SectionHeader("Cards");
 
-        using (ui.Row("CardRow").Gap(12).FitHeight().GrowWidth().Open())
+        using (NiziUi.Row("CardRow").Gap(12).FitHeight().GrowWidth().Open())
         {
-            using (Ui.Card(ctx, "Card1")
+            using (NiziUi.Card("Card1")
                        .Background(UiColor.Rgb(40, 40, 45))
                        .Border(1, UiColor.Rgb(60, 60, 65))
                        .Padding(16)
@@ -322,13 +315,13 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
                        .GrowWidth()
                        .Open())
             {
-                ui.Text("Card Title", UiTextStyle.Default.WithSize(16).WithColor(UiColor.Rgb(100, 200, 130)));
-                ui.Text("This is a card component with background, border, padding, and gap.", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Rgb(180, 180, 180)));
-                Ui.Divider(ctx, UiColor.Rgb(60, 60, 65));
-                ui.Text("Footer content", UiTextStyle.Default.WithSize(12).WithColor(UiColor.Gray));
+                NiziUi.Text("Card Title", UiTextStyle.Default.WithSize(16).WithColor(UiColor.Rgb(100, 200, 130)));
+                NiziUi.Text("This is a card component with background, border, padding, and gap.", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Rgb(180, 180, 180)));
+                NiziUi.Divider(UiColor.Rgb(60, 60, 65));
+                NiziUi.Text("Footer content", UiTextStyle.Default.WithSize(12).WithColor(UiColor.Gray));
             }
 
-            using (Ui.Card(ctx, "Card2")
+            using (NiziUi.Card("Card2")
                        .Background(UiColor.Rgb(40, 40, 45))
                        .Border(1, UiColor.Rgb(60, 60, 65))
                        .Padding(16)
@@ -336,10 +329,10 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
                        .GrowWidth()
                        .Open())
             {
-                ui.Text("Another Card", UiTextStyle.Default.WithSize(16).WithColor(UiColor.Rgb(100, 149, 237)));
-                ui.Text("Cards can hold any combination of widgets and layout elements.", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Rgb(180, 180, 180)));
+                NiziUi.Text("Another Card", UiTextStyle.Default.WithSize(16).WithColor(UiColor.Rgb(100, 149, 237)));
+                NiziUi.Text("Cards can hold any combination of widgets and layout elements.", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Rgb(180, 180, 180)));
 
-                if (Ui.Button(ctx, "CardBtn", "Card Action")
+                if (NiziUi.Button("CardBtn", "Card Action")
                         .Color(UiColor.Rgb(60, 130, 200))
                         .FontSize(13)
                         .GrowWidth()
@@ -350,74 +343,74 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
             }
         }
 
-        Ui.VerticalSpacer(ctx, 12);
+        NiziUi.VerticalSpacer(12);
 
-        SectionHeader(ui, "Dividers & Spacers");
+        SectionHeader("Dividers & Spacers");
 
-        using (ui.Column("DividerCol").Gap(8).FitHeight().GrowWidth().Open())
+        using (NiziUi.Column("DividerCol").Gap(8).FitHeight().GrowWidth().Open())
         {
-            ui.Text("Above divider", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Rgb(180, 180, 180)));
-            Ui.Divider(ctx, UiColor.Rgb(80, 80, 85), 2);
-            ui.Text("Below divider", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Rgb(180, 180, 180)));
+            NiziUi.Text("Above divider", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Rgb(180, 180, 180)));
+            NiziUi.Divider(UiColor.Rgb(80, 80, 85), 2);
+            NiziUi.Text("Below divider", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Rgb(180, 180, 180)));
 
-            using (ui.Row("VDivRow").Gap(8).FitHeight(0, 40).GrowWidth().Open())
+            using (NiziUi.Row("VDivRow").Gap(8).FitHeight(0, 40).GrowWidth().Open())
             {
-                ui.Text("Left", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Rgb(180, 180, 180)));
-                Ui.VerticalDivider(ctx, UiColor.Rgb(80, 80, 85), 2);
-                ui.Text("Right", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Rgb(180, 180, 180)));
+                NiziUi.Text("Left", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Rgb(180, 180, 180)));
+                NiziUi.VerticalDivider(UiColor.Rgb(80, 80, 85), 2);
+                NiziUi.Text("Right", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Rgb(180, 180, 180)));
             }
         }
     }
 
-    private void BuildLayoutTab(UiFrame ui, UiContext ctx)
+    private void BuildLayoutTab()
     {
-        SectionHeader(ui, "Fixed vs Grow vs Fit");
+        SectionHeader("Fixed vs Grow vs Fit");
 
-        using (ui.Row("SizingRow").Gap(8).FitHeight().GrowWidth().Open())
+        using (NiziUi.Row("SizingRow").Gap(8).FitHeight().GrowWidth().Open())
         {
-            using (ui.Panel("FixedBox")
+            using (NiziUi.Panel("FixedBox")
                        .Width(120).Height(60)
                        .Background(UiColor.Rgb(60, 100, 80))
                        .CornerRadius(4)
                        .CenterChildren()
                        .Open())
             {
-                ui.Text("Fixed 120x60", UiTextStyle.Default.WithSize(12));
+                NiziUi.Text("Fixed 120x60", UiTextStyle.Default.WithSize(12));
             }
 
-            using (ui.Panel("GrowBox")
+            using (NiziUi.Panel("GrowBox")
                        .GrowWidth().Height(60)
                        .Background(UiColor.Rgb(80, 60, 100))
                        .CornerRadius(4)
                        .CenterChildren()
                        .Open())
             {
-                ui.Text("Grow Width", UiTextStyle.Default.WithSize(12));
+                NiziUi.Text("Grow Width", UiTextStyle.Default.WithSize(12));
             }
 
-            using (ui.Panel("FitBox")
+            using (NiziUi.Panel("FitBox")
                        .Fit()
                        .Background(UiColor.Rgb(100, 80, 60))
                        .CornerRadius(4)
                        .Padding(12, 8)
                        .Open())
             {
-                ui.Text("Fit Content", UiTextStyle.Default.WithSize(12));
+                NiziUi.Text("Fit Content", UiTextStyle.Default.WithSize(12));
             }
         }
 
-        Ui.VerticalSpacer(ctx, 12);
+        NiziUi.VerticalSpacer(12);
 
-        SectionHeader(ui, "Child Alignment");
+        SectionHeader("Child Alignment");
 
-        using (ui.Row("AlignRow").Gap(8).FitHeight().GrowWidth().Open())
+        using (NiziUi.Row("AlignRow").Gap(8).FitHeight().GrowWidth().Open())
         {
             var alignments = new[] { ("TL", UiAlignX.Left, UiAlignY.Top), ("CC", UiAlignX.Center, UiAlignY.Center), ("BR", UiAlignX.Right, UiAlignY.Bottom) };
 
             for (var i = 0; i < alignments.Length; i++)
             {
                 var (label, ax, ay) = alignments[i];
-                using (ui.Panel($"AlignBox{i}")
+                using (NiziUi.Panel($"AlignBox{i}")
                            .GrowWidth().Height(80)
                            .Background(UiColor.Rgb(40, 40, 50))
                            .Border(1, UiColor.Rgb(60, 60, 70))
@@ -426,18 +419,18 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
                            .AlignChildren(ax, ay)
                            .Open())
                 {
-                    ui.Text(label, UiTextStyle.Default.WithSize(14).WithColor(UiColor.Rgb(100, 200, 130)));
+                    NiziUi.Text(label, UiTextStyle.Default.WithSize(14).WithColor(UiColor.Rgb(100, 200, 130)));
                 }
             }
         }
 
-        Ui.VerticalSpacer(ctx, 12);
+        NiziUi.VerticalSpacer(12);
 
-        SectionHeader(ui, "Nested Layout");
+        SectionHeader("Nested Layout");
 
-        using (ui.Row("NestedOuter").Gap(8).FitHeight().GrowWidth().Open())
+        using (NiziUi.Row("NestedOuter").Gap(8).FitHeight().GrowWidth().Open())
         {
-            using (ui.Column("NestedLeft")
+            using (NiziUi.Column("NestedLeft")
                        .Width(UiSizing.Percent(0.3f))
                        .FitHeight()
                        .Background(UiColor.Rgb(35, 35, 40))
@@ -446,24 +439,24 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
                        .Gap(8)
                        .Open())
             {
-                ui.Text("Sidebar", UiTextStyle.Default.WithSize(14).WithColor(UiColor.Rgb(100, 200, 130)));
-                Ui.Divider(ctx, UiColor.Rgb(60, 60, 65));
+                NiziUi.Text("Sidebar", UiTextStyle.Default.WithSize(14).WithColor(UiColor.Rgb(100, 200, 130)));
+                NiziUi.Divider(UiColor.Rgb(60, 60, 65));
 
                 for (var i = 0; i < 5; i++)
                 {
-                    using (ui.Panel($"SideItem{i}")
+                    using (NiziUi.Panel($"SideItem{i}")
                                .GrowWidth().FitHeight()
                                .Background(UiColor.Rgb(45, 45, 50))
                                .CornerRadius(3)
                                .Padding(8, 6)
                                .Open())
                     {
-                        ui.Text($"Item {i + 1}", UiTextStyle.Default.WithSize(13));
+                        NiziUi.Text($"Item {i + 1}", UiTextStyle.Default.WithSize(13));
                     }
                 }
             }
 
-            using (ui.Column("NestedRight")
+            using (NiziUi.Column("NestedRight")
                        .GrowWidth()
                        .FitHeight()
                        .Background(UiColor.Rgb(35, 35, 40))
@@ -472,24 +465,24 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
                        .Gap(8)
                        .Open())
             {
-                ui.Text("Main Content", UiTextStyle.Default.WithSize(14).WithColor(UiColor.Rgb(100, 149, 237)));
-                Ui.Divider(ctx, UiColor.Rgb(60, 60, 65));
+                NiziUi.Text("Main Content", UiTextStyle.Default.WithSize(14).WithColor(UiColor.Rgb(100, 149, 237)));
+                NiziUi.Divider(UiColor.Rgb(60, 60, 65));
 
                 for (var row = 0; row < 3; row++)
                 {
-                    using (ui.Row($"GridRow{row}").Gap(8).FitHeight().GrowWidth().Open())
+                    using (NiziUi.Row($"GridRow{row}").Gap(8).FitHeight().GrowWidth().Open())
                     {
                         for (var col = 0; col < 3; col++)
                         {
                             var hue = (byte)(60 + row * 30 + col * 20);
-                            using (ui.Panel($"GridCell{row}_{col}")
+                            using (NiziUi.Panel($"GridCell{row}_{col}")
                                        .GrowWidth().Height(50)
                                        .Background(UiColor.Rgb(hue, (byte)(hue / 2), (byte)(hue / 3)))
                                        .CornerRadius(4)
                                        .CenterChildren()
                                        .Open())
                             {
-                                ui.Text($"R{row}C{col}", UiTextStyle.Default.WithSize(12));
+                                NiziUi.Text($"R{row}C{col}", UiTextStyle.Default.WithSize(12));
                             }
                         }
                     }
@@ -497,11 +490,11 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
             }
         }
 
-        Ui.VerticalSpacer(ctx, 12);
+        NiziUi.VerticalSpacer(12);
 
-        SectionHeader(ui, "Scrollable Content");
+        SectionHeader("Scrollable Content");
 
-        using (ui.Panel("ScrollDemo")
+        using (NiziUi.Panel("ScrollDemo")
                    .GrowWidth().Height(150)
                    .Background(UiColor.Rgb(35, 35, 40))
                    .Border(1, UiColor.Rgb(60, 60, 65))
@@ -514,27 +507,27 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
         {
             for (var i = 0; i < 30; i++)
             {
-                using (ui.Panel($"ScrollItem{i}")
+                using (NiziUi.Panel($"ScrollItem{i}")
                            .GrowWidth().FitHeight()
                            .Background(i % 2 == 0 ? UiColor.Rgb(42, 42, 47) : UiColor.Rgb(38, 38, 43))
                            .CornerRadius(3)
                            .Padding(8, 6)
                            .Open())
                 {
-                    ui.Text($"Scrollable item #{i + 1}", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Rgb(180, 180, 180)));
+                    NiziUi.Text($"Scrollable item #{i + 1}", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Rgb(180, 180, 180)));
                 }
             }
         }
     }
 
-    private void BuildStressTestTab(UiFrame ui, UiContext ctx)
+    private void BuildStressTestTab()
     {
-        SectionHeader(ui, "Many Elements");
+        SectionHeader("Many Elements");
 
-        ui.Text("100 buttons rendered each frame:", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Rgb(180, 180, 180)));
-        Ui.VerticalSpacer(ctx, 4);
+        NiziUi.Text("100 buttons rendered each frame:", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Rgb(180, 180, 180)));
+        NiziUi.VerticalSpacer(4);
 
-        using (ui.Panel("StressWrap")
+        using (NiziUi.Panel("StressWrap")
                    .GrowWidth().FitHeight()
                    .Horizontal()
                    .Gap(4)
@@ -546,7 +539,7 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
                 var r = (byte)(50 + i * 2 % 200);
                 var g = (byte)(80 + i * 3 % 170);
                 var b = (byte)(60 + i * 5 % 190);
-                Ui.Button(ctx, $"SB{i}", $"{i}")
+                NiziUi.Button($"SB{i}", $"{i}")
                     .Color(UiColor.Rgb(r, g, b))
                     .FontSize(11)
                     .Padding(6, 3)
@@ -555,27 +548,27 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
             }
         }
 
-        Ui.VerticalSpacer(ctx, 12);
-        SectionHeader(ui, "Nested Depth");
+        NiziUi.VerticalSpacer(12);
+        SectionHeader("Nested Depth");
 
-        ui.Text("Deeply nested containers:", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Rgb(180, 180, 180)));
-        Ui.VerticalSpacer(ctx, 4);
+        NiziUi.Text("Deeply nested containers:", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Rgb(180, 180, 180)));
+        NiziUi.VerticalSpacer(4);
 
-        BuildNestedBoxes(ui, ctx, 0, 10);
+        BuildNestedBoxes(0, 10);
     }
 
-    private static void BuildNestedBoxes(UiFrame ui, UiContext ctx, int depth, int maxDepth)
+    private static void BuildNestedBoxes(int depth, int maxDepth)
     {
         if (depth >= maxDepth)
         {
-            ui.Text("Innermost", UiTextStyle.Default.WithSize(12).WithColor(UiColor.Rgb(100, 200, 130)));
+            NiziUi.Text("Innermost", UiTextStyle.Default.WithSize(12).WithColor(UiColor.Rgb(100, 200, 130)));
             return;
         }
 
         var brightness = (byte)(30 + depth * 8);
         var accent = (byte)(60 + depth * 15);
 
-        using (ui.Panel($"Nest{depth}")
+        using (NiziUi.Panel($"Nest{depth}")
                    .GrowWidth().FitHeight()
                    .Background(UiColor.Rgb(brightness, brightness, (byte)(brightness + 5)))
                    .Border(1, UiColor.Rgb(accent, accent, (byte)(accent + 10)))
@@ -585,31 +578,31 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
                    .Vertical()
                    .Open())
         {
-            ui.Text($"Depth {depth}", UiTextStyle.Default.WithSize(11).WithColor(UiColor.Rgb(accent, accent, (byte)(accent + 40))));
-            BuildNestedBoxes(ui, ctx, depth + 1, maxDepth);
+            NiziUi.Text($"Depth {depth}", UiTextStyle.Default.WithSize(11).WithColor(UiColor.Rgb(accent, accent, (byte)(accent + 40))));
+            BuildNestedBoxes(depth + 1, maxDepth);
         }
     }
 
-    private void BuildNewWidgetsTab(UiFrame ui, UiContext ctx)
+    private void BuildNewWidgetsTab()
     {
-        SectionHeader(ui, "Sliders");
+        SectionHeader("Sliders");
 
-        using (ui.Column("SliderCol").Gap(8).FitHeight().GrowWidth().Open())
+        using (NiziUi.Column("SliderCol").Gap(8).FitHeight().GrowWidth().Open())
         {
-            using (ui.Row("SliderRow1").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
+            using (NiziUi.Row("SliderRow1").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
             {
-                ui.Text("Volume:", UiTextStyle.Default.WithSize(13));
-                Ui.Slider(ctx, "Slider1")
+                NiziUi.Text("Volume:", UiTextStyle.Default.WithSize(13));
+                NiziUi.Slider("Slider1")
                     .Range(0, 1)
                     .ShowValue(true, "P0")
                     .FillColor(UiColor.Rgb(64, 128, 96))
                     .Show(ref _sliderValue);
             }
 
-            using (ui.Row("SliderRow2").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
+            using (NiziUi.Row("SliderRow2").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
             {
-                ui.Text("Speed:", UiTextStyle.Default.WithSize(13));
-                Ui.Slider(ctx, "Slider2")
+                NiziUi.Text("Speed:", UiTextStyle.Default.WithSize(13));
+                NiziUi.Slider("Slider2")
                     .Range(0, 100)
                     .Step(5)
                     .ShowValue(true, "F0")
@@ -618,116 +611,116 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
             }
         }
 
-        Ui.VerticalSpacer(ctx, 12);
+        NiziUi.VerticalSpacer(12);
 
-        SectionHeader(ui, "Draggable Value");
+        SectionHeader("Draggable Value");
 
-        using (ui.Row("DragRow").Gap(12).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
+        using (NiziUi.Row("DragRow").Gap(12).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
         {
-            ui.Text("Scale:", UiTextStyle.Default.WithSize(13));
-            Ui.DraggableValue(ctx, "DragVal1")
+            NiziUi.Text("Scale:", UiTextStyle.Default.WithSize(13));
+            NiziUi.DraggableValue("DragVal1")
                 .Label("S")
                 .LabelColor(UiColor.Rgb(200, 150, 50))
                 .Sensitivity(0.01f)
                 .Format("F3")
                 .Width(150)
                 .Show(ref _dragValue);
-            ui.Text($"= {_dragValue:F3}", UiTextStyle.Default.WithColor(UiColor.Gray).WithSize(12));
+            NiziUi.Text($"= {_dragValue:F3}", UiTextStyle.Default.WithColor(UiColor.Gray).WithSize(12));
         }
 
-        Ui.VerticalSpacer(ctx, 12);
+        NiziUi.VerticalSpacer(12);
 
-        SectionHeader(ui, "Vector Editor");
+        SectionHeader("Vector Editor");
 
-        using (ui.Row("VecRow").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
+        using (NiziUi.Row("VecRow").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
         {
-            ui.Text("Position:", UiTextStyle.Default.WithSize(13));
-            Ui.Vec3Editor(ctx, "Vec3Pos", ref _posX, ref _posY, ref _posZ, 0.1f);
+            NiziUi.Text("Position:", UiTextStyle.Default.WithSize(13));
+            NiziUi.Vec3Editor("Vec3Pos", ref _posX, ref _posY, ref _posZ, 0.1f);
         }
 
-        Ui.VerticalSpacer(ctx, 12);
+        NiziUi.VerticalSpacer(12);
 
-        SectionHeader(ui, "Collapsible Sections");
+        SectionHeader("Collapsible Sections");
 
-        using (var cs1 = Ui.CollapsibleSection(ctx, "CS1", "Transform", true)
+        using (var cs1 = NiziUi.CollapsibleSection("CS1", "Transform", true)
                    .HeaderBackground(UiColor.Rgb(45, 45, 50), UiColor.Rgb(55, 55, 60))
                    .Badge("3 props")
                    .Open())
         {
             if (cs1.IsExpanded)
             {
-                using (ui.Row("CSRow1").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
+                using (NiziUi.Row("CSRow1").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
                 {
-                    ui.Text("Position", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Gray));
-                    Ui.Vec3Editor(ctx, "CSVec3", ref _posX, ref _posY, ref _posZ, 0.1f);
+                    NiziUi.Text("Position", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Gray));
+                    NiziUi.Vec3Editor("CSVec3", ref _posX, ref _posY, ref _posZ, 0.1f);
                 }
-                ui.Text("More transform properties would go here...", UiTextStyle.Default.WithSize(12).WithColor(UiColor.Rgb(140, 140, 140)));
+                NiziUi.Text("More transform properties would go here...", UiTextStyle.Default.WithSize(12).WithColor(UiColor.Rgb(140, 140, 140)));
             }
         }
 
-        Ui.VerticalSpacer(ctx, 4);
+        NiziUi.VerticalSpacer(4);
 
-        using (var cs2 = Ui.CollapsibleSection(ctx, "CS2", "Material", false)
+        using (var cs2 = NiziUi.CollapsibleSection("CS2", "Material", false)
                    .HeaderBackground(UiColor.Rgb(45, 45, 50), UiColor.Rgb(55, 55, 60))
                    .Badge("shader")
                    .Open())
         {
             if (cs2.IsExpanded)
             {
-                ui.Text("Material settings collapsed by default.", UiTextStyle.Default.WithSize(12).WithColor(UiColor.Rgb(140, 140, 140)));
+                NiziUi.Text("Material settings collapsed by default.", UiTextStyle.Default.WithSize(12).WithColor(UiColor.Rgb(140, 140, 140)));
             }
         }
 
-        Ui.VerticalSpacer(ctx, 12);
+        NiziUi.VerticalSpacer(12);
 
-        SectionHeader(ui, "Tree View");
+        SectionHeader("Tree View");
 
-        using (ui.Row("TreeRow").Gap(12).FitHeight().GrowWidth().Open())
+        using (NiziUi.Row("TreeRow").Gap(12).FitHeight().GrowWidth().Open())
         {
-            Ui.TreeView(ctx, "SceneTree", _treeNodes)
+            NiziUi.TreeView("SceneTree", _treeNodes)
                 .Width(250)
                 .Height(200)
                 .Show(ref _treeSelectedId);
 
-            using (ui.Column("TreeInfo").Gap(4).FitHeight().GrowWidth().Open())
+            using (NiziUi.Column("TreeInfo").Gap(4).FitHeight().GrowWidth().Open())
             {
-                ui.Text("Selected:", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Gray));
-                ui.Text(string.IsNullOrEmpty(_treeSelectedId) ? "(none)" : _treeSelectedId,
+                NiziUi.Text("Selected:", UiTextStyle.Default.WithSize(13).WithColor(UiColor.Gray));
+                NiziUi.Text(string.IsNullOrEmpty(_treeSelectedId) ? "(none)" : _treeSelectedId,
                     UiTextStyle.Default.WithSize(14).WithColor(UiColor.Rgb(100, 200, 130)));
             }
         }
 
-        Ui.VerticalSpacer(ctx, 12);
+        NiziUi.VerticalSpacer(12);
 
-        SectionHeader(ui, "Context Menu");
+        SectionHeader("Context Menu");
 
-        using (ui.Row("CtxRow").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
+        using (NiziUi.Row("CtxRow").Gap(8).FitHeight().GrowWidth().AlignChildren(UiAlignX.Left, UiAlignY.Center).Open())
         {
-            var ctxBtn = Ui.Button(ctx, "CtxBtn", "Open Menu")
+            var ctxBtn = NiziUi.Button("CtxBtn", "Open Menu")
                 .Color(UiColor.Rgb(60, 130, 200))
                 .FontSize(13);
             if (ctxBtn.Show())
             {
-                var state = Ui.GetContextMenuState(ctx, "CtxMenu");
+                var state = NiziUi.GetContextMenuState("CtxMenu");
                 state.OpenBelow(ctxBtn.Id);
             }
 
-            var clicked = Ui.ContextMenu(ctx, "CtxMenu", _contextMenuItems).Show();
+            var clicked = NiziUi.ContextMenu("CtxMenu", _contextMenuItems).Show();
             if (clicked >= 0)
             {
-                ui.Text($"Clicked: {_contextMenuItems[clicked].Label}", UiTextStyle.Default.WithSize(12).WithColor(UiColor.Gray));
+                NiziUi.Text($"Clicked: {_contextMenuItems[clicked].Label}", UiTextStyle.Default.WithSize(12).WithColor(UiColor.Gray));
             }
         }
 
-        Ui.VerticalSpacer(ctx, 12);
+        NiziUi.VerticalSpacer(12);
 
-        SectionHeader(ui, "Property Grid");
+        SectionHeader("Property Grid");
 
-        using (var grid = Ui.PropertyGrid(ctx, "PropGrid").LabelWidth(100).Open())
+        using (var grid = NiziUi.PropertyGrid("PropGrid").LabelWidth(100).Open())
         {
             using (grid.Row("Speed"))
             {
-                Ui.DraggableValue(ctx, "PGSpeed")
+                NiziUi.DraggableValue("PGSpeed")
                     .Label("V")
                     .LabelColor(UiColor.Rgb(60, 130, 200))
                     .Sensitivity(0.1f)
@@ -736,20 +729,20 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
             using (grid.Row("Color"))
             {
-                Ui.Vec3Editor(ctx, "PGColor", ref _propR, ref _propG, ref _propB, 0.01f);
+                NiziUi.Vec3Editor("PGColor", ref _propR, ref _propG, ref _propB, 0.01f);
             }
 
             using (grid.Row("Active"))
             {
-                Ui.Checkbox(ctx, "PGCheck", "", _checkboxA).Show();
+                NiziUi.Checkbox("PGCheck", "", _checkboxA).Show();
             }
         }
 
-        Ui.VerticalSpacer(ctx, 12);
+        NiziUi.VerticalSpacer(12);
 
-        SectionHeader(ui, "List Editor");
+        SectionHeader("List Editor");
 
-        var listResult = Ui.ListEditor(ctx, "ListEd")
+        var listResult = NiziUi.ListEditor("ListEd")
             .Title("Components")
             .Height(180)
             .Show(_listItems.ToArray(), ref _listSelectedIndex);
@@ -815,9 +808,9 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
         ];
     }
 
-    private static void SectionHeader(UiFrame ui, string title)
+    private static void SectionHeader(string title)
     {
-        ui.Text(title, new UiTextStyle
+        NiziUi.Text(title, new UiTextStyle
         {
             Color = UiColor.Rgb(100, 200, 130),
             FontSize = 16,
@@ -827,7 +820,6 @@ public sealed class UITestGame(GameDesc? desc = null) : Game(desc)
 
     protected override void OnShutdown()
     {
-        FontAwesome.Shutdown();
         _renderFrame?.Dispose();
     }
 }

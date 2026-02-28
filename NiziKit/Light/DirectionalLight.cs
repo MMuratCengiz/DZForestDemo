@@ -1,15 +1,16 @@
 using System.Numerics;
+using NiziKit.Components;
 using NiziKit.Core;
 
 namespace NiziKit.Light;
 
 public class DirectionalLight(string name) : GameObject(name)
 {
-    public Vector3 Color { get; set; } = new(1.0f, 1.0f, 1.0f);
+    [Color] public Vector3 Color { get; set; } = new(1.0f, 1.0f, 1.0f);
     public float Intensity { get; set; } = 1.0f;
     public bool CastsShadows { get; set; } = true;
 
-    public Vector3 Direction
+    [HideInInspector] public Vector3 Direction
     {
         get
         {

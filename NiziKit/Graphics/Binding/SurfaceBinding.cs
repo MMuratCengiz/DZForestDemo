@@ -30,10 +30,10 @@ public class SurfaceBinding : ShaderBinding<SurfaceComponent>
             target.Normal,
             target.Roughness,
             target.Metallic,
+            target.Emissive,
             target.MetallicValue,
             target.RoughnessValue,
-            target.AlbedoColor,
-            target.UVScale);
+            HashCode.Combine(target.AlbedoColor, target.UVScale, target.EmissiveColor, target.EmissiveIntensity));
 
         if (hash == _lastHash)
         {
@@ -50,7 +50,11 @@ public class SurfaceBinding : ShaderBinding<SurfaceComponent>
             AlbedoColor = target.AlbedoColor,
             EmissiveColor = target.EmissiveColor,
             EmissiveIntensity = target.EmissiveIntensity,
-            HasAlbedoTexture = target.Albedo != null ? 1.0f : 0.0f
+            HasAlbedoTexture = target.Albedo != null ? 1.0f : 0.0f,
+            HasNormalTexture = target.Normal != null ? 1.0f : 0.0f,
+            HasRoughnessTexture = target.Roughness != null ? 1.0f : 0.0f,
+            HasMetallicTexture = target.Metallic != null ? 1.0f : 0.0f,
+            HasEmissiveTexture = target.Emissive != null ? 1.0f : 0.0f
         };
         _dataBuffer.Buffer.WriteData(in data, _dataBuffer.Offset);
 
@@ -60,6 +64,7 @@ public class SurfaceBinding : ShaderBinding<SurfaceComponent>
         bg.SrvTexture(GpuSurfaceLayout.Normal.Binding, target.Normal?.GpuTexture ?? ColorTexture.Missing.Texture);
         bg.SrvTexture(GpuSurfaceLayout.Roughness.Binding, target.Roughness?.GpuTexture ?? ColorTexture.Missing.Texture);
         bg.SrvTexture(GpuSurfaceLayout.Metallic.Binding, target.Metallic?.GpuTexture ?? ColorTexture.Missing.Texture);
+        bg.SrvTexture(GpuSurfaceLayout.Emissive.Binding, target.Emissive?.GpuTexture ?? ColorTexture.Missing.Texture);
         bg.Sampler(GpuSurfaceLayout.TextureSampler.Binding, _sampler);
         bg.CbvWithDesc(new BindBufferDesc
         {

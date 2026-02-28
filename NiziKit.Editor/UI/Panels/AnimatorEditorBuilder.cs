@@ -7,12 +7,12 @@ namespace NiziKit.Editor.UI.Panels;
 
 public static class AnimatorEditorBuilder
 {
-    public static void BuildPlaybackControls(UiFrame ui, UiContext ctx, Animator animator,
+    public static void BuildPlaybackControls(Animator animator,
         EditorViewModel editorVm, string sectionId)
     {
         var t = EditorTheme.Current;
         var controlsId = sectionId + "_AnimCtrl";
-        using (ui.Panel(controlsId + "_Header")
+        using (NiziUi.Panel(controlsId + "_Header")
             .Horizontal()
             .GrowWidth()
             .FitHeight()
@@ -21,14 +21,14 @@ public static class AnimatorEditorBuilder
             .Gap(4)
             .Open())
         {
-            ui.Icon(FontAwesome.Play, t.Accent, t.IconSizeXS);
-            ui.Text("Playback", new UiTextStyle { Color = t.TextSecondary, FontSize = t.FontSizeCaption });
+            NiziUi.Icon(FontAwesome.Play, t.Accent, t.IconSizeXS);
+            NiziUi.Text("Playback", new UiTextStyle { Color = t.TextSecondary, FontSize = t.FontSizeCaption });
         }
 
         var animNames = GetAnimationNames(animator);
         if (animNames.Length > 0)
         {
-            using (ui.Panel(controlsId + "_SelRow")
+            using (NiziUi.Panel(controlsId + "_SelRow")
                 .Horizontal()
                 .GrowWidth()
                 .FitHeight()
@@ -36,7 +36,7 @@ public static class AnimatorEditorBuilder
                 .AlignChildrenY(UiAlignY.Center)
                 .Open())
             {
-                ui.Text("Clip", new UiTextStyle { Color = t.TextSecondary, FontSize = t.FontSizeCaption });
+                NiziUi.Text("Clip", new UiTextStyle { Color = t.TextSecondary, FontSize = t.FontSizeCaption });
 
                 var currentAnim = animator.CurrentAnimation ?? animator.DefaultAnimation ?? "";
                 var selectedIndex = Array.IndexOf(animNames, currentAnim);
@@ -45,7 +45,7 @@ public static class AnimatorEditorBuilder
                     selectedIndex = 0;
                 }
 
-                if (Ui.Dropdown(ctx, controlsId + "_AnimDD", animNames)
+                if (NiziUi.Dropdown(controlsId + "_AnimDD", animNames)
                     .Background(t.SurfaceInset, t.Hover)
                     .TextColor(t.TextPrimary)
                     .FontSize(t.FontSizeCaption)
@@ -62,7 +62,7 @@ public static class AnimatorEditorBuilder
                 }
             }
 
-            using (ui.Panel(controlsId + "_Transport")
+            using (NiziUi.Panel(controlsId + "_Transport")
                 .Horizontal()
                 .GrowWidth()
                 .FitHeight()
@@ -73,7 +73,7 @@ public static class AnimatorEditorBuilder
                 .Open())
             {
                 var stopColor = animator.IsPlaying ? t.TextPrimary : t.TextDisabled;
-                if (RenderTransportButton(ui, ctx, controlsId + "_Stop", FontAwesome.Stop, stopColor, t)
+                if (RenderTransportButton(controlsId + "_Stop", FontAwesome.Stop, stopColor, t)
                     && animator.IsPlaying)
                 {
                     animator.Stop();
@@ -81,7 +81,7 @@ public static class AnimatorEditorBuilder
 
                 if (animator is { IsPlaying: true, IsPaused: false })
                 {
-                    if (RenderTransportButton(ui, ctx, controlsId + "_Pause", FontAwesome.Pause, t.Accent, t))
+                    if (RenderTransportButton(controlsId + "_Pause", FontAwesome.Pause, t.Accent, t))
                     {
                         animator.Pause();
                     }
@@ -89,7 +89,7 @@ public static class AnimatorEditorBuilder
                 else
                 {
                     var playColor = animNames.Length > 0 ? t.Accent : t.TextDisabled;
-                    if (RenderTransportButton(ui, ctx, controlsId + "_Play", FontAwesome.Play, playColor, t))
+                    if (RenderTransportButton(controlsId + "_Play", FontAwesome.Play, playColor, t))
                     {
                         if (animator.IsPaused)
                         {
@@ -108,10 +108,10 @@ public static class AnimatorEditorBuilder
 
             if (animator.IsPlaying || animator.IsPaused)
             {
-                BuildProgressBar(ui, ctx, animator, controlsId, t);
+                BuildProgressBar(animator, controlsId, t);
             }
 
-            using (ui.Panel(controlsId + "_OptionsRow")
+            using (NiziUi.Panel(controlsId + "_OptionsRow")
                 .Horizontal()
                 .GrowWidth()
                 .FitHeight()
@@ -120,11 +120,11 @@ public static class AnimatorEditorBuilder
                 .AlignChildrenY(UiAlignY.Center)
                 .Open())
             {
-                ui.Text("Loop", new UiTextStyle { Color = t.TextSecondary, FontSize = t.FontSizeCaption });
+                NiziUi.Text("Loop", new UiTextStyle { Color = t.TextSecondary, FontSize = t.FontSizeCaption });
                 var loopNames = Enum.GetNames<LoopMode>();
                 var loopIndex = (int)animator.CurrentLoopMode;
 
-                if (Ui.Dropdown(ctx, controlsId + "_LoopDD", loopNames)
+                if (NiziUi.Dropdown(controlsId + "_LoopDD", loopNames)
                     .Background(t.SurfaceInset, t.Hover)
                     .TextColor(t.TextPrimary)
                     .FontSize(t.FontSizeCaption)
@@ -141,9 +141,9 @@ public static class AnimatorEditorBuilder
                     }
                 }
 
-                ui.Text("Speed", new UiTextStyle { Color = t.TextSecondary, FontSize = t.FontSizeCaption });
+                NiziUi.Text("Speed", new UiTextStyle { Color = t.TextSecondary, FontSize = t.FontSizeCaption });
                 var speed = animator.Speed;
-                if (Ui.DraggableValue(ctx, controlsId + "_Speed")
+                if (NiziUi.DraggableValue(controlsId + "_Speed")
                     .LabelWidth(0)
                     .Sensitivity(0.01f)
                     .Format("F2")
@@ -159,15 +159,15 @@ public static class AnimatorEditorBuilder
         }
         else
         {
-            ui.Text("No animations available. Assign a skeleton first.",
+            NiziUi.Text("No animations available. Assign a skeleton first.",
                 new UiTextStyle { Color = t.TextMuted, FontSize = t.FontSizeCaption });
         }
     }
 
-    private static void BuildProgressBar(UiFrame ui, UiContext ctx, Animator animator,
+    private static void BuildProgressBar(Animator animator,
         string controlsId, IEditorTheme t)
     {
-        using (ui.Panel(controlsId + "_Progress")
+        using (NiziUi.Panel(controlsId + "_Progress")
             .Horizontal()
             .GrowWidth()
             .FitHeight()
@@ -177,10 +177,10 @@ public static class AnimatorEditorBuilder
             .Open())
         {
             var timeText = $"{animator.Time:F1}s";
-            ui.Text(timeText, new UiTextStyle { Color = t.TextMuted, FontSize = t.FontSizeCaption });
+            NiziUi.Text(timeText, new UiTextStyle { Color = t.TextMuted, FontSize = t.FontSizeCaption });
 
             var normalizedTime = animator.NormalizedTime;
-            Ui.Slider(ctx, controlsId + "_Scrub")
+            NiziUi.Slider(controlsId + "_Scrub")
                 .Range(0f, 1f)
                 .TrackColor(t.SurfaceInset)
                 .FillColor(t.Accent)
@@ -191,21 +191,21 @@ public static class AnimatorEditorBuilder
                 .Show(ref normalizedTime);
 
             var durText = $"{animator.Duration:F1}s";
-            ui.Text(durText, new UiTextStyle { Color = t.TextMuted, FontSize = t.FontSizeCaption });
+            NiziUi.Text(durText, new UiTextStyle { Color = t.TextMuted, FontSize = t.FontSizeCaption });
         }
     }
 
-    private static bool RenderTransportButton(UiFrame ui, UiContext ctx, string id,
+    private static bool RenderTransportButton(string id,
         string icon, UiColor iconColor, IEditorTheme t)
     {
-        var btn = Ui.Button(ctx, id, "")
+        var btn = NiziUi.Button(id, "")
             .Color(UiColor.Transparent, t.Hover, t.Active)
             .CornerRadius(t.RadiusMedium)
             .Padding(6, 4)
             .Border(0, UiColor.Transparent);
 
         using var scope = btn.Open();
-        scope.Icon(icon, iconColor, t.IconSizeSmall);
+        NiziUi.Icon(icon, iconColor, t.IconSizeSmall);
         return btn.WasClicked();
     }
 

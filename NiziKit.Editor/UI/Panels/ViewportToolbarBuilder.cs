@@ -8,11 +8,11 @@ public static class ViewportToolbarBuilder
 {
     private static readonly string[] ViewPresets = ["Free", "Top", "Bottom", "Front", "Back", "Right", "Left"];
 
-    public static void Build(UiFrame ui, UiContext ctx, EditorViewModel vm)
+    public static void Build(EditorViewModel vm)
     {
         var t = EditorTheme.Current;
 
-        using var row = ui.Panel("ToolbarRow")
+        using var row = NiziUi.Panel("ToolbarRow")
             .Horizontal()
             .GrowWidth()
             .FitHeight()
@@ -20,7 +20,7 @@ public static class ViewportToolbarBuilder
             .Gap(6)
             .Open();
 
-        using (ui.Panel("ToolbarControls")
+        using (NiziUi.Panel("ToolbarControls")
             .Horizontal()
             .Background(t.PanelBackground.WithAlpha(220))
             .Border(UiBorder.All(1, t.Border))
@@ -32,24 +32,24 @@ public static class ViewportToolbarBuilder
             .Gap(6)
             .Open())
         {
-            EditorUi.Badge(ui, vm.GizmoModeText);
+            EditorUi.Badge(vm.GizmoModeText);
 
-            Ui.VerticalDivider(ctx, t.Border);
+            NiziUi.VerticalDivider(t.Border);
 
-            if (EditorUi.ToolbarToggle(ctx, "GridToggle", FontAwesome.BorderAll, vm.GridStatusText, vm.ShowGrid))
+            if (EditorUi.ToolbarToggle("GridToggle", FontAwesome.BorderAll, vm.GridStatusText, vm.ShowGrid))
             {
                 vm.ToggleGrid();
             }
 
-            if (EditorUi.ToolbarToggle(ctx, "SnapToggle", FontAwesome.Magnet, vm.SnapStatusText, vm.SnapEnabled))
+            if (EditorUi.ToolbarToggle("SnapToggle", FontAwesome.Magnet, vm.SnapStatusText, vm.SnapEnabled))
             {
                 vm.ToggleSnap();
             }
 
-            Ui.VerticalDivider(ctx, t.Border);
+            NiziUi.VerticalDivider(t.Border);
 
             var presetIndex = (int)vm.CurrentViewPreset;
-            if (Ui.Dropdown(ctx, "ViewPreset", ViewPresets)
+            if (NiziUi.Dropdown("ViewPreset", ViewPresets)
                 .Background(t.PanelElevated, t.Hover)
                 .TextColor(t.TextPrimary)
                 .FontSize(t.FontSizeCaption)
@@ -63,15 +63,15 @@ public static class ViewportToolbarBuilder
                 vm.SetViewPreset(ViewPresets[presetIndex]);
             }
 
-            if (EditorUi.ToolbarToggle(ctx, "2DToggle", FontAwesome.Cube, vm.ProjectionModeText, vm.Is2DMode))
+            if (EditorUi.ToolbarToggle("2DToggle", FontAwesome.Cube, vm.ProjectionModeText, vm.Is2DMode))
             {
                 vm.Toggle2DMode();
             }
         }
 
-        Ui.FlexSpacer(ctx);
+        NiziUi.FlexSpacer();
 
-        using (ui.Panel("ToolbarStats")
+        using (NiziUi.Panel("ToolbarStats")
             .Horizontal()
             .Background(t.PanelBackground.WithAlpha(220))
             .Border(UiBorder.All(1, t.Border))
@@ -85,11 +85,11 @@ public static class ViewportToolbarBuilder
         {
         if (vm.ShowStatistics)
             {
-                ui.Text($"{vm.Fps:F0} FPS", new UiTextStyle { Color = t.TextSecondary, FontSize = t.FontSizeCaption });
-                ui.Text($"({vm.FrameTime:F1}ms)", new UiTextStyle { Color = t.TextMuted, FontSize = t.FontSizeCaption });
+                NiziUi.Text($"{vm.Fps:F0} FPS", new UiTextStyle { Color = t.TextSecondary, FontSize = t.FontSizeCaption });
+                NiziUi.Text($"({vm.FrameTime:F1}ms)", new UiTextStyle { Color = t.TextMuted, FontSize = t.FontSizeCaption });
             }
 
-            if (EditorUi.IconButton(ctx, "StatsToggle", FontAwesome.ChartBar))
+            if (EditorUi.IconButton("StatsToggle", FontAwesome.ChartBar))
             {
                 vm.ToggleStatistics();
             }

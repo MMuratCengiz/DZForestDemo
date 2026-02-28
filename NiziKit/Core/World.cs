@@ -11,7 +11,7 @@ public class World : IDisposable
     private static World? _instance;
     public static World Instance => _instance ?? throw new InvalidOperationException("World not initialized");
 
-    public static Scene? CurrentScene => Instance._currentScene;
+    public static Scene CurrentScene => Instance._currentScene;
     public static PhysicsWorld PhysicsWorld => Instance._physicsWorld;
     public static RenderWorld RenderWorld => Instance._renderWorld;
     public static AssetWorld AssetWorld => Instance._assetWorld;
@@ -121,7 +121,7 @@ public class World : IDisposable
 
     private readonly IWorldEventListener[] _worldEventListeners;
 
-    private Scene? _currentScene;
+    private Scene _currentScene;
     private readonly PhysicsWorld _physicsWorld;
     private readonly RenderWorld _renderWorld;
     private readonly AssetWorld _assetWorld;
@@ -129,6 +129,7 @@ public class World : IDisposable
 
     public World()
     {
+        _currentScene = new EmptyScene();
         _physicsWorld = new PhysicsWorld();
         _renderWorld = new RenderWorld();
         _assetWorld = new AssetWorld();
@@ -141,7 +142,7 @@ public class World : IDisposable
 
     private void _LoadScene(Scene scene)
     {
-        _currentScene?.Dispose();
+        _currentScene.Dispose();
         foreach (var listener in _worldEventListeners)
         {
             listener.SceneReset();

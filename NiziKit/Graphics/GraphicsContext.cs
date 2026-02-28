@@ -195,6 +195,7 @@ public sealed class GraphicsContext : IDisposable
     public void _BeginFrame()
     {
         _ProcessPendingResize();
+        ShaderHotReload.ProcessPendingReloads();
         _currentFrame = _nextFrame;
         _nextFrame = (_nextFrame + 1) % (int)NumFrames;
     }

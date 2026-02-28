@@ -133,6 +133,10 @@ public class EditorSceneService
             };
         }
 
+        json.AmbientSkyColor = [scene.AmbientSkyColor.X, scene.AmbientSkyColor.Y, scene.AmbientSkyColor.Z];
+        json.AmbientGroundColor = [scene.AmbientGroundColor.X, scene.AmbientGroundColor.Y, scene.AmbientGroundColor.Z];
+        json.AmbientIntensity = scene.AmbientIntensity;
+
         json.Lights = [];
 
         foreach (var obj in scene.RootObjects)

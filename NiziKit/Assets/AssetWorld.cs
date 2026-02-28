@@ -43,7 +43,7 @@ public class AssetWorld : IWorldEventListener
         var meshComp = go.GetComponent<MeshComponent>();
         if (meshComp?.Mesh is { IsUploaded: false })
         {
-            Assets.Upload(meshComp.Mesh);
+            NiziAssets.Upload(meshComp.Mesh);
         }
     }
 }

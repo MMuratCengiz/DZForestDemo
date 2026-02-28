@@ -26,7 +26,6 @@ public sealed class UiColorPickerState
 
 public ref struct UiColorPicker
 {
-    private readonly UiContext _context;
     private readonly UiColorPickerState _state;
 
     private bool _hasAlpha;
@@ -48,7 +47,6 @@ public ref struct UiColorPicker
 
     internal UiColorPicker(UiContext ctx, string id, UiColorPickerState state)
     {
-        _context = ctx;
         _state = state;
         Id = ctx.StringCache.GetId(id);
 
@@ -119,8 +117,8 @@ public ref struct UiColorPicker
             (byte)(Math.Clamp(db, 0f, 1f) * 255),
             (byte)(Math.Clamp(a, 0f, 1f) * 255));
 
-        var swatchId = _context.StringCache.GetId("CPSwatch", Id);
-        var swatchInteraction = _context.GetInteraction(swatchId);
+        var swatchId = NiziUi.Ctx.StringCache.GetId("CPSwatch", Id);
+        var swatchInteraction = NiziUi.Ctx.GetInteraction(swatchId);
 
         var containerDecl = new ClayElementDeclaration { Id = Id };
         containerDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
@@ -129,7 +127,7 @@ public ref struct UiColorPicker
         containerDecl.Layout.ChildGap = 4;
         containerDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
 
-        _context.OpenElement(containerDecl);
+        NiziUi.Ctx.OpenElement(containerDecl);
         {
             var swatchBorderColor = swatchInteraction.IsHovered
                 ? UiColor.Rgb(120, 120, 130) : _borderColor;
@@ -145,8 +143,8 @@ public ref struct UiColorPicker
                 Color = swatchBorderColor.ToClayColor()
             };
 
-            _context.OpenElement(swatchDecl);
-            _context.Clay.CloseElement();
+            NiziUi.Ctx.OpenElement(swatchDecl);
+            NiziUi.Ctx.Clay.CloseElement();
 
             if (_state.IsOpen)
             {
@@ -156,20 +154,20 @@ public ref struct UiColorPicker
                 }
             }
         }
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
 
         var justEndedDrag = false;
-        if (!_context.MousePressed && (_state.IsDraggingHue || _state.IsDraggingSv))
+        if (!NiziUi.Ctx.MousePressed && (_state.IsDraggingHue || _state.IsDraggingSv))
         {
             _state.IsDraggingHue = false;
             _state.IsDraggingSv = false;
             justEndedDrag = true;
         }
 
-        if (_state.IsOpen && _context.MouseJustReleased && !IsAnyDragging() && !justEndedDrag)
+        if (_state.IsOpen && NiziUi.Ctx.MouseJustReleased && !IsAnyDragging() && !justEndedDrag)
         {
-            var popupId = _context.StringCache.GetId("CPPopup", Id);
-            if (!_context.Clay.PointerOver(popupId))
+            var popupId = NiziUi.Ctx.StringCache.GetId("CPPopup", Id);
+            if (!NiziUi.Ctx.Clay.PointerOver(popupId))
             {
                 _state.IsOpen = false;
             }
@@ -221,7 +219,7 @@ public ref struct UiColorPicker
         EnsureWheelTexture();
         var actualSize = _state.ActualTexSize;
 
-        var popupId = _context.StringCache.GetId("CPPopup", Id);
+        var popupId = NiziUi.Ctx.StringCache.GetId("CPPopup", Id);
         var popupDecl = new ClayElementDeclaration { Id = popupId };
         popupDecl.Layout.LayoutDirection = ClayLayoutDirection.TopToBottom;
         popupDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(TexSize + 20);
@@ -245,21 +243,21 @@ public ref struct UiColorPicker
             ZIndex = 1000
         };
 
-        _context.OpenElement(popupDecl);
-        _context.BeginPopupScope(popupId);
+        NiziUi.Ctx.OpenElement(popupDecl);
+        NiziUi.Ctx.BeginPopupScope(popupId);
         {
-            var wheelId = _context.StringCache.GetId("CPWheel", Id);
+            var wheelId = NiziUi.Ctx.StringCache.GetId("CPWheel", Id);
             var wheelDecl = new ClayElementDeclaration { Id = wheelId };
             wheelDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(TexSize);
             wheelDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(TexSize);
-            _context.OpenElement(wheelDecl);
+            NiziUi.Ctx.OpenElement(wheelDecl);
             {
                 if (_state.WheelTexture != null)
                 {
-                    _context.Clay.Texture(_state.WheelTexture, actualSize, actualSize);
+                    NiziUi.Ctx.Clay.Texture(_state.WheelTexture, actualSize, actualSize);
                 }
             }
-            _context.Clay.CloseElement();
+            NiziUi.Ctx.Clay.CloseElement();
 
             if (HandleWheelInteraction(wheelId))
             {
@@ -277,8 +275,8 @@ public ref struct UiColorPicker
             HsvToRgb(_state.Hue, _state.Saturation, _state.Value, out var hexR, out var hexG, out var hexB);
             RenderHexDisplay(hexR, hexG, hexB, a, showAlpha);
         }
-        _context.EndPopupScope();
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.EndPopupScope();
+        NiziUi.Ctx.Clay.CloseElement();
 
         return changed;
     }
@@ -286,37 +284,37 @@ public ref struct UiColorPicker
     private bool HandleWheelInteraction(uint wheelId)
     {
         var changed = false;
-        var wheelInteraction = _context.GetInteraction(wheelId);
+        var wheelInteraction = NiziUi.Ctx.GetInteraction(wheelId);
 
         if (wheelInteraction.IsPressed && !_state.IsDraggingHue && !_state.IsDraggingSv
-            && _context.ActiveDragWidgetId == 0)
+            && NiziUi.Ctx.ActiveDragWidgetId == 0)
         {
-            var bbox = _context.GetElementBounds(wheelId);
+            var bbox = NiziUi.Ctx.GetElementBounds(wheelId);
             var scale = bbox.Width > 0 ? TexSize / bbox.Width : 1f;
             var centerX = bbox.X + bbox.Width / 2f;
             var centerY = bbox.Y + bbox.Height / 2f;
-            var relX = (_context.MouseX - centerX) * scale;
-            var relY = (_context.MouseY - centerY) * scale;
+            var relX = (NiziUi.Ctx.MouseX - centerX) * scale;
+            var relY = (NiziUi.Ctx.MouseY - centerY) * scale;
             var distSq = relX * relX + relY * relY;
 
             if (distSq >= RingInner * RingInner && distSq <= RingOuter * RingOuter)
             {
                 _state.IsDraggingHue = true;
-                _context.ActiveDragWidgetId = Id;
+                NiziUi.Ctx.ActiveDragWidgetId = Id;
             }
             else if (MathF.Abs(relX) <= SvHalf && MathF.Abs(relY) <= SvHalf)
             {
                 _state.IsDraggingSv = true;
-                _context.ActiveDragWidgetId = Id;
+                NiziUi.Ctx.ActiveDragWidgetId = Id;
             }
         }
 
         if (_state.IsDraggingHue)
         {
-            var bbox = _context.GetElementBounds(wheelId);
+            var bbox = NiziUi.Ctx.GetElementBounds(wheelId);
             var centerX = bbox.X + bbox.Width / 2f;
             var centerY = bbox.Y + bbox.Height / 2f;
-            var angle = MathF.Atan2(_context.MouseY - centerY, _context.MouseX - centerX);
+            var angle = MathF.Atan2(NiziUi.Ctx.MouseY - centerY, NiziUi.Ctx.MouseX - centerX);
             var hue = (angle / (2f * MathF.PI) + 0.5f) * 360f;
             if (hue >= 360f)
             {
@@ -332,7 +330,7 @@ public ref struct UiColorPicker
 
         if (_state.IsDraggingSv)
         {
-            var bbox = _context.GetElementBounds(wheelId);
+            var bbox = NiziUi.Ctx.GetElementBounds(wheelId);
             var scale = bbox.Width > 0 ? TexSize / bbox.Width : 1f;
             var centerX = bbox.X + bbox.Width / 2f;
             var centerY = bbox.Y + bbox.Height / 2f;
@@ -340,9 +338,9 @@ public ref struct UiColorPicker
             var svScreenSize = SvSize / scale;
 
             _state.Saturation = Math.Clamp(
-                (_context.MouseX - (centerX - svScreenHalf)) / svScreenSize, 0f, 1f);
+                (NiziUi.Ctx.MouseX - (centerX - svScreenHalf)) / svScreenSize, 0f, 1f);
             _state.Value = 1f - Math.Clamp(
-                (_context.MouseY - (centerY - svScreenHalf)) / svScreenSize, 0f, 1f);
+                (NiziUi.Ctx.MouseY - (centerY - svScreenHalf)) / svScreenSize, 0f, 1f);
             changed = true;
         }
 
@@ -351,7 +349,7 @@ public ref struct UiColorPicker
 
     private bool RenderAlphaSlider(ref float a)
     {
-        var rowId = _context.StringCache.GetId("CPAlphaRow", Id);
+        var rowId = NiziUi.Ctx.StringCache.GetId("CPAlphaRow", Id);
         var rowDecl = new ClayElementDeclaration { Id = rowId };
         rowDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
         rowDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(TexSize);
@@ -361,22 +359,22 @@ public ref struct UiColorPicker
 
         var changed = false;
 
-        _context.OpenElement(rowDecl);
+        NiziUi.Ctx.OpenElement(rowDecl);
         {
-            var labelId = _context.StringCache.GetId("CPAlphaLbl", Id);
+            var labelId = NiziUi.Ctx.StringCache.GetId("CPAlphaLbl", Id);
             var labelDecl = new ClayElementDeclaration { Id = labelId };
             labelDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(14);
             labelDecl.Layout.ChildAlignment.X = ClayAlignmentX.Center;
-            _context.OpenElement(labelDecl);
-            _context.Clay.Text("A", new ClayTextDesc
+            NiziUi.Ctx.OpenElement(labelDecl);
+            NiziUi.Ctx.Clay.Text("A", new ClayTextDesc
             {
                 TextColor = UiColor.Rgb(180, 180, 180).ToClayColor(),
                 FontSize = _fontSize
             });
-            _context.Clay.CloseElement();
+            NiziUi.Ctx.Clay.CloseElement();
 
             var sliderId = "CPAlphaSlider_" + Id;
-            var slider = new UiSlider(_context, sliderId, _state.AlphaSlider);
+            var slider = new UiSlider(NiziUi.Ctx, sliderId, _state.AlphaSlider);
             changed = slider
                 .Range(0f, 1f)
                 .TrackColor(UiColor.Rgb(50, 50, 55))
@@ -389,19 +387,19 @@ public ref struct UiColorPicker
                 .GrowWidth()
                 .Show(ref a);
 
-            var valId = _context.StringCache.GetId("CPAlphaVal", Id);
+            var valId = NiziUi.Ctx.StringCache.GetId("CPAlphaVal", Id);
             var valDecl = new ClayElementDeclaration { Id = valId };
             valDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(30);
             valDecl.Layout.ChildAlignment.X = ClayAlignmentX.Right;
-            _context.OpenElement(valDecl);
-            _context.Clay.Text(a.ToString("F2"), new ClayTextDesc
+            NiziUi.Ctx.OpenElement(valDecl);
+            NiziUi.Ctx.Clay.Text(a.ToString("F2"), new ClayTextDesc
             {
                 TextColor = _valueTextColor.ToClayColor(),
                 FontSize = _fontSize
             });
-            _context.Clay.CloseElement();
+            NiziUi.Ctx.Clay.CloseElement();
         }
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
 
         return changed;
     }
@@ -417,7 +415,7 @@ public ref struct UiColorPicker
             ? $"#{ri:X2}{gi:X2}{bi:X2}{ai:X2}"
             : $"#{ri:X2}{gi:X2}{bi:X2}";
 
-        var hexRowId = _context.StringCache.GetId("CPHexRow", Id);
+        var hexRowId = NiziUi.Ctx.StringCache.GetId("CPHexRow", Id);
         var hexRowDecl = new ClayElementDeclaration { Id = hexRowId };
         hexRowDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
         hexRowDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
@@ -425,22 +423,22 @@ public ref struct UiColorPicker
         hexRowDecl.Layout.ChildGap = 6;
         hexRowDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
 
-        _context.OpenElement(hexRowDecl);
+        NiziUi.Ctx.OpenElement(hexRowDecl);
         {
-            _context.Clay.Text("Hex", new ClayTextDesc
+            NiziUi.Ctx.Clay.Text("Hex", new ClayTextDesc
             {
                 TextColor = _labelColor.ToClayColor(),
                 FontSize = _fontSize
             });
 
-            var spacerId = _context.StringCache.GetId("CPHexSpc", Id);
+            var spacerId = NiziUi.Ctx.StringCache.GetId("CPHexSpc", Id);
             var spacerDecl = new ClayElementDeclaration { Id = spacerId };
             spacerDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
-            _context.OpenElement(spacerDecl);
-            _context.Clay.CloseElement();
+            NiziUi.Ctx.OpenElement(spacerDecl);
+            NiziUi.Ctx.Clay.CloseElement();
 
             var previewColor = UiColor.Rgba(ri, gi, bi, ai);
-            var prevId = _context.StringCache.GetId("CPHexPrev", Id);
+            var prevId = NiziUi.Ctx.StringCache.GetId("CPHexPrev", Id);
             var prevDecl = new ClayElementDeclaration { Id = prevId };
             prevDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(16);
             prevDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(16);
@@ -451,21 +449,21 @@ public ref struct UiColorPicker
                 Width = ClayBorderWidth.CreateUniform(1),
                 Color = _borderColor.ToClayColor()
             };
-            _context.OpenElement(prevDecl);
-            _context.Clay.CloseElement();
+            NiziUi.Ctx.OpenElement(prevDecl);
+            NiziUi.Ctx.Clay.CloseElement();
 
-            _context.Clay.Text(hex, new ClayTextDesc
+            NiziUi.Ctx.Clay.Text(hex, new ClayTextDesc
             {
                 TextColor = _valueTextColor.ToClayColor(),
                 FontSize = _fontSize
             });
         }
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
     }
 
     private void EnsureWheelTexture()
     {
-        var dpiScale = _context.Clay.GetDpiScale();
+        var dpiScale = NiziUi.Ctx.Clay.GetDpiScale();
         var actualSize = Math.Max(1, (int)(TexSize * dpiScale));
 
         if (_state.ActualTexSize != actualSize)
@@ -728,25 +726,5 @@ public ref struct UiColorPicker
         r = r1 + m;
         g = g1 + m;
         b = b1 + m;
-    }
-}
-
-public static partial class Ui
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiColorPicker ColorPicker(UiContext ctx, string id)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        var state = ctx.GetOrCreateState<UiColorPickerState>(elementId);
-        return new UiColorPicker(ctx, id, state);
-    }
-}
-
-public static partial class UiElementScopeExtensions
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiColorPicker ColorPicker(this ref UiElementScope scope, UiContext ctx, string id)
-    {
-        return Ui.ColorPicker(ctx, id);
     }
 }

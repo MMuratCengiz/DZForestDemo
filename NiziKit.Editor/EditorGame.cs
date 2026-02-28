@@ -48,7 +48,6 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         _renderer = new EditorRenderer(_gameRenderer);
 
         _renderer.RenderFrame.EnableUi(UiContextDesc.Default);
-        FontAwesome.InitializeEmbedded(_renderer.RenderFrame.UiContext.Clay);
 
         _editorCameraObject = new GameObject("EditorCamera")
         {
@@ -102,13 +101,12 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         renderFrame.BeginFrame();
 
         var sceneColor = _renderer.RenderScene();
-        var ui = renderFrame.RenderUi(uiFrame => EditorUiBuilder.Build(uiFrame, renderFrame.UiContext, _viewModel));
+        var ui = renderFrame.RenderUi(() => EditorUiBuilder.Build(_viewModel));
 
         renderFrame.AlphaBlit(ui, sceneColor);
 
         renderFrame.Submit();
         renderFrame.Present(sceneColor);
-        renderFrame.UiContext.ClearFrameEvents();
     }
 
     private void UpdateGizmoHover()
@@ -119,30 +117,23 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
 
     private void UpdateMouseOverUi()
     {
-        var ctx = _renderer.RenderFrame.UiContext;
-        var viewportId = ctx.GetElementId("ViewportFill");
-        var overViewport = ctx.Clay.PointerOver(viewportId);
+        var viewportId = NiziUi.GetElementId("ViewportFill");
+        var overViewport = NiziUi.PointerOver(viewportId);
 
         var hasDialog = _viewModel.IsSavePromptOpen
                         || _viewModel.IsOpenSceneDialogOpen
                         || _viewModel.IsImportPanelOpen
                         || _viewModel.IsAssetPickerOpen;
 
-        _mouseOverUi = !overViewport || hasDialog || ctx.IsPointerOverUi;
+        _mouseOverUi = !overViewport || hasDialog || NiziUi.IsPointerOverUi;
     }
 
     protected override void OnEvent(ref Event ev)
     {
-        var renderFrame = _renderer.RenderFrame;
-
         if (ev.Type == EventType.MouseMotion)
         {
             _lastMouseX = ev.MouseMotion.X;
             _lastMouseY = ev.MouseMotion.Y;
-
-            renderFrame.HandleUiEvent(ev);
-            renderFrame.UiContext.RecordEvent(ev);
-
             UpdateMouseOverUi();
 
             if (_gizmoDragging)
@@ -152,8 +143,6 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         }
         else if (ev.Type == EventType.MouseButtonDown)
         {
-            renderFrame.HandleUiEvent(ev);
-            renderFrame.UiContext.RecordEvent(ev);
             UpdateMouseOverUi();
 
             if (!_mouseOverUi && ev.MouseButton.Button == MouseButton.Left)
@@ -168,8 +157,6 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         }
         else if (ev.Type == EventType.MouseButtonUp)
         {
-            renderFrame.HandleUiEvent(ev);
-            renderFrame.UiContext.RecordEvent(ev);
             UpdateMouseOverUi();
 
             if (ev.MouseButton.Button == MouseButton.Left && _gizmoDragging)
@@ -177,16 +164,8 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
                 EndGizmoDrag();
             }
         }
-        else if (ev.Type == EventType.MouseWheel)
-        {
-            renderFrame.HandleUiEvent(ev);
-            renderFrame.UiContext.RecordEvent(ev);
-        }
         else if (ev.Type == EventType.KeyDown)
         {
-            renderFrame.HandleUiEvent(ev);
-            renderFrame.UiContext.RecordEvent(ev);
-
             if (ev.Key.KeyCode == KeyCode.Lshift || ev.Key.KeyCode == KeyCode.Rshift)
             {
                 _shiftHeld = true;
@@ -219,9 +198,6 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         }
         else if (ev.Type == EventType.KeyUp)
         {
-            renderFrame.HandleUiEvent(ev);
-            renderFrame.UiContext.RecordEvent(ev);
-
             if (ev.Key.KeyCode == KeyCode.Lshift || ev.Key.KeyCode == KeyCode.Rshift)
             {
                 _shiftHeld = false;
@@ -234,11 +210,6 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
 
             _keyConsumed = false;
         }
-        else if (ev.Type == EventType.TextInput)
-        {
-            renderFrame.HandleUiEvent(ev);
-            renderFrame.UiContext.RecordEvent(ev);
-        }
         else if (ev is { Type: EventType.WindowEvent, Window.Event: WindowEventType.SizeChanged })
         {
             var width = (uint)ev.Window.Data1;
@@ -246,7 +217,7 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
             OnResize(width, height);
         }
 
-        _textInputActive = renderFrame.UiContext.FocusedTextFieldId != 0;
+        _textInputActive = NiziUi.FocusedTextFieldId != 0;
 
         if (!UiWantsInput && !_gizmoDragging && !_keyConsumed)
         {
@@ -261,6 +232,7 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         if (gizmoPass.Gizmo.BeginDrag(ray, _editorCamera))
         {
             _gizmoDragging = true;
+            PhysicsPaused = true;
 
             var selected = _viewModel.SelectedGameObject?.GameObject;
             if (selected != null)
@@ -295,6 +267,7 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         var gizmoPass = _renderer.EditorOverlayPass;
         gizmoPass?.Gizmo.EndDrag();
         _gizmoDragging = false;
+        PhysicsPaused = false;
 
         var selected = _viewModel.SelectedGameObject?.GameObject;
         if (selected != null)
@@ -321,6 +294,7 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         var gizmoPass = _renderer.EditorOverlayPass;
         gizmoPass?.Gizmo.CancelDrag();
         _gizmoDragging = false;
+        PhysicsPaused = false;
 
         var selected = _viewModel.SelectedGameObject?.GameObject;
         if (selected != null)
@@ -376,9 +350,14 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
             case KeyCode.R:
                 gizmoPass.Gizmo.Mode = GizmoMode.Scale;
                 break;
+            case KeyCode.X:
+                gizmoPass.Gizmo.Space = gizmoPass.Gizmo.Space == GizmoSpace.Local
+                    ? GizmoSpace.World
+                    : GizmoSpace.Local;
+                break;
         }
 
-        _viewModel.UpdateGizmoModeText(gizmoPass.Gizmo.Mode);
+        _viewModel.UpdateGizmoModeText(gizmoPass.Gizmo.Mode, gizmoPass.Gizmo.Space);
     }
 
     private void TrySelectMeshAtCursor()
@@ -616,7 +595,7 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
 
         _editorCamera.SetAspectRatio(width, height);
         _renderer.OnResize(width, height);
-        _renderer.RenderFrame.UiContext.SetViewportSize(width, height);
+        NiziUi.SetViewportSize(width, height);
     }
 
     private bool UiWantsInput => _mouseOverUi || _textInputActive;
@@ -629,7 +608,6 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         _viewModel.ProjectionModeChanged -= OnProjectionModeChanged;
         _viewModel.GridSettingsChanged -= OnGridSettingsChanged;
 
-        FontAwesome.Shutdown();
         _renderer.Dispose();
     }
 }

@@ -204,6 +204,15 @@ public sealed class SceneJson
     [JsonPropertyName("skybox")]
     public SkyboxJson? Skybox { get; set; }
 
+    [JsonPropertyName("ambientSkyColor")]
+    public float[]? AmbientSkyColor { get; set; }
+
+    [JsonPropertyName("ambientGroundColor")]
+    public float[]? AmbientGroundColor { get; set; }
+
+    [JsonPropertyName("ambientIntensity")]
+    public float? AmbientIntensity { get; set; }
+
     [JsonPropertyName("lights")]
     public List<LightJson>? Lights { get; set; }
 

@@ -19,7 +19,6 @@ public struct UiListEditorResult
 
 public ref struct UiListEditor
 {
-    private readonly UiContext _context;
     private readonly UiListEditorState _state;
 
     private string _title;
@@ -27,7 +26,7 @@ public ref struct UiListEditor
     private UiColor _selectedColor;
     private UiColor _hoverColor;
     private UiColor _textColor;
-    private UiColor _headerBgColor;
+    private readonly UiColor _headerBgColor;
     private bool _showAdd;
     private bool _showRemove;
     private ushort _fontSize;
@@ -40,7 +39,6 @@ public ref struct UiListEditor
 
     internal UiListEditor(UiContext ctx, string id, UiListEditorState state)
     {
-        _context = ctx;
         _state = state;
         Id = ctx.StringCache.GetId(id);
 
@@ -118,21 +116,21 @@ public ref struct UiListEditor
             return text;
         }
 
-        var measured = _context.Clay.MeasureText(text, 0, _fontSize);
+        var measured = NiziUi.Ctx.Clay.MeasureText(text, 0, _fontSize);
         if (measured.Width <= maxWidth)
         {
             return text;
         }
 
         const string ellipsis = "...";
-        var ellipsisDims = _context.Clay.MeasureText(ellipsis, 0, _fontSize);
+        var ellipsisDims = NiziUi.Ctx.Clay.MeasureText(ellipsis, 0, _fontSize);
         var remaining = maxWidth - ellipsisDims.Width;
         if (remaining <= 0)
         {
             return ellipsis;
         }
 
-        var fitChars = _context.Clay.GetCharIndexAtOffset(text, remaining, 0, _fontSize);
+        var fitChars = NiziUi.Ctx.Clay.GetCharIndexAtOffset(text, remaining, 0, _fontSize);
         if (fitChars > 0 && fitChars < text.Length)
         {
             return text[..(int)fitChars] + ellipsis;
@@ -158,9 +156,9 @@ public ref struct UiListEditor
             Color = UiColor.Rgb(55, 55, 60).ToClayColor()
         };
 
-        _context.OpenElement(containerDecl);
+        NiziUi.Ctx.OpenElement(containerDecl);
         {
-            var headerId = _context.StringCache.GetId("LEHead", Id);
+            var headerId = NiziUi.Ctx.StringCache.GetId("LEHead", Id);
             var headerDecl = new ClayElementDeclaration { Id = headerId };
             headerDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
             headerDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
@@ -171,24 +169,24 @@ public ref struct UiListEditor
             headerDecl.BackgroundColor = _headerBgColor.ToClayColor();
             headerDecl.BorderRadius = new ClayBorderRadius { TopLeft = 4, TopRight = 4 };
 
-            _context.OpenElement(headerDecl);
+            NiziUi.Ctx.OpenElement(headerDecl);
             {
-                _context.Clay.Text(_title, new ClayTextDesc
+                NiziUi.Ctx.Clay.Text(_title, new ClayTextDesc
                 {
                     TextColor = _textColor.ToClayColor(),
                     FontSize = _fontSize
                 });
 
-                var spacerId = _context.StringCache.GetId("LESpc", Id);
+                var spacerId = NiziUi.Ctx.StringCache.GetId("LESpc", Id);
                 var spacerDecl = new ClayElementDeclaration { Id = spacerId };
                 spacerDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
-                _context.OpenElement(spacerDecl);
-                _context.Clay.CloseElement();
+                NiziUi.Ctx.OpenElement(spacerDecl);
+                NiziUi.Ctx.Clay.CloseElement();
 
                 if (_showAdd)
                 {
-                    var addId = _context.StringCache.GetId("LEAdd", Id);
-                    var addInteraction = _context.GetInteraction(addId);
+                    var addId = NiziUi.Ctx.StringCache.GetId("LEAdd", Id);
+                    var addInteraction = NiziUi.Ctx.GetInteraction(addId);
                     var addBg = addInteraction.IsHovered ? UiColor.Rgb(60, 60, 65) : UiColor.Transparent;
 
                     var addDecl = new ClayElementDeclaration { Id = addId };
@@ -199,15 +197,15 @@ public ref struct UiListEditor
                     addDecl.BackgroundColor = addBg.ToClayColor();
                     addDecl.BorderRadius = ClayBorderRadius.CreateUniform(3);
 
-                    _context.OpenElement(addDecl);
-                    _context.Clay.Text(FontAwesome.Plus, new ClayTextDesc
+                    NiziUi.Ctx.OpenElement(addDecl);
+                    NiziUi.Ctx.Clay.Text(FontAwesome.Plus, new ClayTextDesc
                     {
                         TextColor = UiColor.Rgb(100, 200, 100).ToClayColor(),
                         FontSize = 12,
                         FontId = FontAwesome.FontId,
                         TextAlignment = ClayTextAlignment.Center
                     });
-                    _context.Clay.CloseElement();
+                    NiziUi.Ctx.Clay.CloseElement();
 
                     if (addInteraction.WasClicked)
                     {
@@ -217,8 +215,8 @@ public ref struct UiListEditor
 
                 if (_showRemove)
                 {
-                    var removeId = _context.StringCache.GetId("LEDel", Id);
-                    var removeInteraction = _context.GetInteraction(removeId);
+                    var removeId = NiziUi.Ctx.StringCache.GetId("LEDel", Id);
+                    var removeInteraction = NiziUi.Ctx.GetInteraction(removeId);
                     var removeBg = removeInteraction.IsHovered ? UiColor.Rgb(60, 60, 65) : UiColor.Transparent;
 
                     var removeDecl = new ClayElementDeclaration { Id = removeId };
@@ -229,15 +227,15 @@ public ref struct UiListEditor
                     removeDecl.BackgroundColor = removeBg.ToClayColor();
                     removeDecl.BorderRadius = ClayBorderRadius.CreateUniform(3);
 
-                    _context.OpenElement(removeDecl);
-                    _context.Clay.Text(FontAwesome.Minus, new ClayTextDesc
+                    NiziUi.Ctx.OpenElement(removeDecl);
+                    NiziUi.Ctx.Clay.Text(FontAwesome.Minus, new ClayTextDesc
                     {
                         TextColor = UiColor.Rgb(200, 100, 100).ToClayColor(),
                         FontSize = 12,
                         FontId = FontAwesome.FontId,
                         TextAlignment = ClayTextAlignment.Center
                     });
-                    _context.Clay.CloseElement();
+                    NiziUi.Ctx.Clay.CloseElement();
 
                     if (removeInteraction.WasClicked && _state.SelectedIndex >= 0 && _state.SelectedIndex < items.Length)
                     {
@@ -246,21 +244,21 @@ public ref struct UiListEditor
                     }
                 }
             }
-            _context.Clay.CloseElement();
+            NiziUi.Ctx.Clay.CloseElement();
 
-            var listId = _context.StringCache.GetId("LEList", Id);
+            var listId = NiziUi.Ctx.StringCache.GetId("LEList", Id);
             var listDecl = new ClayElementDeclaration { Id = listId };
             listDecl.Layout.LayoutDirection = ClayLayoutDirection.TopToBottom;
             listDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
             listDecl.Layout.Sizing.Height = ClaySizingAxis.Grow(0, float.MaxValue);
             listDecl.Scroll.Vertical = true;
 
-            _context.OpenElement(listDecl);
+            NiziUi.Ctx.OpenElement(listDecl);
             {
                 for (var i = 0; i < items.Length; i++)
                 {
-                    var itemId = _context.StringCache.GetId("LEItem", Id, (uint)i);
-                    var interaction = _context.GetInteraction(itemId);
+                    var itemId = NiziUi.Ctx.StringCache.GetId("LEItem", Id, (uint)i);
+                    var interaction = NiziUi.Ctx.GetInteraction(itemId);
                     var isSelected = i == _state.SelectedIndex;
 
                     var itemBg = isSelected ? _selectedColor
@@ -276,35 +274,35 @@ public ref struct UiListEditor
                     itemDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
                     itemDecl.BackgroundColor = itemBg.ToClayColor();
 
-                    _context.OpenElement(itemDecl);
+                    NiziUi.Ctx.OpenElement(itemDecl);
 
                     if (_itemActionIcon != null)
                     {
                         var displayText = items[i];
-                        var itemBbox = _context.Clay.GetElementBoundingBox(itemId);
+                        var itemBbox = NiziUi.Ctx.Clay.GetElementBoundingBox(itemId);
                         if (itemBbox.Width > 0)
                         {
                             var availTextWidth = itemBbox.Width - 16 - 20 - 4 - 6;
                             displayText = TruncateText(displayText, availTextWidth);
                         }
 
-                        var textWrapperId = _context.StringCache.GetId("LEITxt", Id, (uint)i);
+                        var textWrapperId = NiziUi.Ctx.StringCache.GetId("LEITxt", Id, (uint)i);
                         var textWrapperDecl = new ClayElementDeclaration { Id = textWrapperId };
                         textWrapperDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
                         textWrapperDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(0, float.MaxValue);
                         textWrapperDecl.Layout.Padding = new ClayPadding { Right = 6 };
                         textWrapperDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
-                        _context.OpenElement(textWrapperDecl);
-                        _context.Clay.Text(displayText, new ClayTextDesc
+                        NiziUi.Ctx.OpenElement(textWrapperDecl);
+                        NiziUi.Ctx.Clay.Text(displayText, new ClayTextDesc
                         {
                             TextColor = _textColor.ToClayColor(),
                             FontSize = _fontSize,
                             WrapMode = ClayTextWrapMode.None
                         });
-                        _context.Clay.CloseElement();
+                        NiziUi.Ctx.Clay.CloseElement();
 
-                        var actionId = _context.StringCache.GetId("LEIAct", Id, (uint)i);
-                        var actionInteraction = _context.GetInteraction(actionId);
+                        var actionId = NiziUi.Ctx.StringCache.GetId("LEIAct", Id, (uint)i);
+                        var actionInteraction = NiziUi.Ctx.GetInteraction(actionId);
                         var actionBg = actionInteraction.IsHovered ? _itemActionHoverColor : UiColor.Transparent;
 
                         var actionDecl = new ClayElementDeclaration { Id = actionId };
@@ -315,15 +313,15 @@ public ref struct UiListEditor
                         actionDecl.BackgroundColor = actionBg.ToClayColor();
                         actionDecl.BorderRadius = ClayBorderRadius.CreateUniform(3);
 
-                        _context.OpenElement(actionDecl);
-                        _context.Clay.Text(_itemActionIcon, new ClayTextDesc
+                        NiziUi.Ctx.OpenElement(actionDecl);
+                        NiziUi.Ctx.Clay.Text(_itemActionIcon, new ClayTextDesc
                         {
                             TextColor = _itemActionColor.ToClayColor(),
                             FontSize = (ushort)(_fontSize - 1),
                             FontId = FontAwesome.FontId,
                             TextAlignment = ClayTextAlignment.Center
                         });
-                        _context.Clay.CloseElement();
+                        NiziUi.Ctx.Clay.CloseElement();
 
                         if (actionInteraction.WasClicked)
                         {
@@ -333,7 +331,7 @@ public ref struct UiListEditor
                     }
                     else
                     {
-                        _context.Clay.Text(items[i], new ClayTextDesc
+                        NiziUi.Ctx.Clay.Text(items[i], new ClayTextDesc
                         {
                             TextColor = _textColor.ToClayColor(),
                             FontSize = _fontSize,
@@ -341,7 +339,7 @@ public ref struct UiListEditor
                         });
                     }
 
-                    _context.Clay.CloseElement();
+                    NiziUi.Ctx.Clay.CloseElement();
 
                     if (interaction.WasClicked && !result.ActionClicked)
                     {
@@ -350,30 +348,10 @@ public ref struct UiListEditor
                     }
                 }
             }
-            _context.Clay.CloseElement();
+            NiziUi.Ctx.Clay.CloseElement();
         }
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
 
         return result;
-    }
-}
-
-public static partial class Ui
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiListEditor ListEditor(UiContext ctx, string id)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        var state = ctx.GetOrCreateState<UiListEditorState>(elementId);
-        return new UiListEditor(ctx, id, state);
-    }
-}
-
-public static partial class UiElementScopeExtensions
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiListEditor ListEditor(this ref UiElementScope scope, UiContext ctx, string id)
-    {
-        return Ui.ListEditor(ctx, id);
     }
 }

@@ -1,12 +1,11 @@
 using DenOfIz;
 using NiziKit.Application.Timing;
-using NiziKit.Core;
 using NiziKit.Graphics;
 using NiziKit.Graphics.Binding;
 using NiziKit.Inputs;
 using Pure.DI;
 
-namespace NiziKit.Services;
+namespace NiziKit.Core;
 
 public partial class GameComposition
 {
@@ -20,16 +19,16 @@ public partial class GameComposition
             .To((Input _, Window window, GraphicsDesc desc) => new GraphicsContext(window, desc))
             .Bind<GpuBinding>().As(Lifetime.Singleton)
             .To((GraphicsContext _) => new GpuBinding())
-            .Bind<Assets.Assets>().As(Lifetime.Singleton)
-            .To((GpuBinding _) => new Assets.Assets())
+            .Bind<Assets.NiziAssets>().As(Lifetime.Singleton)
+            .To((GpuBinding _) => new Assets.NiziAssets())
             .Bind<World>().As(Lifetime.Singleton)
-            .To((Assets.Assets _) => new World())
+            .To((Assets.NiziAssets _) => new World())
             .Arg<Window>("window")
             .Arg<GraphicsDesc>("graphicsDesc")
             .Root<Time>("Time")
             .Root<Input>("Input")
             .Root<GraphicsContext>("Graphics")
             .Root<GpuBinding>("Binding")
-            .Root<Assets.Assets>("Assets")
+            .Root<Assets.NiziAssets>("Assets")
             .Root<World>("World");
 }

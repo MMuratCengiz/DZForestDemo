@@ -32,6 +32,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         LoadLights(sceneData.Lights);
         LoadObjects(sceneData.Objects);
         LoadSkybox(sceneData.Skybox);
+        LoadAmbientLight(sceneData);
     }
 
     public override async Task LoadAsync(CancellationToken ct = default)
@@ -50,6 +51,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
         LoadLights(sceneData.Lights);
         LoadObjects(sceneData.Objects);
         LoadSkybox(sceneData.Skybox);
+        LoadAmbientLight(sceneData);
     }
 
     private HashSet<string> CollectAssetReferences(List<GameObjectJson>? objects, SkyboxJson? skybox)
@@ -641,12 +643,6 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             return;
         }
 
-        if (ComponentRegistry.TryCreate(data.Type, data.Properties, this, out var component) && component != null)
-        {
-            obj.AddComponent(component);
-            return;
-        }
-
         var typeNameLower = data.Type.ToLowerInvariant();
         if (typeNameLower.Contains('.'))
         {
@@ -744,6 +740,13 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
                     }
                 }
                 break;
+
+            default:
+                if (ComponentRegistry.TryCreate(data.Type, data.Properties, this, out var component) && component != null)
+                {
+                    obj.AddComponent(component);
+                }
+                break;
         }
     }
 
@@ -769,6 +772,24 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
             FrontRef = skyboxData.Front,
             BackRef = skyboxData.Back
         };
+    }
+
+    private void LoadAmbientLight(SceneJson sceneData)
+    {
+        if (sceneData.AmbientSkyColor is { Length: >= 3 })
+        {
+            AmbientSkyColor = new Vector3(sceneData.AmbientSkyColor[0], sceneData.AmbientSkyColor[1], sceneData.AmbientSkyColor[2]);
+        }
+
+        if (sceneData.AmbientGroundColor is { Length: >= 3 })
+        {
+            AmbientGroundColor = new Vector3(sceneData.AmbientGroundColor[0], sceneData.AmbientGroundColor[1], sceneData.AmbientGroundColor[2]);
+        }
+
+        if (sceneData.AmbientIntensity.HasValue)
+        {
+            AmbientIntensity = sceneData.AmbientIntensity.Value;
+        }
     }
 
     private static Texture2d? LoadSkyboxFace(string? path)
@@ -871,25 +892,25 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
             return geoType switch
             {
-                "box" => Assets.Assets.CreateBox(
+                "box" => NiziAssets.CreateBox(
                     properties.GetSingleOrDefault("width", 1f),
                     properties.GetSingleOrDefault("height", 1f),
                     properties.GetSingleOrDefault("depth", 1f)),
-                "sphere" => Assets.Assets.CreateSphere(
+                "sphere" => NiziAssets.CreateSphere(
                     properties.GetSingleOrDefault("diameter", 1f),
                     properties.GetUInt32OrDefault("tessellation", 16)),
-                "cylinder" => Assets.Assets.CreateCylinder(
-                    properties.GetSingleOrDefault("diameter", 1f),
-                    properties.GetSingleOrDefault("height", 1f),
-                    properties.GetUInt32OrDefault("tessellation", 16)),
-                "cone" => Assets.Assets.CreateCone(
+                "cylinder" => NiziAssets.CreateCylinder(
                     properties.GetSingleOrDefault("diameter", 1f),
                     properties.GetSingleOrDefault("height", 1f),
                     properties.GetUInt32OrDefault("tessellation", 16)),
-                "quad" => Assets.Assets.CreateQuad(
+                "cone" => NiziAssets.CreateCone(
+                    properties.GetSingleOrDefault("diameter", 1f),
+                    properties.GetSingleOrDefault("height", 1f),
+                    properties.GetUInt32OrDefault("tessellation", 16)),
+                "quad" => NiziAssets.CreateQuad(
                     properties.GetSingleOrDefault("width", 1f),
                     properties.GetSingleOrDefault("height", 1f)),
-                "torus" => Assets.Assets.CreateTorus(
+                "torus" => NiziAssets.CreateTorus(
                     properties.GetSingleOrDefault("diameter", 1f),
                     properties.GetSingleOrDefault("width", 0.3f),
                     properties.GetUInt32OrDefault("tessellation", 16)),
@@ -910,12 +931,12 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
 
         return geoType switch
         {
-            "box" => Assets.Assets.CreateBox(width, height, depth),
-            "sphere" => Assets.Assets.CreateSphere(diameter, tessellation),
-            "cylinder" => Assets.Assets.CreateCylinder(diameter, height, tessellation),
-            "cone" => Assets.Assets.CreateCone(diameter, height, tessellation),
-            "quad" => Assets.Assets.CreateQuad(width, height),
-            "torus" => Assets.Assets.CreateTorus(diameter, width, tessellation),
+            "box" => NiziAssets.CreateBox(width, height, depth),
+            "sphere" => NiziAssets.CreateSphere(diameter, tessellation),
+            "cylinder" => NiziAssets.CreateCylinder(diameter, height, tessellation),
+            "cone" => NiziAssets.CreateCone(diameter, height, tessellation),
+            "quad" => NiziAssets.CreateQuad(width, height),
+            "torus" => NiziAssets.CreateTorus(diameter, width, tessellation),
             _ => throw new NotSupportedException($"Unknown geometry type: {geoType}")
         };
     }

@@ -31,7 +31,6 @@ public sealed class UiDropdownState
 
 public ref struct UiDropdown
 {
-    private readonly UiContext _context;
     private readonly UiDropdownState _state;
     private readonly string[] _items;
 
@@ -45,11 +44,10 @@ public ref struct UiDropdown
     private float _maxDropdownHeight;
     private string _placeholder;
     private bool _searchable;
-    private string _idString;
+    private readonly string _idString;
 
     internal UiDropdown(UiContext ctx, string id, UiDropdownState state, string[] items)
     {
-        _context = ctx;
         _state = state;
         _items = items;
         _idString = id;
@@ -228,14 +226,14 @@ public ref struct UiDropdown
         }
 
         var changed = false;
-        var headerId = _context.StringCache.GetId("DDHeader", Id);
-        var interaction = _context.GetInteraction(headerId);
+        var headerId = NiziUi.Ctx.StringCache.GetId("DDHeader", Id);
+        var interaction = NiziUi.Ctx.GetInteraction(headerId);
 
         var containerDecl = new ClayElementDeclaration { Id = Id };
         containerDecl.Layout.LayoutDirection = ClayLayoutDirection.TopToBottom;
         containerDecl.Layout.Sizing.Width = _width.ToClayAxis();
 
-        _context.OpenElement(containerDecl);
+        NiziUi.Ctx.OpenElement(containerDecl);
         {
             RenderHeader(interaction);
 
@@ -244,12 +242,12 @@ public ref struct UiDropdown
                 changed = RenderDropdownList(headerId);
             }
         }
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
 
-        if (_state.IsOpen && _context.MouseJustReleased)
+        if (_state.IsOpen && NiziUi.Ctx.MouseJustReleased)
         {
-            var listId = _context.StringCache.GetId("DDList", Id);
-            if (!_context.Clay.PointerOver(listId))
+            var listId = NiziUi.Ctx.StringCache.GetId("DDList", Id);
+            if (!NiziUi.Ctx.Clay.PointerOver(listId))
             {
                 _state.Close();
             }
@@ -275,21 +273,21 @@ public ref struct UiDropdown
             return text;
         }
 
-        var measured = _context.Clay.MeasureText(text, 0, _style.FontSize);
+        var measured = NiziUi.Ctx.Clay.MeasureText(text, 0, _style.FontSize);
         if (measured.Width <= maxWidth)
         {
             return text;
         }
 
         const string ellipsis = "...";
-        var ellipsisDims = _context.Clay.MeasureText(ellipsis, 0, _style.FontSize);
+        var ellipsisDims = NiziUi.Ctx.Clay.MeasureText(ellipsis, 0, _style.FontSize);
         var remaining = maxWidth - ellipsisDims.Width;
         if (remaining <= 0)
         {
             return ellipsis;
         }
 
-        var fitChars = _context.Clay.GetCharIndexAtOffset(text, remaining, 0, _style.FontSize);
+        var fitChars = NiziUi.Ctx.Clay.GetCharIndexAtOffset(text, remaining, 0, _style.FontSize);
         if (fitChars > 0 && fitChars < text.Length)
         {
             return text[..(int)fitChars] + ellipsis;
@@ -303,7 +301,7 @@ public ref struct UiDropdown
         var bgColor = _style.GetBackgroundColor(interaction.IsHovered, interaction.IsPressed, false);
         var borderColor = _state.IsOpen ? _style.FocusedBorderColor : _style.BorderColor;
 
-        var headerDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("DDHeader", Id) };
+        var headerDecl = new ClayElementDeclaration { Id = NiziUi.Ctx.StringCache.GetId("DDHeader", Id) };
         headerDecl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
         headerDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
         headerDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(0, float.MaxValue);
@@ -323,60 +321,60 @@ public ref struct UiDropdown
             };
         }
 
-        _context.OpenElement(headerDecl);
+        NiziUi.Ctx.OpenElement(headerDecl);
         {
-            var textContainerId = _context.StringCache.GetId("DDText", Id);
+            var textContainerId = NiziUi.Ctx.StringCache.GetId("DDText", Id);
             var textDecl = new ClayElementDeclaration { Id = textContainerId };
             textDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
-            _context.OpenElement(textDecl);
+            NiziUi.Ctx.OpenElement(textDecl);
             {
                 var displayText = SelectedItem ?? _placeholder;
-                var textBbox = _context.Clay.GetElementBoundingBox(textContainerId);
+                var textBbox = NiziUi.Ctx.Clay.GetElementBoundingBox(textContainerId);
                 if (textBbox.Width > 0)
                 {
                     displayText = TruncateText(displayText, textBbox.Width);
                 }
 
                 var textColor = SelectedItem != null ? _style.TextColor : UiColor.Gray;
-                _context.Clay.Text(displayText, new ClayTextDesc
+                NiziUi.Ctx.Clay.Text(displayText, new ClayTextDesc
                 {
                     TextColor = textColor.ToClayColor(),
                     FontSize = _style.FontSize,
                     WrapMode = ClayTextWrapMode.None
                 });
             }
-            _context.Clay.CloseElement();
+            NiziUi.Ctx.Clay.CloseElement();
 
             RenderArrow();
         }
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
     }
 
     private void RenderArrow()
     {
-        var arrowDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("DDArrow", Id) };
+        var arrowDecl = new ClayElementDeclaration { Id = NiziUi.Ctx.StringCache.GetId("DDArrow", Id) };
         arrowDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(16);
         arrowDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(16);
         arrowDecl.Layout.ChildAlignment.X = ClayAlignmentX.Center;
         arrowDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
 
-        _context.OpenElement(arrowDecl);
+        NiziUi.Ctx.OpenElement(arrowDecl);
         {
             var arrowText = _state.IsOpen ? "^" : "v";
-            _context.Clay.Text(arrowText, new ClayTextDesc
+            NiziUi.Ctx.Clay.Text(arrowText, new ClayTextDesc
             {
                 TextColor = _arrowColor.ToClayColor(),
                 FontSize = 12
             });
         }
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
     }
 
     private bool RenderDropdownList(uint headerId)
     {
         var changed = false;
 
-        var listDecl = new ClayElementDeclaration { Id = _context.StringCache.GetId("DDList", Id) };
+        var listDecl = new ClayElementDeclaration { Id = NiziUi.Ctx.StringCache.GetId("DDList", Id) };
         listDecl.Layout.LayoutDirection = ClayLayoutDirection.TopToBottom;
         listDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
         listDecl.Layout.Sizing.Height = ClaySizingAxis.Fit(0, _maxDropdownHeight);
@@ -413,14 +411,14 @@ public ref struct UiDropdown
 
         listDecl.Scroll.Vertical = true;
 
-        _context.OpenElement(listDecl);
-        _context.BeginPopupScope(listDecl.Id);
+        NiziUi.Ctx.OpenElement(listDecl);
+        NiziUi.Ctx.BeginPopupScope(listDecl.Id);
         {
             if (_searchable)
             {
                 var searchId = _idString + "_DDSearch";
                 var searchText = _state.SearchText;
-                Ui.TextField(_context, searchId, ref searchText)
+                NiziUi.TextField(searchId, ref searchText)
                     .BackgroundColor(UiColor.Rgb(30, 30, 35), UiColor.Rgb(40, 40, 48))
                     .TextColor(_style.TextColor)
                     .BorderColor(UiColor.Rgb(55, 55, 65), _style.FocusedBorderColor)
@@ -429,7 +427,7 @@ public ref struct UiDropdown
                     .Padding(4, 3)
                     .GrowWidth()
                     .Placeholder("Search...")
-                    .Show(ref searchText);
+                    .Show();
                 _state.SearchText = searchText;
             }
 
@@ -449,16 +447,16 @@ public ref struct UiDropdown
                 }
             }
         }
-        _context.EndPopupScope();
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.EndPopupScope();
+        NiziUi.Ctx.Clay.CloseElement();
 
         return changed;
     }
 
     private bool RenderItem(int index)
     {
-        var itemId = _context.StringCache.GetId("DDItem", Id, (uint)index);
-        var interaction = _context.GetInteraction(itemId);
+        var itemId = NiziUi.Ctx.StringCache.GetId("DDItem", Id, (uint)index);
+        var interaction = NiziUi.Ctx.GetInteraction(itemId);
         var isSelected = index == _state.SelectedIndex;
 
         var bgColor = isSelected ? _selectedItemColor
@@ -473,44 +471,17 @@ public ref struct UiDropdown
         itemDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
         itemDecl.BackgroundColor = bgColor.ToClayColor();
 
-        _context.OpenElement(itemDecl);
+        NiziUi.Ctx.OpenElement(itemDecl);
         {
-            _context.Clay.Text(_items[index], new ClayTextDesc
+            NiziUi.Ctx.Clay.Text(_items[index], new ClayTextDesc
             {
                 TextColor = _style.TextColor.ToClayColor(),
                 FontSize = _style.FontSize
             });
         }
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.Clay.CloseElement();
 
         return interaction.WasClicked;
     }
 }
 
-public static partial class Ui
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiDropdown Dropdown(UiContext ctx, string id, string[] items)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        var state = ctx.GetOrCreateState<UiDropdownState>(elementId);
-        return new UiDropdown(ctx, id, state, items);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiDropdown Dropdown(UiContext ctx, string id, string[] items, int initialSelectedIndex)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        var state = ctx.GetOrCreateState(() => new UiDropdownState { SelectedIndex = initialSelectedIndex }, elementId);
-        return new UiDropdown(ctx, id, state, items);
-    }
-}
-
-public static partial class UiElementScopeExtensions
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiDropdown Dropdown(this ref UiElementScope scope, UiContext ctx, string id, string[] items)
-    {
-        return Ui.Dropdown(ctx, id, items);
-    }
-}

@@ -3,7 +3,7 @@
   "cameras": [
     {
       "name": "Main Camera",
-      "position": [-0.92047, 10.5, -9.284246],
+      "position": [-2.1819868, 10.5, -15.535433],
       "rotation": [29.538776, 0, 0],
       "fieldOfView": 0.785398,
       "nearPlane": 0.1,
@@ -22,11 +22,14 @@
     "front": "SkyBox/Textures/LearnOpenGL/front.dztex",
     "back": "SkyBox/Textures/LearnOpenGL/back.dztex"
   },
+  "ambientSkyColor": [0.4, 0.5, 0.6],
+  "ambientGroundColor": [0.2, 0.18, 0.15],
+  "ambientIntensity": 0.3,
   "lights": [
     {
       "type": "directional",
       "name": "Directional Light",
-      "direction": [-0.6498308, -0.60697824, -0.45749024],
+      "direction": [0.13709155, -0.50498915, -0.852169],
       "color": [1, 1, 1],
       "intensity": 1,
       "castsShadows": true
@@ -45,7 +48,13 @@
           "mesh": "geometry:box:1:1:1"
         },
         {
-          "type": "NiziKit.Components.SurfaceComponent"
+          "type": "NiziKit.Components.SurfaceComponent",
+          "albedoColor": [
+            0.6922252,
+            0.6922252,
+            0.6922252,
+            1
+          ]
         },
         {
           "type": "NiziKit.Components.BoxCollider",
@@ -74,8 +83,8 @@
     {
       "name": "My Character",
       "active": true,
-      "position": [-0.92047, 0.5, 5.7157536],
-      "rotation": [-179.99998, -8.483199, -179.99998],
+      "position": [-2.1819868, 0.5, -0.5354333],
+      "rotation": [179.99998, 8.483199, 179.99998],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -85,7 +94,7 @@
         {
           "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_01_B.dztex",
-          "normal": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_Normal_01.dztex"
+          "normal": "Synty/Textures/DarkFantasy/Textures/Misc/PolygonDarkFantasy_Texture_01_Normals.dztex"
         },
         {
           "type": "NiziKit.Animation.Animator",
@@ -243,8 +252,8 @@
         {
           "name": "Bow",
           "active": true,
-          "position": [-0.27535427, 0.6756979, 0.07664442],
-          "rotation": [-80.06197, 3.6497772, -8.33454],
+          "position": [0.34852982, 0.78480005, 0.043152064],
+          "rotation": [-6.5138235, 15.778185, -83.20919],
           "scale": [1, 1, 1],
           "components": [
             {
@@ -288,8 +297,8 @@
     {
       "name": "Crate 2",
       "active": true,
-      "position": [-7.000039, 0.9997239, 2.9999225],
-      "rotation": [-1.4846173E-09, 24.999996, -3.398524E-09],
+      "position": [-7.6839075, -164836670, 5.586101],
+      "rotation": [-19.34761, -6.015429, -10.857702],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -327,8 +336,8 @@
     {
       "name": "Barrel 1",
       "active": true,
-      "position": [-1.0099126, 0.99984145, -3.54748],
-      "rotation": [-6.865833E-09, 21.631596, 3.6016667E-09],
+      "position": [-4.4763737, -164836560, -9.931981],
+      "rotation": [-5.406809, 19.97596, 0.008537976],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -364,8 +373,8 @@
     {
       "name": "House",
       "active": true,
-      "position": [3.0854166, 0.5155997, 3.0098886],
-      "rotation": [179.99791, -86.937904, -179.99779],
+      "position": [2.7758703, 0.6254746, 0.50601625],
+      "rotation": [7.567112E-23, -1.27222155E-14, -8.519813E-08],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -375,79 +384,8 @@
         {
           "type": "NiziKit.Components.SurfaceComponent",
           "albedo": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_01_A.dztex",
-          "normal": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_Normal_01.dztex"
-        }
-      ],
-      "children": []
-    },
-    {
-      "name": "Bonfire",
-      "active": true,
-      "position": [-4, 1, 0],
-      "rotation": [0, 0, 0],
-      "scale": [1, 1, 1],
-      "components": [
-        {
-          "type": "NiziKit.Particles.ParticleSystem",
-          "maxParticles": 2048,
-          "emissionRate": 200,
-          "isEmitting": true,
-          "startLifetimeMin": 0.8,
-          "startLifetimeMax": 2,
-          "startSpeedMin": 1,
-          "startSpeedMax": 3,
-          "startSizeMin": 0.02,
-          "startSizeMax": 0.15,
-          "gravityModifier": -2,
-          "drag": 1.5,
-          "emitterRadius": 0.3,
-          "emitterAngle": 0.2,
-          "startColorR": 1,
-          "startColorG": 0.6,
-          "startColorB": 0.15,
-          "startColorA": 1,
-          "endColorR": 0.3,
-          "endColorG": 0.05,
-          "endColorB": 0,
-          "endColorA": 0,
-          "name": "Bonfire",
-          "isActive": true
-        }
-      ],
-      "children": []
-    },
-    {
-      "name": "Smoke",
-      "active": true,
-      "position": [-4.2246456, 4.17222, -3.5696507],
-      "rotation": [0, 0, 0],
-      "scale": [1, 1, 1],
-      "components": [
-        {
-          "type": "NiziKit.Particles.ParticleSystem",
-          "maxParticles": 2048,
-          "emissionRate": 60,
-          "isEmitting": true,
-          "startLifetimeMin": 2,
-          "startLifetimeMax": 4,
-          "startSpeedMin": 0.3,
-          "startSpeedMax": 0.8,
-          "startSizeMin": 0.1,
-          "startSizeMax": 0.4,
-          "gravityModifier": -0.5,
-          "drag": 0.8,
-          "emitterRadius": 0.5,
-          "emitterAngle": 0.15,
-          "startColorR": 0.45,
-          "startColorG": 0.45,
-          "startColorB": 0.5,
-          "startColorA": 0.6,
-          "endColorR": 0.2,
-          "endColorG": 0.2,
-          "endColorB": 0.22,
-          "endColorA": 0,
-          "name": "Smoke",
-          "isActive": true
+          "normal": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_Normal_01.dztex",
+          "roughness": "Synty/Textures/DarkFantasy/Textures/Misc/PolygonDarkFantasy_Stone_01.dztex"
         }
       ],
       "children": []

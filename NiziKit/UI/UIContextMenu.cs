@@ -63,14 +63,13 @@ public sealed class UiContextMenuState
 
 public ref struct UiContextMenu
 {
-    private readonly UiContext _context;
     private readonly UiContextMenuState _state;
     private readonly UiContextMenuItem[] _items;
 
     private UiColor _bgColor;
     private UiColor _hoverColor;
     private UiColor _textColor;
-    private UiColor _disabledTextColor;
+    private readonly UiColor _disabledTextColor;
     private UiColor _iconColor;
     private UiColor _separatorColor;
     private ushort _fontSize;
@@ -80,7 +79,6 @@ public ref struct UiContextMenu
 
     internal UiContextMenu(UiContext ctx, string id, UiContextMenuState state, UiContextMenuItem[] items)
     {
-        _context = ctx;
         _state = state;
         _items = items;
         Id = ctx.StringCache.GetId(id);
@@ -208,8 +206,8 @@ public ref struct UiContextMenu
             };
         }
 
-        _context.OpenElement(menuDecl);
-        _context.BeginPopupScope(Id);
+        NiziUi.Ctx.OpenElement(menuDecl);
+        NiziUi.Ctx.BeginPopupScope(Id);
         {
             for (var i = 0; i < _items.Length; i++)
             {
@@ -217,25 +215,25 @@ public ref struct UiContextMenu
 
                 if (item.IsSeparator)
                 {
-                    var sepId = _context.StringCache.GetId("CMSep", Id, (uint)i);
+                    var sepId = NiziUi.Ctx.StringCache.GetId("CMSep", Id, (uint)i);
                     var sepDecl = new ClayElementDeclaration { Id = sepId };
                     sepDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
                     sepDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(1);
                     sepDecl.Layout.Padding = new ClayPadding { Left = 8, Right = 8 };
                     sepDecl.BackgroundColor = _separatorColor.ToClayColor();
-                    _context.OpenElement(sepDecl);
-                    _context.Clay.CloseElement();
+                    NiziUi.Ctx.OpenElement(sepDecl);
+                    NiziUi.Ctx.Clay.CloseElement();
 
-                    var gapId = _context.StringCache.GetId("CMGap", Id, (uint)i);
+                    var gapId = NiziUi.Ctx.StringCache.GetId("CMGap", Id, (uint)i);
                     var gapDecl = new ClayElementDeclaration { Id = gapId };
                     gapDecl.Layout.Sizing.Height = ClaySizingAxis.Fixed(4);
-                    _context.OpenElement(gapDecl);
-                    _context.Clay.CloseElement();
+                    NiziUi.Ctx.OpenElement(gapDecl);
+                    NiziUi.Ctx.Clay.CloseElement();
                     continue;
                 }
 
-                var itemId = _context.StringCache.GetId("CMItem", Id, (uint)i);
-                var interaction = item.IsDisabled ? UiInteraction.None : _context.GetInteraction(itemId);
+                var itemId = NiziUi.Ctx.StringCache.GetId("CMItem", Id, (uint)i);
+                var interaction = item.IsDisabled ? UiInteraction.None : NiziUi.Ctx.GetInteraction(itemId);
                 var isHovered = interaction.IsHovered;
                 if (isHovered)
                 {
@@ -252,11 +250,11 @@ public ref struct UiContextMenu
                 itemDecl.Layout.ChildAlignment.Y = ClayAlignmentY.Center;
                 itemDecl.BackgroundColor = itemBg.ToClayColor();
 
-                _context.OpenElement(itemDecl);
+                NiziUi.Ctx.OpenElement(itemDecl);
                 {
                     if (!string.IsNullOrEmpty(item.Icon))
                     {
-                        _context.Clay.Text(item.Icon, new ClayTextDesc
+                        NiziUi.Ctx.Clay.Text(item.Icon, new ClayTextDesc
                         {
                             TextColor = (item.IsDisabled ? _disabledTextColor : _iconColor).ToClayColor(),
                             FontSize = _fontSize,
@@ -266,14 +264,14 @@ public ref struct UiContextMenu
                     }
                     else
                     {
-                        var iconSpacerId = _context.StringCache.GetId("CMIco", Id, (uint)i);
+                        var iconSpacerId = NiziUi.Ctx.StringCache.GetId("CMIco", Id, (uint)i);
                         var iconSpacerDecl = new ClayElementDeclaration { Id = iconSpacerId };
                         iconSpacerDecl.Layout.Sizing.Width = ClaySizingAxis.Fixed(_fontSize);
-                        _context.OpenElement(iconSpacerDecl);
-                        _context.Clay.CloseElement();
+                        NiziUi.Ctx.OpenElement(iconSpacerDecl);
+                        NiziUi.Ctx.Clay.CloseElement();
                     }
 
-                    _context.Clay.Text(item.Label, new ClayTextDesc
+                    NiziUi.Ctx.Clay.Text(item.Label, new ClayTextDesc
                     {
                         TextColor = (item.IsDisabled ? _disabledTextColor : _textColor).ToClayColor(),
                         FontSize = _fontSize
@@ -282,20 +280,20 @@ public ref struct UiContextMenu
                     if (!string.IsNullOrEmpty(item.Shortcut))
                     {
                         // Spacer to push shortcut to the right
-                        var spacerId = _context.StringCache.GetId("CMSpc", Id, (uint)i);
+                        var spacerId = NiziUi.Ctx.StringCache.GetId("CMSpc", Id, (uint)i);
                         var spacerDecl = new ClayElementDeclaration { Id = spacerId };
                         spacerDecl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
-                        _context.OpenElement(spacerDecl);
-                        _context.Clay.CloseElement();
+                        NiziUi.Ctx.OpenElement(spacerDecl);
+                        NiziUi.Ctx.Clay.CloseElement();
 
-                        _context.Clay.Text(item.Shortcut, new ClayTextDesc
+                        NiziUi.Ctx.Clay.Text(item.Shortcut, new ClayTextDesc
                         {
                             TextColor = _disabledTextColor.ToClayColor(),
                             FontSize = _fontSize
                         });
                     }
                 }
-                _context.Clay.CloseElement();
+                NiziUi.Ctx.Clay.CloseElement();
 
                 if (interaction.WasClicked && !item.IsDisabled)
                 {
@@ -303,14 +301,14 @@ public ref struct UiContextMenu
                 }
             }
         }
-        _context.EndPopupScope();
-        _context.Clay.CloseElement();
+        NiziUi.Ctx.EndPopupScope();
+        NiziUi.Ctx.Clay.CloseElement();
 
         if (_state.SkipCloseFrames > 0)
         {
             _state.SkipCloseFrames--;
         }
-        else if (_context.MouseJustReleased && !anyItemHovered && !_context.Clay.PointerOver(Id))
+        else if (NiziUi.Ctx.MouseJustReleased && !anyItemHovered && !NiziUi.Ctx.Clay.PointerOver(Id))
         {
             _state.Close();
         }
@@ -321,23 +319,5 @@ public ref struct UiContextMenu
         }
 
         return clickedIndex;
-    }
-}
-
-public static partial class Ui
-{
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiContextMenu ContextMenu(UiContext ctx, string id, UiContextMenuItem[] items)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        var state = ctx.GetOrCreateState<UiContextMenuState>(elementId);
-        return new UiContextMenu(ctx, id, state, items);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static UiContextMenuState GetContextMenuState(UiContext ctx, string id)
-    {
-        var elementId = ctx.StringCache.GetId(id);
-        return ctx.GetOrCreateState<UiContextMenuState>(elementId);
     }
 }

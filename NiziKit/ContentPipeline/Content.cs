@@ -149,31 +149,6 @@ public static class Content
 
     public static AssetManifest? Manifest { get; private set; }
 
-    public static ShaderProgram LoadShaderProgram(
-        string vertexPath,
-        string pixelPath,
-        Dictionary<string, string?>? defines = null)
-        => Assets.Assets.LoadShaderProgram(vertexPath, pixelPath, defines);
-
-    public static Task<ShaderProgram> LoadShaderProgramAsync(
-        string vertexPath,
-        string pixelPath,
-        Dictionary<string, string?>? defines = null,
-        CancellationToken ct = default)
-        => Assets.Assets.LoadShaderProgramAsync(vertexPath, pixelPath, defines, ct);
-
-    public static ShaderProgram LoadComputeProgram(
-        string computePath,
-        Dictionary<string, string?>? defines = null)
-        => Assets.Assets.LoadComputeProgram(computePath, defines);
-
-    public static Task<ShaderProgram> LoadComputeProgramAsync(
-        string computePath,
-        Dictionary<string, string?>? defines = null,
-        CancellationToken ct = default)
-        => Assets.Assets.LoadComputeProgramAsync(computePath, defines, ct);
-
-
     private static void EnsureInitialized()
     {
         if (_provider != null)
