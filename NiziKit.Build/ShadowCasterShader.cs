@@ -10,14 +10,14 @@ public class ShadowCasterShader(string shaderSourceDir) : OfflineShader(shaderSo
     {
         var vsDesc = new ShaderStageDesc
         {
-            Path = ShaderPath("Default/Default.VS.hlsl"),
+            Path = ShaderPath("Shadow/Shadow.VS.hlsl"),
             Stage = (uint)ShaderStageFlagBits.Vertex,
             EntryPoint = StringView.Create("VSMain")
         };
 
         var psDesc = new ShaderStageDesc
         {
-            Path = ShaderPath("Default/ShadowCaster.PS.hlsl"),
+            Path = ShaderPath("Shadow/Shadow.PS.hlsl"),
             Stage = (uint)ShaderStageFlagBits.Pixel,
             EntryPoint = StringView.Create("PSMain")
         };

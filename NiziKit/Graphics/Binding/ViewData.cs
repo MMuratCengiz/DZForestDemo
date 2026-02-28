@@ -16,10 +16,14 @@ public class ViewData
     public Matrix4x4? ViewProjectionOverride { get; set; }
 }
 
+/// <summary>
+/// CPU-side description of one shadow cascade for a directional light.
+/// </summary>
 public struct ShadowCasterInfo
 {
     public Matrix4x4 LightViewProjection;
-    public Vector4 AtlasScaleOffset;
+    /// <summary>Linear view-space depth at which this cascade ends.</summary>
+    public float SplitDistance;
     public float Bias;
     public float NormalBias;
     public int LightIndex;

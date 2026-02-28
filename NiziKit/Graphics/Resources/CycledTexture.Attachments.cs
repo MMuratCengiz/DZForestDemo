@@ -26,6 +26,16 @@ public partial class CycledTexture
         return new CycledTexture(desc, isScreenSized);
     }
 
+    public static CycledTexture DepthArrayAttachment(string name, int width, int height, int layers)
+    {
+        var desc = Common(name, width, height);
+        desc.Format = Format.D32Float;
+        desc.Usage = (uint)(TextureUsageFlagBits.RenderAttachment | TextureUsageFlagBits.TextureBinding);
+        desc.ClearDepthStencilHint = new Vector2(1.0f, 0.0f);
+        desc.ArraySize = (uint)layers;
+        return new CycledTexture(desc);
+    }
+
     public static CycledTexture DepthStencilAttachment(string name, int width = 0, int height = 0)
     {
         var isScreenSized = width == 0 && height == 0;

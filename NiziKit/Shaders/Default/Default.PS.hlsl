@@ -45,16 +45,25 @@ float4 PSMain(PSInput input) : SV_TARGET
                         : EmissiveColor * EmissiveIntensity;
 
     float3 color = AmbientGroundColor * albedo.rgb;
-    for (int i = 0; i < NumLights; i++)
+    for (int i = 0; i < (int)NumLights; i++)
     {
         Light light = Lights[i];
         if (light.Type == LIGHT_TYPE_DIRECTIONAL)
         {
-            float3 L = normalize(-light.PositionOrDirection);
-
-            float NdotL = saturate(dot(normal, L));
-
-            color += light.Color * light.Intensity * NdotL * albedo.rgb;
+            float3 L     = normalize(-light.PositionOrDirection);
+            float  NdotL = saturate(dot(normal, L));
+            float  shadow = SampleShadow(light.ShadowIndex, input.WorldPos, normal);
+            color += light.Color * light.Intensity * NdotL * shadow * albedo.rgb;
+        }
+        else if (light.Type == LIGHT_TYPE_POINT)
+        {
+            float3 toLight = light.PositionOrDirection - input.WorldPos;
+            float  dist    = length(toLight);
+            float3 L       = toLight / dist;
+            float  atten   = saturate(1.0 - dist / light.Radius);
+            atten *= atten;
+            float  NdotL   = saturate(dot(normal, L));
+            color += light.Color * light.Intensity * NdotL * atten * albedo.rgb;
         }
     }
 

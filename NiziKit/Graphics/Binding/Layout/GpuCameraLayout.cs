@@ -27,7 +27,7 @@ public class GpuCameraLayout : ILayout
             {
                 Binding = Lights.Binding,
                 ArraySize = 1,
-                Stages = (uint)ShaderStageFlagBits.Pixel,
+                Stages = (uint)(ShaderStageFlagBits.Vertex | ShaderStageFlagBits.Pixel),
                 Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer
             },
             new()

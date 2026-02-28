@@ -102,7 +102,7 @@ public class ViewBinding : ShaderBinding<ViewData>
     {
         var scene = viewData.Scene;
         const int maxLights = LightConstantsCapacity.MaxLights;
-        const int maxShadows = LightConstantsCapacity.MaxShadowLights;
+        const int maxShadows = LightConstantsCapacity.MaxShadowCascades;
 
         var lights = stackalloc GpuLightData[maxLights];
         var lightIndex = 0;
@@ -202,7 +202,7 @@ public class ViewBinding : ShaderBinding<ViewData>
             shadowPtr[s] = new GpuShadowData
             {
                 LightViewProjection = shadowCasters[s].LightViewProjection,
-                AtlasScaleOffset = shadowCasters[s].AtlasScaleOffset,
+                SplitDistance = shadowCasters[s].SplitDistance,
                 Bias = shadowCasters[s].Bias,
                 NormalBias = shadowCasters[s].NormalBias
             };

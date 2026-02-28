@@ -44,6 +44,8 @@
 
     <ItemGroup>
       <ClCompile Include="Shaders\Particles\Compute.hlsl" />
+      <ClCompile Include="Shaders\Shadow\Shadow.PS.hlsl" />
+      <ClCompile Include="Shaders\Shadow\Shadow.VS.hlsl" />
     </ItemGroup>
 
     <ItemGroup>

@@ -29,9 +29,9 @@ public class DefaultShader : IDisposable
             var newSkinned = CreateVariant("DefaultShader_SKINNED",
                 "Default/Default.VS.hlsl", "Default/Default.PS.hlsl", SkinnedDefines);
             var newShadow = CreateShadowCasterVariant("ShadowCasterShader",
-                "Default/Default.VS.hlsl", "Default/ShadowCaster.PS.hlsl", null);
+                "Shadow/Shadow.VS.hlsl", "Shadow/Shadow.PS.hlsl", null);
             var newShadowSkinned = CreateShadowCasterVariant("ShadowCasterShader_SKINNED",
-                "Default/Default.VS.hlsl", "Default/ShadowCaster.PS.hlsl", SkinnedDefines);
+                "Shadow/Shadow.VS.hlsl", "Shadow/Shadow.PS.hlsl", SkinnedDefines);
 
             var oldStatic = StaticVariant;
             var oldSkinned = SkinnedVariant;
@@ -64,9 +64,9 @@ public class DefaultShader : IDisposable
         SkinnedVariant = CreateVariant("DefaultShader_SKINNED",
             "Default/Default.VS.hlsl", "Default/Default.PS.hlsl", SkinnedDefines);
         ShadowCasterVariant = CreateShadowCasterVariant("ShadowCasterShader",
-            "Default/Default.VS.hlsl", "Default/ShadowCaster.PS.hlsl", null);
+            "Shadow/Shadow.VS.hlsl", "Shadow/Shadow.PS.hlsl", null);
         ShadowCasterSkinnedVariant = CreateShadowCasterVariant("ShadowCasterShader_SKINNED",
-            "Default/Default.VS.hlsl", "Default/ShadowCaster.PS.hlsl", SkinnedDefines);
+            "Shadow/Shadow.VS.hlsl", "Shadow/Shadow.PS.hlsl", SkinnedDefines);
     }
 
     private static ShaderProgram LoadProgram(
@@ -178,6 +178,15 @@ public class DefaultShader : IDisposable
             PrimitiveTopology = PrimitiveTopology.Triangle,
             CullMode = CullMode.FrontFace,
             FillMode = FillMode.Solid,
+            // Slope-scale depth bias: the GPU offsets each fragment's depth by
+            // SlopeScaledDepthBias × maxSlope during rasterization.  Polygons nearly
+            // tangent to the light direction (high slope) receive the most bias,
+            // eliminating shadow acne on angled surfaces without any Peter Panning.
+            // This is the same technique used by Unity and Godot.
+            Rasterization = new RasterizationDesc
+            {
+                SlopeScaledDepthBias = 2.5f
+            },
             DepthTest = new DepthTest
             {
                 Enable = true,

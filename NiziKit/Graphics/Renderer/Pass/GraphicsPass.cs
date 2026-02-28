@@ -36,6 +36,7 @@ public class GraphicsPass(CommandList commandList) : RenderPass(commandList)
     private float _scissorWidth;
     private float _scissorHeight;
     private bool _hasScissor;
+    private uint _numLayers = 1;
 
     public void SetRenderTarget(int slot, CycledTexture renderTarget, LoadOp loadOp = LoadOp.DontCare, StoreOp storeOp = StoreOp.Store)
     {
@@ -112,6 +113,12 @@ public class GraphicsPass(CommandList commandList) : RenderPass(commandList)
         _hasViewport = true;
     }
 
+    /// <summary>
+    /// Sets the number of render target array layers for layered rendering (e.g. CSM).
+    /// Must be called before <see cref="RenderPass.Begin"/>.
+    /// </summary>
+    public void SetNumLayers(uint numLayers) => _numLayers = numLayers;
+
     public void SetScissor(float x, float y, float width, float height)
     {
         _scissorX = x;
@@ -131,6 +138,7 @@ public class GraphicsPass(CommandList commandList) : RenderPass(commandList)
         _hasViewport = false;
         _hasScissor = false;
         _boundShader = null;
+        _numLayers = 1;
         Array.Clear(_rtTextures);
         _depthTexture = null;
         _stencilTexture = null;
@@ -177,7 +185,7 @@ public class GraphicsPass(CommandList commandList) : RenderPass(commandList)
 
         var renderingDesc = new RenderingDesc
         {
-            NumLayers = 1
+            NumLayers = _numLayers
         };
 
         if (_rtCount > 0)
