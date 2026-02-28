@@ -9,6 +9,8 @@ public class DirectionalLight(string name) : GameObject(name)
     [Color] public Vector3 Color { get; set; } = new(1.0f, 1.0f, 1.0f);
     public float Intensity { get; set; } = 1.0f;
     public bool CastsShadows { get; set; } = true;
+    /// <summary>PCSS penumbra softness. 0 = disabled (basic PCF). Higher = softer far shadows.</summary>
+    public float ShadowSoftness { get; set; } = 1.0f;
 
     [HideInInspector] public Vector3 Direction
     {

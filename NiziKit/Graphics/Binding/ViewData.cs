@@ -26,5 +26,7 @@ public struct ShadowCasterInfo
     public float SplitDistance;
     public float Bias;
     public float NormalBias;
+    /// <summary>PCSS penumbra softness. 0 = disabled (basic PCF). Higher = softer far shadows.</summary>
+    public float LightSize;
     public int LightIndex;
 }

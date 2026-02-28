@@ -204,7 +204,8 @@ public class ViewBinding : ShaderBinding<ViewData>
                 LightViewProjection = shadowCasters[s].LightViewProjection,
                 SplitDistance = shadowCasters[s].SplitDistance,
                 Bias = shadowCasters[s].Bias,
-                NormalBias = shadowCasters[s].NormalBias
+                NormalBias = shadowCasters[s].NormalBias,
+                LightSize = shadowCasters[s].LightSize
             };
         }
 

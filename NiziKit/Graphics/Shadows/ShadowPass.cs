@@ -16,7 +16,7 @@ namespace NiziKit.Graphics.Shadows;
 public sealed class ShadowPass : IDisposable
 {
     // ── Configuration ────────────────────────────────────────────────────────────
-    public const int MapSize = 2048;
+    public const int MapSize = 4096;
     public const int NumCascades = 4;        // Must match NUM_CASCADES in View.hlsl
     private const float Lambda = 0.75f;      // Practical split blend (0 = linear, 1 = log)
     private const float MaxDistance = 300f;  // World-space shadow draw distance
@@ -188,6 +188,7 @@ public sealed class ShadowPass : IDisposable
                 SplitDistance = splitDistances[i + 1],
                 Bias = CascadeBias[i],
                 NormalBias = CascadeNormalBias[i],
+                LightSize = dl.ShadowSoftness,
                 LightIndex = lightIndex
             });
         }

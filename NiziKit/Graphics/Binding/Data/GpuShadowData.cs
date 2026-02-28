@@ -13,5 +13,5 @@ public struct GpuShadowData
     public float SplitDistance; //  4 bytes – linear view-space depth at this cascade's far edge
     public float Bias; //  4 bytes
     public float NormalBias; //  4 bytes
-    public float Pad; //  4 bytes
+    public float LightSize; //  4 bytes – PCSS penumbra control (0 = basic PCF only)
 }

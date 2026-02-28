@@ -30,7 +30,7 @@ struct ShadowData
     float    SplitDistance; // Linear view-space depth at this cascade's far edge.
     float    Bias;
     float    NormalBias;
-    float    _Pad;
+    float    LightSize; // PCSS penumbra control. 0 = disabled (basic PCF only).
 };
 
 cbuffer ViewConstants : register(b0, space1)

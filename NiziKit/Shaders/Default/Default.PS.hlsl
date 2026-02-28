@@ -52,7 +52,7 @@ float4 PSMain(PSInput input) : SV_TARGET
         {
             float3 L     = normalize(-light.PositionOrDirection);
             float  NdotL = saturate(dot(normal, L));
-            float  shadow = SampleShadow(light.ShadowIndex, input.WorldPos, normal);
+            float  shadow = SampleShadow(light.ShadowIndex, input.WorldPos, normal, L, input.Position.xy);
             color += light.Color * light.Intensity * NdotL * shadow * albedo.rgb;
         }
         else if (light.Type == LIGHT_TYPE_POINT)

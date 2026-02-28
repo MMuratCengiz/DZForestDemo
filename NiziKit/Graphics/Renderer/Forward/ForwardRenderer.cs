@@ -6,6 +6,7 @@ using NiziKit.Components;
 using NiziKit.Core;
 using NiziKit.Graphics.Binding;
 using NiziKit.Graphics.Resources;
+using NiziKit.Graphics.Renderer.Common;
 using NiziKit.Graphics.Shadows;
 
 namespace NiziKit.Graphics.Renderer.Forward;
@@ -19,8 +20,10 @@ public class ForwardRenderer : IRenderer
     private GpuShader _skinnedShader;
     private readonly SkyboxPass _skyboxPass;
     private readonly ShadowPass _shadowPass;
+    private readonly ShadowSmoothPass _shadowSmoothPass;
 
     private readonly CycledTexture _sceneColor;
+    private readonly CycledTexture _sceneColorSmoothed;
     private readonly CycledTexture _sceneDepth;
 
     private readonly List<(GpuShader shader, SurfaceComponent surface, RenderBatch batch)> _drawList = new(256);
@@ -38,6 +41,7 @@ public class ForwardRenderer : IRenderer
         _viewData = new ViewData();
 
         _sceneColor = CycledTexture.ColorAttachment("SceneColor");
+        _sceneColorSmoothed = CycledTexture.ColorAttachment("SceneColorSmoothed");
         _sceneDepth = CycledTexture.DepthAttachment("SceneDepth");
 
         _defaultShaderSet = new DefaultShader();
@@ -45,6 +49,7 @@ public class ForwardRenderer : IRenderer
         _skinnedShader = _defaultShaderSet.SkinnedVariant;
 
         _shadowPass = new ShadowPass(_defaultShaderSet.ShadowCasterVariant, _defaultShaderSet.ShadowCasterSkinnedVariant);
+        _shadowSmoothPass = new ShadowSmoothPass();
 
         ShaderHotReload.OnShadersReloaded += OnShadersReloaded;
 
@@ -120,7 +125,14 @@ public class ForwardRenderer : IRenderer
         }
 
         pass.End();
-        return _sceneColor;
+
+        // Screen-space bilateral blur to smooth shadow edges.
+        var smoothPass = frame.BeginGraphicsPass();
+        smoothPass.CommandList.Begin();
+        _shadowSmoothPass.Execute(smoothPass.CommandList, _sceneColor, _sceneDepth, _sceneColorSmoothed);
+        smoothPass.CommandList.End();
+
+        return _sceneColorSmoothed;
     }
 
     // ── Shader selection ─────────────────────────────────────────────────────────
@@ -160,8 +172,10 @@ public class ForwardRenderer : IRenderer
         ShaderHotReload.OnShadersReloaded -= OnShadersReloaded;
         _defaultShaderSet.Dispose();
         _shadowPass.Dispose();
+        _shadowSmoothPass.Dispose();
         _skyboxPass.Dispose();
         _sceneColor.Dispose();
+        _sceneColorSmoothed.Dispose();
         _sceneDepth.Dispose();
     }
 }
