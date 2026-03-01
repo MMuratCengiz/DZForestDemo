@@ -7,7 +7,7 @@ using AvaloniaAppBuilder = global::Avalonia.AppBuilder;
 
 namespace NiziKit.Skia;
 
-public sealed class SkiaUI
+public sealed class NiziAvalonia
 {
     private static bool _initialized;
 
@@ -21,12 +21,12 @@ public sealed class SkiaUI
 
     public Texture? Texture => _topLevel.Texture;
 
-    public SkiaUI()
+    public NiziAvalonia(Func<AvaloniaAppBuilder>? appFactory = null)
     {
         if (!_initialized)
         {
             _initialized = true;
-            AvaloniaAppBuilder.Configure<SkiaAvaloniaApp>()
+            (appFactory?.Invoke() ?? AvaloniaAppBuilder.Configure<SkiaAvaloniaApp>())
                 .UseDenOfIz()
                 .SetupWithoutStarting();
         }

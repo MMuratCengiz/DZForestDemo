@@ -30,9 +30,6 @@ public static class DenOfIzPlatform
 
         _initialized = true;
 
-        // Disable Avalonia's sync context - we manage our own game loop
-        AvaloniaSynchronizationContext.AutoInstall = false;
-
         _renderTimer = new DenOfIzRenderTimer();
         _platformGraphics = new DenOfIzPlatformGraphics();
     }
