@@ -15,6 +15,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\NiziKit.Skia\NiziKit.Skia.csproj" />
       <ProjectReference Include="..\NiziKit\NiziKit.csproj" />
       <ProjectReference Include="..\NiziKit.Generators\NiziKit.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
@@ -27,6 +28,7 @@
 
     <ItemGroup>
       <Folder Include="Assets\Fonts\" />
+      <Folder Include="AvaUi\" />
     </ItemGroup>
 
     <Import Project="..\NiziKit\build\NiziKit.targets" />

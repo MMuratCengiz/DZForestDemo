@@ -21,14 +21,15 @@ public sealed class NiziAvalonia
 
     public Texture? Texture => _topLevel.Texture;
 
-    public NiziAvalonia(Func<AvaloniaAppBuilder>? appFactory = null)
+    public NiziAvalonia(Action<AvaloniaAppBuilder>? appFactory = null)
     {
         if (!_initialized)
         {
             _initialized = true;
-            (appFactory?.Invoke() ?? AvaloniaAppBuilder.Configure<SkiaAvaloniaApp>())
-                .UseDenOfIz()
-                .SetupWithoutStarting();
+            var appBuilder = AvaloniaAppBuilder.Configure<SkiaAvaloniaApp>();
+            appBuilder.UseDenOfIz();
+            appFactory?.Invoke(appBuilder);
+            appBuilder.SetupWithoutStarting();
         }
 
         _topLevel = new DenOfIzTopLevel();

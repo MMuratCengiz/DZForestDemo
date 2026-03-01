@@ -28,8 +28,14 @@ internal sealed class DenOfIzTopLevel : EmbeddableControlRoot
     {
         _impl.TextInputActiveChanged += active =>
         {
-            if (active) InputSystem.StartTextInput();
-            else InputSystem.StopTextInput();
+            if (active)
+            {
+                InputSystem.StartTextInput();
+            }
+            else
+            {
+                InputSystem.StopTextInput();
+            }
         };
     }
 
