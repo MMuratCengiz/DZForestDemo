@@ -28,7 +28,6 @@
 
     <ItemGroup>
       <Folder Include="Assets\Fonts\" />
-      <Folder Include="AvaUi\" />
     </ItemGroup>
 
     <Import Project="..\NiziKit\build\NiziKit.targets" />

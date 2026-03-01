@@ -1,0 +1,22 @@
+<Panel xmlns="https://github.com/avaloniaui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+       xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+       xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+       mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+       x:Class="DZForestDemo.AvaUi.Views.ChatWindow"
+       VerticalAlignment="Top"
+       >
+    <StackPanel>
+        <StackPanel Orientation="Horizontal">
+            <Button>Click Me</Button>
+            <Label FontSize="16" Foreground="Red">Welcome to Avalonia!</Label>
+        </StackPanel>
+        <ScrollViewer MinHeight="100">
+            <StackPanel Name="Messages">
+
+            </StackPanel>
+        </ScrollViewer>
+        <TextBox Name="ChatBox">
+        </TextBox>
+    </StackPanel>
+</Panel>

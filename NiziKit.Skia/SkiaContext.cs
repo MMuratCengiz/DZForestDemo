@@ -8,7 +8,7 @@ namespace NiziKit.Skia;
 public sealed class SkiaContext : IDisposable
 {
     private static SkiaContext? _instance;
-    public static SkiaContext Instance => _instance ?? throw new InvalidOperationException("SkiaContext not initialized");
+    public static SkiaContext Instance => _instance ??= new SkiaContext();
     public static GRContext GRContext => Instance._grContext;
 
     private readonly GRContext _grContext;
