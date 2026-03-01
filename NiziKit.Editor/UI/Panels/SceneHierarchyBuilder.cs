@@ -85,6 +85,7 @@ public static class SceneHierarchyBuilder
         {
             UiContextMenuItem.Item("New Object", FontAwesome.Plus),
             UiContextMenuItem.Item("New Child", FontAwesome.Plus),
+            UiContextMenuItem.Item("New Sprite", FontAwesome.Image),
             UiContextMenuItem.Separator(),
             UiContextMenuItem.Item("New Directional Light", FontAwesome.Lightbulb),
             UiContextMenuItem.Item("New Point Light", FontAwesome.Lightbulb),
@@ -106,11 +107,12 @@ public static class SceneHierarchyBuilder
         {
             case 0: vm.NewObject(); break;
             case 1: vm.NewChildObject(); break;
-            case 3: vm.NewDirectionalLight(); break;
-            case 4: vm.NewPointLight(); break;
-            case 5: vm.NewSpotLight(); break;
-            case 7: vm.DuplicateObject(); break;
-            case 8: vm.DeleteObject(); break;
+            case 2: vm.NewSpriteObject(); break;
+            case 4: vm.NewDirectionalLight(); break;
+            case 5: vm.NewPointLight(); break;
+            case 6: vm.NewSpotLight(); break;
+            case 8: vm.DuplicateObject(); break;
+            case 9: vm.DeleteObject(); break;
         }
     }
 

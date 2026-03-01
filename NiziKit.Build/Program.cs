@@ -106,5 +106,6 @@ exporter.Export(new GizmoShader(shaderSourceDir));
 exporter.Export(new GridShader(shaderSourceDir));
 exporter.Export(new ParticleSystemComputeShader(shaderSourceDir));
 exporter.Export(new ParticleSystemRasterShader(shaderSourceDir));
+exporter.Export(new SpriteShader(shaderSourceDir));
 
 return 0;

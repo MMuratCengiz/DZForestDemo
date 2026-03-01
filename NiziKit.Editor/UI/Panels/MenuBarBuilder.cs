@@ -99,6 +99,7 @@ public static class MenuBarBuilder
             UiContextMenuItem.Separator(),
             UiContextMenuItem.Item("New Object", FontAwesome.Plus),
             UiContextMenuItem.Item("New Child", FontAwesome.Plus),
+            UiContextMenuItem.Item("New Sprite", FontAwesome.Image),
             UiContextMenuItem.Separator(),
             UiContextMenuItem.Item("Duplicate", FontAwesome.Copy, "Ctrl+D"),
             UiContextMenuItem.Item("Delete", FontAwesome.Trash, "Del"),
@@ -128,11 +129,15 @@ public static class MenuBarBuilder
         {
             vm.NewChildObject();
         }
-        else if (editResult == 6)
+        else if (editResult == 5)
+        {
+            vm.NewSpriteObject();
+        }
+        else if (editResult == 7)
         {
             vm.DuplicateObject();
         }
-        else if (editResult == 7)
+        else if (editResult == 8)
         {
             vm.DeleteObject();
         }

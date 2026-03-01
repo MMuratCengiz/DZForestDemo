@@ -291,23 +291,6 @@ public static class PropertyEditorRenderer
     {
         var t = EditorTheme.Current;
         var scene = World.CurrentScene;
-
-        if (scene == null)
-        {
-            var value = prop.GetValue(instance)?.ToString() ?? "(no scene)";
-            NiziUi.TextField(id, ref value)
-                .BackgroundColor(t.InputBackground, t.InputBackgroundFocused)
-                .TextColor(t.TextMuted)
-                .BorderColor(t.Border, t.Accent)
-                .FontSize(t.FontSizeCaption)
-                .CornerRadius(t.RadiusSmall)
-                .Padding(4, 3)
-                .GrowWidth()
-                .ReadOnly(true)
-                .Show();
-            return;
-        }
-
         var nameList = new List<string>();
         CollectAllGameObjectNames(scene.RootObjects, nameList);
         var names = nameList.ToArray();

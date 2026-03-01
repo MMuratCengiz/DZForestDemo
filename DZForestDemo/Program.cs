@@ -6,7 +6,7 @@ internal static class Program
 {
     private static void Main(string[] args)
     {
-        Game.Run<DemoGame>(new GameDesc
+        Game.Run<Demo2DGame>(new GameDesc
         {
             Title = "DenOfIz Scene Demo - Press F1/F2 to switch scenes",
             Maximized = true,

@@ -428,21 +428,35 @@ public sealed class EditorOverlayPass : IDisposable
 
     public void AddSelectionBox(GameObject obj)
     {
-        var meshComponent = obj.GetComponent<MeshComponent>();
-        if (meshComponent?.Mesh == null)
-        {
-            return;
-        }
-
         if (_selectionBoxMatrices.Count >= MaxSelectionBoxes)
         {
             return;
         }
 
-        var bounds = meshComponent.Mesh.Bounds;
-        var scale = bounds.Max - bounds.Min;
-        var boundsMatrix = Matrix4x4.CreateScale(scale) * Matrix4x4.CreateTranslation(bounds.Min);
-        _selectionBoxMatrices.Add(boundsMatrix * obj.WorldMatrix);
+        var meshComponent = obj.GetComponent<MeshComponent>();
+        if (meshComponent?.Mesh != null)
+        {
+            var bounds = meshComponent.Mesh.Bounds;
+            var scale = bounds.Max - bounds.Min;
+            var boundsMatrix = Matrix4x4.CreateScale(scale) * Matrix4x4.CreateTranslation(bounds.Min);
+            _selectionBoxMatrices.Add(boundsMatrix * obj.WorldMatrix);
+            return;
+        }
+
+        var sprite = obj.GetComponent<SpriteComponent>();
+        if (sprite != null)
+        {
+            var texture = sprite.Texture;
+            var sizeX = sprite.Size.X != 0 ? sprite.Size.X : (texture?.Width ?? 100) / 100f;
+            var sizeY = sprite.Size.Y != 0 ? sprite.Size.Y : (texture?.Height ?? 100) / 100f;
+            var pivot = sprite.Pivot;
+
+            var spriteMatrix =
+                Matrix4x4.CreateScale(sizeX, sizeY, 0.01f) *
+                Matrix4x4.CreateTranslation(-pivot.X * sizeX, -pivot.Y * sizeY, 0f) *
+                obj.WorldMatrix;
+            _selectionBoxMatrices.Add(spriteMatrix);
+        }
     }
 
     public void BuildSceneIcons(Scene scene, CameraComponent editorCamera, GameObject? selectedObject)

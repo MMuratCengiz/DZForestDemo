@@ -87,13 +87,19 @@ public static class LightShadowCascades
 
             // Bounding sphere: use average of corners as centre.
             var center = Vector3.Zero;
-            foreach (var c in subCorners) center += c;
+            foreach (var c in subCorners)
+            {
+                center += c;
+            }
+
             center /= 8;
 
             // Grow the radius to fully enclose all 8 corners (sphere is stable across rotations).
             var radius = 0f;
             foreach (var c in subCorners)
+            {
                 radius = MathF.Max(radius, Vector3.Distance(center, c));
+            }
 
             // Round UP to the next integer to avoid sub-texel radius changes.
             radius = MathF.Ceiling(radius);

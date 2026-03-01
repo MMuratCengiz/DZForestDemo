@@ -14,6 +14,7 @@ public sealed class EditorDesc
     public string Title { get; init; } = "NiziKit Editor";
     public uint Width { get; init; } = 0;
     public uint Height { get; init; } = 0;
+    public Type? RendererType { get; init; }
 }
 
 public static class Editor

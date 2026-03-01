@@ -3,32 +3,34 @@ using Avalonia.Controls;
 using Avalonia.Controls.Embedding;
 using Avalonia.Controls.Primitives;
 using Avalonia.Input;
-using Avalonia.Skia.Helpers;
 using Avalonia.VisualTree;
 using DenOfIz;
-using SkiaSharp;
-using AvaloniaMouseButton = Avalonia.Input.MouseButton;
+using NiziKit.Graphics;
 
 namespace NiziKit.Skia.Avalonia;
 
-public sealed class DenOfIzTopLevel : EmbeddableControlRoot
+internal sealed class DenOfIzTopLevel : EmbeddableControlRoot
 {
     private readonly DenOfIzTopLevelImpl _impl;
     private DenOfIzSkiaSurface? _surface;
     private double _scaling = 1.0;
 
+    private float _lastMouseX;
+    private float _lastMouseY;
+    private bool _shiftHeld;
+    private bool _ctrlHeld;
+    private bool _altHeld;
+
     public Texture? Texture => _surface?.Texture;
 
-    public DenOfIzSkiaSurface? Surface => _surface;
-
-    public int PixelWidth => _surface?.Width ?? 0;
-
-    public int PixelHeight => _surface?.Height ?? 0;
-
-    public event Action<bool>? TextInputActiveChanged
+    public DenOfIzTopLevel()
+        : this((int)GraphicsContext.Width, (int)GraphicsContext.Height, OS.GetDisplayScale((int)Display.GetPrimaryDisplay().ID))
     {
-        add => _impl.TextInputActiveChanged += value;
-        remove => _impl.TextInputActiveChanged -= value;
+        _impl.TextInputActiveChanged += active =>
+        {
+            if (active) InputSystem.StartTextInput();
+            else InputSystem.StopTextInput();
+        };
     }
 
     public DenOfIzTopLevel(int width, int height, double scaling = 1.0)
@@ -36,10 +38,8 @@ public sealed class DenOfIzTopLevel : EmbeddableControlRoot
     {
         _scaling = scaling;
         SetRenderSize(width, height, scaling);
-
         Prepare();
         StartRendering();
-
         InvalidateMeasure();
         InvalidateArrange();
     }
@@ -71,80 +71,91 @@ public sealed class DenOfIzTopLevel : EmbeddableControlRoot
             _surface.Resize(width, height, scaling);
         }
 
-        _impl.SetClientSize(new Size(width, height), scaling);
+        _impl.SetClientSize(new Size(width / scaling, height / scaling), scaling);
     }
 
-    public void Resize(int width, int height, double scaling = 1.0)
+    private void Resize(int width, int height)
     {
-        SetRenderSize(width, height, scaling);
-
+        SetRenderSize(width, height, _scaling);
         InvalidateMeasure();
         InvalidateArrange();
     }
 
-    public void Render()
+    private void Layout()
     {
-        _impl.TriggerPaint();
         if (_surface == null)
         {
             return;
         }
+
         var size = new Size(_surface.Width / _scaling, _surface.Height / _scaling);
         if (!IsMeasureValid || !IsArrangeValid)
         {
             Measure(size);
             Arrange(new Rect(size));
         }
-
-        var canvas = _surface.RenderTarget.Canvas;
-        canvas.DrawColor(SKColors.Transparent, SKBlendMode.Src);
-
-        DrawingContextHelper.RenderAsync(canvas, this).GetAwaiter().GetResult();
-        _surface.RenderTarget.Flush();
     }
 
-    public void InjectMouseMove(double x, double y, RawInputModifiers modifiers = RawInputModifiers.None)
+    public void Update(float dt)
     {
-        _impl.InjectMouseMove(new Point(x, y), modifiers);
+        Layout();
+        DenOfIzPlatform.TriggerRenderTick(TimeSpan.FromSeconds(dt));
     }
 
-    public void InjectMouseDown(double x, double y, AvaloniaMouseButton button = AvaloniaMouseButton.Left,
-        RawInputModifiers modifiers = RawInputModifiers.None)
+    public void ProcessEvent(ref Event ev)
     {
-        _impl.InjectMouseDown(new Point(x, y), button, modifiers);
-    }
+        switch (ev.Type)
+        {
+            case EventType.MouseMotion:
+                _lastMouseX = ev.MouseMotion.X;
+                _lastMouseY = ev.MouseMotion.Y;
+                _impl.InjectMouseMove(new Point(_lastMouseX / _scaling, _lastMouseY / _scaling), CurrentModifiers);
+                break;
 
-    public void InjectMouseUp(double x, double y, AvaloniaMouseButton button = AvaloniaMouseButton.Left,
-        RawInputModifiers modifiers = RawInputModifiers.None)
-    {
-        _impl.InjectMouseUp(new Point(x, y), button, modifiers);
-    }
+            case EventType.MouseButtonDown:
+                _impl.InjectMouseDown(
+                    new Point(ev.MouseButton.X / _scaling, ev.MouseButton.Y / _scaling),
+                    DenOfIzKeyMapper.ToAvaloniaMouseButton(ev.MouseButton.Button),
+                    CurrentModifiers);
+                break;
 
-    public void InjectMouseWheel(double x, double y, double deltaX, double deltaY,
-        RawInputModifiers modifiers = RawInputModifiers.None)
-    {
-        _impl.InjectMouseWheel(new Point(x, y), new Vector(deltaX, deltaY), modifiers);
-    }
+            case EventType.MouseButtonUp:
+                _impl.InjectMouseUp(
+                    new Point(ev.MouseButton.X / _scaling, ev.MouseButton.Y / _scaling),
+                    DenOfIzKeyMapper.ToAvaloniaMouseButton(ev.MouseButton.Button),
+                    CurrentModifiers);
+                break;
 
-    public void InjectKeyDown(Key key, RawInputModifiers modifiers = RawInputModifiers.None)
-    {
-        _impl.InjectKeyDown(key, modifiers);
-    }
+            case EventType.MouseWheel:
+                _impl.InjectMouseWheel(
+                    new Point(_lastMouseX / _scaling, _lastMouseY / _scaling),
+                    new Vector(ev.MouseWheel.X, ev.MouseWheel.Y),
+                    CurrentModifiers);
+                break;
 
-    public void InjectKeyUp(Key key, RawInputModifiers modifiers = RawInputModifiers.None)
-    {
-        _impl.InjectKeyUp(key, modifiers);
-    }
+            case EventType.KeyDown:
+                UpdateModifiers(ev.Key.KeyCode, pressed: true);
+                _impl.InjectKeyDown(DenOfIzKeyMapper.ToAvaloniaKey(ev.Key.KeyCode), CurrentModifiers);
+                break;
 
-    public void InjectTextInput(string text)
-    {
-        _impl.InjectTextInput(text);
+            case EventType.KeyUp:
+                _impl.InjectKeyUp(DenOfIzKeyMapper.ToAvaloniaKey(ev.Key.KeyCode), CurrentModifiers);
+                UpdateModifiers(ev.Key.KeyCode, pressed: false);
+                break;
+
+            case EventType.TextInput:
+                _impl.InjectTextInput(ev.Text.Text.ToString());
+                break;
+
+            case EventType.WindowEvent when ev.Window.Event == WindowEventType.SizeChanged:
+                Resize((int)ev.Window.Data1, (int)ev.Window.Data2);
+                break;
+        }
     }
 
     public bool HitTest(double x, double y)
     {
-        var point = new Point(x, y);
-        var hit = this.InputHitTest(point);
+        var hit = this.InputHitTest(new Point(x, y));
 
         if (hit == null || hit == this)
         {
@@ -176,4 +187,17 @@ public sealed class DenOfIzTopLevel : EmbeddableControlRoot
 
         return false;
     }
+
+    private void UpdateModifiers(KeyCode key, bool pressed)
+    {
+        switch (key)
+        {
+            case KeyCode.Lshift or KeyCode.Rshift: _shiftHeld = pressed; break;
+            case KeyCode.Lctrl or KeyCode.Rctrl:   _ctrlHeld  = pressed; break;
+            case KeyCode.Lalt  or KeyCode.Ralt:    _altHeld   = pressed; break;
+        }
+    }
+
+    private RawInputModifiers CurrentModifiers =>
+        DenOfIzKeyMapper.ToModifiers(_shiftHeld, _ctrlHeld, _altHeld);
 }

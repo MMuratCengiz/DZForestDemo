@@ -303,11 +303,6 @@ public static class InspectorBuilder
     {
         var t = EditorTheme.Current;
         var scene = World.CurrentScene;
-        if (scene == null)
-        {
-            return;
-        }
-
         using var section = NiziUi.CollapsibleSection("AmbientLightSettings", "Ambient Light", false)
             .HeaderBackground(t.SectionHeaderBg, t.Hover)
             .HeaderTextColor(t.TextPrimary)
@@ -398,11 +393,6 @@ public static class InspectorBuilder
     {
         var t = EditorTheme.Current;
         var scene = World.CurrentScene;
-        if (scene == null)
-        {
-            return;
-        }
-
         using var section = NiziUi.CollapsibleSection("SkyboxSettings", "Skybox Settings", false)
             .HeaderBackground(t.SectionHeaderBg, t.Hover)
             .HeaderTextColor(t.TextPrimary)

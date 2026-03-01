@@ -89,11 +89,6 @@ public class EditorViewModel
     {
         RootObjects.Clear();
         var scene = World.CurrentScene;
-        if (scene == null)
-        {
-            return;
-        }
-
         SceneDisplayName = scene.Name ?? "Scene";
 
         foreach (var obj in scene.RootObjects)
@@ -126,11 +121,6 @@ public class EditorViewModel
     public void NewObject()
     {
         var scene = World.CurrentScene;
-        if (scene == null)
-        {
-            return;
-        }
-
         var obj = scene.CreateObject("New Object");
         var vm = new GameObjectViewModel(obj, this);
         RootObjects.Add(vm);
@@ -154,14 +144,24 @@ public class EditorViewModel
         UndoSystem.Execute(new CreateObjectAction(this, vm, parent, "Create Child Object"));
     }
 
+    public void NewSpriteObject()
+    {
+        var scene = World.CurrentScene;
+        var obj = scene.CreateObject("New Sprite");
+        var sprite = obj.AddComponent<SpriteComponent>();
+        sprite.Color = System.Numerics.Vector4.One;
+        sprite.Size = new System.Numerics.Vector2(1, 1);
+
+        var vm = new GameObjectViewModel(obj, this);
+        RootObjects.Add(vm);
+        SelectObject(vm);
+
+        UndoSystem.Execute(new CreateObjectAction(this, vm, null, "Create Sprite"));
+    }
+
     public void NewDirectionalLight()
     {
         var scene = World.CurrentScene;
-        if (scene == null)
-        {
-            return;
-        }
-
         var light = scene.CreateObject<DirectionalLight>("Directional Light");
         light.LookAt(new System.Numerics.Vector3(0.5f, -1f, 0.5f));
         var vm = new GameObjectViewModel(light, this);
@@ -174,11 +174,6 @@ public class EditorViewModel
     public void NewPointLight()
     {
         var scene = World.CurrentScene;
-        if (scene == null)
-        {
-            return;
-        }
-
         var light = scene.CreateObject<PointLight>("Point Light");
         light.LocalPosition = new System.Numerics.Vector3(0, 3, 0);
         var vm = new GameObjectViewModel(light, this);
@@ -191,11 +186,6 @@ public class EditorViewModel
     public void NewSpotLight()
     {
         var scene = World.CurrentScene;
-        if (scene == null)
-        {
-            return;
-        }
-
         var light = scene.CreateObject<SpotLight>("Spot Light");
         light.LocalPosition = new System.Numerics.Vector3(0, 3, 0);
         light.LookAt(new System.Numerics.Vector3(0, -1, 0));
@@ -214,11 +204,6 @@ public class EditorViewModel
         }
 
         var scene = World.CurrentScene;
-        if (scene == null)
-        {
-            return;
-        }
-
         var objectVm = SelectedGameObject;
         var parent = FindParent(objectVm);
         int index;
@@ -247,11 +232,6 @@ public class EditorViewModel
         }
 
         var scene = World.CurrentScene;
-        if (scene == null)
-        {
-            return;
-        }
-
         var original = SelectedGameObject.GameObject;
         var clone = _sceneService.CloneGameObject(original);
 
@@ -279,11 +259,6 @@ public class EditorViewModel
     public void SaveScene()
     {
         var scene = World.CurrentScene;
-        if (scene == null)
-        {
-            return;
-        }
-
         _sceneService.SaveScene(scene);
         IsDirty = false;
     }

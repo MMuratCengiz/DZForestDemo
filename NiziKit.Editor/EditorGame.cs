@@ -1,6 +1,7 @@
 using System.Numerics;
 using DenOfIz;
 using NiziKit.Application;
+using NiziKit.Assets;
 using NiziKit.Components;
 using NiziKit.Core;
 using NiziKit.Editor.Gizmos;
@@ -9,6 +10,7 @@ using NiziKit.Editor.UI;
 using NiziKit.Editor.ViewModels;
 using NiziKit.Graphics;
 using NiziKit.Graphics.Renderer;
+using NiziKit.Graphics.Renderer.Renderer2D;
 using NiziKit.Inputs;
 using NiziKit.Physics;
 using NiziKit.UI;
@@ -17,6 +19,9 @@ namespace NiziKit.Editor;
 
 public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
 {
+    public override Type RendererType => Editor.Desc.RendererType ?? base.RendererType;
+    public bool Is2DScene => RendererType == typeof(Renderer2D);
+
     private EditorRenderer _renderer = null!;
     private IRenderer _gameRenderer = null!;
     private EditorViewModel _viewModel = null!;
@@ -34,6 +39,12 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
     private bool _shiftHeld;
     private bool _ctrlHeld;
     private bool _keyConsumed;
+
+    // 2D camera pan state
+    private bool _isPanning;
+    private float _panStartX;
+    private float _panStartY;
+    private Vector3 _panStartCameraPos;
 
     private Vector3 _gizmoDragStartPosition;
     private Quaternion _gizmoDragStartRotation;
@@ -83,11 +94,28 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         _viewModel.GridSettingsChanged += OnGridSettingsChanged;
         _viewModel.SetGridDesc(_renderer.EditorOverlayPass.Gizmo.GridDesc);
         SyncGridSettings(_viewModel);
+
+        if (Is2DScene)
+        {
+            _editorController.SetPositionAndLookAt(
+                new Vector3(0, 0, -10), Vector3.Zero, immediate: true);
+            _editorCamera.ProjectionType = ProjectionType.Orthographic;
+            _editorCamera.OrthographicSize = 5f;
+            _editorController.IsEnabled = false;
+
+            _viewModel.Is2DMode = true;
+            _viewModel.CurrentViewPreset = ViewPreset.Front;
+            _renderer.EditorOverlayPass.GridOrientation =
+                Matrix4x4.CreateRotationX(MathF.PI / 2);
+        }
     }
 
     protected override void Update(float dt)
     {
-        _editorController.UpdateCamera(dt);
+        if (!Is2DScene)
+        {
+            _editorController.UpdateCamera(dt);
+        }
 
         if (!_mouseOverUi && !_gizmoDragging)
         {
@@ -140,12 +168,23 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
             {
                 HandleGizmoDrag(_shiftHeld);
             }
+            else if (Is2DScene && _isPanning)
+            {
+                Handle2DPan(ev.MouseMotion.X, ev.MouseMotion.Y);
+            }
         }
         else if (ev.Type == EventType.MouseButtonDown)
         {
             UpdateMouseOverUi();
 
-            if (!_mouseOverUi && ev.MouseButton.Button == MouseButton.Left)
+            if (Is2DScene && !_mouseOverUi && ev.MouseButton.Button == MouseButton.Right)
+            {
+                _isPanning = true;
+                _panStartX = ev.MouseButton.X;
+                _panStartY = ev.MouseButton.Y;
+                _panStartCameraPos = _editorCameraObject.LocalPosition;
+            }
+            else if (!_mouseOverUi && ev.MouseButton.Button == MouseButton.Left)
             {
                 if (TryBeginGizmoDrag())
                 {
@@ -163,6 +202,15 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
             {
                 EndGizmoDrag();
             }
+
+            if (Is2DScene && ev.MouseButton.Button == MouseButton.Right)
+            {
+                _isPanning = false;
+            }
+        }
+        else if (Is2DScene && ev.Type == EventType.MouseWheel && !_mouseOverUi)
+        {
+            Handle2DZoom(ev.MouseWheel.Y);
         }
         else if (ev.Type == EventType.KeyDown)
         {
@@ -219,7 +267,7 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
 
         _textInputActive = NiziUi.FocusedTextFieldId != 0;
 
-        if (!UiWantsInput && !_gizmoDragging && !_keyConsumed)
+        if (!UiWantsInput && !_gizmoDragging && !_keyConsumed && !Is2DScene)
         {
             _editorController.HandleEvent(in ev);
         }
@@ -363,11 +411,6 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
     private void TrySelectMeshAtCursor()
     {
         var scene = World.CurrentScene;
-        if (scene == null)
-        {
-            return;
-        }
-
         var ray = _editorCamera.ScreenPointToRay(_lastMouseX, _lastMouseY, _width, _height);
 
         GameObject? closestObject = null;
@@ -397,9 +440,29 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
             }
         }
 
+        foreach (var spriteComponent in scene.FindComponents<SpriteComponent>())
+        {
+            var gameObject = spriteComponent.Owner;
+            if (gameObject == null)
+            {
+                continue;
+            }
+
+            var spriteBounds = GetSpriteBounds(spriteComponent);
+            if (TransformGizmo.RayBoundsIntersection(ray, spriteBounds, gameObject.WorldMatrix,
+                    out var distance))
+            {
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    closestObject = gameObject;
+                }
+            }
+        }
+
         foreach (var obj in scene.RootObjects)
         {
-            if (obj.GetComponent<MeshComponent>() != null)
+            if (obj.GetComponent<MeshComponent>() != null || obj.GetComponent<SpriteComponent>() != null)
             {
                 continue;
             }
@@ -450,6 +513,20 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         return true;
     }
 
+    private static BoundingBox GetSpriteBounds(SpriteComponent sprite)
+    {
+        var texture = sprite.Texture;
+        var sizeX = sprite.Size.X != 0 ? sprite.Size.X : (texture?.Width ?? 100) / 100f;
+        var sizeY = sprite.Size.Y != 0 ? sprite.Size.Y : (texture?.Height ?? 100) / 100f;
+        var pivot = sprite.Pivot;
+
+        var minX = -pivot.X * sizeX;
+        var minY = -pivot.Y * sizeY;
+        return new BoundingBox(
+            new Vector3(minX, minY, -0.01f),
+            new Vector3(minX + sizeX, minY + sizeY, 0.01f));
+    }
+
     private static GameObjectViewModel? FindGameObjectViewModel(IEnumerable<GameObjectViewModel> viewModels,
         GameObject target)
     {
@@ -482,6 +559,8 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         var distance = 5f;
 
         var meshComponent = selected.GetComponent<MeshComponent>();
+        var spriteComponent = selected.GetComponent<SpriteComponent>();
+
         if (meshComponent?.Mesh != null)
         {
             var bounds = meshComponent.Mesh.Bounds;
@@ -493,6 +572,27 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
 
             var center = (bounds.Min + bounds.Max) * 0.5f;
             targetPosition = Vector3.Transform(center, selected.WorldMatrix);
+        }
+        else if (spriteComponent != null)
+        {
+            var spriteBounds = GetSpriteBounds(spriteComponent);
+            var center = (spriteBounds.Min + spriteBounds.Max) * 0.5f;
+            targetPosition = Vector3.Transform(center, selected.WorldMatrix);
+
+            var size = spriteBounds.Max - spriteBounds.Min;
+            var scale = selected.LocalScale;
+            var maxExtent = MathF.Max(size.X * scale.X, size.Y * scale.Y);
+            distance = maxExtent * 2f;
+            distance = MathF.Max(distance, 2f);
+        }
+
+        if (Is2DScene)
+        {
+            _editorCameraObject.LocalPosition = new Vector3(
+                targetPosition.X, targetPosition.Y,
+                _editorCameraObject.LocalPosition.Z);
+            _editorCamera.OrthographicSize = MathF.Max(distance, 2f);
+            return;
         }
 
         var directionToTarget = targetPosition - _editorCameraObject.LocalPosition;
@@ -596,6 +696,28 @@ public sealed class EditorGame(GameDesc? desc = null) : Game(desc)
         _editorCamera.SetAspectRatio(width, height);
         _renderer.OnResize(width, height);
         NiziUi.SetViewportSize(width, height);
+    }
+
+    private void Handle2DZoom(float scrollDelta)
+    {
+        var zoomFactor = 1f - scrollDelta * 0.1f;
+        _editorCamera.OrthographicSize = Math.Clamp(
+            _editorCamera.OrthographicSize * zoomFactor, 0.5f, 100f);
+    }
+
+    private void Handle2DPan(float mouseX, float mouseY)
+    {
+        var deltaX = mouseX - _panStartX;
+        var deltaY = mouseY - _panStartY;
+
+        var orthoSize = _editorCamera.OrthographicSize;
+        var aspect = (float)_width / _height;
+        var pixelsPerUnit = _height / (orthoSize * 2f);
+
+        var worldDx = -deltaX / pixelsPerUnit;
+        var worldDy = deltaY / pixelsPerUnit;
+
+        _editorCameraObject.LocalPosition = _panStartCameraPos + new Vector3(worldDx, worldDy, 0);
     }
 
     private bool UiWantsInput => _mouseOverUi || _textInputActive;

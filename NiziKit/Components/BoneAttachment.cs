@@ -67,11 +67,6 @@ public partial class BoneAttachment : NiziComponent
     private static GameObject? FindObjectByName(string name)
     {
         var scene = World.CurrentScene;
-        if (scene == null)
-        {
-            return null;
-        }
-
         foreach (var root in scene.RootObjects)
         {
             if (root.Name == name)

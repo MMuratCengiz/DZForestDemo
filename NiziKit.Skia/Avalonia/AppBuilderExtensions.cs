@@ -3,7 +3,7 @@ using Avalonia;
 namespace NiziKit.Skia.Avalonia;
 
 
-public static class AppBuilderExtensions
+internal static class AppBuilderExtensions
 {
     public static AppBuilder UseDenOfIz(this AppBuilder builder)
     {

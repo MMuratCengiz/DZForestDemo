@@ -170,11 +170,6 @@ public class CreateObjectAction(
     public void Undo()
     {
         var scene = World.CurrentScene;
-        if (scene == null)
-        {
-            return;
-        }
-
         if (parentVm != null)
         {
             parentVm.RemoveChild(objectVm);
@@ -194,11 +189,6 @@ public class CreateObjectAction(
     public void Redo()
     {
         var scene = World.CurrentScene;
-        if (scene == null)
-        {
-            return;
-        }
-
         if (parentVm != null)
         {
             parentVm.AddChild(objectVm);
@@ -225,11 +215,6 @@ public class DeleteObjectAction(
     public void Undo()
     {
         var scene = World.CurrentScene;
-        if (scene == null)
-        {
-            return;
-        }
-
         if (parentVm != null)
         {
             parentVm.GameObject.AddChild(objectVm.GameObject);
@@ -247,11 +232,6 @@ public class DeleteObjectAction(
     public void Redo()
     {
         var scene = World.CurrentScene;
-        if (scene == null)
-        {
-            return;
-        }
-
         if (parentVm != null)
         {
             parentVm.RemoveChild(objectVm);

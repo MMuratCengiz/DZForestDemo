@@ -163,7 +163,10 @@ public class Game : IDisposable
             }
 
             World.CurrentScene?.HandleCameraEvent(in ev);
-            NiziUi.OnEvent(in ev);
+            if (NiziUi.IsInitialized)
+            {
+                NiziUi.OnEvent(in ev);
+            }
             OnEvent(ref ev);
         }
     }

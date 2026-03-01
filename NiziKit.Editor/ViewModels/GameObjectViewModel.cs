@@ -50,6 +50,11 @@ public class GameObjectViewModel
                     return FontAwesome.Camera;
                 }
 
+                if (typeName.Contains("Sprite", StringComparison.OrdinalIgnoreCase))
+                {
+                    return FontAwesome.Image;
+                }
+
                 if (typeName.Contains("Mesh", StringComparison.OrdinalIgnoreCase) ||
                     typeName.Contains("Renderer", StringComparison.OrdinalIgnoreCase))
                 {
@@ -82,6 +87,11 @@ public class GameObjectViewModel
                 if (typeName.Contains("Camera", StringComparison.OrdinalIgnoreCase))
                 {
                     return UiColor.Rgb(100, 180, 160);
+                }
+
+                if (typeName.Contains("Sprite", StringComparison.OrdinalIgnoreCase))
+                {
+                    return UiColor.Rgb(120, 180, 220);
                 }
 
                 if (typeName.Contains("Mesh", StringComparison.OrdinalIgnoreCase) ||

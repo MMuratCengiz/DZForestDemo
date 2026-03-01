@@ -82,6 +82,7 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
                         CollectAssetRef(comp.Properties, "metallic", refs);
                         CollectAssetRef(comp.Properties, "roughness", refs);
                         CollectAssetRef(comp.Properties, "skeleton", refs);
+                        CollectAssetRef(comp.Properties, "texture", refs);
                         CollectAnimationRefs(comp.Properties, refs);
                     }
                 }
@@ -738,6 +739,48 @@ public class JsonScene(string jsonPath) : Scene(Path.GetFileNameWithoutExtension
                     {
                         surfaceComp.UVOffset = new Vector2(uvOffset[0], uvOffset[1]);
                     }
+                }
+                break;
+
+            case "sprite":
+                var spriteComp = obj.AddComponent<SpriteComponent>();
+                if (data.Properties != null)
+                {
+                    var textureRef = data.Properties.GetStringOrDefault("texture");
+                    if (!string.IsNullOrEmpty(textureRef))
+                    {
+                        spriteComp.Texture = ResolveTexture(textureRef);
+                    }
+
+                    var spriteColor = data.Properties.GetFloatArrayOrDefault("color");
+                    if (spriteColor is { Length: >= 4 })
+                    {
+                        spriteComp.Color = new Vector4(spriteColor[0], spriteColor[1], spriteColor[2], spriteColor[3]);
+                    }
+
+                    spriteComp.SortingLayer = data.Properties.GetInt32OrDefault("sortingLayer", 0);
+                    spriteComp.SortOrder = data.Properties.GetInt32OrDefault("sortOrder", 0);
+
+                    var size = data.Properties.GetFloatArrayOrDefault("size");
+                    if (size is { Length: >= 2 })
+                    {
+                        spriteComp.Size = new Vector2(size[0], size[1]);
+                    }
+
+                    var pivot = data.Properties.GetFloatArrayOrDefault("pivot");
+                    if (pivot is { Length: >= 2 })
+                    {
+                        spriteComp.Pivot = new Vector2(pivot[0], pivot[1]);
+                    }
+
+                    var uvRect = data.Properties.GetFloatArrayOrDefault("uvRect");
+                    if (uvRect is { Length: >= 4 })
+                    {
+                        spriteComp.UVRect = new Vector4(uvRect[0], uvRect[1], uvRect[2], uvRect[3]);
+                    }
+
+                    spriteComp.FlipX = data.Properties.GetBooleanOrDefault("flipX", false);
+                    spriteComp.FlipY = data.Properties.GetBooleanOrDefault("flipY", false);
                 }
                 break;
 

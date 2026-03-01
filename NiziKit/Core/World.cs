@@ -14,6 +14,7 @@ public class World : IDisposable
     public static Scene CurrentScene => Instance._currentScene;
     public static PhysicsWorld PhysicsWorld => Instance._physicsWorld;
     public static RenderWorld RenderWorld => Instance._renderWorld;
+    public static RenderWorld2D RenderWorld2D => Instance._renderWorld2D;
     public static AssetWorld AssetWorld => Instance._assetWorld;
     public static AnimationWorld AnimationWorld => Instance._animationWorld;
 
@@ -124,6 +125,7 @@ public class World : IDisposable
     private Scene _currentScene;
     private readonly PhysicsWorld _physicsWorld;
     private readonly RenderWorld _renderWorld;
+    private readonly RenderWorld2D _renderWorld2D;
     private readonly AssetWorld _assetWorld;
     private readonly AnimationWorld _animationWorld;
 
@@ -132,10 +134,11 @@ public class World : IDisposable
         _currentScene = new EmptyScene();
         _physicsWorld = new PhysicsWorld();
         _renderWorld = new RenderWorld();
+        _renderWorld2D = new RenderWorld2D();
         _assetWorld = new AssetWorld();
         _animationWorld = new AnimationWorld();
 
-        _worldEventListeners = [_assetWorld, _physicsWorld, _animationWorld, _renderWorld];
+        _worldEventListeners = [_assetWorld, _physicsWorld, _animationWorld, _renderWorld, _renderWorld2D];
 
         _instance = this;
     }

@@ -13,7 +13,6 @@ namespace NiziKit.Graphics.Renderer.Forward;
 
 public class ForwardRenderer : IRenderer
 {
-    // ── Resources ────────────────────────────────────────────────────────────────
     private readonly ViewData _viewData;
     private readonly DefaultShader _defaultShaderSet;
     private GpuShader _defaultShader;
@@ -27,8 +26,6 @@ public class ForwardRenderer : IRenderer
     private readonly CycledTexture _sceneDepth;
 
     private readonly List<(GpuShader shader, SurfaceComponent surface, RenderBatch batch)> _drawList = new(256);
-
-    // ── Public API ───────────────────────────────────────────────────────────────
 
     public CameraComponent? Camera
     {
@@ -60,11 +57,6 @@ public class ForwardRenderer : IRenderer
     {
         var renderWorld = World.RenderWorld;
         var scene = World.CurrentScene;
-        if (scene == null)
-        {
-            return _sceneColor;
-        }
-
         var camera = _viewData.Camera ?? scene.GetActiveCamera();
 
         _viewData.Scene = scene;
@@ -87,7 +79,6 @@ public class ForwardRenderer : IRenderer
         _viewData.ShadowAtlas = shadowCasters.Length > 0 ? _shadowPass.ShadowMapArray : null;
         _viewData.ShadowCasters = shadowCasters;
 
-        // ── Main forward pass ─────────────────────────────────────────────────────
         var pass = frame.BeginGraphicsPass();
         pass.SetRenderTarget(0, _sceneColor, LoadOp.Clear);
         pass.SetDepthTarget(_sceneDepth, LoadOp.Clear);
@@ -135,8 +126,6 @@ public class ForwardRenderer : IRenderer
         return _sceneColorSmoothed;
     }
 
-    // ── Shader selection ─────────────────────────────────────────────────────────
-
     private GpuShader SelectShader(RenderBatch batch)
     {
         foreach (var obj in batch.Objects)
@@ -148,8 +137,6 @@ public class ForwardRenderer : IRenderer
         }
         return _defaultShader;
     }
-
-    // ── Lifecycle ────────────────────────────────────────────────────────────────
 
     private void OnShadersReloaded()
     {
