@@ -64,7 +64,7 @@ public static class NiziPackBuilder
         }
 
         long indexOffset = HeaderSize;
-        long dataOffset = AlignUp(indexOffset + indexSize, Alignment);
+        var dataOffset = AlignUp(indexOffset + indexSize, Alignment);
 
         WriteHeader(output, (uint)files.Count, indexOffset, indexSize, dataOffset, totalDataSize);
 

@@ -33,7 +33,7 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
 
     public double RenderScaling => _scaling;
 
-    public IScreenImpl? Screen => null;
+    public IScreenImpl? Screen { get; } = new DenOfIzScreenImpl();
 
     public IPlatformHandle? Handle => null;
 
@@ -253,8 +253,9 @@ public sealed class DenOfIzTopLevelImpl : ITopLevelImpl
     {
     }
 
-    public IPopupImpl? CreatePopup()
-        => null; // Popups not supported in embedded mode
+    public PixelPoint ScreenPosition { get; set; }
+
+    public IPopupImpl? CreatePopup() => null;
 
     public void SetTransparencyLevelHint(IReadOnlyList<WindowTransparencyLevel> transparencyLevels)
     {

@@ -1,5 +1,7 @@
 using Avalonia;
+using DenOfIz;
 using NiziKit.Application;
+using NiziKit.Graphics;
 using NiziKit.Skia;
 
 namespace DZForestDemo;
@@ -15,6 +17,13 @@ internal static class Program
             Title = "DenOfIz Scene Demo - Press F1/F2 to switch scenes",
             Maximized = true,
             Resizable =  true,
+            Graphics = new GraphicsDesc()
+            {
+                ApiPreference = new APIPreference()
+                {
+                    Windows = APIPreferenceWindows.Vulkan
+                }
+            }
         });
     }
 }

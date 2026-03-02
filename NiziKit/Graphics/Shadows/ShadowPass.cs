@@ -151,7 +151,7 @@ public sealed class ShadowPass : IDisposable
 
         if (_casterList.Count == 0)
         {
-            return Array.Empty<ShadowCasterInfo>();
+            return [];
         }
 
         if (_casterArray.Length != _casterList.Count)

@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Dialogs;
 using Avalonia.Themes.Simple;
 using DenOfIz;
 using NiziKit.Skia.Avalonia;
@@ -21,9 +22,16 @@ public sealed class NiziAvalonia
 
     public Texture? Texture => _topLevel.Texture;
 
-    public static AvaloniaAppBuilder BuildAvaloniaApp() =>
-        AvaloniaAppBuilder.Configure<SkiaAvaloniaApp>()
-            .UseDenOfIz();
+    public static AvaloniaAppBuilder BuildAvaloniaApp()
+    {
+        var buildAvaloniaApp = AvaloniaAppBuilder.Configure<SkiaAvaloniaApp>();
+        buildAvaloniaApp.UseDenOfIz();
+        if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+        {
+            buildAvaloniaApp.UseManagedSystemDialogs();
+        }
+        return buildAvaloniaApp;
+    }
 
     public NiziAvalonia(Action<AvaloniaAppBuilder>? appFactory = null)
     {
@@ -39,9 +47,15 @@ public sealed class NiziAvalonia
         _topLevel = new DenOfIzTopLevel();
     }
 
-    public void Update(float dt) => _topLevel.Update(dt);
+    public void Update(float dt)
+    {
+        _topLevel.Update(dt);
+    }
 
-    public void OnEvent(ref Event ev) => _topLevel.ProcessEvent(ref ev);
+    public void OnEvent(ref Event ev)
+    {
+        _topLevel.ProcessEvent(ref ev);
+    }
 
     public bool HitTest(double x, double y) => _topLevel.HitTest(x, y);
 

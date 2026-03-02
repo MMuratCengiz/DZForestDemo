@@ -198,7 +198,7 @@ internal sealed class DenOfIzWindowingPlatform : IWindowingPlatform
         => throw new NotSupportedException("DenOfIz platform doesn't support creating windows. Use DenOfIzTopLevel instead.");
 
     public ITopLevelImpl CreateEmbeddableTopLevel()
-        => throw new NotSupportedException("Use DenOfIzTopLevel constructor directly.");
+        => new DenOfIzTopLevelImpl();
 
     public ITrayIconImpl? CreateTrayIcon()
         => null;

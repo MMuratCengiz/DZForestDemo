@@ -173,7 +173,7 @@ internal sealed class DenOfIzTopLevel : EmbeddableControlRoot
         {
             if (current is Button or TextBox or ComboBox or ListBox or TreeView
                 or ScrollViewer or MenuItem or Menu or ToggleButton or CheckBox
-                or Slider or ScrollBar)
+                or Slider or ScrollBar or SelectableTextBlock or TextBlock)
             {
                 return true;
             }

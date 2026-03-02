@@ -120,7 +120,8 @@
       "Bash(where:*)",
       "Bash(cmd /c:*)",
       "Bash(wsl ls:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "WebFetch(domain:reference.avaloniaui.net)"
     ]
   }
 }

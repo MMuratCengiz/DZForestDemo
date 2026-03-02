@@ -80,7 +80,7 @@ public partial class Animator : NiziComponent, IDisposable
                 return RetargetSource.AnimationNames;
             }
 
-            return Skeleton?.AnimationNames ?? Array.Empty<string>();
+            return Skeleton?.AnimationNames ?? [];
         }
     }
 
@@ -310,7 +310,7 @@ public partial class Animator : NiziComponent, IDisposable
             }
         }
 
-        var names = Skeleton?.AnimationNames ?? Array.Empty<string>();
+        var names = Skeleton?.AnimationNames ?? [];
         for (var i = 0; i < names.Count; i++)
         {
             if (names[i] == name)

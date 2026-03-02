@@ -38,7 +38,7 @@ public partial class CapsuleCollider : Collider
 
     internal override PhysicsShape CreateShape()
     {
-        float cylinderLength = Math.Max(0, Height - Radius * 2f);
+        var cylinderLength = Math.Max(0, Height - Radius * 2f);
         return PhysicsShape.Capsule(Radius, cylinderLength);
     }
 

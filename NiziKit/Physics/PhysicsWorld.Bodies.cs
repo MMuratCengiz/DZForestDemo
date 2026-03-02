@@ -291,8 +291,8 @@ public sealed partial class PhysicsWorld
 
             Vector3 pos;
             Quaternion rot;
-            Vector3 linearVel = Vector3.Zero;
-            Vector3 angularVel = Vector3.Zero;
+            var linearVel = Vector3.Zero;
+            var angularVel = Vector3.Zero;
 
             if (_bodyHandles.TryGetValue(id, out var bodyHandle))
             {
