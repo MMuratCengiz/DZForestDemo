@@ -21,10 +21,18 @@ public static partial class NiziUi
     /// </summary>
     public static void StyledText(string markup, UiTextStyle baseStyle = default)
     {
+        StyledText(markup, baseStyle, baseStyle.WrapMode);
+    }
+
+    public static void StyledText(string markup, UiTextStyle baseStyle, UiTextWrap wrap)
+    {
         if (string.IsNullOrEmpty(markup))
         {
             return;
         }
+
+        // Apply wrap mode to the base style
+        baseStyle.WrapMode = wrap;
 
         // Fast path: no tags at all
         if (!markup.Contains('<'))
@@ -50,13 +58,28 @@ public static partial class NiziUi
             return;
         }
 
+        var clayWrapMode = wrap switch
+        {
+            UiTextWrap.Words => ClayTextWrapMode.Words,
+            UiTextWrap.Newlines => ClayTextWrapMode.Newlines,
+            _ => ClayTextWrapMode.None
+        };
+
         // Multiple segments: wrap in a horizontal container so they flow inline
         var decl = new ClayElementDeclaration
         {
             Id = _ctx.StringCache.GetId("StyledText", _ctx.NextElementIndex())
         };
         decl.Layout.LayoutDirection = ClayLayoutDirection.LeftToRight;
-        decl.Layout.Sizing.Width = ClaySizingAxis.Fit(0, float.MaxValue);
+        // When wrapping is enabled, grow width so Clay can reflow text within available space
+        if (wrap != UiTextWrap.None)
+        {
+            decl.Layout.Sizing.Width = ClaySizingAxis.Grow(0, float.MaxValue);
+        }
+        else
+        {
+            decl.Layout.Sizing.Width = ClaySizingAxis.Fit(0, float.MaxValue);
+        }
         decl.Layout.Sizing.Height = ClaySizingAxis.Fit(0, float.MaxValue);
 
         _ctx.OpenElement(decl);
@@ -69,7 +92,7 @@ public static partial class NiziUi
                     TextColor = style.Color.ToClayColor(),
                     FontSize = style.FontSize > 0 ? style.FontSize : (ushort)14,
                     FontId = style.FontId,
-                    WrapMode = ClayTextWrapMode.None,
+                    WrapMode = clayWrapMode,
                     TextAlignment = style.Alignment switch
                     {
                         UiTextAlign.Center => ClayTextAlignment.Center,
@@ -81,6 +104,37 @@ public static partial class NiziUi
             }
         }
         _ctx.Clay.CloseElement();
+    }
+
+    public static void StyledText(string markup, string className)
+    {
+        var cls = GetTextClass(className);
+        var style = new UiTextStyle();
+        var wrap = UiTextWrap.None;
+        if (cls != null)
+        {
+            if (cls.Color.HasValue)
+            {
+                style.Color = cls.Color.Value;
+            }
+
+            if (cls.FontSize.HasValue)
+            {
+                style.FontSize = cls.FontSize.Value;
+            }
+
+            if (cls.FontId.HasValue)
+            {
+                style.FontId = (ushort)cls.FontId.Value;
+            }
+
+            if (cls.WrapMode.HasValue) { style.WrapMode = cls.WrapMode.Value; wrap = cls.WrapMode.Value; }
+            if (cls.Alignment.HasValue)
+            {
+                style.Alignment = cls.Alignment.Value;
+            }
+        }
+        StyledText(markup, style, wrap);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

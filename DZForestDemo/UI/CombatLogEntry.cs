@@ -1,4 +1,4 @@
-namespace DZForestDemo.AvaUi.Models;
+namespace DZForestDemo.UI;
 
 public enum CombatEntryType
 {
@@ -17,7 +17,7 @@ public record TextSegment(
     string? TooltipTitle = null,
     string? TooltipContent = null,
     string? TooltipIcon = null,
-    string? ColorResourceKey = null);
+    string? ColorKey = null);
 
 public record CombatLogEntry(
     IReadOnlyList<TextSegment> Segments,

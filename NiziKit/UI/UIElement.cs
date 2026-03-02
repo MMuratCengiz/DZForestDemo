@@ -22,6 +22,78 @@ public ref struct UiElement
     public uint Id { get; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiElement Class(string name)
+    {
+        var style = NiziUi.GetClass(name);
+        if (style == null)
+        {
+            return this;
+        }
+
+        if (style.Background.HasValue)
+        {
+            Background(style.Background.Value);
+        }
+
+        if (style.Border.HasValue)
+        {
+            Border(style.Border.Value);
+        }
+
+        if (style.Padding.HasValue)
+        {
+            Padding(style.Padding.Value);
+        }
+
+        if (style.CornerRadius.HasValue)
+        {
+            CornerRadius(style.CornerRadius.Value);
+        }
+
+        if (style.Width.HasValue)
+        {
+            Width(style.Width.Value);
+        }
+
+        if (style.Height.HasValue)
+        {
+            Height(style.Height.Value);
+        }
+
+        if (style.Direction.HasValue)
+        {
+            Direction(style.Direction.Value);
+        }
+
+        if (style.Gap.HasValue)
+        {
+            Gap(style.Gap.Value);
+        }
+
+        if (style.AlignX.HasValue)
+        {
+            AlignChildrenX(style.AlignX.Value);
+        }
+
+        if (style.AlignY.HasValue)
+        {
+            AlignChildrenY(style.AlignY.Value);
+        }
+
+        if (style.ScrollVertical is true)
+        {
+            ScrollVertical();
+        }
+
+        if (style.ScrollHorizontal is true)
+        {
+            ScrollHorizontal();
+        }
+
+        return this;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public UiElement Direction(UiDirection dir)
     {
         _decl.Layout.LayoutDirection = dir == UiDirection.Horizontal
@@ -284,6 +356,13 @@ public ref struct UiElement
     public UiElement CornerRadius(float radius)
     {
         _decl.BorderRadius = ClayBorderRadius.CreateUniform(radius);
+        return this;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiElement Floating(ClayFloatingDesc floating)
+    {
+        _decl.Floating = floating;
         return this;
     }
 

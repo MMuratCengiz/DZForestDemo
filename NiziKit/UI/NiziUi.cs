@@ -6,6 +6,8 @@ namespace NiziKit.UI;
 public static partial class NiziUi
 {
     private static UiContext _ctx = null!;
+    private static readonly Dictionary<string, UiStyleClass> _styleClasses = new();
+    private static readonly Dictionary<string, UiTextStyleClass> _textStyleClasses = new();
 
     internal static UiContext Ctx
     {
@@ -75,4 +77,24 @@ public static partial class NiziUi
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint GetCharIndexAtOffset(string text, float offset, ushort fontId, ushort fontSize)
         => _ctx.Clay.GetCharIndexAtOffset(StringView.Create(text), offset, fontId, fontSize);
+
+    public static void RegisterClass(string name, UiStyleClass style)
+    {
+        _styleClasses[name] = style;
+    }
+
+    public static void RegisterTextClass(string name, UiTextStyleClass style)
+    {
+        _textStyleClasses[name] = style;
+    }
+
+    internal static UiStyleClass? GetClass(string name)
+    {
+        return _styleClasses.GetValueOrDefault(name);
+    }
+
+    internal static UiTextStyleClass? GetTextClass(string name)
+    {
+        return _textStyleClasses.GetValueOrDefault(name);
+    }
 }

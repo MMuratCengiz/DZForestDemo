@@ -45,7 +45,12 @@ public static partial class NiziUi
             TextColor = style.Color.ToClayColor(),
             FontSize = style.FontSize > 0 ? style.FontSize : (ushort)14,
             FontId = style.FontId,
-            WrapMode = ClayTextWrapMode.None,
+            WrapMode = style.WrapMode switch
+            {
+                UiTextWrap.Words => ClayTextWrapMode.Words,
+                UiTextWrap.Newlines => ClayTextWrapMode.Newlines,
+                _ => ClayTextWrapMode.None
+            },
             TextAlignment = style.Alignment switch
             {
                 UiTextAlign.Center => ClayTextAlignment.Center,
@@ -54,6 +59,41 @@ public static partial class NiziUi
             }
         };
         _ctx.Clay.Text(text, desc);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Text(string text, string className)
+    {
+        var cls = GetTextClass(className);
+        var style = new UiTextStyle();
+        if (cls != null)
+        {
+            if (cls.Color.HasValue)
+            {
+                style.Color = cls.Color.Value;
+            }
+
+            if (cls.FontSize.HasValue)
+            {
+                style.FontSize = cls.FontSize.Value;
+            }
+
+            if (cls.FontId.HasValue)
+            {
+                style.FontId = (ushort)cls.FontId.Value;
+            }
+
+            if (cls.WrapMode.HasValue)
+            {
+                style.WrapMode = cls.WrapMode.Value;
+            }
+
+            if (cls.Alignment.HasValue)
+            {
+                style.Alignment = cls.Alignment.Value;
+            }
+        }
+        Text(text, style);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

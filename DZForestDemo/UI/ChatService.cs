@@ -1,13 +1,10 @@
-using System.Collections.ObjectModel;
-using DZForestDemo.AvaUi.Models;
-
-namespace DZForestDemo.AvaUi.Services;
+namespace DZForestDemo.UI;
 
 public class ChatService
 {
     private const int MaxMessages = 500;
 
-    public ObservableCollection<ChatMessage> Messages { get; } = [];
+    public List<ChatMessage> Messages { get; } = [];
 
     public void AddMessage(string character, string text, ChatMessageType type = ChatMessageType.Normal)
     {

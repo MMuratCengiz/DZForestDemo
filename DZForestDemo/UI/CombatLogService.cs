@@ -1,13 +1,10 @@
-using System.Collections.ObjectModel;
-using DZForestDemo.AvaUi.Models;
-
-namespace DZForestDemo.AvaUi.Services;
+namespace DZForestDemo.UI;
 
 public class CombatLogService
 {
     private const int MaxEntries = 300;
 
-    public ObservableCollection<CombatLogEntry> Entries { get; } = [];
+    public List<CombatLogEntry> Entries { get; } = [];
 
     public void AddEntry(CombatLogEntry entry)
     {
@@ -20,12 +17,12 @@ public class CombatLogService
     {
         var segments = new List<TextSegment>
         {
-            new(attacker, true, attacker, attackerTooltip ?? $"Level ?? Adventurer", "\u2694", "CombatTextGold"),
+            new(attacker, true, attacker, attackerTooltip ?? "Level ?? Adventurer", "\u2694", "CombatTextGold"),
             new(" strikes "),
             new(target, true, target, targetTooltip ?? "A hostile creature", "\ud83d\udc7e", "CombatTextGold"),
             new(" with "),
             new(weapon, true, weapon, weaponTooltip ?? "A sturdy weapon", "\ud83d\udde1", "CombatTextGold"),
-            new($" for "),
+            new(" for "),
             new($"{damage}", false, null, null, null, "CombatDamage"),
             new(" damage.")
         };
@@ -43,7 +40,7 @@ public class CombatLogService
             new(spell, true, spell, spellTooltip ?? "A magical spell", "\u2728", "CombatSpell"),
             new(" on "),
             new(target, true, target, targetTooltip ?? "A hostile creature", "\ud83d\udc7e", "CombatTextGold"),
-            new($" for "),
+            new(" for "),
             new($"{damage}", false, null, null, null, "CombatSpell"),
             new(" damage.")
         };
@@ -61,7 +58,7 @@ public class CombatLogService
             new(target, true, target, targetTooltip ?? "An ally", "\ud83d\udee1", "CombatTextGold"),
             new(" with "),
             new(spell, true, spell, spellTooltip ?? "A healing spell", "\ud83d\udc9a", "CombatHeal"),
-            new($" for "),
+            new(" for "),
             new($"+{amount}", false, null, null, null, "CombatHeal"),
             new(" HP.")
         };

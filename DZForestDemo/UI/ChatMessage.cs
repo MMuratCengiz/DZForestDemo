@@ -1,4 +1,4 @@
-namespace DZForestDemo.AvaUi.Models;
+namespace DZForestDemo.UI;
 
 public enum ChatMessageType
 {

@@ -275,6 +275,13 @@ public enum UiTextAlign
     Right
 }
 
+public enum UiTextWrap
+{
+    None,
+    Words,
+    Newlines
+}
+
 public readonly struct UiInteraction
 {
     public readonly bool IsHovered;

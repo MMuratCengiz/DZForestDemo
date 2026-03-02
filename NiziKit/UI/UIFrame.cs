@@ -52,7 +52,12 @@ public readonly ref struct UiFrame
             TextColor = style.Color.ToClayColor(),
             FontSize = style.FontSize > 0 ? style.FontSize : (ushort)14,
             FontId = style.FontId,
-            WrapMode = ClayTextWrapMode.None,
+            WrapMode = style.WrapMode switch
+            {
+                UiTextWrap.Words => ClayTextWrapMode.Words,
+                UiTextWrap.Newlines => ClayTextWrapMode.Newlines,
+                _ => ClayTextWrapMode.None
+            },
             TextAlignment = style.Alignment switch
             {
                 UiTextAlign.Center => ClayTextAlignment.Center,
@@ -109,13 +114,15 @@ public struct UiTextStyle
     public ushort FontSize;
     public ushort FontId;
     public UiTextAlign Alignment;
+    public UiTextWrap WrapMode;
 
     public static UiTextStyle Default => new()
     {
         Color = UiColor.White,
         FontSize = 14,
         FontId = 0,
-        Alignment = UiTextAlign.Left
+        Alignment = UiTextAlign.Left,
+        WrapMode = UiTextWrap.None
     };
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -143,6 +150,13 @@ public struct UiTextStyle
     public UiTextStyle WithAlignment(UiTextAlign align)
     {
         Alignment = align;
+        return this;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public UiTextStyle WithWrap(UiTextWrap wrap)
+    {
+        WrapMode = wrap;
         return this;
     }
 }

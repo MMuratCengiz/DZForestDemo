@@ -83,8 +83,8 @@
     {
       "name": "My Character",
       "active": true,
-      "position": [-2.1819868, 0.5, -0.5354333],
-      "rotation": [179.99998, 8.483199, 179.99998],
+      "position": [-0.92047, 0.5, 5.7157536],
+      "rotation": [-179.99998, -8.483199, -179.99998],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -252,8 +252,8 @@
         {
           "name": "Bow",
           "active": true,
-          "position": [0.34852982, 0.78480005, 0.043152064],
-          "rotation": [-6.5138235, 15.778185, -83.20919],
+          "position": [-0.27535427, 0.6756979, 0.07664442],
+          "rotation": [-80.06197, 3.6497772, -8.33454],
           "scale": [1, 1, 1],
           "components": [
             {
@@ -297,8 +297,8 @@
     {
       "name": "Crate 2",
       "active": true,
-      "position": [-7.6839075, -164836670, 5.586101],
-      "rotation": [-19.34761, -6.015429, -10.857702],
+      "position": [-7.000039, 0.9997239, 2.9999225],
+      "rotation": [-1.4846173E-09, 24.999996, -3.398524E-09],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -336,8 +336,8 @@
     {
       "name": "Barrel 1",
       "active": true,
-      "position": [-4.4763737, -164836560, -9.931981],
-      "rotation": [-5.406809, 19.97596, 0.008537976],
+      "position": [-1.0099126, 0.99984145, -3.54748],
+      "rotation": [-6.865833E-09, 21.631596, 3.6016667E-09],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -373,8 +373,8 @@
     {
       "name": "House",
       "active": true,
-      "position": [2.7758703, 0.6254746, 0.50601625],
-      "rotation": [7.567112E-23, -1.27222155E-14, -8.519813E-08],
+      "position": [3.0854166, 0.5155997, 3.0098886],
+      "rotation": [179.99791, -86.937904, -179.99779],
       "scale": [1, 1, 1],
       "components": [
         {
@@ -386,6 +386,23 @@
           "albedo": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_01_A.dztex",
           "normal": "Synty/Textures/FantasyKingdom/Textures/PolygonFantasyKingdom_Texture_Normal_01.dztex",
           "roughness": "Synty/Textures/DarkFantasy/Textures/Misc/PolygonDarkFantasy_Stone_01.dztex"
+        }
+      ],
+      "children": []
+    },
+    {
+      "name": "New Object",
+      "active": true,
+      "position": [-12.541502, 7.3859005, 0],
+      "rotation": [0, 0, 0],
+      "scale": [1, 1, 1],
+      "components": [
+        {
+          "type": "NiziKit.Components.MeshComponent",
+          "mesh": "Synty/Models/StreetRacer/UCX_SM_Bld_Warehouse_01.nizimesh"
+        },
+        {
+          "type": "NiziKit.Components.SurfaceComponent"
         }
       ],
       "children": []

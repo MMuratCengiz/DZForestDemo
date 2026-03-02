@@ -5,6 +5,12 @@ namespace NiziKit.UI;
 public static partial class NiziUi
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static UiTabControl TabControl(string id)
+    {
+        return new UiTabControl(_ctx, id);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static UiButton Button(string id, string text)
     {
         return new UiButton(_ctx, id, text);
