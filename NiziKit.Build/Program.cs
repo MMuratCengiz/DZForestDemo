@@ -97,10 +97,6 @@ var defaultShaderOffline = new DefaultShader(shaderSourceDir);
 exporter.Export(defaultShaderOffline);
 exporter.Export(defaultShaderOffline, new Dictionary<string, string?> { ["SKINNED"] = null });
 
-exporter.Export(new ShadowCasterShader(shaderSourceDir));
-exporter.Export(new ShadowCasterShader(shaderSourceDir), new Dictionary<string, string?> { ["SKINNED"] = null });
-
-exporter.Export(new ShadowSmoothShader(shaderSourceDir));
 exporter.Export(new SkyboxShader(shaderSourceDir));
 exporter.Export(new GizmoShader(shaderSourceDir));
 exporter.Export(new GridShader(shaderSourceDir));

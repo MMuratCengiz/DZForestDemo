@@ -6,8 +6,6 @@ public class GpuCameraLayout : ILayout
 {
     public static readonly BindingSlot Camera = BindingSlot.ConstantBuffer(0);
     public static readonly BindingSlot Lights = BindingSlot.ConstantBuffer(1);
-    public static readonly BindingSlot ShadowAtlas = BindingSlot.ShaderResource(2);
-    public static readonly BindingSlot ShadowSampler = BindingSlot.Sampler(3);
     public static readonly FrequencySpace FrequencySpace = FrequencySpace.Camera;
 
     public BindGroupLayout Layout { get; }
@@ -30,20 +28,6 @@ public class GpuCameraLayout : ILayout
                 Stages = (uint)(ShaderStageFlagBits.Vertex | ShaderStageFlagBits.Pixel),
                 Descriptor = (uint)ResourceDescriptorFlagBits.UniformBuffer
             },
-            new()
-            {
-                Binding = ShadowAtlas.Binding,
-                ArraySize = 1,
-                Stages = (uint)ShaderStageFlagBits.Pixel,
-                Descriptor = (uint)ResourceDescriptorFlagBits.Texture
-            },
-            new()
-            {
-                Binding = ShadowSampler.Binding,
-                ArraySize = 1,
-                Stages = (uint)ShaderStageFlagBits.Pixel,
-                Descriptor = (uint)ResourceDescriptorFlagBits.Sampler
-            }
         };
 
         var desc = new BindGroupLayoutDesc

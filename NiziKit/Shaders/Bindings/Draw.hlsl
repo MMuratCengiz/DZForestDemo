@@ -8,7 +8,7 @@ struct InstanceData
 };
 
 
-#ifndef MAX_INStANCES
+#ifndef MAX_INSTANCES
 #define MAX_INSTANCES 500
 #endif
 

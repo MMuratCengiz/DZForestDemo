@@ -10,8 +10,6 @@ public class DefaultShader : IDisposable
 {
     public GpuShader StaticVariant { get; private set; } = null!;
     public GpuShader SkinnedVariant { get; private set; } = null!;
-    public GpuShader ShadowCasterVariant { get; private set; } = null!;
-    public GpuShader ShadowCasterSkinnedVariant { get; private set; } = null!;
 
     private static readonly Dictionary<string, string?> SkinnedDefines = new() { ["SKINNED"] = null };
 
@@ -28,26 +26,14 @@ public class DefaultShader : IDisposable
                 "Default/Default.VS.hlsl", "Default/Default.PS.hlsl", null);
             var newSkinned = CreateVariant("DefaultShader_SKINNED",
                 "Default/Default.VS.hlsl", "Default/Default.PS.hlsl", SkinnedDefines);
-            var newShadow = CreateShadowCasterVariant("ShadowCasterShader",
-                "Shadow/Shadow.VS.hlsl", "Shadow/Shadow.PS.hlsl", null);
-            var newShadowSkinned = CreateShadowCasterVariant("ShadowCasterShader_SKINNED",
-                "Shadow/Shadow.VS.hlsl", "Shadow/Shadow.PS.hlsl", SkinnedDefines);
 
             var oldStatic = StaticVariant;
             var oldSkinned = SkinnedVariant;
-            var oldShadow = ShadowCasterVariant;
-            var oldShadowSkinned = ShadowCasterSkinnedVariant;
 
             StaticVariant = newStatic;
             SkinnedVariant = newSkinned;
-            ShadowCasterVariant = newShadow;
-            ShadowCasterSkinnedVariant = newShadowSkinned;
-
             oldStatic.Dispose();
             oldSkinned.Dispose();
-            oldShadow.Dispose();
-            oldShadowSkinned.Dispose();
-
             return true;
         }
         catch (Exception ex)
@@ -63,10 +49,6 @@ public class DefaultShader : IDisposable
             "Default/Default.VS.hlsl", "Default/Default.PS.hlsl", null);
         SkinnedVariant = CreateVariant("DefaultShader_SKINNED",
             "Default/Default.VS.hlsl", "Default/Default.PS.hlsl", SkinnedDefines);
-        ShadowCasterVariant = CreateShadowCasterVariant("ShadowCasterShader",
-            "Shadow/Shadow.VS.hlsl", "Shadow/Shadow.PS.hlsl", null);
-        ShadowCasterSkinnedVariant = CreateShadowCasterVariant("ShadowCasterShader_SKINNED",
-            "Shadow/Shadow.VS.hlsl", "Shadow/Shadow.PS.hlsl", SkinnedDefines);
     }
 
     private static ShaderProgram LoadProgram(
@@ -204,7 +186,5 @@ public class DefaultShader : IDisposable
     {
         StaticVariant.Dispose();
         SkinnedVariant.Dispose();
-        ShadowCasterVariant.Dispose();
-        ShadowCasterSkinnedVariant.Dispose();
     }
 }

@@ -14,6 +14,6 @@ public struct GpuLightData
     public float Radius;
     public float InnerConeAngle;
     public float OuterConeAngle;
-    public int ShadowIndex;
-    public float Pad0;
+    public float _Pad0;
+    public float _Pad1;
 }

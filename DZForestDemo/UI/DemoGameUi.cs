@@ -33,7 +33,7 @@ public class DemoGameUi
             // Main chat window
             using (NiziUi.Column("ChatWindow")
                        .GrowWidth()
-                       .GrowHeight(500, 600)
+                       .GrowHeight(200, 300)
                        .Background(GameTheme.Background)
                        .Border(1, GameTheme.Border)
                        .CornerRadius(6)

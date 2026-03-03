@@ -55,8 +55,6 @@ public class Renderer2D : IRenderer
         _viewData.Scene = scene;
         _viewData.DeltaTime = Time.DeltaTime;
         _viewData.TotalTime = Time.TotalTime;
-        _viewData.ShadowAtlas = null;
-        _viewData.ShadowCasters = [];
 
         var sprites = renderWorld2D.GetSortedSprites();
 

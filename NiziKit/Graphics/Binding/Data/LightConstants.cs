@@ -21,13 +21,8 @@ public struct LightConstantsCapacity
 public unsafe struct LightConstants
 {
     public fixed byte Lights[LightConstantsCapacity.MaxLights * 64];                  // 512 bytes
-    public fixed byte Shadows[LightConstantsCapacity.MaxShadowCascades * 80];        // 320 bytes
     public Vector3 AmbientSkyColor;
     public uint NumLights;
     public Vector3 AmbientGroundColor;
     public float AmbientIntensity;
-    public uint NumShadows;
-    public uint Pad0;
-    public uint Pad1;
-    public uint Pad2;
 }

@@ -42,8 +42,6 @@ public class ViewBinding : ShaderBinding<ViewData>
             bg.BeginUpdate();
             bg.Cbv(GpuCameraLayout.Camera.Binding, _cameraBuffer[i]);
             bg.Cbv(GpuCameraLayout.Lights.Binding, _lightBuffer[i]);
-            bg.SrvTexture(GpuCameraLayout.ShadowAtlas.Binding, ColorTexture.Missing.Texture);
-            bg.Sampler(GpuCameraLayout.ShadowSampler.Binding, _shadowSampler);
             bg.EndUpdate();
         }
     }
@@ -55,17 +53,6 @@ public class ViewBinding : ShaderBinding<ViewData>
 
         _cameraBuffer.Write(in camera);
         _lightBuffer.Write(in lights);
-
-        if (target.ShadowAtlas != null)
-        {
-            var bg = BindGroups[GraphicsContext.FrameIndex];
-            bg.BeginUpdate();
-            bg.Cbv(GpuCameraLayout.Camera.Binding, _cameraBuffer[GraphicsContext.FrameIndex]);
-            bg.Cbv(GpuCameraLayout.Lights.Binding, _lightBuffer[GraphicsContext.FrameIndex]);
-            bg.SrvTexture(GpuCameraLayout.ShadowAtlas.Binding, target.ShadowAtlas[GraphicsContext.FrameIndex]);
-            bg.Sampler(GpuCameraLayout.ShadowSampler.Binding, _shadowSampler);
-            bg.EndUpdate();
-        }
     }
 
     private static GpuCamera BuildCamera(ViewData viewData)
@@ -106,23 +93,12 @@ public class ViewBinding : ShaderBinding<ViewData>
 
         var lights = stackalloc GpuLightData[maxLights];
         var lightIndex = 0;
-        var shadowCasters = viewData.ShadowCasters;
 
         foreach (var dl in scene.GetObjectsOfType<DirectionalLight>())
         {
             if (lightIndex >= maxLights || !dl.IsActive)
             {
                 continue;
-            }
-
-            var shadowIdx = -1;
-            for (var s = 0; s < shadowCasters.Length; s++)
-            {
-                if (shadowCasters[s].LightIndex == lightIndex)
-                {
-                    shadowIdx = s;
-                    break;
-                }
             }
 
             lights[lightIndex++] = new GpuLightData
@@ -135,7 +111,6 @@ public class ViewBinding : ShaderBinding<ViewData>
                 Radius = 0,
                 InnerConeAngle = 0,
                 OuterConeAngle = 0,
-                ShadowIndex = shadowIdx
             };
         }
 
@@ -156,7 +131,6 @@ public class ViewBinding : ShaderBinding<ViewData>
                 Radius = pl.Range,
                 InnerConeAngle = 0,
                 OuterConeAngle = 0,
-                ShadowIndex = -1
             };
         }
 
@@ -177,7 +151,6 @@ public class ViewBinding : ShaderBinding<ViewData>
                 Radius = sl.Range,
                 InnerConeAngle = sl.InnerConeAngle,
                 OuterConeAngle = sl.OuterConeAngle,
-                ShadowIndex = -1
             };
         }
 
@@ -187,26 +160,12 @@ public class ViewBinding : ShaderBinding<ViewData>
             AmbientGroundColor = scene.AmbientGroundColor,
             AmbientIntensity = scene.AmbientIntensity,
             NumLights = (uint)lightIndex,
-            NumShadows = (uint)shadowCasters.Length
         };
 
         var lightPtr = (GpuLightData*)result.Lights;
         for (var i = 0; i < lightIndex; i++)
         {
             lightPtr[i] = lights[i];
-        }
-
-        var shadowPtr = (GpuShadowData*)result.Shadows;
-        for (var s = 0; s < shadowCasters.Length && s < maxShadows; s++)
-        {
-            shadowPtr[s] = new GpuShadowData
-            {
-                LightViewProjection = shadowCasters[s].LightViewProjection,
-                SplitDistance = shadowCasters[s].SplitDistance,
-                Bias = shadowCasters[s].Bias,
-                NormalBias = shadowCasters[s].NormalBias,
-                LightSize = shadowCasters[s].LightSize
-            };
         }
 
         return result;

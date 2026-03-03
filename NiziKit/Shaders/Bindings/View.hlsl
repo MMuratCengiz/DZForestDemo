@@ -6,9 +6,6 @@
 #define LIGHT_TYPE_SPOT 2
 #define MAX_LIGHTS 8
 
-#define MAX_SHADOW_CASCADES 4
-#define NUM_CASCADES        MAX_SHADOW_CASCADES
-
 struct Light
 {
     float3 PositionOrDirection;
@@ -21,16 +18,6 @@ struct Light
     float  OuterConeAngle;
     int    ShadowIndex; // Index of the first cascade in Shadows[]. -1 = no shadow.
     float  _Pad0;
-};
-
-// Match GpuShadowData.cs
-struct ShadowData
-{
-    float4x4 LightViewProjection;
-    float    SplitDistance; // Linear view-space depth at this cascade's far edge.
-    float    Bias;
-    float    NormalBias;
-    float    LightSize; // PCSS penumbra control. 0 = disabled (basic PCF only).
 };
 
 cbuffer ViewConstants : register(b0, space1)
@@ -50,18 +37,11 @@ cbuffer ViewConstants : register(b0, space1)
 
 cbuffer LightConstants : register(b1, space1)
 {
-    Light      Lights[MAX_LIGHTS];
-    ShadowData Shadows[MAX_SHADOW_CASCADES];
-    float3     AmbientSkyColor;
-    uint       NumLights;
-    float3     AmbientGroundColor;
-    float      AmbientIntensity;
-    uint       NumShadows; // Total cascade count that are active.
-    uint       _Pad0;
-    uint       _Pad1;
-    uint       _Pad2;
+    Light  Lights[MAX_LIGHTS];
+    float3 AmbientSkyColor;
+    uint   NumLights;
+    float3 AmbientGroundColor;
+    float  AmbientIntensity;
 };
-
-#include "Shadow.hlsl"
 
 #endif

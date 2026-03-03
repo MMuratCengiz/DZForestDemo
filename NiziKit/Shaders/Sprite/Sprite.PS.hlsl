@@ -1,4 +1,6 @@
+#include "../Bindings/View.hlsl"
 #include "../Bindings/Material.hlsl"
+#include "../Bindings/Draw.hlsl"
 
 struct PSInput
 {
