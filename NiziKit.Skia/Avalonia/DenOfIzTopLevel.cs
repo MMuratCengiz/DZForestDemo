@@ -6,6 +6,7 @@ using Avalonia.Input;
 using Avalonia.VisualTree;
 using DenOfIz;
 using NiziKit.Graphics;
+using Rect = Avalonia.Rect;
 
 namespace NiziKit.Skia.Avalonia;
 
